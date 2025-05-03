@@ -1,0 +1,22 @@
+baseURL = "https://datasciocean.com"
+
+# [en, zh-cn, fr, pl, ...] determines default content language
+defaultContentLanguage = "en"
+
+# website title
+title = "DataSci Ocean"
+
+# whether to use robots.txt
+enableRobotsTXT = true
+
+# whether to use git commit log
+enableGitInfo = true
+
+# whether to use emoji code
+enableEmoji = true
+
+# theme
+theme = "DoIt"
+
+# themes directory
+themesDir = "themes"

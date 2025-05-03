@@ -1,0 +1,19 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>DataSci Ocean</title>
+        <link>http://localhost:1313/zh-tw/</link>
+        <description>Datasci Ocean: 深入探索機器學習、深度學習 (大型語言模型) 與人工智慧。涵蓋程式碼實作、論文筆記及部分計算機科學主題</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-tw</language><managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
+            <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Tue, 03 Mar 2020 21:40:32 &#43;0800</lastBuildDate>
+            <atom:link href="http://localhost:1313/zh-tw/index.xml" rel="self" type="application/rss+xml" />
+        <item>
+    <title>主题文档 - 基本概念</title>
+    <link>http://localhost:1313/zh-tw/theme-documentation-basics/</link>
+    <pubDate>Tue, 03 Mar 2020 21:40:32 &#43;0800</pubDate><author>
+                        <name>Dillon</name><uri>https://dillonzq.com</uri></author><author>
+                        <name>PCloud</name><uri>https://github.com/HEIGE-PCloud</uri><email>heige.pcloud@outlook.com</email></author><guid>http://localhost:1313/zh-tw/theme-documentation-basics/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="/theme-documentation-basics/featured-image.webp" referrerpolicy="no-referrer">
+            </div><p>探索 Hugo - <strong>DoIt</strong> 主题的全部内容和背后的核心概念.</p>]]></description>
+</item></channel>
+</rss>

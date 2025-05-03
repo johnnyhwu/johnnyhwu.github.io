@@ -1,0 +1,8 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>所有文章 - DataSci Ocean</title>
+        <link>http://localhost:1313/zh-tw/posts/</link>
+        <description>所有文章 | DataSci Ocean</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-tw</language><managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
+            <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Tue, 03 Mar 2020 21:40:32 &#43;0800</lastBuildDate><atom:link href="http://localhost:1313/zh-tw/posts/" rel="self" type="application/rss+xml" /></channel>
+</rss>

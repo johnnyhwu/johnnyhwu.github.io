@@ -1,0 +1,198 @@
+# site description
+description = "Datasci Ocean: Dive into Machine Learning, Deep Learning (LLMs), and AI. Featuring code implementations, paper notes, and select CS topics."
+
+# site keywords
+keywords = ["Datasci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "Artificial Intelligence", "AI", "Large Language Models", "LLMs", "Computer Science", "CS", "Software Engineering", "Code", "Implementation", "Paper Notes", "Paper Review", "Python", "C++", "Technical Blog"]
+
+# App icon config
+[app]
+  # optional site title override for the app when added to an iOS home screen or Android launcher
+  title = "Datasci Ocean"
+  
+  # whether to omit favicon resource links
+  noFavicon = false
+  
+  # modern SVG favicon to use in place of older style .png and .ico files
+  svgFavicon = ""
+  
+  # Safari mask icon color
+  iconColor = "#5bbad5"
+  
+  # Windows v8-10 tile color
+  tileColor = "#da532c"
+
+# Search config
+[search]
+  enable = true
+  # type of search engine ("algolia", "fuse", "pagefind")
+  type = "fuse"
+  
+  # max index length of the chunked content
+  contentLength = 4000
+  
+  # placeholder of the search bar
+  placeholder = ""
+  
+  # max number of results length
+  maxResultLength = 10
+  
+  # snippet length of the result
+  snippetLength = 40
+  
+  # HTML tag name of the highlight part in results
+  highlightTag = "em"
+  
+  # whether to use the absolute URL based on the baseURL in search index
+  absoluteURL = false
+  [search.algolia]
+    # index = "en_index"
+    # appID = "5YGRNRQK1G"
+    # searchKey = "0ff6874805de24b84aa1d5ebccad56cd"
+    index = ""
+    appID = ""
+    searchKey = ""
+  [search.fuse]
+    # https://fusejs.io/api/options.html
+    isCaseSensitive = false
+    minMatchCharLength = 2
+    findAllMatches = false
+    location = 0
+    threshold = 0.1
+    distance = 100
+    ignoreLocation = true
+    useExtendedSearch = false
+    ignoreFieldNorm = false
+  [search.pagefind]
+    # https://pagefind.app/docs/search-config/#available-options
+    # run `npx pagefind --site $YOUR_PUBLIC_DIR` after site build to create pagefind index
+    termFrequency = 1.0
+    pageLength = 0.75
+    termSimilarity = 1.0
+    termSaturation = 1.4
+
+# Home page config
+[home]
+  # amount of RSS pages
+  rss = 10
+  
+  # Home page profile
+  [home.profile]
+    enable = true
+    
+    # Gravatar Email for preferred avatar in home page
+    gravatarEmail = ""
+    
+    # URL of avatar shown in home page
+    avatarURL = "/images/avatar.png"
+    
+    # URL the avatar links to
+    avatarLinkURL = ""
+    
+    # title shown in home page (HTML format is supported)
+    title = ""
+    
+    # subtitle shown in home page
+    subtitle = "Just a software engineer blogging to share insights and learn together."
+    
+    # whether to use typeit animation for subtitle
+    typeit = true
+    
+    # whether to show social links
+    social = true
+    
+    # disclaimer (HTML format is supported)
+    disclaimer = ""
+  
+  # Home page posts
+  [home.posts]
+    enable = true
+    
+    # special amount of posts in each home posts page
+    paginate = 7
+
+# Social config in home page
+[social]
+  Angellist = ""
+  Bandcamp = ""
+  Behance = ""
+  Bilibili = ""
+  Bitbucket = ""
+  BuyMeACoffee = ""
+  Codepen = ""
+  Deviantart = ""
+  Devto = ""
+  Douban = ""
+  Dribbble = ""
+  Email = "l066858998@gmail.com"
+  Facebook = ""
+  Fivehundredpx = ""
+  Flickr = ""
+  Foursquare = ""
+  FreeCodeCamp = ""
+  Gitea = ""
+  GitHub = ""
+  Gitlab = ""
+  Goodreads = ""
+  Googlescholar = ""
+  Hackernews = ""
+  Instagram = "wei_programming/"
+  Jsfiddle = ""
+  Keybase = ""
+  Kickstarter = ""
+  Ko-Fi = ""
+  Lastfm = ""
+  Liberapay = ""
+  Linkedin = "johnnyhwu/"
+  Linktree = ""
+  Matrix = ""
+  Medium = ""
+  Mix = ""
+  Odnoklassniki = ""
+  ORCID = ""
+  Patreon = ""
+  Paypal = ""
+  Pinterest = ""
+  QQ = ""
+  QQGroup = ""
+  Quora = ""
+  Reddit = ""
+  Researchgate = ""
+  RSS = true
+  Skype = ""
+  Slidershare = ""
+  Snapchat = ""
+  Soundcloud = ""
+  Spotify = ""
+  Stackoverflow = ""
+  Steam = ""
+  Strava = ""
+  Telegram = ""
+  Thingiverse = ""
+  Tumblr = ""
+  Twitch = ""
+  Twitter = ""
+  Vine = ""
+  VK = ""
+  Weibo = ""
+  Whatsapp = ""
+  Wordpress = ""
+  Xing = ""
+  XMPP = ""
+  Youtubechannel = "UCKzu0kgUsffUddIORpQFGtQ"
+  Youtubecustom = ""
+  Youtubelegacy = ""
+  Zhihu = ""
+  Bluesky = ""
+  # [social.Mastodon]
+  #   id = "@xxxx"
+  #   prefix = "https://mastodon.technology/"
+  # [social.Diaspora]
+  #   id = "@xxxx"
+  #   prefix = "https://yyyy/"
+
+# Sponsor config
+[sponsor]
+  enable = true
+  bio = "If you find this post helpful, please consider sponsoring."
+  link = "https://buymeacoffee.com/hongwei"
+  # custom = "<a href=\"https://www.buymeacoffee.com/PCloud\" target=\"_blank\"><img src=\"https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png\" alt=\"Buy Me A Coffee\" style=\"height: 40px !important;width: 145 !important;\" ></a>"

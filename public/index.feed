@@ -1,0 +1,43 @@
+{
+    "version" : "https://jsonfeed.org/version/1.1",
+    "title" : "DataSci Ocean",
+    "description": "Datasci Ocean: Dive into Machine Learning, Deep Learning (LLMs), and AI. Featuring code implementations, paper notes, and select CS topics.",
+    "home_page_url" : "http://localhost:1313/",
+    "feed_url" : "http://localhost:1313/index.feed",
+    "icon" : "http://localhost:1313/apple-touch-icon.png",
+    "favicon" : "http://localhost:1313/favicon.ico",
+    "author" : {
+        "name" : "Hong-Wei Wu",
+        "url": "https://www.linkedin.com/in/johnnyhwu/",
+        "avatar": "http://localhost:1313/images/avatar.png"
+    },
+    "items" : [
+    {
+        "title" : "内容",
+        "date_published" : "0001-01-01T00:00:00Z",
+        "date_modified" : "0001-01-01T00:00:00Z",
+        "id" : "http://localhost:1313/tags/content/_index.zh-cn/",
+        "url" : "http://localhost:1313/tags/content/_index.zh-cn/",
+        "content_html" : "",
+        "language": "en"
+    },
+    {
+        "title" : "安装",
+        "date_published" : "0001-01-01T00:00:00Z",
+        "date_modified" : "0001-01-01T00:00:00Z",
+        "id" : "http://localhost:1313/tags/installation/_index.zh-cn/",
+        "url" : "http://localhost:1313/tags/installation/_index.zh-cn/",
+        "content_html" : "",
+        "language": "en"
+    }
+    {
+        "title" : "配置",
+        "date_published" : "0001-01-01T00:00:00Z",
+        "date_modified" : "0001-01-01T00:00:00Z",
+        "id" : "http://localhost:1313/tags/configuration/_index.zh-cn/",
+        "url" : "http://localhost:1313/tags/configuration/_index.zh-cn/",
+        "content_html" : "",
+        "language": "en"
+    },
+    ]
+}
