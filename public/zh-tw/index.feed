@@ -15,7 +15,7 @@
     {
         "title" : "主题文档 - 基本概念",
         "date_published" : "2020-03-03T21:40:32+08:00",
-        "date_modified" : "2020-03-06T21:40:32+08:00",
+        "date_modified" : "2025-05-03T20:37:26+08:00",
         "id" : "http://localhost:1313/zh-tw/theme-documentation-basics/",
         "url" : "http://localhost:1313/zh-tw/theme-documentation-basics/",
         "summary": "探索 Hugo - DoIt 主题的全部内容和背后的核心概念.\n",

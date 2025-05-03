@@ -15,7 +15,7 @@
     {
         "title" : "内容",
         "date_published" : "0001-01-01T00:00:00Z",
-        "date_modified" : "0001-01-01T00:00:00Z",
+        "date_modified" : "2025-05-03T20:37:26+08:00",
         "id" : "http://localhost:1313/tags/content/_index.zh-cn/",
         "url" : "http://localhost:1313/tags/content/_index.zh-cn/",
         "content_html" : "",
@@ -24,7 +24,7 @@
     {
         "title" : "安装",
         "date_published" : "0001-01-01T00:00:00Z",
-        "date_modified" : "0001-01-01T00:00:00Z",
+        "date_modified" : "2025-05-03T20:37:26+08:00",
         "id" : "http://localhost:1313/tags/installation/_index.zh-cn/",
         "url" : "http://localhost:1313/tags/installation/_index.zh-cn/",
         "content_html" : "",
@@ -33,7 +33,7 @@
     {
         "title" : "配置",
         "date_published" : "0001-01-01T00:00:00Z",
-        "date_modified" : "0001-01-01T00:00:00Z",
+        "date_modified" : "2025-05-03T20:37:26+08:00",
         "id" : "http://localhost:1313/tags/configuration/_index.zh-cn/",
         "url" : "http://localhost:1313/tags/configuration/_index.zh-cn/",
         "content_html" : "",
