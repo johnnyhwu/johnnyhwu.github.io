@@ -1,7 +1,7 @@
-weight = 2
+weight = 1
 
 # language code
-languageCode = "zh-tw"
+languageCode = "zh-TW"
 
 # language name
 languageName = "繁體中文"

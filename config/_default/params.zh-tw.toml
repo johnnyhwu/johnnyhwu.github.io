@@ -1,13 +1,13 @@
 # site description
-description = "Datasci Ocean: 深入探索機器學習、深度學習 (大型語言模型) 與人工智慧。涵蓋程式碼實作、論文筆記及部分計算機科學主題"
+description = "DataSci Ocean: 深入探索機器學習、深度學習 (大型語言模型) 與人工智慧。涵蓋程式碼實作、論文筆記及部分計算機科學主題"
 
 # site keywords
-keywords = ["Datasci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "Artificial Intelligence", "AI", "Large Language Models", "LLMs", "Computer Science", "CS", "Software Engineering", "Code", "Implementation", "Paper Notes", "Paper Review", "Python", "C++", "Technical Blog"]
+keywords = ["DataSci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "Artificial Intelligence", "AI", "Large Language Models", "LLMs", "Computer Science", "CS", "Software Engineering", "Code", "Implementation", "Paper Notes", "Paper Review", "Python", "C++", "Technical Blog"]
 
 # App icon config
 [app]
   # optional site title override for the app when added to an iOS home screen or Android launcher
-  title = "Datasci Ocean"
+  title = "DataSci Ocean"
   # whether to omit favicon resource links
   noFavicon = false
   # modern SVG favicon to use in place of older style .png and .ico files
@@ -117,7 +117,7 @@ keywords = ["Datasci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "A
   Foursquare = ""
   FreeCodeCamp = ""
   Gitea = ""
-  GitHub = "xxxx"
+  GitHub = ""
   Gitlab = ""
   Goodreads = ""
   Googlescholar = ""

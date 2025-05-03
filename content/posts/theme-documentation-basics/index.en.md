@@ -1,21 +1,20 @@
 ---
-weight: 1
+# weight: 1
 title: "Theme Documentation - Basics"
-date: 2020-03-03T21:29:01+08:00
-lastmod: 2020-03-06T21:29:01+08:00
+date: 2020-03-06
+lastmod: 2020-03-06
 draft: false
-authors: ["Dillon", "PCloud"]
 description: "Discover what the Hugo - DoIt theme is all about and the core-concepts behind it."
 featuredImage: "featured-image.webp"
 
 tags: ["installation", "configuration"]
-categories: ["documentation"]
+categories: ["paper-intro"]
 series: ["getting-start"]
 series_weight: 1
 lightgallery: true
 license: '<a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>'
-toc:
-  auto: false
+
+url: "paper-intro/:contentbasename"
 ---
 
 Discover what the Hugo - **DoIt** theme is all about and the core-concepts behind it.
