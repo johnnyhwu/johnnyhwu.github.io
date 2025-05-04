@@ -11,16 +11,7 @@
                     hreflang="en"
                     href="https://datasciocean.com/en/categories/"
                     /></url><url>
-            <loc>https://datasciocean.com/en/tags/content/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
-                        rel="alternate"
-                        hreflang="zh-tw"
-                        href="https://datasciocean.com/tags/content/"
-                        /><xhtml:link
-                    rel="alternate"
-                    hreflang="en"
-                    href="https://datasciocean.com/en/tags/content/"
-                    /></url><url>
-            <loc>https://datasciocean.com/en/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://datasciocean.com/en/</loc><lastmod>2025-05-03T20:37:26&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-tw"
                         href="https://datasciocean.com/"
@@ -29,34 +20,25 @@
                     hreflang="en"
                     href="https://datasciocean.com/en/"
                     /></url><url>
-            <loc>https://datasciocean.com/en/categories/documentation/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://datasciocean.com/en/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/</loc><lastmod>2025-01-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-tw"
-                        href="https://datasciocean.com/categories/documentation/"
+                        href="https://datasciocean.com/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/"
                         /><xhtml:link
                     rel="alternate"
                     hreflang="en"
-                    href="https://datasciocean.com/en/categories/documentation/"
+                    href="https://datasciocean.com/en/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/"
                     /></url><url>
-            <loc>https://datasciocean.com/en/series/getting-start/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://datasciocean.com/en/tags/large-language-model/</loc><lastmod>2025-01-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-tw"
-                        href="https://datasciocean.com/series/getting-start/"
+                        href="https://datasciocean.com/tags/large-language-model/"
                         /><xhtml:link
                     rel="alternate"
                     hreflang="en"
-                    href="https://datasciocean.com/en/series/getting-start/"
+                    href="https://datasciocean.com/en/tags/large-language-model/"
                     /></url><url>
-            <loc>https://datasciocean.com/en/tags/markdown/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
-                        rel="alternate"
-                        hreflang="zh-tw"
-                        href="https://datasciocean.com/tags/markdown/"
-                        /><xhtml:link
-                    rel="alternate"
-                    hreflang="en"
-                    href="https://datasciocean.com/en/tags/markdown/"
-                    /></url><url>
-            <loc>https://datasciocean.com/en/posts/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://datasciocean.com/en/posts/</loc><lastmod>2025-01-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-tw"
                         href="https://datasciocean.com/posts/"
@@ -65,16 +47,16 @@
                     hreflang="en"
                     href="https://datasciocean.com/en/posts/"
                     /></url><url>
-            <loc>https://datasciocean.com/en/series/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://datasciocean.com/en/tags/single-agent/</loc><lastmod>2025-01-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-tw"
-                        href="https://datasciocean.com/series/"
+                        href="https://datasciocean.com/tags/single-agent/"
                         /><xhtml:link
                     rel="alternate"
                     hreflang="en"
-                    href="https://datasciocean.com/en/series/"
+                    href="https://datasciocean.com/en/tags/single-agent/"
                     /></url><url>
-            <loc>https://datasciocean.com/en/tags/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://datasciocean.com/en/tags/</loc><lastmod>2025-01-31T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-tw"
                         href="https://datasciocean.com/tags/"
@@ -82,42 +64,6 @@
                     rel="alternate"
                     hreflang="en"
                     href="https://datasciocean.com/en/tags/"
-                    /></url><url>
-            <loc>https://datasciocean.com/en/theme-documentation-content/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
-                        rel="alternate"
-                        hreflang="zh-tw"
-                        href="https://datasciocean.com/theme-documentation-content/"
-                        /><xhtml:link
-                    rel="alternate"
-                    hreflang="en"
-                    href="https://datasciocean.com/en/theme-documentation-content/"
-                    /></url><url>
-            <loc>https://datasciocean.com/en/tags/configuration/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
-                        rel="alternate"
-                        hreflang="zh-tw"
-                        href="https://datasciocean.com/tags/configuration/"
-                        /><xhtml:link
-                    rel="alternate"
-                    hreflang="en"
-                    href="https://datasciocean.com/en/tags/configuration/"
-                    /></url><url>
-            <loc>https://datasciocean.com/en/tags/installation/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
-                        rel="alternate"
-                        hreflang="zh-tw"
-                        href="https://datasciocean.com/tags/installation/"
-                        /><xhtml:link
-                    rel="alternate"
-                    hreflang="en"
-                    href="https://datasciocean.com/en/tags/installation/"
-                    /></url><url>
-            <loc>https://datasciocean.com/en/paper-intro/theme-documentation-basics/</loc><lastmod>2025-05-04T00:31:51&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
-                        rel="alternate"
-                        hreflang="zh-tw"
-                        href="https://datasciocean.com/paper-intro/theme-documentation-basics/"
-                        /><xhtml:link
-                    rel="alternate"
-                    hreflang="en"
-                    href="https://datasciocean.com/en/paper-intro/theme-documentation-basics/"
                     /></url><url>
             <loc>https://datasciocean.com/en/authors/</loc><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
@@ -137,4 +83,13 @@
                     rel="alternate"
                     hreflang="en"
                     href="https://datasciocean.com/en/categories/paper-intro/"
+                    /></url><url>
+            <loc>https://datasciocean.com/en/series/</loc><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
+                        rel="alternate"
+                        hreflang="zh-tw"
+                        href="https://datasciocean.com/series/"
+                        /><xhtml:link
+                    rel="alternate"
+                    hreflang="en"
+                    href="https://datasciocean.com/en/series/"
                     /></url></urlset>

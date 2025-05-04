@@ -9,34 +9,20 @@
     <managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
     <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster>
     <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
-    <lastBuildDate>Sun, 04 May 2025 00:31:51 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 31 Jan 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://datasciocean.com/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Content</title>
-      <link>https://datasciocean.com/tags/content/</link>
-      <pubDate>Sat, 07 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
-      <guid>https://datasciocean.com/tags/content/</guid>
+      <title>Large Language Model</title>
+      <link>https://datasciocean.com/tags/large-language-model/</link>
+      <pubDate>Fri, 31 Jan 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>https://datasciocean.com/tags/large-language-model/</guid>
       <description></description>
     </item>
     <item>
-      <title>Markdown</title>
-      <link>https://datasciocean.com/tags/markdown/</link>
-      <pubDate>Sat, 07 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
-      <guid>https://datasciocean.com/tags/markdown/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Configuration</title>
-      <link>https://datasciocean.com/tags/configuration/</link>
-      <pubDate>Fri, 06 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
-      <guid>https://datasciocean.com/tags/configuration/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Installation</title>
-      <link>https://datasciocean.com/tags/installation/</link>
-      <pubDate>Fri, 06 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
-      <guid>https://datasciocean.com/tags/installation/</guid>
+      <title>Single-Agent</title>
+      <link>https://datasciocean.com/tags/single-agent/</link>
+      <pubDate>Fri, 31 Jan 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>https://datasciocean.com/tags/single-agent/</guid>
       <description></description>
     </item>
   </channel>

@@ -4,25 +4,16 @@
         <link>https://datasciocean.com/</link>
         <description>DataSci Ocean: 深入探索機器學習、深度學習 (大型語言模型) 與人工智慧。涵蓋程式碼實作、論文筆記及部分計算機科學主題</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-TW</language><managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
-            <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sat, 07 Mar 2020 00:00:00 &#43;0000</lastBuildDate>
+            <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Fri, 31 Jan 2025 00:00:00 &#43;0000</lastBuildDate>
             <atom:link href="https://datasciocean.com/index.xml" rel="self" type="application/rss+xml" />
         <item>
-    <title>主题文档 - 内容</title>
-    <link>https://datasciocean.com/theme-documentation-content/</link>
-    <pubDate>Sat, 07 Mar 2020 00:00:00 &#43;0000</pubDate><author>
+    <title>[論文介紹] HuatuoGPT-o1, Towards Medical Complex Reasoning with LLMs</title>
+    <link>https://datasciocean.com/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/</link>
+    <pubDate>Fri, 31 Jan 2025 00:00:00 &#43;0000</pubDate><author>
         <name>Hong-Wei Wu</name>
-    </author><guid>https://datasciocean.com/theme-documentation-content/</guid>
+    </author><guid>https://datasciocean.com/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/</guid>
     <description><![CDATA[<div class="featured-image">
-                <img src="/theme-documentation-content/featured-image.webp" referrerpolicy="no-referrer">
-            </div><p>了解如何在 <strong>DoIt</strong> 主题中快速, 直观地创建和组织内容.</p>]]></description>
-</item><item>
-    <title>主题文档 - 基本概念</title>
-    <link>https://datasciocean.com/paper-intro/theme-documentation-basics/</link>
-    <pubDate>Fri, 06 Mar 2020 00:00:00 &#43;0000</pubDate><author>
-        <name>Hong-Wei Wu</name>
-    </author><guid>https://datasciocean.com/paper-intro/theme-documentation-basics/</guid>
-    <description><![CDATA[<div class="featured-image">
-                <img src="/paper-intro/theme-documentation-basics/featured-image.webp" referrerpolicy="no-referrer">
-            </div><p>探索 Hugo - <strong>DoIt</strong> 主题的全部内容和背后的核心概念.</p>]]></description>
+                <img src="/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/featured-image.jpg" referrerpolicy="no-referrer">
+            </div>理解如何針對 Specific Domain 訓練 o1 模型]]></description>
 </item></channel>
 </rss>
