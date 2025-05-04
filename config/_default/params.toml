@@ -447,7 +447,7 @@ bundle = false
       logoUrl = "/images/avatar.png"
   # Related content config
   [page.related]
-    enable = true
+    enable = false
     count = 5
 
 # Sponsor config
