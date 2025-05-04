@@ -1,0 +1,26 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>All Posts - DataSci Ocean</title>
+        <link>http://localhost:1313/en/posts/</link>
+        <description>All Posts | DataSci Ocean</description>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
+            <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Fri, 31 Jan 2025 00:00:00 &#43;0000</lastBuildDate><atom:link href="http://localhost:1313/en/posts/" rel="self" type="application/rss+xml" /><item>
+    <title>EHRAgent: Code Empowers Large Language Models for Few-shot  Complex Tabular Reasoning on Electronic Health Records</title>
+    <link>http://localhost:1313/en/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/</link>
+    <pubDate>Sun, 26 Jan 2025 00:00:00 &#43;0000</pubDate><author>
+        <name>Hong-Wei Wu</name>
+    </author><guid>http://localhost:1313/en/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/featured-image.jpg" referrerpolicy="no-referrer">
+            </div>LLM Agent for Multi-Table QA Task]]></description>
+</item><item>
+    <title>HuatuoGPT-o1: Towards Medical Complex Reasoning with LLMs</title>
+    <link>http://localhost:1313/en/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/</link>
+    <pubDate>Fri, 31 Jan 2025 00:00:00 &#43;0000</pubDate><author>
+        <name>Hong-Wei Wu</name>
+    </author><guid>http://localhost:1313/en/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/featured-image.jpg" referrerpolicy="no-referrer">
+            </div>Understand how to train an o1-like model on specific domain]]></description>
+</item></channel>
+</rss>

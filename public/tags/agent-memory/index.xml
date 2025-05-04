@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Agent Memory on DataSci Ocean</title>
+    <link>http://localhost:1313/tags/agent-memory/</link>
+    <description>Recent content in Agent Memory on DataSci Ocean</description>
+    <generator>Hugo</generator>
+    <language>zh-TW</language>
+    <managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
+    <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sun, 04 May 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/agent-memory/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>LangMem 基本概念介紹</title>
+      <link>http://localhost:1313/other/langmem-intro/</link>
+      <pubDate>Sun, 04 May 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/other/langmem-intro/</guid>
+      <description></description>
+    </item>
+  </channel>
+</rss>
