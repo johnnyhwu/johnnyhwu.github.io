@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on DataSci Ocean</title>
+    <link>https://datasciocean.com/tags/</link>
+    <description>Recent content in Tags on DataSci Ocean</description>
+    <generator>Hugo</generator>
+    <language>zh-TW</language>
+    <managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
+    <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sun, 04 May 2025 00:31:51 +0800</lastBuildDate>
+    <atom:link href="https://datasciocean.com/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Content</title>
+      <link>https://datasciocean.com/tags/content/</link>
+      <pubDate>Sat, 07 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>https://datasciocean.com/tags/content/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Markdown</title>
+      <link>https://datasciocean.com/tags/markdown/</link>
+      <pubDate>Sat, 07 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>https://datasciocean.com/tags/markdown/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Configuration</title>
+      <link>https://datasciocean.com/tags/configuration/</link>
+      <pubDate>Fri, 06 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>https://datasciocean.com/tags/configuration/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Installation</title>
+      <link>https://datasciocean.com/tags/installation/</link>
+      <pubDate>Fri, 06 Mar 2020 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>https://datasciocean.com/tags/installation/</guid>
+      <description></description>
+    </item>
+  </channel>
+</rss>
