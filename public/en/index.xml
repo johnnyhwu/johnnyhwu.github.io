@@ -15,5 +15,14 @@
     <description><![CDATA[<div class="featured-image">
                 <img src="/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/featured-image.jpg" referrerpolicy="no-referrer">
             </div>Understand how to train an o1-like model on specific domain]]></description>
+</item><item>
+    <title>EHRAgent: Code Empowers Large Language Models for Few-shot  Complex Tabular Reasoning on Electronic Health Records</title>
+    <link>https://datasciocean.com/en/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/</link>
+    <pubDate>Sun, 26 Jan 2025 00:00:00 &#43;0000</pubDate><author>
+        <name>Hong-Wei Wu</name>
+    </author><guid>https://datasciocean.com/en/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/featured-image.jpg" referrerpolicy="no-referrer">
+            </div>LLM Agent for Multi-Table QA Task]]></description>
 </item></channel>
 </rss>

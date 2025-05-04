@@ -28,7 +28,7 @@
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
-<link rel="canonical" href="https://datasciocean.com/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/" />
+<link rel="canonical" href="https://datasciocean.com/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/" /><link rel="prev" href="https://datasciocean.com/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/" />
 <link rel="stylesheet" href="/css/main.min.css"><link rel="stylesheet" href="/css/style.min.css"><script type="application/ld+json">{"@context": "https://schema.org","@type": "BlogPosting",
         "headline": "[論文介紹] HuatuoGPT-o1, Towards Medical Complex Reasoning with LLMs",
         "inLanguage": "zh-TW",
@@ -241,7 +241,7 @@
 </nav></div>
             </div><div class="content" id="content" data-pagefind-body><h2 id="前言" class="headerLink">
     <a href="#%e5%89%8d%e8%a8%80" class="header-mark"></a>1 前言</h2><p>如何將 AI 技術 (ex. LLM, MLLM) 應用在 <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7640807/" target="_blank" rel="noopener noreferrer">Medical Domain</a> 一直以來都是研究者所重視的方向之一。</p>
-<p>在前一篇文章中，我們介紹了 <a href="https://datasciocean.tech/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/" target="_blank" rel="noopener noreferrer">EHRAgent (EMNLP 2024)</a> 如何將 LLM 與 Medical Domain 的知識整合，並善用 LLM 的 Reasoning 以及 Coding 能力，來讓 LLM 能夠基於包含大量 Table 的 EHR Database 進行 Table QA 任務。</p>
+<p>在前一篇文章中，我們介紹了 <a href="../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/" rel="">EHRAgent (EMNLP 2024)</a> 如何將 LLM 與 Medical Domain 的知識整合，並善用 LLM 的 Reasoning 以及 Coding 能力，來讓 LLM 能夠基於包含大量 Table 的 EHR Database 進行 Table QA 任務。</p>
 <p>此外，自從 2024/9/12 OpenAI 發布 <a href="https://openai.com/o1/" target="_blank" rel="noopener noreferrer">o1 模型</a>以來，許多研究被提出希望能夠復現 o1 模型的能力，釐清 o1 模型的訓練方法。</p>
 <p>綜合上述兩點，本篇文章想和讀者分享 <a href="https://arxiv.org/abs/2412.18925" target="_blank" rel="noopener noreferrer">HuatuoGPT-o1, Towards Medical Complex Reasoning with LLMs (2024/12)</a> — 一篇針對 Medical Domain 的 o1 模型。讀完 HuatuoGPT-o1 後，我們將能夠學習到<strong>如何在 Medical Domain 訓練出一個 o1 模型</strong>。</p>
 <p>然而，畢竟 OpenAI 沒有公開 o1 模型的訓練方法，因此 HuatuoGPT-o1 只是一個 o1-like 模型。為了減少冗言贅字，本篇文章仍以 o1 模型稱呼之。所謂的 o1 模型和過往模型最大的差別在於 Decoding 階段，o1 模型能夠產生 Long Chain-of-Thought Style 的回答，同時能夠在推理過程中能發現自己的錯誤然後進行修正，展現出更強大的推理能力；也因為如此，o1 類型的模型除了是個 Large Language Model 外，也經常被稱為 <a href="https://arxiv.org/abs/2501.09686" target="_blank" rel="noopener noreferrer">Large Reasoning Model</a>。</p>
@@ -514,9 +514,7 @@
 <h2 id="結語" class="headerLink">
     <a href="#%e7%b5%90%e8%aa%9e" class="header-mark"></a>8 結語</h2><p>本篇文章分享 <a href="https://arxiv.org/abs/2412.18925" target="_blank" rel="noopener noreferrer">HuatuoGPT-o1, Towards Medical Complex Reasoning with LLMs (2024/12)</a> — 一篇針對 Medical Domain 的 o1 模型。讀完 HuatuoGPT-o1 後，我們將能夠學習到<strong>如何在 Medical Domain 訓練出一個 o1 模型</strong>。我覺得這篇論文讓我們學習到最多的就是，如何從頭開始且比較低成本的方式 (相較於 OpenAI o1)，建立一個 Domain-Specific 的 o1 模型。包含整體流程該如何設計 (Dataset Collection, Preprocess, Transformation, SFT, RL)，以及 Prompt 該怎麼寫 (Search Strategy, CoT Trajectory to Complex CoT)。</p></div>
 
-        
-
-<div class="post-footer" id="post-footer">
+        <div class="post-footer" id="post-footer">
     <div class="post-info">
         <div class="post-info-line">
             <div class="post-info-mod">
@@ -545,7 +543,8 @@
         </section>
     </div>
 
-    <div class="post-nav print:tw-hidden"></div>
+    <div class="post-nav print:tw-hidden"><a href="/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/" class="prev" rel="prev" title="[論文介紹] EHRAgent: Code Empowers Large Language Models for Few-shot  Complex Tabular Reasoning on Electronic Health Records"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"/></svg>[論文介紹] EHRAgent: Code Empowers Large Language Models for Few-shot  Complex Tabular Reasoning on Electronic Health Records</a></div>
 </div>
 <div id="comments" class="print:!tw-hidden tw-pt-32 tw-pb-8"></div></article></main><footer class="footer">
         <div class="footer-container"><div class="footer-line"><svg class="icon"

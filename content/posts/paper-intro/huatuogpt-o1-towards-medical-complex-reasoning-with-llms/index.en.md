@@ -23,7 +23,7 @@ url: "paper-intro/:contentbasename"
 
 How to apply AI techniques (ex. LLM, MLLM) in the [Medical Domain](https://pmc.ncbi.nlm.nih.gov/articles/PMC7640807/) has always been one of the directions valued by researchers.
 
-In the previous article, we introduced [EHRAgent (EMNLP 2024)](https://datasciocean.tech/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) and how it integrates LLMs with knowledge from the Medical Domain, utilizing the LLM's Reasoning and Coding abilities to enable it to perform Table QA tasks based on EHR Databases containing a large number of tables.
+In the previous article, we introduced [EHRAgent (EMNLP 2024)](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) and how it integrates LLMs with knowledge from the Medical Domain, utilizing the LLM's Reasoning and Coding abilities to enable it to perform Table QA tasks based on EHR Databases containing a large number of tables.
 
 In addition, since OpenAI released the [o1 model](https://openai.com/o1/) on 2024/9/12, many studies have been proposed hoping to reproduce the capabilities of the o1 model and clarify its training methods.
 

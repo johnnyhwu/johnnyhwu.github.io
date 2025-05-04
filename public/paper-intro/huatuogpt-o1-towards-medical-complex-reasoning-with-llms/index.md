@@ -7,7 +7,7 @@
 
 如何將 AI 技術 (ex. LLM, MLLM) 應用在 [Medical Domain](https://pmc.ncbi.nlm.nih.gov/articles/PMC7640807/) 一直以來都是研究者所重視的方向之一。
 
-在前一篇文章中，我們介紹了 [EHRAgent (EMNLP 2024)](https://datasciocean.tech/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) 如何將 LLM 與 Medical Domain 的知識整合，並善用 LLM 的 Reasoning 以及 Coding 能力，來讓 LLM 能夠基於包含大量 Table 的 EHR Database 進行 Table QA 任務。
+在前一篇文章中，我們介紹了 [EHRAgent (EMNLP 2024)](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) 如何將 LLM 與 Medical Domain 的知識整合，並善用 LLM 的 Reasoning 以及 Coding 能力，來讓 LLM 能夠基於包含大量 Table 的 EHR Database 進行 Table QA 任務。
 
 此外，自從 2024/9/12 OpenAI 發布 [o1 模型](https://openai.com/o1/)以來，許多研究被提出希望能夠復現 o1 模型的能力，釐清 o1 模型的訓練方法。
 
