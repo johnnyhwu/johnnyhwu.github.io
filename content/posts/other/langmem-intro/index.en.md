@@ -1,86 +1,87 @@
 ---
 # weight: 1
-title: "LangMem 基本概念介紹"
+title: "Intorduction to LangMem"
 date: 2025-05-06
 lastmod: 2025-05-06
 draft: false
-description: "本篇文章介紹了 Agent Memory 的基本概念，並透過 Email Agent 的範例，詳細說明如何使用 LangMem 實現 Semantic Memory, Episodic Memory 和 Procedural Memory，幫助 Agent 優化任務處理能力。"
+description: "Explore the core concepts of Agent Memory (Semantic, Episodic, Procedural) for LLMs. Learn practical implementation of long-term agent memory using LangGraph & LangMem, based on DeepLearning.AI course notes, with a detailed Email Agent example."
 featuredImage: "featured-image.png"
 
-tags: ["Large Language Model", "Agent Memory"]
+tags: ["Large Language Model", "Single-Agent"]
 categories: ["other"]
 # series: ["getting-start"]
 # series_weight: 1
 lightgallery: true
+license: '<a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>'
 
 url: "other/:contentbasename"
 ---
 
 <!--more-->
 
-## 前言
+## Introduction
 
-本篇文章為 DeepLearning.AI 所開設的 [Long-Term Agentic Memory with LangGraph](https://www.deeplearning.ai/short-courses/long-term-agentic-memory-with-langgraph/) 課程筆記。希望讀者能夠透過本篇文章，理解 Agent Memory 的基本概念，以及如何透過 [LangMem](https://github.com/langchain-ai/langmem) 實踐 Agent Memory！
+This article serves as notes for the DeepLearning.AI course, [Long-Term Agentic Memory with LangGraph](https://www.deeplearning.ai/short-courses/long-term-agentic-memory-with-langgraph/). It is hoped that through this article, readers can understand the basic concepts of Agent Memory and how to implement Agent Memory using [LangMem](https://github.com/langchain-ai/langmem)!
 
-## 為什麼 Agent 需要 Memory
+## Why Does an Agent Need Memory
 
-了解 Agent 的 Memory 之前，我們先思考這個問題：
-> 為什麼 Agent 需要 Memory ?
+Before understanding Agent Memory, let's first consider this question:
+> Why does an Agent need Memory?
 
-作者舉一個能夠自動回覆 Email 的 Agent 來說明。如下圖示，這個 LLM 需要在讀取信件內容後，透過 Tool Calling 查看收件者的行事曆 (Calendar Tool)，再透過 Tool Calling 進行 Email 內容的撰寫 (Email Writing Tool)：
+The author uses an Agent capable of automatically replying to emails as an example. As shown in the figure below, this LLM needs to read the email content, then check the recipient's calendar using Tool Calling (Calendar Tool), and finally use Tool Calling to draft the email content (Email Writing Tool):
 
-{{< image src="email-agent.png" caption="一個能夠自動回覆 Email 的 Agent" >}}
+{{< image src="email-agent.png" caption="An Agent capable of automatically replying to emails" >}}
 
-在這個過程中，LLM 需要過去的經驗，幫助它克服一些挑戰。如下圖中的紅字所述：
+In this process, the LLM needs past experience to help it overcome some challenges. As described in the red text in the figure below:
 
-{{< image src="email-agent-challenge.png" caption="Email Agent 會遇到的挑戰" >}}
+{{< image src="email-agent-challenge.png" caption="Challenges an Email Agent might encounter" >}}
 
-如果 Agent 有記憶能力 (Memory)，就能夠參考過去的經驗來處理新的任務。如此一來，Agent 就能夠隨著處理的任務愈多，收集到愈多經驗，而變得更厲害。
+If the Agent has memory capability, it can refer to past experience to handle new tasks. This way, the Agent can become more capable as it processes more tasks and gathers more experience.
 
-## Memory 的類型以及運作時機
+## Types of Memory and When They Operate
 
-Agent 的 Memory 主要可以分為三種類型:
+Agent Memory can mainly be divided into three types:
 
-{{< image src="memory-type.png" caption="Agent Memory 的類型" >}}
+{{< image src="memory-type.png" caption="Types of Agent Memory" >}}
 
-- Semantic Memory: 存放與「事實」相關的內容（我覺得以廣義來說「文件」也可以當成這個類別）
-- Episodic Memory: 存放與「經驗」相關的內容（Ex. 放在 Prompt 中的 Few-Shot Examples）
-- Procedural Memory: 存放與「指令」相關的內容（Ex. 給 LLM 的 System Prompt）
+- Semantic Memory: Stores content related to "facts" (I think broadly speaking, "documents" can also fall into this category).
+- Episodic Memory: Stores content related to "experiences" (Ex. Few-Shot Examples placed in the Prompt).
+- Procedural Memory: Stores content related to "instructions" (Ex. System Prompt given to the LLM).
 
-而 Agent Memory 的運作時機主要有兩種：
+And there are two main operating times for Agent Memory:
 
-{{< image src="memory-work.png" caption="Agent Memory 的類型" >}}
+{{< image src="memory-work.png" caption="When Agent Memory operates" >}}
 
-- In the hot path: 在收到 User 的每次 Query 時都會進行 Memory 的讀取與寫入
-- In the background: 在 Agent 的運行過程中，會定期進行 Memory 的讀取與寫入
+- In the hot path: Memory is read and written every time a User Query is received.
+- In the background: Memory is periodically read and written during the Agent's operation.
 
 ## Email Agent w/ & w/o Memory
 
-理解了 Agent Memory 的基本概念後，我們來看看在 Email Agent 中，Memory 的運作方式。下圖為一個基本的 Email Agent，沒有使用 Memory 的情況下的 Worflow:
+Having understood the basic concepts of Agent Memory, let's look at how Memory operates in the Email Agent. The figure below shows the workflow of a basic Email Agent without using Memory:
 
-{{< image src="email-agent-wo-memory.png" caption="Email Agent 沒有 Memory" >}}
+{{< image src="email-agent-wo-memory.png" caption="Email Agent without Memory" >}}
 
-而下圖為一個使用 Memory 的 Email Agent 的 Workflow:
+And the figure below shows the workflow of an Email Agent using Memory:
 
-{{< image src="email-agent-w-memory.png" caption="Email Agent 有 Memory" >}}
+{{< image src="email-agent-w-memory.png" caption="Email Agent with Memory" >}}
 
-可以發現到：
-- Episodic Memory: 其實就是放在 Prompt 中的 Few-Shot Examples，幫助 LLM 判斷這個 Email 是否需要回覆
-- Procedural Memory: 其實就是寫在 LLM 的 System Prompt 中的內容，告訴 LLM 如何使用 Calandar Tool 以及 Email Writing Tool
-- Semantic Memory: 存放既定的事實 (Ex. Response Preference)
+It can be observed that:
+- Episodic Memory: Essentially, it's the Few-Shot Examples placed in the Prompt, helping the LLM decide if the email needs a reply.
+- Procedural Memory: Essentially, it's the content written in the LLM's System Prompt, telling the LLM how to use the Calendar Tool and Email Writing Tool.
+- Semantic Memory: Stores established facts (Ex. Response Preference).
 
-## Email Agent 的實做 (不具備 Memory)
+## Email Agent Implementation (Without Memory)
 
-接著，先實做一個基本的 Email Agent，這個 Agent 不具備 Memory 的功能:
+Next, let's first implement a basic Email Agent without Memory functionality:
 
-{{< image src="email-agent-wo-memory.png" caption="Email Agent 沒有 Memory" >}}
+{{< image src="email-agent-wo-memory.png" caption="Email Agent without Memory" >}}
 
-### Triage 的實做
+### Triage Implementation
 
-Triage 基本上就是透過 LLM 來對目前的郵件進行分類，分為三類：
-- ignore: 忽略這封郵件
-- notify: 這封郵件是重要的資訊，但不需要回覆
-- respond: 這封郵件需要回覆
+Triage basically involves classifying the current email through an LLM into three categories:
+- ignore: Ignore this email.
+- notify: This email contains important information but does not require a reply.
+- respond: This email requires a reply.
 
 ```python
 from pydantic import BaseModel, Field
@@ -105,10 +106,10 @@ llm_router = llm.with_structured_output(Router)
 ```
 
 {{< admonition tip >}}
-比較有趣的是，作者這邊是透過 `pydantic` 來定義這個 Router 的結構化輸出，這樣的做法可以讓 LLM 的輸出更具結構性，並且能夠更方便地進行後續的處理。除了 LangChain 支援這樣的作法之外，[outlines](https://github.com/dottxt-ai/outlines) 也是一個讓 LLM 進行 Structured Text Generation 的選擇。
+It's interesting that the author uses `pydantic` here to define the structured output of this Router. This approach makes the LLM's output more structured and facilitates subsequent processing. Besides LangChain supporting this method, [outlines](https://github.com/dottxt-ai/outlines) is another option for structured text generation with LLMs.
 {{< /admonition >}}
 
-`llm_router` 的實際使用方式如下：
+The actual usage of `llm_router` is as follows:
 
 ```python
 result = llm_router.invoke(
@@ -119,7 +120,7 @@ result = llm_router.invoke(
 )
 ```
 
-而 System Prompt 的內容如下：
+And the content of the System Prompt is as follows:
 
 ```text
 < Role >
@@ -158,7 +159,7 @@ None
 </ Few shot examples >
 ```
 
-而 User Prompt 的內容如下：
+And the content of the User Prompt is as follows:
 
 ```text
 Please determine how to handle the below email thread:
@@ -179,9 +180,9 @@ Thanks!
 Alice
 ```
 
-### Tools 的實做
+### Tools Implementation
 
-接著，作者定義了 3 種 Tool 讓 LLM 使用：
+Next, the author defines 3 types of Tools for the LLM to use:
 
 ```python
 from langchain_core.tools import tool
@@ -210,9 +211,9 @@ def check_calendar_availability(day: str) -> str:
     return f"Available times on {day}: 9:00 AM, 2:00 PM, 4:00 PM"
 ```
 
-### Main Agent 的實做
+### Main Agent Implementation
 
-Main Agent 的任務是透過使用 Tools 來完成 Email 回覆的任務：
+The task of the Main Agent is to use Tools to complete the email replying task:
 
 ```python
 from langgraph.prebuilt import create_react_agent
@@ -225,7 +226,7 @@ agent = create_react_agent(
 )
 ```
 
-而這邊的 `create_prompt` 的內容如下：
+And the content of `create_prompt` here is as follows:
 
 ```text
 < Role >
@@ -245,7 +246,7 @@ Use these tools when appropriate to help manage John's tasks efficiently.
 </ Instructions >
 ```
 
-而 Main Agent 的使用方式如下：
+The usage of the Main Agent is as follows:
 
 ```python
 response = agent.invoke(
@@ -256,7 +257,7 @@ response = agent.invoke(
 )
 ```
 
-Main Agent 的輸出：
+Output of the Main Agent:
 
 ```text
 ================================== Ai Message ==================================
@@ -270,9 +271,9 @@ You have the following available times on Tuesday:
 If you need me to schedule anything or make any arrangements, just let me know!
 ```
 
-### 透過 LangGraph 整合為一個 Workflow
+### Integrating into a Workflow via LangGraph
 
-最後，將上述的 Triage 與 Main Agent 整合為一個 Workflow。
+Finally, integrate the above Triage and Main Agent into a workflow.
 
 ```python
 from langgraph.graph import add_messages
@@ -344,12 +345,13 @@ email_agent = email_agent.add_edge(START, "triage_router")
 email_agent = email_agent.compile()
 ```
 
-Email Agent 的整體 Workflow 如下圖所示：
+The overall workflow of the Email Agent is shown in the figure below:
 
-{{< image src="email-agent-langgraph.png" caption="Email Agent 的整體 Workflow" >}}
+{{< image src="email-agent-langgraph.png" caption="Overall Workflow of the Email Agent" >}}
 
-### Email Agent 範例輸入與輸出
-- 範例輸入 1: 不需要回覆的 Email
+### Email Agent Example Input and Output
+
+- Example Input 1: Email that does not require a reply
     ```python
     email_input = {
         "author": "Marketing Team <marketing@amazingdeals.com>",
@@ -388,7 +390,8 @@ Email Agent 的整體 Workflow 如下圖所示：
     ```text
     🚫 Classification: IGNORE - This email can be safely ignored
     ```
-- 範例輸入 2: 需要回覆的 Email
+
+- Example Input 2: Email that requires a reply
     ```python
     email_input = {
         "author": "Alice Smith <alice.smith@company.com>",
@@ -447,13 +450,13 @@ Email Agent 的整體 Workflow 如下圖所示：
     I have responded to Alice's email, clarifying that the endpoints she mentioned should be included in the documentation and that the team will update the documentation accordingly.
     ```
 
-## Email Agent 的實做 (具備 Memory)
+## Email Agent Implementation (With Memory)
 
-### Sematic Memory 的實做
+### Semantic Memory Implementation
 
-如同上文所述，Semantic Memory 主要是存放與「事實」相關的內容，這些事實也通常會存放在一個 Long-Term Memory 中。
+As mentioned above, Semantic Memory primarily stores content related to "facts," which are also typically stored in a Long-Term Memory.
 
-作者透過 LangGraph 的 `InMemoryStore` 來模擬 Semantic Memory 的儲存：
+The author simulates the storage of Semantic Memory using LangGraph's `InMemoryStore`:
 
 ```python
 from langgraph.store.memory import InMemoryStore
@@ -463,7 +466,7 @@ store = InMemoryStore(
 )
 ```
 
-並且透過建立兩個 Tool 來進行 Semantic Memory 的 **Manage** 以及 **Search**：
+And creates two Tools to **Manage** and **Search** Semantic Memory:
 
 ```python
 from langmem import create_manage_memory_tool, create_search_memory_tool
@@ -484,11 +487,11 @@ search_memory_tool = create_search_memory_tool(
 )
 ```
 
-在呼叫 `create_manage_memory_tool` 以及 `create_search_memory_tool` 時，都有傳入 `namespace`，用來區隔不同的 Memory Collection。這邊的 `langgraph_user_id` 則是會在 LangGraph 被 Invoke 時傳入，如此一來就能夠區隔不同的使用者的 Memory Collection。
+When calling `create_manage_memory_tool` and `create_search_memory_tool`, namespace is passed to differentiate between different Memory Collections. `langgraph_user_id` here will be passed when LangGraph is Invoked, thus allowing for the separation of Memory Collections for different users.
 
-舉例來說，User A 的 Memory Collection 為 `("email_assistant", "user_a", "collection")`，而 User B 的 Memory Collection 則為 `("email_assistant", "user_b", "collection")`，不同的使用者擁有各自獨立的 Memory Collection。
+For example, User A's Memory Collection is `("email_assistant", "user_a", "collection")`, while User B's Memory Collection is `("email_assistant", "user_b", "collection")`. Different users have their own independent Memory Collections.
 
-- **manage_memory_tool 的相關資訊：**
+- Information related to `manage_memory_tool`:
     - Name:
         ```python
         print(manage_memory_tool.name)
@@ -521,12 +524,12 @@ search_memory_tool = create_search_memory_tool(
             'id': {'anyOf': [{'format': 'uuid', 'type': 'string'}, {'type': 'null'}], 'default': None, 'title': 'Id'}
         }
         ```
-        可以發現到，這邊的 `args` 主要有三個參數:
-        - content: 要儲存的內容
-        - action: 要進行的動作 (create, update, delete)
-        - id: 指的是 Memory Block 的 ID，這個 ID 會在 Memory Block 被建立時自動產生，並且會在 Memory Block 被更新或刪除時使用
+        It can be seen that the `args` here mainly have three parameters:
+        - **content**: The content to be stored.
+        - **action**: The action to be performed (create, update, delete).
+        - **id**: Refers to the ID of the Memory Block. This ID is automatically generated when a Memory Block is created and is used when updating or deleting a Memory Block.\
 
-- **search_memory_tool 的相關資訊：**
+- Information related to `search_memory_tool`:
     - Name:
         ```python
         print(search_memory_tool.name)
@@ -553,11 +556,11 @@ search_memory_tool = create_search_memory_tool(
             'filter': {'anyOf': [{'type': 'object'}, {'type': 'null'}], 'default': None, 'title': 'Filter'}
         }
         ```
-        可以發現 search_memory_tool 主要是傳入 'query' 透過 Emnbedding 計算 Cosine Similarity 來找到最相似的 Memory ，並且回傳這些 Memory 的內容。
+        It can be seen that `search_memory_tool` mainly takes a 'query' and uses Embedding to calculate Cosine Similarity to find the most similar Memory, and then returns the content of these Memories.
 
-### 將 Sematic Memory 加入 Main Agent
+### Adding Semantic Memory to the Main Agent
 
-接著，將 Semantic Memory 加入 Main Agent 的 Workflow 中。類似上文 Main Agent 的定義，這邊改成多將 `manage_memory_tool` 以及 `search_memory_tool` 加入到 Main Agent 的 Tools 中：
+Next, add Semantic Memory to the workflow of the Main Agent. Similar to the definition of the Main Agent above, this is changed to add `manage_memory_tool` and `search_memory_tool` to the Tools of the Main Agent:
 
 ```python
 from langgraph.prebuilt import create_react_agent
@@ -580,7 +583,7 @@ response_agent = create_react_agent(
 )
 ```
 
-同時，`create_prompt` 也要加入 `manage_memory_tool` 以及 `search_memory_tool` 的相關資訊：
+At the same time, `create_prompt` must also include information related to `manage_memory_tool` and `search_memory_tool`:
 
 ```text
 < Role >
@@ -602,7 +605,7 @@ Use these tools when appropriate to help manage John's tasks efficiently.
 </ Instructions >
 ```
 
-實際 Invoke 一次 Main Agent:
+Invoke the Main Agent once:
 
 ```python
 config = {"configurable": {"langgraph_user_id": "lance"}}
@@ -636,7 +639,7 @@ created memory 4fd406ea-ba98-4ed0-92f3-838ea73e8a24
 I've recorded that Jim is your friend in my memory. This will help me better assist you with any future interactions or tasks involving Jim. Is there anything specific about Jim that you'd like me to know or help you with?
 ```
 
-可以發現到，Main Agent 在收到 User 的輸入後，會透過 `manage_memory_tool` 將這個資訊儲存到 Semantic Memory 中。接著，當 User 再次詢問關於 Jim 的問題時，Main Agent 就能夠從 Semantic Memory 中找到相關的資訊，並且進行回覆:
+It can be seen that after receiving the User's input, the Main Agent will store this information in Semantic Memory using `manage_memory_tool`. Then, when the User asks a question about Jim again, the Main Agent can find the relevant information from Semantic Memory and respond:
 
 ```python
 response = response_agent.invoke(
@@ -668,9 +671,11 @@ Name: search_memory
 Based on the stored memory, Jim is John Doe's friend. However, this is fairly basic information. If you need more specific details about Jim or have a particular question about him, please let me know and I'll try to help further.
 ```
 
-### Episodic Memory 的實做
+### Episodic Memory Implementation
 
-Episodic Memory 主要是存放與「經驗」相關的內容，這些經驗通常會在 LLM 的 Prompt 中進行 Few-Shot Learning。在這個 Email Agent 的例子中，Episodic Memory 主要是用來幫助 LLM 判斷這封 Email 是否需要回覆。這些經驗一樣也可以透過一個 Long-Term Memory 來儲存。作者這邊使用 `InMemoryStore` 來模擬 Episodic Memory 的儲存：
+Episodic Memory primarily stores content related to "experiences." These experiences are typically used for Few-Shot Learning within the LLM's Prompt.
+
+In this Email Agent example, Episodic Memory is mainly used to help the LLM determine if an email needs a reply. These experiences can also be stored through a Long-Term Memory. The author uses `InMemoryStore` here to simulate the storage of Episodic Memory:
 
 ```python
 from langgraph.store.memory import InMemoryStore
@@ -680,7 +685,7 @@ store = InMemoryStore(
 )
 ```
 
-存放一個過去的經驗：
+Store a past experience:
 
 ```python
 import uuid
@@ -714,7 +719,7 @@ store.put(
 )
 ```
 
-存放另外一個過去的經驗：
+Store another past experience:
 
 ```python
 data = {
@@ -748,7 +753,7 @@ store.put(
 )
 ```
 
-當今天收到一封 Email 時，Episodic Memory 會透過 `search` Method 計算新的 Email 與過去經驗的 Embedding 的 Cosine Similarity，並且回傳最相似的經驗。這邊的 `search` Method 會傳入 `limit` 參數，來限制回傳的經驗數量：
+When a new Email is received today, Episodic Memory will calculate the Cosine Similarity between the new Email and the Embeddings of past experiences using the `search` Method, and return the most similar experiences. The `search` Method here will pass a `limit` parameter to restrict the number of returned experiences:
 
 ```python
 # Template for formating an example to put in prompt
@@ -828,8 +833,11 @@ Hi John,
 > Triage Result: ignore
 ```
 
-### Procedural Memory 的實做
-Procedural Memory 主要是存放與「指令」相關的內容，這些指令其實就是 LLM 在進行不同任務時所需要的 System Prompt。這些 System Prompt 一樣也可以透過一個 Long-Term Memory 來儲存。作者這邊一樣使用 `InMemoryStore` 來模擬 Procedural Memory 的儲存：
+### Procedural Memory Implementation
+
+Procedural Memory primarily stores content related to "instructions." These instructions are essentially the System Prompts that the LLM needs when performing different tasks.
+
+These System Prompts can also be stored through a Long-Term Memory. The author uses `InMemoryStore` here as well to simulate the storage of Procedural Memory:
 
 ```python
 from langgraph.store.memory import InMemoryStore
@@ -839,11 +847,11 @@ store = InMemoryStore(
 )
 ```
 
-目前的 Email Agent 主要是由兩個 System Prompt 來進行定義:
-- [Triage System Prompt](#triage-的實做): 用來判斷這封 Email 是否需要回覆
-- [Main Agent System Prompt](#main-agent-的實做): 用來定義 LLM 在進行 Email 回覆時的行為
+The current Email Agent is primarily defined by two System Prompts:
+- [Triage System Prompt](#triage-implementation): Used to determine if the email needs a reply.
+- [Main Agent System Prompt](#main-agent-implementation): Used to define the LLM's behavior when replying to emails.
 
-我們可以將這兩個 System Prompt 儲存到 Procedural Memory 中，並且在 LLM 進行 Triage 以及 Email 回覆時，透過 `search` Method 來取得這些 System Prompt 的內容。以下加入 Episodic Memory 以及 Procedural Memory 後的 Triage 的實做：
+We can store these two System Prompts in Procedural Memory and retrieve their content using the `search` Method when the LLM performs Triage and email replies. The following is the implementation of Triage after adding Episodic Memory and Procedural Memory:
 
 ```python
 def triage_router(state: State, config, store) -> Command[
@@ -947,9 +955,9 @@ def triage_router(state: State, config, store) -> Command[
     return Command(goto=goto, update=update)
 ```
 
-可以發現到，組成 Triage System Prompt 的內容，除了 `triage_system_prompt` 之外，還有 `ignore_prompt`、`notify_prompt` 以及 `respond_prompt`。這些內容都是從 Procedural Memory 中取得的。
+It can be seen that the content forming the Triage System Prompt, in addition to `triage_system_prompt`, also includes `ignore_prompt`, `notify_prompt`, and `respond_prompt`. This content is retrieved from Procedural Memory.
 
-此外，在 Main Agent 的 system Prompt 部份，原本的 `create_prompt` 如下所示：
+Furthermore, regarding the Main Agent's system Prompt, the original `create_prompt` was as follows:
 
 ```python
 def create_prompt(state):
@@ -964,7 +972,7 @@ def create_prompt(state):
     ] + state['messages']
 ```
 
-在加入 Procedural Memory 之後：
+After adding Procedural Memory:
 
 ```python
 def create_prompt(state, config, store):
@@ -992,11 +1000,11 @@ def create_prompt(state, config, store):
     ] + state['messages']
 ```
 
-可以發現到，這邊的 `agent_system_prompt_memory` 中的 `instructions` 參數，不再只是讀去固定的值，而是會從 Procedural Memory 中取得。
+It can be seen that the `instructions` parameter in `agent_system_prompt_memory` here is no longer reading a fixed value, but rather retrieving it from Procedural Memory.
 
-總結來說，這邊的 Triage System Prompt 會從 Procedural Memory 中取得 `triage_ignore`、`triage_notify` 以及 `triage_respond` 的內容，而 Main Agent 則是會從 Procedural Memory 中取得 `agent_instructions` 的內容。
+In summary, the Triage System Prompt here retrieves the content of `triage_ignore`, `triage_notify`, and `triage_respond` from Procedural Memory, while the Main Agent retrieves the content of `agent_instructions` from Procedural Memory.
 
-以下是這 4 個 Instruction 在 Procedural Memory 中的內容：
+Below is the content of these 4 Instructions in Procedural Memory:
 
 ```python
 store.get(("lance",), "agent_instructions").value['prompt']
@@ -1012,7 +1020,7 @@ store.get(("lance",), "triage_notify").value['prompt']
 # 'Team member out sick, build system notifications, project status updates'
 ```
 
-接著，我們希望 Email Agent 在與 User 互動的過程中，能夠根據 User 提供的 Feedback 來調整這些 Instruction 的內容。作者這邊透過 `langmem` 的 `create_multi_prompt_optimizer` 來建立一個 Prompt Optimizer。
+Next, we hope that the Email Agent can adjust the content of these Instructions based on the Feedback provided by the User during interaction. The author here uses langmem's `create_multi_prompt_optimizer` to create a Prompt Optimizer.
 
 ```python
 from langmem import create_multi_prompt_optimizer
@@ -1023,7 +1031,7 @@ optimizer = create_multi_prompt_optimizer(
 )
 ```
 
-接著，模擬 User 提供的 Feedback：
+Next, simulate the Feedback provided by the User:
 
 ```python
 conversations = [
@@ -1034,7 +1042,7 @@ conversations = [
 ]
 ```
 
-其中 `response['messages']` 是指 User 與 Email Agent 互動的過程：
+Where `response['messages']` refers to the interaction process between the User and the Email Agent:
 
 ```text
 ================================ Human Message =================================
@@ -1063,9 +1071,9 @@ Email sent to alice.jones@bar.com with subject 'Re: Quick question about API doc
 I've responded to Alice Jones regarding the urgent issue with the service being down, and I've assured her that the issue is being looked into.
 ```
 
-因此，User 在這整段的對話中，給予的 Feedback 是「Always sign your emails `John Doe`」。
+Therefore, the Feedback given by the User during this entire conversation is "Always sign your emails John Doe".
 
-除了 User 的 Feedback 之外，還需要告訴 Prompt Optimizer "when_to_update" 以及進行更新時的 "update_instruction"：
+In addition to the User's Feedback, we also need to tell the Prompt Optimizer "when_to_update" and the "update_instruction" when updating:
 
 ```python
 prompts = [
@@ -1100,7 +1108,7 @@ prompts = [
 ]
 ```
 
-最後，將這些資訊傳入 `optimizer` 中，讓 Prompt Optimizer 根據 User 的 Feedback 以及 "when_to_update" 的標準，來判斷哪一個 Prompt 需要進行更新，並且根據 "update_instruction" 的內容來進行更新：
+Finally, pass this information to the `optimizer` so that the Prompt Optimizer can determine which Prompt needs to be updated based on the User's Feedback and the "when_to_update" standard, and perform the update according to the content of "update_instruction":
 
 ```python
 updated = optimizer.invoke(
@@ -1108,7 +1116,7 @@ updated = optimizer.invoke(
 )
 ```
 
-最後更新完後的 Prompt 如下所示：
+The final updated Prompt is as follows:
 
 ```python
 print(updated)
@@ -1143,10 +1151,9 @@ print(updated)
 ]
 ```
 
-可以發現到，`main_agent` 的 Prompt 已經被更新為「Use these tools when appropriate to help manage John's tasks efficiently. When sending emails, always sign them as "John Doe"。」。這樣的話，當 Email Agent 在進行 Email 回覆時，就會自動將簽名改成 `John Doe`。
+It can be seen that the `main_agent`'s Prompt has been updated to "Use these tools when appropriate to help manage John's tasks efficiently. When sending emails, always sign them as "John Doe"." This way, when the Email Agent replies to emails, it will automatically change the signature to `John Doe`.
 
-## 結語
+## Conclusion
+This article introduced the basic concepts of Agent Memory and demonstrated how to implement Semantic Memory, Episodic Memory, and Procedural Memory through an Email Agent example using LangMem.
 
-本篇文章介紹了 Agent Memory 的基本概念，並且透過一個 Email Agent 的範例來說明如何透過 LangMem 實現 Semantic Memory, Episodic Memory 以及 Procedural Memory。
-
-本篇文章為 DeepLearning.AI 所開設的 [Long-Term Agentic Memory with LangGraph](https://www.deeplearning.ai/short-courses/long-term-agentic-memory-with-langgraph/) 課程筆記，完整的範例程式碼可以參考 [Building a Memory-Enhanced Email Agent with LangGraph](https://github.com/NirDiamant/GenAI_Agents/blob/main/all_agents_tutorials/memory-agent-tutorial.ipynb)。
+This article is notes from the DeepLearning.AI course [Long-Term Agentic Memory with LangGraph](https://www.deeplearning.ai/short-courses/long-term-agentic-memory-with-langgraph/). The complete example code can be found at [Building a Memory-Enhanced Email Agent with LangGraph](https://github.com/NirDiamant/GenAI_Agents/blob/main/all_agents_tutorials/memory-agent-tutorial.ipynb).
