@@ -3,7 +3,7 @@
 title: "REPLUG: Retrieval-Augmented Black-Box Language Models"
 date: 2024-10-31
 lastmod: 2024-10-31
-draft: false
+draft: true
 description: "Explore how Retrieval-Augmented Generation (RAG) enhances black-box LLMs. This article details the NAACL 2024 paper REPLUG, discussing its innovative methods for Inference and Training stages to improve LLM answer quality and effectively reduce hallucination."
 featuredImage: "featured-image.png"
 
