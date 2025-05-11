@@ -13,7 +13,7 @@ categories: ["python-tutorial"]
 # series_weight: 1
 lightgallery: true
 
-url: "paper-intro/:contentbasename"
+url: "python-tutorial/:contentbasename"
 ---
 
 <!--more-->
