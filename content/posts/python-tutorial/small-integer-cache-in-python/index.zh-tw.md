@@ -18,7 +18,7 @@ url: "python-tutorial/:contentbasename"
 
 <!--more-->
 
-率，而且已經被實做在 Python 中。
+本篇文章想和大家分享 Python Language 中的一個 Trick — Small Integer Cache，這個 Trick 的目的是為了提昇 Python 程式的運作效率，而且已經被實做在 Python 中。
 
 本篇文章適合對於 Python 程式語言已經有基本認識，且希望學習一些 Python 的底層知識的讀者！如果你還是一名程式初學者，並且想從 Python 開始學習的話，可以參考 [Python 教學系列文章](https://datasciocean.tech/categories/python-tutorial/)。
 
