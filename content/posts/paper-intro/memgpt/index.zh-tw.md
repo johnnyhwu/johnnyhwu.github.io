@@ -1,10 +1,10 @@
 ---
 # weight: 1
 title: "[論文介紹] MemGPT: Towards LLMs as Operating Systems"
-date: 2025-05-13
-lastmod: 2025-05-13
-draft: true
-description: ""
+date: 2025-05-18
+lastmod: 2025-05-18
+draft: false
+description: "本篇文章介紹 MemGPT 如何管理 LLM 的 Short-Term 與 Long-Term Memory。說明 MemGPT 如何基於 ReAct-Based Agent，透過連續的 Thinking 以及 Tool Calling 來操作 Core Memory, Chat History, Archival Memory 以及 Recall Memory 等多種不同 Memory 類型，達到 Persistent Conversation 的目的。"
 featuredImage: "featured-image.png"
 
 tags: ["Large Language Model", "Agent Memory"]
@@ -28,6 +28,7 @@ url: "paper-intro/:contentbasename"
 
 {{< admonition info >}}
 身為 AI 領域的工程師或研究者，如果你還不了解 Mem0 以及 LangMem 的概念，務必閱讀以下兩篇文章：
+
 - [LangMem 概念介紹](../../other/langmem-intro/)
 - [Mem0 概念介紹](../mem0/)
 {{< /admonition >}}
@@ -83,74 +84,59 @@ MemGPT 在 Prompt 中規劃了一個 Core Memory 區塊用來保存最重要的�
 
 當接收到使用者的輸入後，MemGPT 會先進行 Inner Thought 後再輸出。如同[上文](#memgpt-的核心概念)所述，MemGPT 的所有輸出都會是 Tool Calling，因此如果在 Inner Thought 中 MemGPT 覺得這個資訊值得被紀錄在 Core Memory，那這一次的輸出就會是一個 `core_memory_append` 的 Tool Calling，來將此資訊紀錄到 Core Memory 中。
 
-### Mem0<sup>g</sup> 的記憶管理方式
+### MemGPT 的 Chat History
 
-{{< image src="mem0-g.png" caption="[Figure 3] Graph-based memory architecture of Mem0<sup>g</sup> illustrating entity extraction and update phase." >}}
+如上圖所示，MemGPT 在 Prompt 中除了規劃一個 Core Memory 之外，還會有一個區塊來放置 Chat History。這裡的 Chat History 就是 MemGPT 與使用者互動的 Multi-Turn Conversation。
 
-從上圖 Figure 3 可以看到，**Mem0<sup>g</sup>** 與 **Mem0** 的 Memory Architecture 相當類似，兩者都有 Extraction Phase 以及 Update Phase。不同的地方在於 **Mem0<sup>g</sup>** 是以 Graph-Based 的方式來管理記憶，而 **Mem0** 則是以 Vector/Relational Database 的方式來管理記憶。
+當 Conversation 的內容超過 Chat History 區塊大小的限制時，MemGPT 會將一個 Chunk 的 Chat History 透過 LLM 轉為 Chat Summary，並將 Chat Summary 取代原本的 Chunk。
 
-在 Mem0<sup>g</sup> 中，Memory 會透過一個 Graph 來表示，一個 Graph \(G\) 會包含 Node \( V \), Edge \( E \) 以及 Label \( L \)。具體來說：
+這個 Chunk 的大小可以透過 `desired_memory_token_pressure` ([letta/letta/settings.py](https://github.com/letta-ai/letta/blob/e4a7bb1489392142c7cdc4b90f87d1cbff999b93/letta/settings.py#L51)) 來控制，在 `calculate_summarizer_cutoff` ([letta/letta/llm_api/helpers.py](https://github.com/letta-ai/letta/blob/e4a7bb1489392142c7cdc4b90f87d1cbff999b93/letta/llm_api/helpers.py#L317)) 中就會透過這個參數來計算有多少 Token 需要被 Summarize。
 
-- **Node \( V \)**: 代表實體 (Entity)，例如：Alice, San Francisco
-- **Edges \( E \)**: 代表實體之間的關係 (e.g., lives_in)
-- **Labels \( L \)**: 代表實體的語意類型 (e.g., Alice - Person, San Francisco - City)
+在 MemGPT 中，LLM 所生成的 Chat Summary 實際上是一種 **Recursive Summary**，因為 LLM 在對 Chunk 生成 Summary 時， Chunk 中可能也會包含前一次的 Chat Summary。
 
-每個 Entity Node \(v \in V\) 包含三個組成部分:
+### MemGPT 的 Recall Memory
 
-1. Entity 的類別 (例如：Person, Location, Event)
-2. Entity 的 Embedding \(e_v\)，捕捉實體的語意
-3. Entity 的 Metadata，包括創建時間 \(t_v\)
+{{< image src="recall-memory.jpeg" caption="MemGPT 透過 Recall Memory 儲存所有 Chat History" >}}
 
-在 Mem0<sup>g</sup> 中，Node 之間的關係會透過一個 Triplet \((v_s, r, v_d)\) 表示，其中 \(v_s\) 和 \(v_d\) 是 Source Node 和 Target Node，\(r\) 是連接它們的 Edge。
+承接 [MemGPT 的 Chat History](#memgpt-的-chat-history)，被 Summarize 的 Chunk 並不會被丟棄，而是會存入一個外部的 Database，我們稱其為 **Recall Memory**。換句話說，MemGPT 與使用者所有的對話紀錄都不會遺失，全部都會存在 Recall Memory 中。
 
-在 **Extraction Phase** 中，會透過 LLM 進行兩階段的處理：**Entity Extraction** 以及 **Relationship Generation**。
+既然它是一種 Memory，那勢必就能夠從中查找資訊。沒錯！MemGPT 的 System Prompt 中也會告訴 MemGPT 能夠透過 `conversation_search` 的 Tool 來從 Recall Memory 中查找資訊。
 
-Entity Extraction 就是透過一個 Extity Extractor LLM 來從對話紀錄中提取出所有的 Entity，並且標示出這些 Entity 的類型。例如，如果對話內容是討論與旅遊相關的主題，那麼 Entity 就可能是「出發地點」、「目的地」、「出發時間」等。這些 Entity 會被轉換成 Graph 中的 Node，並且會被標示上類別 (Label)，例如「出發地點」的類別可能是「Location」，而「出發時間」的類別可能是「Date」。
+### MemGPT 的 Archival Memory
 
-Relationship Generation 則是透過一個 Relationship Generator LLM 來從對話紀錄中提取出所有的 Entity 之間的關係，並且標示出這些關係的類型。例如，如果對話內容是討論與旅遊相關的主題，那麼 Entity 之間的關係就可能是「出發地點」和「目的地」之間的關係是「Travel From-To」，而「出發時間」和「目的地」之間的關係是「Travel Date」。
+{{< image src="archival-memory.jpeg" caption="Core Memory 存不下的資訊就放到 Archival Memory" >}}
 
-在 **Update Phase** 中，則是根據目前新建立的 Triplet \((v_s, r, v_d)\) ，比較 Source Node 以及 Target Node 與 Graph 中既有的 Node 的 Embedding，從 Graph 中取出與這兩個 Node 較為類似的 Node，然後透過 Conflict Detection 以及 Update Resolver 來決定要將新的 Source Node 以及 Target Node 都加入到 Graph 中，還是只加入一個 Node，或是都不加入僅更新 Graph 中的資訊。
+既然 Chat History 有自己的外部 Database, **Recall Memory**, 來儲存 Chat History 放不下的資訊，那麼 Core Memory 當然也有自己的外部 Database 來儲存 Core Memory 放不下的資訊。我們稱其為 **Archival Memory**。
 
-在 Mem0<sup>g</sup> 中，採用兩種 Memory Retrieval 的方式：
-- Entity-Centric Approach: 基於一個 Query，先分析 Query 中的 Entity，然後從 Graph 中取出與這些 Entity 相關的 Node，並將這些 Node 既有的 Relationship 建立一個 Subgraph，這個 Subgraph 就是代表這個 Query 的 Relevant Contextual Information。
-- Semantic Triplet Approach: 基於一個 Query，先將這個 Query 轉為一個 Dense Embedding，再拿這個 Embedding 與 Graph 中所有 Triplet 的 Textual Encoding 的 Embedding 進行比對，取出最相似的 K 個 Triplet，這 K 個 Triplet 就是代表這個 Query 的 Relevant Contextual Information。
+MemGPT 與使用者的互動過程中，如果覺得某一個資訊 (例如：使用者的喜好) 需要被記住，然而 Core Memory (例如：Core Memory 中的 "User" Block) 已經滿了，這時候 MemGPT 可以根據這個資訊的**重要程度**，進行以下兩種操作：
 
-在實驗階段中，作者使用 [Neo4j](https://neo4j.com/) 作為 Graph Database，並且使用 GPT-4o-mini 作為 Entity Extractor LLM 以及 Relationship Generator LLM。
+- 新的資訊很重要：將 Core Memory 中的內容搬到 Archival Memory，然後把這個新的重要資訊存到 Core Memory
+- 新的資訊沒那麼重要：直接將新的資訊存到 Archival Memory
 
-## Mem0 的實驗結果
+Archival Memory 的用途除了可以當 Core Memory 的額外的外部儲存空間之外，也是 **RAG** (Retrieval-Augmented Generation) 應用中，外部資料會存放的地方。也就是說，當使用者希望 MemGPT 可以根據一份 PDF 回答問題時，這份 PDF 就會被存放在 Archival Memory 中。
 
-### 測試資料集的選擇
+當然，在 MemGPT 的 System Prompt 中，我們也會告訴 MemGPT 可以透過 `archival_memory_search` 的 Tool，來查找 Archival Memory 中的資訊。
 
-作者選用 [LOCOMO](https://aclanthology.org/2024.acl-long.747.pdf) 資料集作為 Benchmark，LOCOMO 專門用來為評估對話系統中模型的長期記憶能力。LOCOMO 包含 10 個 Conversation，每個 Conversation 平均包含 600 則對話（平均約為 26K 個 Tokens）。每個 Conversation 平均有 200 個問題及其對應的標準答案。這些問題被分為多種類型：Single-Hop, Multi-Hop, Temporal (時間相關)以及 Open-domain。
+### MemGPT 的 A/R Stats
 
-### 衡量指標上的選擇
+到目前為止，我們已經了解到 MemGPT 有兩個外部的 Database：**Archival Memory** 和 **Recall Memory**，分別作為 Core Memory 以及 Chat History 的額外儲存空間。
 
-除了基本的 **F1 Score (F1)** and **BLEU-1 (B1)** 之外，作者再加入 **LLM-as-a-Judge (J)** 來提昇衡量的準確性。這三個指標都是衡量 LLM 的輸出與 Groundtruth 之間是否足夠一致。
+> 然而，這兩個外部儲存空間的資訊不會在 MemGPT 的 Context 中，MemGPT 要如何知道他們的狀態呢？
 
-除了上述指標外，作者也加入了 **Token Consumption** 來衡量不同的方法平均在處理每一個 Query 時，需要從 Memory Database 中題取出多少 Tokens (這些 Tokens 會變成 LLM 的輸入)，以及 **Latency** 來衡量不同的方法平均在處理每一個 Query 時，所需要的時間。
+在 MemGPT 中，透過在 Context 中加入一個 **A/R Stats** 區塊，來紀錄 Archival 與 Recall Memory 中目前的資訊量，得以讓 MemGPT 判斷是否該去兩個 Memory 中查找資訊。
 
-### 實驗結果
+舉例來說，當 Archival 與 Recall Memory 中有存放一些資訊時，透過 A/R Stats，MemGPT 就知道可以去兩個 Memory 中查找資訊：
 
-{{< image src="exp.png" caption="[Table 1] Performance comparison of memory-enabled systems across different question types in the LOCOMO dataset." >}}
-
-從 Table 1 的實驗數據中，令我感到相當的驚訝，Mem0 的表現不只在 Single-Hop, Multi-Hop 以及 Temporal 上都達到的 State-of-the-Art (SOTA) 的表現，而且在三個指標上都比第二名高出許多。在 Open-domain 上，雖然不是 SOTA，但是與第一名相較起來也只有一點點落差。
-
-LOCOMO 這個 Benchamrk 的有效性也在 Reddit 上被討論。有人認為 LOCOMO 這個資料集是有一些問題存在的，稍微修改一些實驗設定 [Zep 的表現甚至超越 Mem0 24%](https://www.reddit.com/r/LangChain/comments/1kg5qas/lies_damn_lies_statistics_is_mem0_really_sota_in/)，又或者是許多鄉民認為 [Mem0 的實驗設定有問題，才導致 Mem0 遠遠勝過其他的方法](https://www.reddit.com/r/LangChain/comments/1kash7b/i_benchmarked_openai_memory_vs_langmem_vs_letta/)。
-
-此外，第二個值得注意的點是，Mem0<sup>g</sup> 相對於 Mem0 加入了 Graph-Based 的結構來儲存記憶，設計更複雜的 Extraction Phase 以及 Update Phase，然而卻只有在 Open-Domain 與 Temporal 的類別上表現的比 Mem0 好。作者針對原因並沒有做太深入的分析。
-
-{{< image src="exp-2.png" caption="[Figure 4a] Comparison of search latency at p50 (median) and p95 (95th percentile) across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, and A-Mem)." >}}
-
-{{< image src="exp-3.png" caption="[Figure 4b] Comparison of total response latency at p50 and p95 across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, OpenAI, full-context, and A-Mem)." >}}
-
-上圖的 Figure 4a 與 Figure 4b 分別是針對不同方法衡量在 LOCOMO 整體資料集上的 LLM-as-a-Judge Score, Search Latency 以及 Total Response Latency 的表現。可以發現到 Mem0 和 Mem0<sup>g</sup> 在 Latency 以及 LLM-as-a-Judge 的分數上展現了很強的優勢。
+{{< image src="ar-stats.png" caption="MemGPT 根據 A/R Stats 得知 Archival 與 Recall Memory 的狀態" >}}
 
 ## 結語
 
-本篇文章介紹 [Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory](https://arxiv.org/abs/2504.19413) 論文，了解 **Mem0** 與 **Mem0<sup>g</sup>** 是如何從原始的對話紀錄透過 Extraction Phase 與 Update Phase 來管理長期記憶；以及 Mem0<sup>g</sup> 如何透過 Graph-Based 的結構來儲存記憶。
+本篇文章介紹 [MemGPT: Towards LLMs as Operating Systems](https://arxiv.org/pdf/2310.08560) 論文，內容主要為 [LLMs as Operating Systems: Agent Memory](https://www.deeplearning.ai/short-courses/llms-as-operating-systems-agent-memory/) 的課程筆記。
 
-從作者選擇的 LOCOMO 測試資料集上，我們看到了 Mem0 與 Mem0<sup>g</sup> 在 Single-Hop, Multi-Hop 等多個面向都勝過 Baseline 方法，也看到 Mem0 與 Mem0<sup>g</sup> 在 Latency 上相較於其他方法的優勢。
+MemGPT 想處理的挑戰就是 **Prompt Compilation**：如何將**大量資訊從 Agent State 精鍊到 Prompt**，讓 LLM 基於 Prompt 成功產生正確的輸出。
 
-在論文中並沒有詳細的呈現 Mem0 與 Mem0<sup>g</sup> 中所使用的 Prompt，但是從 GitHub 上找到兩個 Prompt 檔案，有興趣的讀者可以再研究看看：
-- **Mem0**: [mem0/configs/prompts.py](https://github.com/mem0ai/mem0/blob/main/mem0/configs/prompts.py) 
-- **Mem0<sup>g</sup>**: [mem0/graphs/utils.py](https://github.com/mem0ai/mem0/blob/main/mem0/graphs/utils.py)
+為了克服此挑戰，MemGPT 將 LLM 的 Context Window (Short-Term Memory) 分為多個區塊，包含 System Prompt, Core Memory, A/R Stats, Chat Summary 以及 Chat History。並設計兩種 Long-Term Memory: Archival Memory 以及 Recall Memory 分別作為 Core Memory 以及 Chat History 的額外儲存空間。
+
+此外，MemGPT 也讓 LLM 以 [ReAct-Based Agent](https://arxiv.org/abs/2210.03629) 的方式，透過連續循環的 Thinking, Action (Tool Calling), Thinking, Action (Tool Calling)..., 來從不同的 Memory 中查找與精鍊資訊。
+
+最後，以 Long/Short-Term Memory 的角度來看，MemGPT 與 [LangMem](../../other/langmem-intro/), [Mem0](../mem0/) 相似的地方在於， 他們都有針對 **Long-Term Memory** 提出自己的方法，但比較特別的是 MemGPT 針對 **Short-Term Memory** (LLM 的 Context Windows) 中應該放置什麼樣的內容有更多的設計與著墨。
