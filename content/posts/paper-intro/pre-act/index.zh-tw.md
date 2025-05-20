@@ -3,7 +3,7 @@
 title: "[論文介紹] Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents"
 date: 2025-05-20
 lastmod: 2025-05-20
-draft: true
+draft: false
 description: "本篇文章介紹 Pre-Act 論文，說明 PreAct 如何透過讓 LLM 在每一個 Reasoning Step 中產生與修改 Plan，來彌補傳統 Single Agent 方法 'ReAct' 的不足，進而提昇 LLM 在長期規劃任務上的表現。"
 featuredImage: "featured-image.jpg"
 

@@ -3,7 +3,7 @@
 title: "Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents"
 date: 2025-05-20
 lastmod: 2025-05-20
-draft: true
+draft: false
 description: "Discover Pre-Act, an approach enhancing Large Language Model (LLM) agent performance through multi-step planning and reasoning. Learn how Pre-Act overcomes ReAct's limitations in long-term planning by generating and modifying plans at each thinking step, thereby improving acting capabilities."
 featuredImage: "featured-image.jpg"
 
