@@ -1,10 +1,10 @@
 ---
 # weight: 1
 title: "[論文介紹] Steering Large Language Models Between Code Execution and Textual Reasoning"
-date: 2025-05-20
-lastmod: 2025-05-20
-draft: true
-description: ""
+date: 2025-05-25
+lastmod: 2025-05-25
+draft: false
+description: "本篇文章介紹 Steering Large Language Models Between Code Execution and Textual Reasoning 論文，該論文由 MIT, Harvard, Microsoft, Google DeepMind 發表於 ICLR 2025。在本篇文章中，我們將會理解 LLM 在 Textual Output 以及 Code Execution 兩種 Reasoning 方式間的選擇以及表現。"
 featuredImage: "featured-image.jpg"
 
 tags: ["Large Language Model", "Single-Agent"]
@@ -163,19 +163,87 @@ OpenAI GPT-4o 預設是以 Textual Output 進行 Reasoning，但是必要時 GPT
 
 ### 實驗結果
 
-{{< image src="exp.png" caption="實驗結果" >}}
+{{< image src="exp.png" caption="[Table 1] 實驗結果" >}}
 
 作者從上表的實驗結果得到 2 個 Insight：
 
-1. **7 種 Baseline 方法中，沒有絕對最好的，可以適用所有任務的，每種任務適合不同的 Reasoning 方法**
-2. **Code Execution 不是每次都是最好的，有些任務上 Textual Output Reasoning 帶來更好的表現**，主要原因來自於：
+1. 7 種 Baseline 方法中，沒有絕對最好可以適用所有任務的方法，每種任務適合不同的 Reasoning 方法
+2. 不是每次透過 Code Execution 進行 Reasoning 都是最好的，有些任務上 Textual Output Reasoning 帶來更好的表現，主要原因來自於：
     - 某些任務要考慮太多面向，LLM 寫出的 Code 沒有完全考慮
     - Code 限制了 LLM 能夠輸出的 Token，而限制了 LLM 思考
 
+## 本篇論文所提出的方法
+
+作者提出 3 種方法來提昇 LLM 使用 Textual Output 或是 Code Execution 進行 Reasoning 的表現：
+
+- **Code Interpreter+**: 如同 Baseline 方法 "All Code"，鼓勵 LLM 透過 Code Execution 進行 Reasoning (論文中並沒有很清楚的說明這個方法和 "All Code" Baseline 方法的區別)
+- **Code + Text + Sum.**: 先透過 "All Code" 與 "All Text" 方法得到基於 Code Execution 和 Textual Output 進行 Reasoning 所得到的結果，再透過一個 LLM 基於兩種答案總結出最後的答案。Prompt 如下所示：
+
+  ```text
+  You are a helpful AI assistant. Solve tasks using your coding and language skills.
+
+  In the following cases, there are two different agents respond to the same problem. In some
+  cases, they output the direct answer, while sometimes they output the code to calculate the
+  answer.
+
+  I will display you the initial question and the answers from two agents. The code execution
+  results will also be given if the code exists. Your task is to analyze this question based on the
+  analysis and answers from above two agents and then output your final answer.
+
+  If you want to generate code to acquire the answer, suggest python code (in a python coding
+  block) for the user to execute. Don’t include multiple code blocks in one response, only
+  include one in the response. Do not ask users to copy and paste the result. Instead, use
+  ’print’ function for the output when relevant.
+
+  I hope you can perform better than other two agents. Hence, try to choose the best answer
+  and propose a new one if you think their methods and answers are wrong.
+  ```
+
+- **Self-estimate Score**: 先要求 LLM 基於目前的問題，給予 Textual Output 與 Code Execution 兩種 Reasoning 方法各一個分數，代表哪一種方法比較適合。再要求 LLM 依照分數高的方法進行 Reasoning。 Prompt 如下所示：
+
+  ```text
+  You will be presented with a task that can potentially be solved using either pure textual
+  reasoning or coding (or a combination of both). Your goal is to determine which method
+  will be most effective for solving the task and figure out the answer. Follow these steps:
+
+  1. **Estimate your confidence level** in solving the task using both approaches:
+  - **Coding score (0-10)**: How confident are you that you can solve this task correctly by
+  writing code? Provide reasoning.
+  - **Text score (0-10)**: How confident are you that you can solve this task correctly by
+  using textual reasoning? Provide reasoning.
+
+  2. **Choose the approach** that you believe has the highest chance of success:
+  - If one score is significantly higher, start with that approach.
+  - If both scores are close, start with textual reasoning first, then decide if coding is necessary
+  after.
+
+  3. **Solve the task** using the chosen method:
+  - If you chose coding, write the necessary code, explain the logic behind it, and run it.
+  - If you chose textual reasoning, use detailed explanation and logical steps to reach the
+  answer.
+
+  4. **Reflect** after attempting the task:
+  - Did the chosen approach work well? If not, should you switch to the other method?
+
+  Now, here is the task:
+  ```
+
+## 實驗結果
+
+{{< image src="exp2.png" caption="[Table 2] 實驗結果" >}}
+
+從 Table 1 以及 Table 2 都可以看到 **Code + Text + Sum.** 是所有方法中表現的最好的，說明了與其讓 LLM 只選擇 Textual Output 或 Code Execution 進行 Reasoning，倒不如讓 LLM 同時考慮兩種 Reasoning 方法的結果，能夠得到最好的表現。
+
 ## 結語
 
-本篇文章非常快速的介紹了 [Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents](https://www.arxiv.org/abs/2505.09970) 論文：
+本篇文章介紹一篇 ICLR 2025 的論文 — [Steering Large Language Models Between Code Execution and Textual Reasoning](https://openreview.net/forum?id=5X5Z7Ffrjb)，主要在理解 LLM 在 Textual Output 以及 Code Execution 兩種 Reasoning 方式的選擇以及表現。
 
-Pre-Act 中透過每一個 Reasoning Step 來產生以及修改 Plan，來優化傳統的 [ReAct-Based Reasoning](https://arxiv.org/abs/2210.03629) 中僅針對馬上要執行的下一個 Action 的 Single-Step Thinking 的不足，讓 LLM 在 Long-Term Planning 的任務上有更好的表現。
+以下是本篇論文的 Takeaway:
 
-比較可惜的是，論文中比較的 Baseline 僅有針對 ReAct 一種方法，所使用的 Public Benchmark 也僅有一種。然而，由於 ReAct 也可以算是 LLM Agent 領域的始祖等級的論文，後續也還有許多方法被提出，再加上 Benchmark 較少，比較難說明 Pre-Act 方法能夠多有效。但透過本篇論文，我們還是得以知道 "產生 Plan" 以及 "修改 Plan" 在 LLM 處理任務上所帶來的好處！
+- 較大的模型 (GPT-4o) 在一些難度中間 (不難也不簡單) 的任務上，傾向透過 Textual Output 進行 Reasoning，而導致在這些問題上得到錯誤的答案；相反的，較小的模型 (GPT-3.5-turbo) 則是在所有難度的任務上，都傾向透過 Code Execution 進行 Reasoning，使得正確率較高
+- 在 Prompt 中要求模型一定要透過 Code 來 Reasoning 不能保證結果一定是好的，模型可能會產生沒有效率如同 Textual Output 的 Code，使得最後得到的答案仍然是錯誤的
+- 有些任務適合 Textual Output 進行 Reasoning 而有些則適合 Code Execution，沒有絕對最好的
+- LLM 以 Code Execution 進行 Reasoning 時，可能因為以下兩種情況而表現不好：
+  - 某些任務要考慮太多面向，LLM 寫出的 Code 沒有完全考慮
+  - Code 限制了 LLM 能夠輸出的 Token，而限制了 LLM 思考
+- 讓 LLM 基於兩種 Reasoning 方法的結果再總結出最終答案，能夠得到最好的表現

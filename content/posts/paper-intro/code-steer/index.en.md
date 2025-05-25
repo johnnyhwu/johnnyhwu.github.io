@@ -1,10 +1,10 @@
 ---
 # weight: 1
-title: "Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents"
-date: 2025-05-20
-lastmod: 2025-05-20
-draft: true
-description: "Discover Pre-Act, an approach enhancing Large Language Model (LLM) agent performance through multi-step planning and reasoning. Learn how Pre-Act overcomes ReAct's limitations in long-term planning by generating and modifying plans at each thinking step, thereby improving acting capabilities."
+title: "Steering Large Language Models Between Code Execution and Textual Reasoning"
+date: 2025-05-25
+lastmod: 2025-05-25
+draft: false
+description: "Explore an ICLR 2025 paper on guiding Large Language Models (LLMs) between code execution and textual reasoning. Learn why models like GPT-4o may prefer text-based approaches, sometimes leading to errors, and how combining both reasoning methods yields the best performance."
 featuredImage: "featured-image.jpg"
 
 tags: ["Large Language Model", "Single-Agent"]
@@ -21,121 +21,230 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This article introduces the paper "[Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents](https://www.arxiv.org/abs/2505.09970)," published on arXiv in May 2025 by [Uniphore](https://www.uniphore.com/).
+This article introduces the paper "[Steering Large Language Models Between Code Execution and Textual Reasoning](https://openreview.net/forum?id=5X5Z7Ffrjb)", published on arXiv in October 2024 by researchers from MIT, Harvard, Microsoft, and Google DeepMind, and accepted by the ICLR 2025 conference. The impressive list of authors and the prestigious conference suggest this is a high-quality paper!
 
-## The Problem Pre-Act Aims to Solve
+## The Problem This Paper Aims to Solve
 
-In the [ReAct](https://arxiv.org/abs/2210.03629) method, the Large Language Model's (LLM) single-step reasoning (or "thinking") focuses only on the immediate next action, not on a sequence of future actions. This approach leads to ReAct performing poorly on tasks requiring long-term planning.
+As the title suggests, this paper seeks to address/explore the question:
 
-## Pre-Act's Proposed Solution
+> For a Large Language Model (LLM), is it better to reason using Code Execution or Textual Output?
 
-Pre-Act enables the LLM to generate a detailed plan during each "thinking" step. This plan primarily includes "steps already executed" and "steps to be executed next."
+For some Natural Language Processing (NLP) tasks, like generating summaries or engaging in dialogue, Textual Output reasoning is clearly more natural and effective. However, for tasks involving mathematics or logical inference, Code Execution reasoning can often lead to the correct answer more efficiently.
 
-For example, given an input task, Pre-Act's first "thinking" phase generates a plan with N steps. Each step describes what action to take (essentially, which tool to use), and the final step uses the "Final Answer" tool to output the ultimate response. After each "thinking" phase, Pre-Act outputs an action (represented in JSON format). The system executes this action and feeds the resulting observation back into the context.
+{{< image src="code-exec-is-better.png" caption="Code Execution Reasoning is better." >}}
 
-Subsequently, during its second "thinking" phase, Pre-Act regenerates the plan based on the content in the context (the previous plan, action, and observation). The new plan outlines what previous thinking and actions have accomplished and modifies the subsequent steps accordingly.
+For example, consider the two tasks shown above: "Which is larger, 9.11 or 9.9?" and "How many 'r's are in 'strawberry' and what are their positions?" These tasks are quite simple, yet GPT-4o provides incorrect answers when using Textual Output reasoning. In contrast, it easily gets them right using Code Execution.
 
-{{< image src="example.png" caption="ReAct vs. Pre-Act." >}}
+{{< image src="code-exec-is-better-2.png" caption="Code Execution Reasoning is better." >}}
 
-As seen in the example image above, ReAct's thinking at each step focuses solely on the immediate next action. In contrast, Pre-Act's thinking at each step includes a description of a global plan.
+As shown above, or when performing multiplication of two numbers where "2_3" means a 2-digit number multiplied by a 3-digit number, we find that as the number of digits increases, even OpenAI's O1-type models cannot answer correctly through more Textual Output reasoning.
 
-{{< admonition info "Supplementary Note" >}}
-To enhance LLM performance in long-term planning tasks, techniques for **"generating a plan"** and **"modifying a plan"** are quite common. The [Plan-and-Act (2025/03)](../plan-and-act/) paper employs similar concepts. However, [Plan-and-Act (2025/03)](../plan-and-act/) uses a multi-agent architecture (Planner x Executor), while Pre-Act, as discussed in this paper, uses a single-agent approach.
+Clearly, for LLMs, no single reasoning method can solve all problems. Sometimes Textual Output is more suitable, while other times Code Execution is better. Therefore, another question this paper addresses is:
+
+> How can we guide LLMs to use the appropriate reasoning method (Textual Output vs. Code Execution) for the right tasks?
+
+Besides answering these two questions, the paper also analyzes the differences in performance when using Textual Output versus Code Execution for reasoning across six LLMs (O1-preview, GPT-4o, GPT-4o-mini, GPT-3.5, Claude-sonnet, Mixtral-8x7b) on various tasks.
+
+## OpenAI GPT-4o: Code Execution vs. Textual Output
+
+OpenAI's GPT-4o defaults to Textual Output reasoning, but it can use Code Execution through its Code Interpreter Tool when necessary. The authors analyzed three models—GPT-4o, GPT-4o-mini, and GPT-3.5-turbo—to see whether they would choose Code Execution or Textual Output reasoning for two different tasks: Number Multiplying (calculating the product of two numbers) and Game 24 (given some numbers, select and output an equation that results in 24).
+
+This experiment revealed:
+
+{{< admonition tip Insight >}}
+Larger models (like GPT-4o) tend to use Textual Output reasoning for tasks of moderate difficulty (not too hard, not too easy), which can lead to incorrect answers. Conversely, smaller models (like GPT-3.5-turbo) tend to use Code Execution reasoning for tasks of all difficulty levels, resulting in higher accuracy.
 {{< /admonition >}}
 
-Pre-Act helps the LLM achieve the aforementioned reasoning process through the design of the following system prompt (provided in the paper). (To be honest, I find the system prompt quite disorganized.):
-``````text
-<system> You are an intelligent assistant and your task is to respond to the human as helpfully and
-accurately as possible. You would be provided with a conversation (along with some steps if present)
-and you need to provide your response as Final Answer or use the following tools (if required):
-Instructions:
-------------------------------------------------------------------------------------------
-{instructions}
-Functions/Tools:
-------------------------------------------------------------------------------------------
-{tools}
-===============
-Use a json blob to specify a tool by providing an action key (tool name) and an action_input key
-(tool input).
-Valid "action" values: "Final Answer" or {tool_names}
-In case of final answer:
-Next Steps (Plan):
-1. I will now proceed with the final answer because ... (explanation)
-Follow this format (flow):
-Question: input question to answer
-Thought: consider previous and subsequent steps and conversation. Summary for what you did previously (ONLY IF
-function calls were made for the last user request) and create the multi-step plan.
-Action:
-```
-$JSON_BLOB
-```
-Observation: action result
-... (repeat Thought/Action/Observation N times)
-Thought: First provide the summary of previous steps (ONLY IF function calls were made for the last user request)
-and then the plan consisting of only 1 step i.e. proceed with the final answer because ... explanation for it
-Action:```
-{
-"action": "Final Answer",
-"action_input": "Final response to human”
-}
-Definition of Multi-Step Plan:
-For each request you will create a multi-step plan consisting of actions that needs to be taken until the final
-answer along with the reasoning for the immediate action.
-E.g.
-Next Steps (Plan):
-1. I will first do ... (action1) with the detailed reasoning.
-2. I will do ... (action2) with the detailed reasoning.
-k. I will do ... (actionk) with the detailed reasoning.
-k+1. I will now proceed with the final answer because ... (explanation)
-Example Output: When responding to human, please output a response only in one of two formats
-(strictly follow it):
-**Option 1:**
-If function calls were made for the last human message in the conversation request, include Previous Steps: ... +
-Next Steps: multi-step plan (provide an explanation or detailed reasoning)." Otherwise, provide Previous Steps:
-NA and Next Steps: ..
-Action:
-```
-{
-"action": "string, \ The action to take. Must be one of {tool_names}",
-"action_input": dict of parameters of the tool predicted
-}
-```
-**Option #2:**
-In case of you know the final answer or feel you need to respond to the user for clarification,
-etc. Output = Thought: If function calls were made for the last human message in the conversation
-request, include Previous Steps: ... + Next Steps: Let's proceed with the final answer because ...
-(provide an explanation)." Otherwise, provide Previous Steps: NA and Next Steps: ..
-Action:
-```
-{
-"action": "Final Answer",
-"action_input": "string \ You should put what you want to return to use here"
-}
-```
-Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary
-and parameters values for the tool should be deduced from the conversation directly or indirectly.
-Respond directly if appropriate. Format is Thought:\nAction:```$JSON_BLOB```then Observation <user>
-Conversation:
-{conversation}
-``````
+{{< image src="gpt-4o-fail.png" caption="Example of GPT-4o making a mistake." >}}
 
-The Pre-Act paper also discusses finetuning Llama-3.1-8B and Llama-3.1-70B models to output in the Pre-Act style of thinking. Interested readers can refer to the original paper for more details, which won't be elaborated here.
+As shown above, GPT-4o **confidently** uses Textual Output reasoning to correctly answer simple 2-digit multiplication. For very difficult multi-digit multiplication (the second example), GPT-4o knows to use Code Execution. However, in the third example, faced with a moderately difficult 4-digit multiplication, GPT-4o **still confidently** uses Textual Output reasoning and gets the **wrong** answer.
 
-## Pre-Act Experimental Results
+{{< image src="gpt-4o-exp-1.png" caption="[Figure 3] Performance of different models on Number Multiplying." >}}
 
-{{< image src="exp.png" caption="Pre-Act Experimental Results." >}}
+{{< image src="gpt-4o-exp-2.png" caption="[Figure 4] Performance of different models on Game 24." >}}
 
-The experimental results above are from Table 2 in the paper, representing Pre-Act's main experiments. The first 5 rows in the table represent models without finetuning ('van' for 'vanilla'), comparing ReAct and Pre-Act performance using different system prompts. The last 2 rows show the performance of finetuned models ('f.t.' for 'finetune').
+The two images above correspond to Figures 3 and 4 in the paper. The quantitative analysis clearly shows that GPT-4o tends to use Textual Output reasoning for simple tasks and Code Execution for clearly difficult tasks. However, for moderately difficult tasks, it still opts for Textual Output reasoning, leading to a higher error rate. In contrast, GPT-3.5-turbo uses Code Execution reasoning for tasks ranging from simple to difficult.
 
-Observations from both experimental setups include:
+Since Number Multiplying and Game 24 are tasks well-suited for Code Execution reasoning, the smaller model (GPT-3.5-turbo) actually outperformed the larger model (GPT-4o).
 
-- Models achieve significantly better Pre-Act-based reasoning performance than ReAct-based reasoning simply by modifying the system prompt.
-- If models are specifically finetuned for Pre-Act-based reasoning, their performance can be even better than those relying solely on system prompt modifications.
+What if we directly instruct the model in the prompt to use Code Execution reasoning? Would all models perform equally well? The authors conducted this experiment but found that:
+
+{{< admonition tip Insight >}}
+Requiring the model to use Code for reasoning in the prompt doesn't guarantee good results. The model might generate inefficient **code that resembles Textual Output**, leading to incorrect answers.
+{{< /admonition >}}
+
+{{< image src="text-like-code.png" caption="GPT-4o generating code that resembles Textual Output." >}}
+
+As shown above, even when GPT-4o is asked to use Code Execution reasoning, it might be inherently confident that the task can be solved with Textual Output reasoning. This can result in code that still mimics textual thought processes, leading to an incorrect final result.
+
+## Larger-Scale Experimental Analysis
+
+To more thoroughly analyze and compare the performance of existing LLMs on Code Execution and Textual Output reasoning, the authors used 7 baseline methods with 6 LLMs, tested on 14 different tasks.
+
+### Task Types
+
+The 14 tasks are listed below:
+
+- **Math**
+  - Number Multiplying
+  - Game 24
+  - GSM-Hard
+  - MATH-Geometry
+  - MATH-Count&Probability
+- **Logical Reasoning**
+  - Date Understanding
+  - Web of Lies
+  - Logical Deduction
+  - Navigate
+- **Robot Planning**
+  - BoxNet
+  - Path Plan
+- **Symbolic Calculation**
+  - Letters
+  - BoxLift
+  - Blocksworld
+
+These tasks can all be handled by Code Execution reasoning but vary in difficulty. Each task has over 300 test samples, so random variations in LLM output can be largely ignored. For a description of each task and its source paper, please refer to Appendix D of the original paper.
+
+### Method Types
+
+The 7 baseline methods are as follows:
+
+- **Only Question**: Only the input question is provided.
+- **All Text**: The prompt includes hints to make the LLM reason only with Textual Output.
+- **All Code**: The prompt includes hints to make the LLM reason only with Code Execution.
+- **All Code + CoT**: The prompt includes hints to make the LLM reason only with Code Execution using [Chain-of-Thought](https://arxiv.org/abs/2201.11903).
+- **AutoGen Conca.**: The input question is concatenated with the [AutoGen](https://arxiv.org/abs/2308.08155) system prompt. AutoGen's System Prompt:
+    ```text
+    You are a helpful AI assistant. Solve tasks using your coding and language skills. In the
+    following cases, suggest python code (in a python coding block) or shell script (in a sh coding
+    block) for the user to execute. 1. When you need to collect info, use the code to output the
+    info you need, for example, browse or search the web, download/read a file, print the content
+    of a webpage or a file, get the current date/time, check the operating system. After sufficient
+    info is printed and the task is ready to be solved based on your language skill, you can solve
+    the task by yourself. 2. When you need to perform some task with code, use the code to
+    perform the task and output the result. Finish the task smartly. Solve the task step by step if
+    you need to. If a plan is not provided, explain your plan first. Be clear which step uses code,
+    and which step uses your language skill. When using code, you must indicate the script type
+    in the code block. The user cannot provide any other feedback or perform any other action
+    beyond executing the code you suggest. The user can’t modify your code. So do not suggest
+    incomplete code which requires users to modify. Don’t use a code block if it’s not intended
+    to be executed by the user. If you want the user to save the code in a file before executing it,
+    put # filename: filename inside the code block as the first line. Don’t include multiple code
+    blocks in one response. Do not ask users to copy and paste the result. Instead, use ’print’
+    function for the output when relevant. Check the execution result returned by the user. If the
+    result indicates there is an error, fix the error and output the code again. Suggest the full code
+    instead of partial code or code changes. If the error can’t be fixed or if the task is not solved
+    even after the code is executed successfully, analyze the problem, revisit your assumption,
+    collect additional info you need, and think of a different approach to try. When you find an
+    answer, verify the answer carefully. Include verifiable evidence in your response if possible.
+    Reply ”TERMINATE” in the end when everything is done.
+    ```
+- **AutoGen System**: Uses AutoGen's system prompt as the LLM's system prompt (LLMs do not use a system prompt by default).
+- **Code Interpreter**: Allows the LLM to use a Code Interpreter.
+
+### LLM Model Types
+
+The 6 LLMs are as follows:
+
+- **O1-preview**
+- **GPT-4o**
+- **GPT-4o-mini**
+- **GPT-3.5-turbo-16k-0613 (GPT-3.5)**
+- **Claude-3-sonnet-20240229 (Claude-sonnet)**
+- **Open-mixtral-8x7b (Mixtral-8x7b)**
+
+Apart from the GPT series LLMs, which offer a **Code Interpreter** function, the other LLMs do not. Therefore, they were not tested with the **Code Interpreter** method. O1-preview cannot have its system prompt changed, so the **AutoGen System** method is not applicable to O1-preview.
+
+### Evaluation Metric
+
+{{< image src="metric.png" caption="Evaluation Metric" >}}
+
+The authors used the **Average Normalized Score** as the score for each method. AveNorm<sub>\(j\)</sub> represents the final score of the \(j\)-th method, \(s_{ij}\) is the score of the \(j\)-th method on the \(i\)-th task, and max(\(s_i\)) is the maximum possible score for the \(i\)-th task.
+
+### Experimental Results
+
+{{< image src="exp.png" caption="[Table 1] Experimental Results" >}}
+
+From the experimental results in the table above, the authors derived 2 insights:
+
+1. Among the 7 baseline methods, there is no single best method applicable to all tasks; different tasks are suited to different reasoning methods.
+2. Using Code Execution reasoning is not always best. For some tasks, Textual Output reasoning yields better performance, primarily because:
+   - Some tasks require consideration of too many aspects, and the LLM-generated code doesn't fully account for them.
+   - Code restricts the tokens an LLM can output, thereby limiting the LLM's thinking process.
+
+## Methods Proposed by This Paper
+
+The authors propose 3 methods to improve LLM performance when using Textual Output or Code Execution reasoning:
+
+- **Code Interpreter+**: Similar to the baseline method "All Code," this encourages the LLM to use Code Execution for reasoning (the paper doesn't clearly distinguish this method from the "All Code" baseline).
+- **Code + Text + Sum.**: First, results are obtained using the "All Code" and "All Text" methods (based on Code Execution and Textual Output reasoning, respectively). Then, another LLM summarizes these two answers to produce a final answer. The prompt is as follows:
+
+    ```text
+    You are a helpful AI assistant. Solve tasks using your coding and language skills.
+
+    In the following cases, there are two different agents respond to the same problem. In some
+    cases, they output the direct answer, while sometimes they output the code to calculate the
+    answer.
+
+    I will display you the initial question and the answers from two agents. The code execution
+    results will also be given if the code exists. Your task is to analyze this question based on the
+    analysis and answers from above two agents and then output your final answer.
+
+    If you want to generate code to acquire the answer, suggest python code (in a python coding
+    block) for the user to execute. Don’t include multiple code blocks in one response, only
+    include one in the response. Do not ask users to copy and paste the result. Instead, use
+    ’print’ function for the output when relevant.
+
+    I hope you can perform better than other two agents. Hence, try to choose the best answer
+    and propose a new one if you think their methods and answers are wrong.
+    ```
+
+-   **Self-estimate Score**: The LLM is first asked to give a score for both Textual Output and Code Execution reasoning methods based on the current problem, indicating which method is more suitable. Then, the LLM is asked to reason according to the method with the higher score. The prompt is as follows:
+
+    ```text
+    You will be presented with a task that can potentially be solved using either pure textual
+    reasoning or coding (or a combination of both). Your goal is to determine which method
+    will be most effective for solving the task and figure out the answer. Follow these steps:
+
+    1. **Estimate your confidence level** in solving the task using both approaches:
+    - **Coding score (0-10)**: How confident are you that you can solve this task correctly by
+    writing code? Provide reasoning.
+    - **Text score (0-10)**: How confident are you that you can solve this task correctly by
+    using textual reasoning? Provide reasoning.
+
+    2. **Choose the approach** that you believe has the highest chance of success:
+    - If one score is significantly higher, start with that approach.
+    - If both scores are close, start with textual reasoning first, then decide if coding is necessary
+    after.
+
+    3. **Solve the task** using the chosen method:
+    - If you chose coding, write the necessary code, explain the logic behind it, and run it.
+    - If you chose textual reasoning, use detailed explanation and logical steps to reach the
+    answer.
+
+    4. **Reflect** after attempting the task:
+    - Did the chosen approach work well? If not, should you switch to the other method?
+
+    Now, here is the task:
+    ```
+
+## Experimental Results
+
+{{< image src="exp2.png" caption="[Table 2] Experimental Results" >}}
+
+Both Table 1 and Table 2 show that **Code + Text + Sum.** performs the best among all methods. This suggests that instead of forcing an LLM to choose only Textual Output or Code Execution reasoning, allowing it to consider the results of both reasoning methods leads to the best performance.
 
 ## Conclusion
 
-This article provided a quick overview of the "[Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents](https://www.arxiv.org/abs/2505.09970)" paper:
+This article introduced an ICLR 2025 paper — [Steering Large Language Models Between Code Execution and Textual Reasoning](https://openreview.net/forum?id=5X5Z7Ffrjb) — which primarily focuses on understanding LLM choices and performance between Textual Output and Code Execution reasoning methods.
 
-Pre-Act enhances traditional [ReAct-based reasoning](https://arxiv.org/abs/2210.03629) by generating and modifying a plan at each reasoning step. This addresses the limitation of ReAct's single-step thinking, which only focuses on the immediate next action, thereby enabling LLMs to perform better on long-term planning tasks.
+Here are the key takeaways from this paper:
 
-Unfortunately, the paper only compares Pre-Act against ReAct as a baseline and uses only one public benchmark. While ReAct is a foundational paper in the LLM Agent field, many subsequent methods have been proposed. The limited number of benchmarks makes it somewhat difficult to definitively gauge Pre-Act's overall effectiveness. Nevertheless, this paper highlights the benefits of "generating a plan" and "modifying a plan" for LLM task processing.
+- Larger models (like GPT-4o) tend to use Textual Output reasoning for tasks of moderate difficulty, which can lead to incorrect answers. Conversely, smaller models (like GPT-3.5-turbo) tend to use Code Execution reasoning for tasks of all difficulty levels, resulting in higher accuracy.
+- Requiring a model to use Code for reasoning in the prompt doesn't guarantee good results; the model might generate inefficient code that resembles Textual Output, leading to incorrect answers.
+- Some tasks are better suited for Textual Output reasoning, while others are better for Code Execution; there's no absolute best method.
+- When an LLM uses Code Execution for reasoning, it might perform poorly due to two reasons:
+  - Some tasks involve too many aspects, and the LLM-generated code doesn't fully consider them.
+  - Code restricts the tokens an LLM can output, thereby limiting its thinking process.
+- Allowing an LLM to summarize a final answer based on the results of both reasoning methods yields the best performance.
