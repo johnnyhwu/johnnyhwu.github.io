@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-本篇文章介紹 [OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning](https://arxiv.org/abs/2502.11271) 論文，OctoTools 的 5 位作者都是來自 Standford，並於 2025 年 2 月將這篇發表於 arXiv 上。
+本篇文章介紹 [OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning](https://arxiv.org/abs/2502.11271) 論文，OctoTools 的 5 位作者都是來自 Standford，並於 2025 年 2 月將這篇發論文表於 arXiv 上。
 
 OctoTools 是一個 Training-Free 且 Open-Sourced 的 Agentic Framework，目的在於提昇 LLM 的 Task Planning 與 Tool Usage 能力，進而提昇 LLM 在 Multi-Step 任務上的表現。
 
@@ -39,6 +39,39 @@ OctoTools 的 [Github](https://github.com/octotools/octotools) 截至 2025 年 5
 
 如果還有餘力的話，也可以再閱讀我們之前所介紹的 [PLAN-AND-ACT](../plan-and-act/) 以及 [Pre-Act](../pre-act/)。這 2 篇論文與本篇文章要介紹的 OctoTools 都是在 2025 年上半年所發表，但是更著重在 Planning-Execution 框架上，方法上會比 OctoTools 更單純，因此適合先閱讀！
 {{< /admonition >}}
+
+## OctoTools 方法介紹
+
+{{< image src="approach-min.png" caption="[Figure 1] OctoTools 框架" >}}
+
+OctoTools 方法如上圖 Figure 1 所示，主要由 **Tool Cards**, **Planner** 與 **Executor** 組成。
+
+在 Tool Cards 中會定義很多 Tool，以及每一個 Tool 的 Metadata。基於使用者的 Query，OctoTools 會經過以下步驟:
+
+1. Query Analyzer 分析哪些 Tool 適合現在的 Query，並且制定 High-Level Plan。這個 High-Level Plan 會用來當作 Trajectory 中的第一個元素
+2. Action Predictor 基於目前的 Trajectory 產生更具體的 Low-Level Plan，也就是下一個 Action，包含這個 Action 的目標是什麼，要使用什麼 Tool，以及要傳入什麼參數
+3. Command Generator 將由文字描述的 Action 轉為具體的 Python Code
+4. Command Executor 執行這段 Python Code 得到 Execution Result
+5. 將 {Action, Python Code, Execution Result} 這一個完整的 Step 存入整個 Trajectory
+6. 由 Context Verifier 基於整個 Trjectory 判斷是不是已經得到最終答案，給出 "CONTINUE" 或是 "STOP" 的信號
+    - "CONTINUE": 回到第 2 步驟，此時 Action Predictor 已經可以根據新的 Trajectory 產生新的 Low-Level Action
+    - "STOP": 進入到第 7 步驟
+7. 由 Solution Summarizer 基於整個 Trajectory 產生最終的答案
+
+{{< image src="example-min.png" caption="[Figure 3] OctoTools 範例" >}}
+
+### Tool Cards
+
+在 OctoTools 中的 Tool Cards 如上圖 Figure 3 所示，基本上有 Name, Description, Input, Output, Demonstrations 以及比較特的 "User Metadata"。 "User Metadata" 主要是 User 對這個 Tool 提供更多提示 (EX. 這個 Tool 有什麼限制, 這個 Tool 的 Best Practice 是什麼)，讓 Planner 以及 Executor 更了解這個 Tool。
+
+每個 Tool 都有實做兩個標準函式：
+
+- `execute()`: 基於傳入的參數執行 Tool
+- `get_metadata()`: 取得 Tool 的 Metadata (讓 Planner 與 Executor 可以即時了解 Tool 的資訊)
+
+想進一步閱讀實際 Tool Cards 內容的讀者，可以參考論文中的 Appendix D:
+
+{{< image src="tools-min.png" caption="OctoTools 中所定義的 Tools" >}}
 
 ## Mem0 想解決的問題
 
