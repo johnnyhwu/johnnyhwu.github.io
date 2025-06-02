@@ -2,7 +2,7 @@
 # weight: 1
 title: "OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning"
 date: 2025-06-02
-lastmod: 2025-06-02
+lastmod: 2025-06-03
 draft: false
 description: "Introducing Agentic AI: OctoTools! Understand how OctoTools enhances the performance of LLM Agents on complex tasks through its well-defined and extensible Tool Cards, and the ingenious interplay between its Planner and Executor."
 featuredImage: "featured-image.jpg"

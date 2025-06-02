@@ -2,7 +2,7 @@
 # weight: 1
 title: "[論文介紹] OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning"
 date: 2025-06-02
-lastmod: 2025-06-02
+lastmod: 2025-06-03
 draft: false
 description: "Agentic AI 介紹：OctoTools！理解 OctoTools 如何透過明確的且據延展性的 Tool Cards 設計，以及 Planner 與 Executor 之間的巧妙的互動，來提昇 LLM Agent 在複雜任務的表現"
 featuredImage: "featured-image.jpg"
