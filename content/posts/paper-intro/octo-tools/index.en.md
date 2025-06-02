@@ -1,11 +1,11 @@
 ---
 # weight: 1
 title: "OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning"
-date: 2025-05-25
-lastmod: 2025-05-25
-draft: true
-description: ""
-featuredImage: "featured-image.png"
+date: 2025-06-02
+lastmod: 2025-06-02
+draft: false
+description: "Introducing Agentic AI: OctoTools! Understand how OctoTools enhances the performance of LLM Agents on complex tasks through its well-defined and extensible Tool Cards, and the ingenious interplay between its Planner and Executor."
+featuredImage: "featured-image.jpg"
 
 tags: ["Large Language Model", "Multi-Agent"]
 categories: ["paper-intro"]
@@ -21,119 +21,108 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This article introduces the paper "[Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory](https://arxiv.org/abs/2504.19413)". Mem0 is an agentic memory method developed by the company [mem0.ai](https://mem0.ai/research). Although this paper was just released on arXiv in April 2025, the first version of Mem0 was already [released on GitHub](https://github.com/mem0ai/mem0/releases/tag/release) back in July 2023.
+This article introduces the paper "[OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning](https://arxiv.org/abs/2502.11271)". The five authors of OctoTools are all from Stanford, and they published this paper on arXiv in February 2025.
 
-Mem0's main goal is to solve the long-term memory (LTM) problem in Large Language Models (LLMs) and provide a production-ready solution. Visiting Mem0's [GitHub page](https://github.com/mem0ai/mem0), you might be surprised to find that as of May 11, 2025, it has garnered over 29K stars. The project's popularity is truly noteworthy.
+OctoTools is a training-free and open-sourced agentic framework designed to enhance the task planning and tool usage capabilities of Large Language Models (LLMs), thereby improving their performance on multi-step tasks.
 
-This article will focus on introducing the Mem0 paper, understanding its design philosophy, architecture, and experimental results. Detailed usage instructions are available on Mem0's GitHub under the ["Basic Usage" section](https://github.com/mem0ai/mem0?tab=readme-ov-file#basic-usage), so they won't be repeated here.
+As of May 2025, the [GitHub repository for OctoTools](https://github.com/octotools/octotools) has already accumulated 1.2K stars, indicating its significant popularity. Additionally, Discover AI has produced an [introductory video on OctoTools](https://www.youtube.com/watch?v=4828sGfx7dk), which interested readers might find useful!
 
-## The Problem Mem0 Aims to Solve
+## The Problem OctoTools Aims to Solve
 
-{{< image src="problem.png" caption="[Figure 1] Illustration of memory importance in AI agents." >}}
+In recent years, various agentic framework methods have been proposed. Essentially, these frameworks enable LLMs to tackle more complex and flexible problems through iterative steps of planning and execution.
 
-Mem0 primarily aims to address the long-term memory (LTM) issues faced by AI agents. When an agent lacks LTM, it cannot remember past interactions with humans. This prevents it from tailoring responses to human preferences. As shown in Figure 1 (left), if a user states they are vegetarian and want to avoid dairy at the beginning of a conversation, an agent without LTM might later forget this and offer unsuitable suggestions. Conversely, Figure 1 (right) shows an agent with LTM remembering the user's preferences and providing relevant advice.
+However, some agentic framework methods, like [Toolformer (NeurIPS 2023)](https://openreview.net/forum?id=Yacmpz84TH) and [LLaVA-Plus](https://arxiv.org/abs/2311.05437), require training the LLMs. Others, such as [Visual Sketchpad (NeurIPS 2024)](https://openreview.net/forum?id=GNSMl1P5VR&referrer=%5Bthe%20profile%20of%20Weijia%20Shi%5D(%2Fprofile%3Fid%3D~Weijia_Shi1)) and [WebWISE (NAACL 2024)](https://aclanthology.org/2024.findings-naacl.234/), are limited to specific domains. While training-free methods applicable to general domains do exist (e.g., [Chameleon (NeurIPS 2023)](https://openreview.net/forum?id=HtqnVSCj3q¬eId=AkDivMFFzq), [HuggingGPT (NeurIPS 2023)](https://openreview.net/forum?id=yHdTscY6Ci)), their performance on multi-step tasks has often been less than ideal.
 
-Even though the context windows (the amount of recent information an LLM can consider) of current LLMs are constantly expanding, they still can't fully solve the LTM problem. The authors of Mem0 highlight three reasons:
-- As interactions increase, the accumulated conversation history and thought processes will eventually exceed the LLM's context window, making it impossible for the LLM to remember all information.
-- Human-LLM interactions often jump between different topics. This means if a user asks about Topic A, the LLM's context window might be filled with unrelated information, potentially affecting the quality of its answer for Topic A.
-- Most LLMs are based on the Transformer architecture. The self-attention mechanism in Transformers not only increases in computational complexity with a larger context window but its performance can also degrade.
+Therefore, OctoTools aims to introduce a training-free agentic framework applicable to general domains that also delivers better performance on multi-step tasks.
 
-## A Brief Introduction to the Mem0 Method
+{{< admonition tip "Related Papers" >}}
+If you're new to the field of LLM Agents, be sure to first read our previous introduction to a classic LLM Agent paper—[HuggingGPT](../hugginggpt/)—to understand how LLMs handle multi-step tasks through planning and execution frameworks.
 
-Mem0 primarily includes two memory architectures:
-- **Mem0**: Manages memory purely through an LLM and a vector/relational database.
-- **Mem0<sup>g</sup>**: Builds upon **Mem0** by adding a graph-based memory structure.
+If you have more time, you can also read our introductions to [PLAN-AND-ACT](../plan-and-act/) and [Pre-Act](../pre-act/). These two papers, like OctoTools discussed here, were published in the first half of 2025. However, they focus more on the planning-execution framework and their methods are simpler than OctoTools, making them good preparatory reading!
+{{< /admonition >}}
 
-### Mem0's Memory Management
+## Introducing the OctoTools Method
 
-{{< image src="mem0.png" caption="[Figure 2] Architectural overview of the Mem0 system showing extraction and update phase." >}}
+{{< image src="approach-min.png" caption="[Figure 1] OctoTools Framework" >}}
 
-Mem0's memory management, as shown in Figure 2, is divided into two main phases: the Extraction Phase and the Update Phase.
-- **Extraction Phase**: Extracts information worth remembering from the conversation history.
-- **Update Phase**: Compares this new information with existing memories, then updates or deletes existing memories accordingly.
+The OctoTools method, as shown in Figure 1 above, is primarily composed of **Tool Cards**, a **Planner**, and an **Executor**.
 
-Specifically, in the Extraction Phase, an LLM extracts "candidate facts" (potential new memories) based on:
-- A summary of long-term past conversations: This summary is periodically generated by another LLM based on conversation records stored in the database.
-- The last M conversation turns: These represent the most recent interactions and are the source from which the Extraction Phase extracts candidate facts.
+Tool Cards define many tools and the metadata for each tool. Based on a user's query, OctoTools follows these steps:
 
-In the Update Phase, each candidate fact is compared with existing memories to ensure consistency in the memory database. For every candidate fact, the K most similar "retrieved memories" (based on embedding similarity) are fetched from the database. These retrieved memories are then compared with the candidate fact.
+1. The **Query Analyzer** analyzes which tools are suitable for the current query and formulates a high-level plan. This high-level plan becomes the first element in the trajectory.
+2. The **Action Predictor**, based on the current trajectory, generates a more specific low-level plan, which is the next action. This includes the goal of the action, the tool to be used, and the parameters to be passed.
+3. The **Command Generator** converts the text-described action into concrete Python code.
+4. The **Command Executor** runs this Python code to get the execution result.
+5. This complete step—{Action, Python Code, Execution Result}—is stored in the overall trajectory.
+6. The **Context Verifier**, based on the entire trajectory, determines whether the final answer has been obtained, signaling "CONTINUE" or "STOP".
+    - "CONTINUE": Return to step 2. The Action Predictor can now generate a new low-level action based on the updated trajectory.
+    - "STOP": Proceed to step 7.
+7. The **Solution Summarizer** generates the final answer based on the entire trajectory.
 
-This comparison is done by an LLM using a technique called "function-calling" to decide on one of the following operations:
-- ADD: Since the candidate fact is new information, it's added to the memory database.
-- UPDATE: The candidate fact is used to update an existing memory in the database.
-- DELETE: An existing memory in the database contradicts the candidate fact, so the existing memory is deleted.
-- NOOP: No operation is performed.
+{{< image src="example-min.png" caption="[Figure 3] OctoTools Example" >}}
 
-In their experiments, the authors set M = 10 for recent conversation turns in the Extraction Phase and K = 10 for retrieved memories in the Update Phase. GPT-4o-mini was used as the LLM for both phases.
+### Tool Cards
 
-### Mem0<sup>g</sup>'s Memory Management
+As shown in Figure 3 above, Tool Cards in OctoTools generally include Name, Description, Input, Output, Demonstrations, and a distinctive "User Metadata" field. "User Metadata" mainly provides additional hints from the user about the tool (e.g., limitations of the tool, best practices for using the tool), allowing the Planner and Executor to better understand the tool.
 
-{{< image src="mem0-g.png" caption="[Figure 3] Graph-based memory architecture of Mem0<sup>g</sup> illustrating entity extraction and update phase." >}}
+Each tool implements two standard functions:
 
-As seen in Figure 3, **Mem0<sup>g</sup>**'s memory architecture is quite similar to **Mem0**'s, featuring both an Extraction Phase and an Update Phase. The key difference is that **Mem0<sup>g</sup>** uses a graph-based approach to manage memory, while **Mem0** uses vector/relational databases.
+- `execute()`: Executes the tool based on the passed parameters.
+- `get_metadata()`: Retrieves the tool's metadata (allowing the Planner and Executor to understand tool information in real-time).
 
-In Mem0<sup>g</sup>, memory is represented by a graph \(G\) comprising nodes \( V \), edges \( E \), and labels \( L \). Specifically:
+Readers interested in the actual content of Tool Cards can refer to Appendix D in the paper:
 
-- **Nodes \( V \)**: Represent entities (e.g., Alice, San Francisco).
-- **Edges \( E \)**: Represent relationships between entities (e.g., lives_in).
-- **Labels \( L \)**: Represent the semantic type of entities (e.g., Alice - Person, San Francisco - City).
+{{< image src="tools-min.png" caption="Tools defined in OctoTools" >}}
 
-Each entity node \(v \in V\) consists of three components:
+### Planner
 
-1. The entity's category (e.g., Person, Location, Event).
-2. The entity's embedding \(e_v\), which captures its semantic meaning.
-3. The entity's metadata, including its creation time \(t_v\).
+The Planner is actually composed of four LLMs: **Query Analyzer**, **Action Predictor**, **Context Verifier**, and **Solution Summarizer**.
 
-In Mem0<sup>g</sup>, relationships between nodes are represented by a triplet \((v_s, r, v_d)\), where \(v_s\) and \(v_d\) are the source and target nodes, and \(r\) is the edge connecting them.
+As shown in Figure 3, based on the user's query and the tool set, the Query Analyzer's goal is to generate a high-level plan. This plan includes "Summary," "Required Skills," "Relevant Tools," and "Additional Considerations." This high-level plan helps guide the overall reasoning process in the right direction.
 
-In the **Extraction Phase**, an LLM performs a two-stage process: **Entity Extraction** and **Relationship Generation**.
+The Action Predictor then generates a specific low-level action based on the high-level plan. This includes the "Sub-Goal" (the objective of this action), "Tool Name," and "Context" (information to be passed to the tool).
 
-Entity Extraction involves an Entity Extractor LLM identifying all entities from the conversation history and tagging their types. For example, if the conversation is about travel, entities might include "departure city," "destination," and "departure time." These entities become nodes in the graph and are labeled with categories like "Location" for "departure city" and "Date" for "departure time."
+After the Executor returns the execution result, the Context Verifier determines whether the reasoning process should continue, based on the user's query, the initial high-level plan, and the current trajectory. If it decides to continue, it returns to the Action Predictor, which then generates a new low-level action based on the current trajectory (which now includes the high-level plan as well as the previously executed action and its result).
 
-Relationship Generation uses a Relationship Generator LLM to extract relationships between entities from the conversation history and identify their types. For instance, in a travel discussion, the relationship between "departure city" and "destination" might be "Travel From-To," while the relationship between "departure time" and "destination" could be "Travel Date."
+If the Context Verifier decides to stop, the complete trajectory is passed to the Solution Summarizer to generate the final answer.
 
-In the **Update Phase**, based on newly created triplets \((v_s, r, v_d)\), the embeddings of the source and target nodes are compared with existing nodes in the graph. Nodes similar to these two are retrieved. Then, through Conflict Detection and an Update Resolver, a decision is made whether to add both new nodes to the graph, add only one, or just update existing information in the graph without adding new nodes.
+The specific prompts for these four LLMs can be found in Appendix C of the paper:
 
-Mem0<sup>g</sup> employs two memory retrieval methods:
-- Entity-Centric Approach: Based on a query, it first analyzes the entities in the query. Then, it retrieves related nodes from the graph and constructs a subgraph from these nodes and their existing relationships. This subgraph represents the relevant contextual information for the query.
-- Semantic Triplet Approach: Based on a query, it first converts the query into a dense embedding. This embedding is then compared with the embeddings of the textual encodings of all triplets in the graph. The K most similar triplets are retrieved, representing the relevant contextual information for the query.
+{{< image src="prompt.png" caption="Prompt Template" >}}
 
-In the experimental phase, the authors used [Neo4j](https://neo4j.com/) as the graph database and GPT-4o-mini as both the Entity Extractor LLM and the Relationship Generator LLM.
+### Executor
 
-## Mem0's Experimental Results
+The Executor is quite straightforward, consisting of one LLM: **Command Generator (Predictor)**.
 
-### Choice of Test Dataset
+As shown in Figure 3, the task of the Command Generator is to convert the action generated by the Action Predictor into more concrete Python code. This Python code is then passed to a Python Executor to be run, yielding a result.
 
-The authors chose the [LOCOMO](https://aclanthology.org/2024.acl-long.747.pdf) dataset as a benchmark. LOCOMO is specifically designed to evaluate the long-term memory capabilities of models in conversational systems. It contains 10 conversations, each averaging 600 turns (about 26K tokens). Each conversation has an average of 200 questions with corresponding ground truth answers. These questions are categorized into types: Single-Hop, Multi-Hop, Temporal (time-related), and Open-domain.
+The prompt for the Command Generator (Predictor) can also be found in Appendix C of the paper.
 
-### Choice of Evaluation Metrics
+### Task-specific Toolset Optimization
 
-In addition to standard metrics like **F1 Score (F1)** and **BLEU-1 (B1)**, the authors included **LLM-as-a-Judge (J)** to enhance measurement accuracy. These three metrics assess how closely the LLM's output matches the ground truth.
+Suppose there are already many tools in the current Tool Set. In each stage of the Planner, we don't want to put all tool information into the LLM's context, as some tools might be completely unsuitable for the current task and would instead become irrelevant information in the context. Therefore, if a type of task has some validation tasks, we can perform the following steps using these validation tasks to create an Optimized Tool Set:
 
-Besides these, the authors also incorporated **Token Consumption** to measure how many tokens, on average, different methods need to retrieve from the memory database for each query (these tokens become LLM input), and **Latency** to measure the average time different methods take to process each query.
+1. Establish a Base Tool Set by selecting some essential tools.
+2. Let the Planner and Executor process validation tasks using this Base Tool Set to get a Base Score.
+3. Randomly select a tool from the remaining tools.
+4. Create a New Tool Set = Base Tool Set + New Selected Tool.
+5. Let the Planner and Executor process validation tasks using this New Tool Set to get a New Score.
+6. If this New Score is greater than the Base Score, it indicates that this New Selected Tool is suitable for this type of task.
+7. Repeat Steps 3 to 6 until every tool has been tested.
+8. Create an Optimized Tool Set = Base Tool Set + all tools suitable for this type of task.
 
-### Experimental Results
+## OctoTools Experimental Results
 
-{{< image src="exp.png" caption="[Table 1] Performance comparison of memory-enabled systems across different question types in the LOCOMO dataset." >}}
+{{< image src="exp-1-min.png" caption="Experiment 1" >}}
 
-The experimental data in Table 1 is quite surprising. Mem0 not only achieved State-of-the-Art (SOTA) performance in Single-Hop, Multi-Hop, and Temporal categories but also surpassed the second-best method significantly across all three metrics. In the Open-domain category, while not SOTA, it was only slightly behind the top performer.
+As shown in the table above, the authors used 18 benchmarks in their experiments, covering Text and Image modalities across 5 domains. The green checkmarks indicate the skills required by each benchmark, from left to right: Visual Understanding, Numerical Calculation, Knowledge Retrieval, and Multi-Step Reasoning. OctoTools<sub>base</sub> represents using only the Base Tool Set, while OctoTools uses the Optimized Tool Set.
 
-The validity of the LOCOMO benchmark has been discussed on Reddit. Some argue that the LOCOMO dataset has issues, with slight modifications to experimental setups reportedly allowing [Zep to outperform Mem0 by 24%](https://www.reddit.com/r/LangChain/comments/1kg5qas/lies_damn_lies_statistics_is_mem0_really_sota_in/). Others believe that [Mem0's experimental setup was flawed, leading to its significant outperformance over other methods](https://www.reddit.com/r/LangChain/comments/1kash7b/i_benchmarked_openai_memory_vs_langmem_vs_letta/).
+The table shows that the OctoTools method, whether using the Base or Optimized Tool Set, outperforms baseline methods. This suggests that agentic framework methods are better suited for handling complex tasks.
 
-Additionally, a second noteworthy point is that Mem0<sup>g</sup>, despite incorporating a more complex graph-based structure for memory storage and more intricate Extraction and Update Phases compared to Mem0, only performed better than Mem0 in the Open-Domain and Temporal categories. The authors did not provide an in-depth analysis of why this was the case.
+{{< image src="exp-2-min.png" caption="Experiment 2" >}}
 
-{{< image src="exp-2.png" caption="[Figure 4a] Comparison of search latency at p50 (median) and p95 (95th percentile) across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, and A-Mem)." >}}
-
-{{< image src="exp-3.png" caption="[Figure 4b] Comparison of total response latency at p50 and p95 across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, OpenAI, full-context, and A-Mem)." >}}
-
-Figures 4a and 4b above show the LLM-as-a-Judge Score, Search Latency, and Total Response Latency for different methods across the entire LOCOMO dataset. It's evident that Mem0 and Mem0<sup>g</sup> demonstrate a strong advantage in terms of latency and LLM-as-a-Judge scores.
+The table above presents a comparison of OctoTools with other agentic framework methods. Although OctoTools also shows better performance than other methods, the authors did not clearly specify what kind of agentic workflows were created using the other agentic frameworks for comparison.
 
 ## Conclusion
 
-This article introduced the paper "[Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory](https://arxiv.org/abs/2504.19413)", explaining how **Mem0** and **Mem0<sup>g</sup>** manage long-term memory by processing raw conversation logs through Extraction and Update Phases, and how Mem0<sup>g</sup> utilizes a graph-based structure to store memories.
-
-On the LOCOMO test dataset chosen by the authors, we observed that Mem0 and Mem0<sup>g</sup> outperformed baseline methods in multiple aspects like Single-Hop and Multi-Hop tasks. We also saw their latency advantages compared to other methods.
-
-The paper does not detail the prompts used in Mem0 and Mem0<sup>g</sup>. However, two prompt files can be found on GitHub for interested readers to explore:
-- **Mem0**: [mem0/configs/prompts.py](https://github.com/mem0ai/mem0/blob/main/mem0/configs/prompts.py)
-- **Mem0<sup>g</sup>**: [mem0/graphs/utils.py](https://github.com/mem0ai/mem0/blob/main/mem0/graphs/utils.py)
+This article introduced the paper "[OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning](https://arxiv.org/abs/2502.11271)". OctoTools is a training-free and open-sourced agentic framework that enhances the task planning and tool usage capabilities of LLMs through a carefully designed interplay between Tool Cards, the Planner, and the Executor. Experimental results also demonstrate that OctoTools performs better than other agentic frameworks (e.g., AutoGen, GPT-Functions, LangChain).
