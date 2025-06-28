@@ -39,7 +39,7 @@ bundle = false
   # cache remote images for better optimisations
   cacheRemote = true
   # Image resizing and optimisation
-  optimise = true
+  optimise = false
 
 # Header config
 [header]
