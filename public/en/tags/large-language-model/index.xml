@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Large Language Model on DataSci Ocean</title>
+    <link>http://localhost:1313/en/tags/large-language-model/</link>
+    <description>Recent content in Large Language Model on DataSci Ocean</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
+    <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster>
+    <copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright>
+    <lastBuildDate>Sat, 28 Jun 2025 18:36:03 +0800</lastBuildDate>
+    <atom:link href="http://localhost:1313/en/tags/large-language-model/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>AutoMind: Adaptive Knowledgeable Agent for Automated Data Science</title>
+      <link>http://localhost:1313/en/paper-intro/automind/</link>
+      <pubDate>Sat, 28 Jun 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/automind/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA</title>
+      <link>http://localhost:1313/en/paper-intro/notes-writing/</link>
+      <pubDate>Fri, 27 Jun 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/notes-writing/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning</title>
+      <link>http://localhost:1313/en/paper-intro/octo-tools/</link>
+      <pubDate>Mon, 02 Jun 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/octo-tools/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Steering Large Language Models Between Code Execution and Textual Reasoning</title>
+      <link>http://localhost:1313/en/paper-intro/code-steer/</link>
+      <pubDate>Sun, 25 May 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/code-steer/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents</title>
+      <link>http://localhost:1313/en/paper-intro/pre-act/</link>
+      <pubDate>Tue, 20 May 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/pre-act/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>MemGPT: Towards LLMs as Operating Systems</title>
+      <link>http://localhost:1313/en/paper-intro/memgpt/</link>
+      <pubDate>Sun, 18 May 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/memgpt/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory</title>
+      <link>http://localhost:1313/en/paper-intro/mem0/</link>
+      <pubDate>Tue, 13 May 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/mem0/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>PLAN-AND-ACT: Improving Planning of Agents for Long-Horizon Tasks</title>
+      <link>http://localhost:1313/en/paper-intro/plan-and-act/</link>
+      <pubDate>Sun, 11 May 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/plan-and-act/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Intorduction to LangMem</title>
+      <link>http://localhost:1313/en/other/langmem-intro/</link>
+      <pubDate>Tue, 06 May 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/other/langmem-intro/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>HuatuoGPT-o1: Towards Medical Complex Reasoning with LLMs</title>
+      <link>http://localhost:1313/en/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/</link>
+      <pubDate>Fri, 31 Jan 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/huatuogpt-o1-towards-medical-complex-reasoning-with-llms/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face</title>
+      <link>http://localhost:1313/en/paper-intro/hugginggpt/</link>
+      <pubDate>Mon, 27 Jan 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/hugginggpt/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>EHRAgent: Code Empowers Large Language Models for Few-shot  Complex Tabular Reasoning on Electronic Health Records</title>
+      <link>http://localhost:1313/en/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/</link>
+      <pubDate>Sun, 26 Jan 2025 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>RAFT: Adapting Language Model to Domain Specific RAG</title>
+      <link>http://localhost:1313/en/paper-intro/raft-adapting-language-model-to-domain-specific-rag/</link>
+      <pubDate>Thu, 31 Oct 2024 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/raft-adapting-language-model-to-domain-specific-rag/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>REPLUG: Retrieval-Augmented Black-Box Language Models</title>
+      <link>http://localhost:1313/en/paper-intro/replug-retrieval-augmented-black-box-language-models/</link>
+      <pubDate>Thu, 31 Oct 2024 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/replug-retrieval-augmented-black-box-language-models/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Better &amp; Faster Large Language Models via Multi-token Prediction</title>
+      <link>http://localhost:1313/en/paper-intro/multi-token/</link>
+      <pubDate>Thu, 18 Jul 2024 00:00:00 +0000</pubDate><author>l066858998@gmail.com (Hong-Wei Wu)</author>
+      <guid>http://localhost:1313/en/paper-intro/multi-token/</guid>
+      <description></description>
+    </item>
+  </channel>
+</rss>

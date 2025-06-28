@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noodp" /><title>[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs - DataSci Ocean</title><meta name="Description" content="深入解析紐約大學2024年6月發表的 Cambrian-1 論文。這項開源研究以「視覺為中心」，全面探討多模態大型語言模型 (VLM) 的視覺表徵、連接器設計、訓練策略與數據集，旨在真正提升模型的視覺理解能力，並開源了 Cambrian-1 模型、CV-Bench 基準測試及 Cambrian-7M 資料集。"><meta property="og:url" content="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/">
+  <meta property="og:site_name" content="DataSci Ocean">
+  <meta property="og:title" content="[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs">
+  <meta property="og:description" content="深入解析紐約大學2024年6月發表的 Cambrian-1 論文。這項開源研究以「視覺為中心」，全面探討多模態大型語言模型 (VLM) 的視覺表徵、連接器設計、訓練策略與數據集，旨在真正提升模型的視覺理解能力，並開源了 Cambrian-1 模型、CV-Bench 基準測試及 Cambrian-7M 資料集。">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-07-29T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-05-10T11:15:03+08:00">
+    <meta property="article:tag" content="Vision Language Model">
+    <meta property="og:image" content="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/featured-image.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/featured-image.png">
+  <meta name="twitter:title" content="[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs">
+  <meta name="twitter:description" content="深入解析紐約大學2024年6月發表的 Cambrian-1 論文。這項開源研究以「視覺為中心」，全面探討多模態大型語言模型 (VLM) 的視覺表徵、連接器設計、訓練策略與數據集，旨在真正提升模型的視覺理解能力，並開源了 Cambrian-1 模型、CV-Bench 基準測試及 Cambrian-7M 資料集。">
+<meta name="application-name" content="DataSci Ocean">
+<meta name="apple-mobile-web-app-title" content="DataSci Ocean">
+
+<meta name="theme-color" content="#f8f8f8">
+
+
+<meta name="google-site-verification" content="JjNbQx4bl50OFX5gOcj61_gSVFqJ0d9LdfGLKQ2XX9I" /><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<link rel="canonical" href="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" /><link rel="prev" href="http://localhost:1313/paper-intro/multi-token/" /><link rel="next" href="http://localhost:1313/python-tutorial/small-integer-cache-in-python/" />
+<link rel="stylesheet" href="/css/main.min.css"><link rel="stylesheet" href="/css/style.min.css"><script type="application/ld+json">{"@context": "https://schema.org","@type": "BlogPosting",
+        "headline": "[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs",
+        "inLanguage": "zh-TW",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/"
+        },"image": [{
+                            "@type": "ImageObject",
+                            "url": "http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/featured-image.png",
+                            "width":  650 ,
+                            "height":  366 
+                        }],"genre": "posts","keywords":["Vision Language Model"],"wordcount":  7673 ,
+        "url": "http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/","datePublished": "2024-07-29T00:00:00+00:00","dateModified": "2025-05-10T11:15:03+08:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
+            "@type": "Organization",
+            "name": "Hong-Wei Wu","logo": {
+                    "@type": "ImageObject",
+                    "url": "http://localhost:1313/images/avatar.png",
+                    "width":  1080 ,
+                    "height":  1080 
+                }},"author": {
+                "@type": "Person",
+                "name": "Hong-Wei Wu",
+                "url": "https://www.linkedin.com/in/johnnyhwu/"
+            },"description": "深入解析紐約大學2024年6月發表的 Cambrian-1 論文。這項開源研究以「視覺為中心」，全面探討多模態大型語言模型 (VLM) 的視覺表徵、連接器設計、訓練策略與數據集，旨在真正提升模型的視覺理解能力，並開源了 Cambrian-1 模型、CV-Bench 基準測試及 Cambrian-7M 資料集。"
+    }</script></head>
+
+
+<body data-instant-intensity="viewport" class="tw-flex tw-min-h-screen tw-flex-col"><script type="text/javascript">
+    function setTheme(theme) {
+      document.body.setAttribute('theme', theme); 
+      document.documentElement.className = theme;
+      document.documentElement.style.setProperty('color-scheme', theme === 'light' ? 'light' : 'dark');
+      if (theme === 'light') {
+        document.documentElement.classList.remove('tw-dark')
+      } else {
+        document.documentElement.classList.add('tw-dark')
+      }
+      window.theme = theme;   
+      window.isDark = window.theme !== 'light' 
+    }
+    function saveTheme(theme) {window.localStorage && localStorage.setItem('theme', theme);}
+    function getMeta(metaName) {const metas = document.getElementsByTagName('meta'); for (let i = 0; i < metas.length; i++) if (metas[i].getAttribute('name') === metaName) return metas[i]; return '';}
+    if (window.localStorage && localStorage.getItem('theme')) {
+        let theme = localStorage.getItem('theme');
+        if (theme === 'light' || theme === 'dark') {
+        setTheme(theme);
+        } else {
+            if ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                setTheme('dark');
+            } else {
+                setTheme('light');
+            }
+        }
+      } else { 
+        if ('auto' === 'light' || 'auto' === 'dark') 
+            setTheme('auto'), saveTheme('auto'); 
+        else saveTheme('auto'), window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? setTheme('dark') : setTheme('light');
+    }
+    let metaColors = {'light': '#f8f8f8','dark': '#161b22'}
+    getMeta('theme-color').content = metaColors[document.body.getAttribute('theme')];
+    window.switchThemeEventSet = new Set()
+</script><div id="back-to-top"></div>
+    <div id="mask"></div><header class="desktop print:!tw-hidden" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="DataSci Ocean">DataSci Ocean</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item"
+                    href="/posts/" > 所有文章 </a><a class="menu-item"
+                    href="/tags/" > 標籤 </a><a class="menu-item"
+                    href="/categories/" > 分類 </a><span class="menu-item delimiter"></span><button class="menu-item language" aria-label="選擇語言">繁體中文<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
+                    <select class="language-select" aria-label="選擇語言" id="language-select-desktop"
+                        onchange="location = this.value;"><option value="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/"  selected>繁體中文</option><option value="/en/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" >English</option></select>
+                </button><span class="menu-item search" id="search-desktop">
+                    <input type="text"
+                        placeholder="搜索文章標題或內容..."
+                        id="search-input-desktop">
+                    <button class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+                    </button>
+                    <button class="search-button search-clear" id="search-clear-desktop" title="清空">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                    </button>
+                    <span class="search-button search-loading tw-animate-spin" id="search-loading-desktop">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M304 48c0 26.51-21.49 48-48 48s-48-21.49-48-48 21.49-48 48-48 48 21.49 48 48zm-48 368c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm208-208c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zM96 256c0-26.51-21.49-48-48-48S0 229.49 0 256s21.49 48 48 48 48-21.49 48-48zm12.922 99.078c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.491-48-48-48zm294.156 0c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.49-48-48-48zM108.922 60.922c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.491-48-48-48z"/></svg>
+                    </span>
+                </span><button class="menu-item theme-select" aria-label="切換主題">
+                    <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M8 256c0 136.966 111.033 248 248 248s248-111.034 248-248S392.966 8 256 8 8 119.033 8 256zm248 184V72c101.705 0 184 82.311 184 184 0 101.705-82.311 184-184 184z"/></svg>
+                    <select class="color-theme-select" id="theme-select-desktop" aria-label="切換主題">
+                        <option value="light">淺色</option>
+                        <option value="dark">深色</option>
+                        <option value="auto">系统預設</option>
+                    </select>
+                </button></div>
+        </div>
+    </div>
+</header><header class="mobile print:!tw-hidden" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="DataSci Ocean">DataSci Ocean</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                <div class="search mobile" id="search-mobile">
+                    <input type="text"
+                        placeholder="搜索文章標題或內容..."
+                        id="search-input-mobile">
+                    <button class="search-button search-toggle tw-h-10" id="search-toggle-mobile" title="搜索">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+                    </button>
+                    <button class="search-button search-clear tw-h-fit" id="search-clear-mobile" title="清空">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                    </button>
+                    <span class="search-button search-loading tw-animate-spin" id="search-loading-mobile">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M304 48c0 26.51-21.49 48-48 48s-48-21.49-48-48 21.49-48 48-48 48 21.49 48 48zm-48 368c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm208-208c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zM96 256c0-26.51-21.49-48-48-48S0 229.49 0 256s21.49 48 48 48 48-21.49 48-48zm12.922 99.078c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.491-48-48-48zm294.156 0c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.49-48-48-48zM108.922 60.922c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.491-48-48-48z"/></svg>
+                    </span>
+                </div>
+                <button class="search-cancel" id="search-cancel-mobile">
+                    取消
+                </button>
+            </div><a class="menu-item" href="/posts/" title="" >所有文章</a><a class="menu-item" href="/tags/" title="" >標籤</a><a class="menu-item" href="/categories/" title="" >分類</a><button class="menu-item theme-select tw-w-full" aria-label="切換主題">
+                <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M8 256c0 136.966 111.033 248 248 248s248-111.034 248-248S392.966 8 256 8 8 119.033 8 256zm248 184V72c101.705 0 184 82.311 184 184 0 101.705-82.311 184-184 184z"/></svg>
+                <select class="color-theme-select" id="theme-select-mobile" aria-label="切換主題">
+                    <option value="light">淺色</option>
+                    <option value="dark">深色</option>
+                    <option value="auto">系统預設</option>
+                </select>
+            </button><button class="menu-item tw-w-full" title="">繁體中文<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
+                <select class="language-select" title="" onchange="location = this.value;"><option value="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/"  selected>繁體中文</option><option value="/en/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" >English</option></select>
+            </button></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div><main class="tw-mx-4 tw-flex-1"><div class="toc print:!tw-hidden" id="toc-auto">
+        <h2 class="toc-title">目錄</h2>
+        <div class="toc-content" id="toc-content-auto"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#cambrian-1-想解決的問題與目標">Cambrian-1 想解決的問題與目標</a></li>
+    <li><a href="#分析-1哪些-benchmark-是真的在衡量-vlm-的視覺能力">分析 1：哪些 Benchmark 是真的在衡量 VLM 的「視覺能力」</a></li>
+    <li><a href="#開源-1cv-bench--衡量-vlm-視覺能力的-benchmark">開源 1：CV-Bench — 衡量 VLM 視覺能力的 Benchmark</a></li>
+    <li><a href="#分析-2不同類型的-visual-encoder-如何影響-vlm-的視覺能力">分析 2：不同類型的 Visual Encoder 如何影響 VLM 的視覺能力</a></li>
+    <li><a href="#分析-3vlm-的訓練方式--one-stage-vs-two-stage">分析 3：VLM 的訓練方式 — One Stage vs. Two Stage</a></li>
+    <li><a href="#分析-4vlm-中-visual-encoder-的數量--一個-visual-encoder-vs-多個-visual-encoder">分析 4：VLM 中 Visual Encoder 的數量 — 一個 Visual Encoder vs. 多個 Visual Encoder</a></li>
+    <li><a href="#分析-5vlm-中新的-connector-design--spatial-vision-aggregator-sva">分析 5：VLM 中新的 Connector Design — Spatial Vision Aggregator (SVA)</a></li>
+    <li><a href="#開源-2high-quality-instruction-tuning-data--cambrian-7m">開源 2：High-Quality Instruction-Tuning Data — Cambrian-7M</a></li>
+    <li><a href="#分析-6透過-system-prompt-控制-vlm-的輸出內容">分析 6：透過 System Prompt 控制 VLM 的輸出內容</a></li>
+    <li><a href="#開源-3vision-language-model--cambrian-1">開源 3：Vision-Language Model — Cambrian-1</a></li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+    </div><dialog id="toc-dialog" class="tw-max-w-full tw-w-full tw-max-h-full tw-h-full tw-ml-16">
+        <div class="toc tw-mx-4 tw-max-w-full">
+            <h2 class="tw-mx-0 tw-my-6 tw-uppercase tw-text-2xl">目錄</h2>
+            <div class="toc-content"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#cambrian-1-想解決的問題與目標">Cambrian-1 想解決的問題與目標</a></li>
+    <li><a href="#分析-1哪些-benchmark-是真的在衡量-vlm-的視覺能力">分析 1：哪些 Benchmark 是真的在衡量 VLM 的「視覺能力」</a></li>
+    <li><a href="#開源-1cv-bench--衡量-vlm-視覺能力的-benchmark">開源 1：CV-Bench — 衡量 VLM 視覺能力的 Benchmark</a></li>
+    <li><a href="#分析-2不同類型的-visual-encoder-如何影響-vlm-的視覺能力">分析 2：不同類型的 Visual Encoder 如何影響 VLM 的視覺能力</a></li>
+    <li><a href="#分析-3vlm-的訓練方式--one-stage-vs-two-stage">分析 3：VLM 的訓練方式 — One Stage vs. Two Stage</a></li>
+    <li><a href="#分析-4vlm-中-visual-encoder-的數量--一個-visual-encoder-vs-多個-visual-encoder">分析 4：VLM 中 Visual Encoder 的數量 — 一個 Visual Encoder vs. 多個 Visual Encoder</a></li>
+    <li><a href="#分析-5vlm-中新的-connector-design--spatial-vision-aggregator-sva">分析 5：VLM 中新的 Connector Design — Spatial Vision Aggregator (SVA)</a></li>
+    <li><a href="#開源-2high-quality-instruction-tuning-data--cambrian-7m">開源 2：High-Quality Instruction-Tuning Data — Cambrian-7M</a></li>
+    <li><a href="#分析-6透過-system-prompt-控制-vlm-的輸出內容">分析 6：透過 System Prompt 控制 VLM 的輸出內容</a></li>
+    <li><a href="#開源-3vision-language-model--cambrian-1">開源 3：Vision-Language Model — Cambrian-1</a></li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+        </div>
+    </dialog><script>document.getElementsByTagName("main")[0].setAttribute("autoTOC", "true")</script><article class="page single print:!tw-w-full print:!tw-max-w-none print:!tw-m-0 print:!tw-p-0"><h1 class="single-title" data-pagefind-meta="date:2024-07-29" data-pagefind-body>[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs</h1><div class="post-meta">
+            <div class="post-meta-line">
+                <span class="post-author"><img class="tw-inline-block tw-max-h-4 tw-rounded-full tw-translate-y-[-2px] tw-mr-1"  src='/images/avatar.png'   alt="Hong-Wei Wu avatar" height="16" width="16"><a href="https://www.linkedin.com/in/johnnyhwu/" title="Author" target="_blank" rel="noopener noreferrer author" class="author">Hong-Wei Wu</a>
+                </span>&nbsp;<span class="post-category"></span>&nbsp;<span class="post-category">收錄於 <a href="/categories/paper-intro/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>論文介紹</a></span></div>
+            <div class="post-meta-line"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;<time datetime="2024-07-29">2024-07-29</time>&nbsp;<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;約 7673 字&nbsp;
+                    <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>&nbsp;預計閱讀 34 分鐘&nbsp;</div>
+        </div><div class="featured-image"><img  loading="eager" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/featured-image.png'   alt="深入解析紐約大學2024年6月發表的 Cambrian-1 論文。這項開源研究以「視覺為中心」，全面探討多模態大型語言模型 (VLM) 的視覺表徵、連接器設計、訓練策略與數據集，旨在真正提升模型的視覺理解能力，並開源了 Cambrian-1 模型、CV-Bench 基準測試及 Cambrian-7M 資料集。" height="366" width="650"></div><div class="details toc print:!tw-block" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目錄</span>
+                    <span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#cambrian-1-想解決的問題與目標">Cambrian-1 想解決的問題與目標</a></li>
+    <li><a href="#分析-1哪些-benchmark-是真的在衡量-vlm-的視覺能力">分析 1：哪些 Benchmark 是真的在衡量 VLM 的「視覺能力」</a></li>
+    <li><a href="#開源-1cv-bench--衡量-vlm-視覺能力的-benchmark">開源 1：CV-Bench — 衡量 VLM 視覺能力的 Benchmark</a></li>
+    <li><a href="#分析-2不同類型的-visual-encoder-如何影響-vlm-的視覺能力">分析 2：不同類型的 Visual Encoder 如何影響 VLM 的視覺能力</a></li>
+    <li><a href="#分析-3vlm-的訓練方式--one-stage-vs-two-stage">分析 3：VLM 的訓練方式 — One Stage vs. Two Stage</a></li>
+    <li><a href="#分析-4vlm-中-visual-encoder-的數量--一個-visual-encoder-vs-多個-visual-encoder">分析 4：VLM 中 Visual Encoder 的數量 — 一個 Visual Encoder vs. 多個 Visual Encoder</a></li>
+    <li><a href="#分析-5vlm-中新的-connector-design--spatial-vision-aggregator-sva">分析 5：VLM 中新的 Connector Design — Spatial Vision Aggregator (SVA)</a></li>
+    <li><a href="#開源-2high-quality-instruction-tuning-data--cambrian-7m">開源 2：High-Quality Instruction-Tuning Data — Cambrian-7M</a></li>
+    <li><a href="#分析-6透過-system-prompt-控制-vlm-的輸出內容">分析 6：透過 System Prompt 控制 VLM 的輸出內容</a></li>
+    <li><a href="#開源-3vision-language-model--cambrian-1">開源 3：Vision-Language Model — Cambrian-1</a></li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content" data-pagefind-body><h2 id="前言" class="headerLink">
+    <a href="#%e5%89%8d%e8%a8%80" class="header-mark"></a>1 前言</h2><p>今天要和大家分享一篇由紐約大學於 2024 年 6 月所發表的論文：<a href="https://arxiv.org/abs/2406.16860" target="_blank" rel="noopener noreferrer">Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs</a>！如同標題所述，本篇論文就是想特別著重在「視覺能力」的角度（Vision-Centric）來研究 Vision-Language Model 應該怎麼訓練最好。</p>
+<p>論文中真的徹底的探索（如同標題中的 Explore）了 Vision-Language Model 中各種層面的設計，讀完之後真的覺得收穫滿滿（對於 Vision-Language Model 的設計有很充分的理解），也很敬佩這群學者的研究精神，以及他們對這個 Community 的貢獻！</p>
+<p>此外，如同標題中的「Open」所言，這項研究的所有模型與訓練資料集完全開源在 <a href="https://huggingface.co/collections/nyu-visionx/cambrian-1-models-666fa7116d5420e514b0f23c" target="_blank" rel="noopener noreferrer">HuggingFace</a> 以及 <a href="https://github.com/cambrian-mllm/cambrian" target="_blank" rel="noopener noreferrer">GitHub</a> 上，真心覺得研究者在 AI 領域中所費不貲所做的研究，最後開源給大家使用，真的很佛心！（雖然有些人說如果沒開源 Paper 上不了頂會，但其實也可以看到很多論文在上了頂會之後，就把 GitHub 上的 Repo 下架或是只放一個 README，因此真的還是懷抱感恩的心，感謝這些願意開源的研究者）</p>
+<p>在讀完這篇論文之後，我覺得論文所提出的模型名稱「Cambrian-1」真的很有意思！Cambrian 的中文是「寒武紀」的意思，根據維<a href="https://zh.wikipedia.org/zh-tw/%E5%AF%92%E6%AD%A6%E7%BA%AA?useskin=vector" target="_blank" rel="noopener noreferrer">基百科的解釋</a>：</p>
+<blockquote>
+  <p>寒武紀是生物化石開始在地層中被大量發現的地質時期，幾乎所有的現生動物門都出現在被稱為『寒武紀大爆發』的演化輻射事件</p>
+</blockquote><p>簡單來說，在寒武紀以前還沒有太多的生物的活動痕跡，但是在寒武紀開始之後，出現了大量的生物活動的痕跡，這些動物如同雨後春筍般的開始演化成各種不同的動物門。有些學者認為:</p>
+<blockquote>
+  <p>寒武紀大爆發是因為這時候的動物們開始有了「視覺能力」，他們開始具有類似眼睛的器官來感知這個世界的光線，來解讀這個世界的畫面，進而推動了動物神經系統的發展以及智慧的形成</p>
+</blockquote><p>這也讓我想到 Stanford University 的李飛飛教授在今年 4 月於 TED 的演講「<a href="https://www.ted.com/talks/fei_fei_li_with_spatial_intelligence_ai_will_understand_the_real_world?language=zh-tw&amp;subtitle=en" target="_blank" rel="noopener noreferrer">With spatial intelligence, AI will understand the real world</a>」中也有提到類似的想法（寒武紀大爆發與動物視覺能力開始發展有所關聯），強調電腦視覺對於人工智慧的重要性。對於想徹底研究 Vision-Language Model 中「視覺能力」的此篇研究而言，<a href="https://cambrian-mllm.github.io/" target="_blank" rel="noopener noreferrer">Cambrian-1</a> 的取名似乎也有同樣的意義呢！</p>
+<h2 id="cambrian-1-想解決的問題與目標" class="headerLink">
+    <a href="#cambrian-1-%e6%83%b3%e8%a7%a3%e6%b1%ba%e7%9a%84%e5%95%8f%e9%a1%8c%e8%88%87%e7%9b%ae%e6%a8%99" class="header-mark"></a>2 Cambrian-1 想解決的問題與目標</h2><p>Cambrian-1 這篇論文的第一個目的是想<strong>全面性的探討 Multimodal LLM</strong>（此處為 Vision 和 Language 這兩種 Modality，因此在本文中也會稱其為 Vision-Language Model 或是簡稱 VLM）<strong>設計上的各種細節</strong>，主要包含以下五個面向：</p>
+<ul>
+<li>Visual Representation：Vision-Language Model 中的 Visual Encoder 應該怎麼設計會比較好</li>
+<li>Connector Design：有些論文稱即為 <a href="https://llava-vl.github.io/" target="_blank" rel="noopener noreferrer">Projection Layer</a> 或是 <a href="https://arxiv.org/abs/2405.02246" target="_blank" rel="noopener noreferrer">Modality Projection</a>，此 Module 的用途就是要將 Visual Feature 和 Text Feature 對齊（Align），這個 Module 應該怎麼設計比較好？</li>
+<li>Instruction Tuning Data：什麼樣的 Instruction Tuning Data 能夠幫助 Vision-Language Model 表現得更好</li>
+<li>Instruction Tuning Recipe：Vision-Language Model 應該要怎麼訓練？一階段？兩階段？</li>
+<li>Benchmarking：如何有效的衡量 Vision-Language Model 的視覺能力？</li>
+</ul>
+<p>而過去所提出的 VLM 方法，很少有這麼全面的分析每一個面向！此外，LLM 是 Vision-Language Model 重要的根本，一個能力強的 LLM 經常也會導致 Vision-Language Model 能力很強。</p>
+<p>但是這就會導致一個問題，有些研究提出更強的 Vision-Language Model 其實只是使用了更強的 LLM，並不是真的設計出更好的 Visual Representation Learning 的方法。</p>
+<p><strong>因此，Cambrian-1 這篇論文的第二個目的是就是希望</strong>以 Vision-Centric 的角度出發，透過提升 VLM 的「視覺能力」，來提升 VLM 的表現，而不單單只是使用更大的 LLM！</p>
+<h2 id="分析-1哪些-benchmark-是真的在衡量-vlm-的視覺能力" class="headerLink">
+    <a href="#%e5%88%86%e6%9e%90-1%e5%93%aa%e4%ba%9b-benchmark-%e6%98%af%e7%9c%9f%e7%9a%84%e5%9c%a8%e8%a1%a1%e9%87%8f-vlm-%e7%9a%84%e8%a6%96%e8%a6%ba%e8%83%bd%e5%8a%9b" class="header-mark"></a>3 分析 1：哪些 Benchmark 是真的在衡量 VLM 的「視覺能力」</h2><p>想要探究 VLM 的視覺能力，那第一步當然是先研究 VLM 中的 Visual Encoder。更具體的來說，必須理解什麼樣類型的 Visual Encoder 所得到的 Visual Representation 是比較好的，比較能夠提升 VLM 在 Benchmark 上的表現。</p>
+<p>然而，這樣真的合理嗎？這群研究者更謹慎的思考：如果 VLM 在 Benchmark 上表現得好，就代表它的視覺能力（Visual Encoder）好嗎？還是其實是它的語言能力（Large Language Model）能力好？</p>
+<p>因此，<strong>想要知道什麼樣的 Visual Encoder 真的能夠提升 VLM 的視覺能力，第一步就必須先找到適合的 Benchmark！</strong> 為了了解 Benchmark 是不是真的在衡量 VLM 的<strong>視覺能力</strong>，作者將一個 VLM 衡量在一個 Benchmark 上時都會看以下三種情況：</p>
+<ul>
+<li>Visual Enabled：正常情況，讓 VLM 回答這個問題時有提供圖像</li>
+<li>Visual Disabled：特殊情況，讓 VLM 回答這個問題時不提供圖像</li>
+<li>Random Guess：直接亂猜答案</li>
+</ul>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/benchmark.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/benchmark.png" data-sub-html="<h2>[Figure 3] Left: MLLM performance with and without visual input across benchmarks. Right: PCA clusters benchmarks by performance, labeled as General (green), Knowledge (yellow), Chart &amp; OCR (red), and Vision-Centric (blue).</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/benchmark.png'    height="540" width="1600"></a><figcaption class="image-caption">[Figure 3] Left: MLLM performance with and without visual input across benchmarks. Right: PCA clusters benchmarks by performance, labeled as General (green), Knowledge (yellow), Chart &amp; OCR (red), and Vision-Centric (blue).</figcaption>
+    </figure>
+<p>從上圖 Figure 3（左）可以看到：在 SQA-I、MMMU 和 MathVista Bemchmark 上，VLM 在 Visual Enabled 和 Disabled 的情況所得到的分數竟然幾乎一樣。更白話的說，當 VLM 在回答這些 Benchmark 的問題時，有沒有提供圖片給它，沒有太大的影響。</p>
+<p>這就表示在這些 Benchmark 上，根本不是在衡量 VLM 的「視覺」能力，而是在衡量「語言」能力。換句話說，VLM 在這些 Benchmark 上表現得愈好，可能其實只是它所使用的 LLM 比較好而已。</p>
+<p>在 TextVQA 和 GQA 中，Visual Enabled 和 Disabled 會讓 VLM 的表現有差別，代表這些 Benchmark 確實有在衡量 VLM 的視覺能力。但是神奇的是，在 Visual Disabled 的情況下，VLM 已經看不到圖片，照理說他的回答應該是會跟亂猜沒什麼兩樣，但是從上圖 Figure 3（左）卻可以看到，Visual Disabled 比 Random Guess 好很多。這表示這些 Benchmark 所衡量出來的成績仍然會受到 VLM 中 LLM 的影響。</p>
+<p>最後，在 MMVP 和 MME 上，Visual Enabled 和 Disabled 的成績差很多，而且在 Visual Disabled 的情況下表現的還比 Random Guess 差。這表示 MLLM 如果要在這兩個 Benchmark 上做得好，就真的必須要有好的視覺能力，把圖像資訊看得很清楚！從這邊的分析所得到的 Finding：</p>
+<div class="details admonition success open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/></svg></span>Finding<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">目前多數的 VLM Benchmark 都沒有真的衡量 VLM 的視覺能力！</div></div></div>
+<h2 id="開源-1cv-bench--衡量-vlm-視覺能力的-benchmark" class="headerLink">
+    <a href="#%e9%96%8b%e6%ba%90-1cv-bench--%e8%a1%a1%e9%87%8f-vlm-%e8%a6%96%e8%a6%ba%e8%83%bd%e5%8a%9b%e7%9a%84-benchmark" class="header-mark"></a>4 開源 1：CV-Bench — 衡量 VLM 視覺能力的 Benchmark</h2><p>由於既有的 Benchmark 大部分都沒有真正的在衡量 VLM 的視覺能力（這些 Benchmark 都不是 Vision-Centric 的），因此作者提出了一個新的 Vision-Centric Benchmark 稱為 <a href="https://huggingface.co/datasets/nyu-visionx/CV-Bench" target="_blank" rel="noopener noreferrer">Cambrian Vision-Centric Benchmark（CV-Bench</a>，裏頭包含了 2638 個樣本。</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/dataset.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/dataset.png" data-sub-html="<h2>[Figure 4] Cambrian Vision-Centric Benchmark (CV-Bench). We repurpose standard vision benchmarks to evaluate the fundamental 2D and 3D visual understanding of MLLMs.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/dataset.png'    height="485" width="1600"></a><figcaption class="image-caption">[Figure 4] Cambrian Vision-Centric Benchmark (CV-Bench). We repurpose standard vision benchmarks to evaluate the fundamental 2D and 3D visual understanding of MLLMs.</figcaption>
+    </figure>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/task-type.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/task-type.png" data-sub-html="<h2>[Table 1] Breakdown of the 2D and 3D tasks evaluated in the Cambrian Vision-Centric Benchmark (CV-Bench). The examples are sourced from ADE20K, COCO, and Omni3D.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/task-type.png'    height="473" width="1600"></a><figcaption class="image-caption">[Table 1] Breakdown of the 2D and 3D tasks evaluated in the Cambrian Vision-Centric Benchmark (CV-Bench). The examples are sourced from ADE20K, COCO, and Omni3D.</figcaption>
+    </figure>
+<p>從上圖 Figure 4 和上表 Table 1 可以發現，CV-Bench 衡量了 VLM 在 2D 的視覺能力（Spatial Relationship 和 Object Count）和 3D 的視覺能力（Depth Order 和 Relative Distance）。此外，作者們也相當用心，CV-Bench 裡面的每一個 Question 都是有人工看過的（根據他們論文中的說法）！</p>
+<h2 id="分析-2不同類型的-visual-encoder-如何影響-vlm-的視覺能力" class="headerLink">
+    <a href="#%e5%88%86%e6%9e%90-2%e4%b8%8d%e5%90%8c%e9%a1%9e%e5%9e%8b%e7%9a%84-visual-encoder-%e5%a6%82%e4%bd%95%e5%bd%b1%e9%9f%bf-vlm-%e7%9a%84%e8%a6%96%e8%a6%ba%e8%83%bd%e5%8a%9b" class="header-mark"></a>5 分析 2：不同類型的 Visual Encoder 如何影響 VLM 的視覺能力</h2><figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder.png" data-sub-html="<h2>[Figure 6] Evaluating Visual Representations with MLLMs While language-supervised models outperform self-supervised or other models, a well-trained self-supervised model like DINOv2 can also achieve competitive performance on vision-centric tasks.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder.png'    height="677" width="1600"></a><figcaption class="image-caption">[Figure 6] Evaluating Visual Representations with MLLMs While language-supervised models outperform self-supervised or other models, a well-trained self-supervised model like DINOv2 can also achieve competitive performance on vision-centric tasks.</figcaption>
+    </figure>
+<p>有了可以真正衡量 VLM 的視覺能力的 Benchmark 後，作者採用<strong>兩階段（Two Stage）的訓練</strong>，來比較不同類型的 Visual Encoder 對於 VLM 在不同 Benchmark 上的表現。所謂兩階段（Two Stage）訓練的意思是：</p>
+<ul>
+<li><strong>第一階段（Pre-Training Stage）</strong>：將 VLM 中的 Visual Encoder 和 Large Language Model 的參數都 Freeze，<strong>透過 Adapter Data 訓練 Connector</strong></li>
+<li><strong>第二階段（Fine-Tuning Stage）</strong>：將 VLM 中的 Visual Encoder 的參數 Freeze，<strong>透過 Instruction-Tuning Data 訓練 Connector 和 Large Language Model</strong></li>
+</ul>
+<p>換句話說，在這兩階段的訓練方式中，VLM 中的 Visual Encoder 都是被 Freeze 的！</p>
+<p>從上圖 Figure 6 可以發現 Language-Supervised Model（ex. <a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener noreferrer">CLIP</a>）比 Self-Supervised Model（ex. <a href="https://arxiv.org/abs/2104.14294" target="_blank" rel="noopener noreferrer">DINO</a>）表現得更好，且在 Chat 以及 OCR-Related 的問題上有更好的表現。</p>
+<p>這主要是因為 <strong>CLIP 這種 Language-Supervised Model 在訓練時，就已經會學習到很多圖片和文字的關係</strong>，因此更擅長理解圖像中的文字（OCR-Related Task），但是 Self-Supervised Model 在訓練都只有看過圖片的資訊而已。作者也有提到，CLIP-Based Model 之所以可以表現更好，很有可能也是因為它們的訓練資料通常比 Self-Supervised Model 多很多。</p>
+<p>此外，不管是 Language-Supervised 或 Self-Supervised 的 Visual Encoder 亦或是 ViT-Based 或是 ConvNet-Based 的 Visual Encoder，提高圖像解析度對 VLM 在 Vision-Centric Benchmark 的表現會更好。我發現到這裡的分析結果，也符合 Apple 於 2024/04 所發表的 <a href="https://arxiv.org/abs/2403.09611" target="_blank" rel="noopener noreferrer">MM1</a> 中所提出的觀點！</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/clip-dino.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/clip-dino.png" data-sub-html="<h2>[Figure 7] Continued Fine-Tuning Narrows the Gap Between CLIP and DINOv2.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/clip-dino.png'    height="468" width="1600"></a><figcaption class="image-caption">[Figure 7] Continued Fine-Tuning Narrows the Gap Between CLIP and DINOv2.</figcaption>
+    </figure>
+<p>雖然說 Language-Supervised Model（ex. CLIP）在 VLM Benchmark 上的表現普遍勝過 Self-Supervised Model（ex. DINOv2），但是前面有提到這有可能是因為 CLIP 在訓練階段所用的訓練資料量比較多的原因。</p>
+<p>因此，作者在上圖 Figure 7 中呈現，以 DINOv2 代表 Self-Supervised Model 作為 VLM 的 Visual Encoder 的話，如果在 Fine-Tuning Stage 將其 Unfreeze，然後使用更多的 Instruction Following Data，就可以縮小 DINOv2-based VLM 和 CLIP-based VLM 的表現差距。</p>
+<p>從這邊的分析所得到的 Finding：</p>
+<div class="details admonition success open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/></svg></span>Finding<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">Language-Supervised Model 更擅長理解圖像中的文字，在 OCR-Related 的問題上比 Self-Supervised Model 表現得更好。此外，無論哪一種 Visual Encoder，提高圖像解析度對 VLM 都有好的影響</div></div></div>
+<h2 id="分析-3vlm-的訓練方式--one-stage-vs-two-stage" class="headerLink">
+    <a href="#%e5%88%86%e6%9e%90-3vlm-%e7%9a%84%e8%a8%93%e7%b7%b4%e6%96%b9%e5%bc%8f--one-stage-vs-two-stage" class="header-mark"></a>6 分析 3：VLM 的訓練方式 — One Stage vs. Two Stage</h2><p>分析了 VLM 中不同 Visual Encoder 的影響後，作者們接著研究如何有效的訓練 VLM。更具體的來說，VLM 的訓練究竟是一個階段（One Stage）還是兩階段（Two Stage）比較好。</p>
+<p>在上文中我們已經介紹過兩階段訓練，其實就是先在 Pre-Training 階段訓練 Connector，接著在 Fine-Tuning 階段訓練 Connector 和 LLM。然而，是否真的需要先在 Pre-Training 階段訓練 Connector，也有<a href="https://arxiv.org/abs/2402.07865" target="_blank" rel="noopener noreferrer">研究</a>提出不同的看法。</p>
+<p>因此，在這個小節中所說的一階段（One Stage）訓練，就是沒有特別先透過 Pre-Training 階段訓練 Connector，而是直接進入 Fine-Tuning 階段訓練 Connector 和 LLM。 作者在這部分的實驗中，以 Vicuna-1.5-7B 作為 LLM Backbone，並且搭配下表 Table 9 中所列出的 23 種 Visual Encoder：</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder-type.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder-type.png" data-sub-html="<h2>[Table 9] Catalog of all vision backbones tested. &lsquo;I&rsquo; denotes that the visual tokens have been interpolated down to the specified length.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder-type.png'    height="1239" width="1600"></a><figcaption class="image-caption">[Table 9] Catalog of all vision backbones tested. &lsquo;I&rsquo; denotes that the visual tokens have been interpolated down to the specified length.</figcaption>
+    </figure>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder-bench.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder-bench.png" data-sub-html="<h2>[Figure 5] Training Recipe Impact on Performance. Boxplots show benchmark scores across categories for different visual encoders (Language-Supervised, Self-Supervised, Other) and training recipes (freezing/unfreezing visual encoders with varying adapter data amounts).</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-encoder-bench.png'    height="902" width="1600"></a><figcaption class="image-caption">[Figure 5] Training Recipe Impact on Performance. Boxplots show benchmark scores across categories for different visual encoders (Language-Supervised, Self-Supervised, Other) and training recipes (freezing/unfreezing visual encoders with varying adapter data amounts).</figcaption>
+    </figure>
+<p>在上圖 Figure 5 中的實驗主要是呈現 3 種類型的 Visual Encoder（Table 9 中呈現）所形成的 VLM，透過 4 種不同的訓練方式（0M＿雪花、0.5M＿雪花、1.2M＿雪花、1.2M＿火焰）所得到的 VLM 在 Benchmark 上的表現。其中，以下為每一種訓練方式的意義：</p>
+<ul>
+<li><strong>0M_雪花</strong>：在 Pre-Training 階段中，將 Visual Encoder 的參數 <strong>Freeze</strong>，並且使用 <strong>0M</strong> 的 Adapter Data 訓練 Connector。其實就是相當於<strong>一階段（One Stage）訓練</strong> — 沒有 Pre-Training 階段，直接進行 Fine-Tuning 階段</li>
+<li><strong>0.5M_雪花</strong>：在 Pre-Training 階段中，將 Visual Encoder 的參數 <strong>Freeze</strong>，並且使用 <strong>0.5M</strong> 的 Adapter Data 訓練 Connector。屬於<strong>兩階段（Two Stage）訓練</strong></li>
+<li><strong>1.2M_雪花</strong>：在 Pre-Training 階段中，將 Visual Encoder 的參數 <strong>Freeze</strong>，並且使用 <strong>1.2M</strong> 的 Adapter Data 訓練 Connector。屬於<strong>兩階段（Two Stage）訓練</strong></li>
+<li><strong>1.2M_火焰：<strong>在 Pre-Training 階段中，將 Visual Encoder 的參數 <strong>Unfreeze</strong>，並且使用 <strong>1.2M</strong> 的 Adapter Data 訓練 Connector。屬於</strong>兩階段（Two Stage）訓練</strong></li>
+</ul>
+<p>從上圖 Figure 5 可以發現，不管哪一種 Visual Encoder 以及 Benchmark，&ldquo;0M_雪花&rdquo; 這種訓練方式的表現相對其他而言較差，代表兩階段（Two Stage）的訓練確實可以幫助 VLM 表現得更好。</p>
+<p>此外，在 Pre-Training 階段中，將 Visual Encoder 的參數 Freeze（雪花）的情況下，使用更多 Adapter Data（0M ⭢ 0.5M <strong>⭢</strong> 1.2M），VLM 的表現也會愈好。</p>
+<p>最後，比較 &ldquo;1.2M＿雪花&rdquo; 與 &ldquo;1.2M＿火焰&rdquo; 可以發現後者有較好的表現，說明了如果在 Pre-Training 階段中，將 Visual Encoder 的參數 Unfreeze 也可以進一步提升VLM 的表現！</p>
+<p>從這邊的分析所得到的 Finding：</p>
+<div class="details admonition success open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/></svg></span>Finding<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">在 Fine-Tune VLM 中的 Connector 與 LLM 之前，先 Pre-Train Connector 確實能夠提升 VLM 的表現；在 Pre-Training 階段中，訓練資料（Adapter Data）愈多，也可以提升 VLM 的表現；在 Pre-Training 階段中，除了訓練 Connector 之外，也將 Visual Encoder 一起加入訓練也能夠提升 VLM 的表現</div></div></div>
+<h2 id="分析-4vlm-中-visual-encoder-的數量--一個-visual-encoder-vs-多個-visual-encoder" class="headerLink">
+    <a href="#%e5%88%86%e6%9e%90-4vlm-%e4%b8%ad-visual-encoder-%e7%9a%84%e6%95%b8%e9%87%8f--%e4%b8%80%e5%80%8b-visual-encoder-vs-%e5%a4%9a%e5%80%8b-visual-encoder" class="header-mark"></a>7 分析 4：VLM 中 Visual Encoder 的數量 — 一個 Visual Encoder vs. 多個 Visual Encoder</h2><p>從 Figure 6 的實驗中可以看到不同類型的 Visual Encoder（Language-Supervised、Self-Supervised、Other）在不同的 Benchmark 上會有不太一樣的表現，代表它們可能擅長從圖像中汲取不同的特徵。作者們就思考那有沒有可能將多個 Visual Encoder 結合在一起，來得到圖像中不同的特徵，進而提升 VLM 在所有 Benchmark 上的整體表現呢？</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-backbone.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-backbone.png" data-sub-html="<h2>[Table 3] | All Benchmark Results for Model Ensemble with 1.2M Adapter Data &#43; 737K Instruction Tuning Data.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/visual-backbone.png'    height="457" width="1600"></a><figcaption class="image-caption">[Table 3] | All Benchmark Results for Model Ensemble with 1.2M Adapter Data + 737K Instruction Tuning Data.</figcaption>
+    </figure>
+<p>從上表 Table 3 就可以發現：</p>
+<div class="details admonition success open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/></svg></span>Finding<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">結合愈多 Visual Encoder 整體上可以讓 VLM 表現得更好！</div></div></div>
+<h2 id="分析-5vlm-中新的-connector-design--spatial-vision-aggregator-sva" class="headerLink">
+    <a href="#%e5%88%86%e6%9e%90-5vlm-%e4%b8%ad%e6%96%b0%e7%9a%84-connector-design--spatial-vision-aggregator-sva" class="header-mark"></a>8 分析 5：VLM 中新的 Connector Design — Spatial Vision Aggregator (SVA)</h2><p>在上一個小節（分析 4）中，已經知道把多個不同類型的 Visual Encoder 的資訊結合在一起，可以提升 VLM 的表現。然而，由於每個 Visual Encoder 的輸入圖像解析度不同，導致輸出的 Token 數量也不一致。</p>
+<p>如果要將這些不同的 Visual Encoder 的輸出結合在一起，作者在上一個小節（分析 4）中採取最 Naive 的做法：將所有 Visual Encoder 的輸出 Token 透過 Interpolation 方式變成 576 個 Token，然後在 Feature 的維度上將這些 Token Concatenate 在一起。</p>
+<p>然而，在 Interpolation 的過程中，就會造成資訊的流失；此外，直接將不同 Visual Encoder 的輸出直接 Concatenate 在一起，也相當於以「相同」的重要性來看待不同 Visual Encoder 的輸出。因此，在這個小節中介紹作者所設計的 Connector，來將多個 Visual Encoder 的輸出更有效率的結合（Aggregate）在一起，以提升 VLM 的視覺能力。</p>
+<p>我認為本篇論文所提出的 Connector 設計的味道上就很類似 <a href="https://arxiv.org/pdf/2301.12597" target="_blank" rel="noopener noreferrer">BLIP-2 中 Q-Former</a> 那樣的操作：設定一個 <strong>Fixed-Sized &amp; Learnable 的 Query Token</strong>，然後把 Visual Encoder 的輸出 Token 當作 Key Token 和 Value Token，進行 <strong>Cross-Attention</strong> 的運算，讓 Query Token 可以 Attend 到不同的 Visual Encoder 所輸出的圖像資訊。</p>
+<p>這樣的好處很明顯，由於 Query Token 是 Learnable 的，模型可以自己學習從多個 Visual Encoder 中取出資訊，給予不同的 Visual Encoder 的輸出不同的重要性；此外，由於 Query Token 是 Fixed-Sized 的，也可以避免因為 Visual Encoder 數量變多，而使得最後 Concatenate 出來的 Tensor 的維度也變大。</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sva.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sva.png" data-sub-html="<h2>[Figure 8] Spatial Vision Aggregator (SVA). We propose SVA, a dynamic and spatially-aware connector that integrates multiple vision features with LLMs while reducing the number of tokens.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sva.png'    height="705" width="1600"></a><figcaption class="image-caption">[Figure 8] Spatial Vision Aggregator (SVA). We propose SVA, a dynamic and spatially-aware connector that integrates multiple vision features with LLMs while reducing the number of tokens.</figcaption>
+    </figure>
+<p>上圖 Figure 8（左圖）呈現的是本篇論文所設計的 Connector。Connector 中會有一個 <code>L x L</code> 的 Fixed-Size &amp; Learnable Query Token Sequence（<code>X</code>）。這個 Sequence 中總共有 <code>L x L</code> 個 Query，每一個 Query 都是 C Dimension。</p>
+<p>此外，Figure 8（左圖）中也有 <code>N</code> 個 Visual Encoder，每一個 Visual Encoder 都會輸出一個 <code>J x J</code> 的 Visual Tokens。 如同前文所述，為了要讓 Query 可以從不同的 Visual Encoder 上取得圖像的特徵資訊，我們需要讓 Query 與 Visual Token（代表 Key 和 Value）進行 Cross-Attention。</p>
+<p>但是有趣的是，作者在進行 Cross-Attention 時，<strong>希望保留原來圖像特徵在空間****上（Spatial）的相對關係，因此一個 Query Token 只會和特定的一些 Key/Value Tokens 進行 Cross-Attention</strong>。</p>
+<p>舉例來說，<code>X</code> 中的藍色框框（其中一個 Query Token），就只會和 <code>F</code> 中的紅色框框（Key、Value Token）進行 Cross-Attention。紅色框框的位置算法也很簡單，就是看那一個 Visual Encoder 的 Output Sequence 是 Query Sequence 的幾倍大就可以知道。</p>
+<p>舉例來說，假設 <code>Fk</code> 的尺寸是 <code>X</code> 的 mk 倍，那麼 <code>X</code> 中位於 <code>(i, j)</code> 的 Query Token，就會對應到 <code>Fk</code> 中以下範圍的 Visual Token（Key、Value Token）：</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/key-value.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/key-value.png" data-sub-html="<h2>Compute position of key/value tokens for current query token</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/key-value.png'    height="82" width="1600"></a><figcaption class="image-caption">Compute position of key/value tokens for current query token</figcaption>
+    </figure>
+<p>Query 和 Key、Value 進行 Cross-Attention 時，運算過程如下方 Equation (1) 所示。<code>X</code> 會有一個 Query Weight Matrix，每一個 Visual Encoder 都會有自己的 Key Weight Matrix 和 Value Weight Matrix，分別將 Visual Token 轉為 Key 與 Value：</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/ep1.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/ep1.png" data-sub-html="<h2>Cross Attention of query (from X) and key/value (from visual tokens)</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/ep1.png'    height="403" width="1600"></a><figcaption class="image-caption">Cross Attention of query (from X) and key/value (from visual tokens)</figcaption>
+    </figure>
+<p>到目前為止，我們已經介紹完本篇論文所提出的 Spatial Vision Aggregator (SVA) 的概念！然而，可以發現 Query Sequence 中的一個 Query 其實需要去 Attend 到很多 Visual Tokens。</p>
+<p>換句話說，一個 Query Token 需要記載的資訊量偏多。如果上述的 Cross-Attention 運算「只進行一次」的話，也有可能會導致得到的 Query Sequence 沒有辦法消化不同 Visual Encoder 輸出的所有資訊，造成圖像資訊的流失。</p>
+<p>為了解決這個問題，如 Figure 8（右圖）所示，作者把這個 Connector 不只放在 LLM 一開始的地方，也放在 LLM 中的每一層。讓每次 Query Token 都還可以去跟這些 Visual Encoder 的輸出進行 Cross-Attention。</p>
+<p>從這邊的分析所得到的 Finding：</p>
+<div class="details admonition success open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/></svg></span>Finding<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">在設計 VLM 中的 Connector 時，考慮圖像特徵的空間資訊整合多個 Visual Encoder 的輸出，並將圖像資訊融入到 LLM 之中（而不只是在 LLM 之前）有助於提升 VLM 的視覺能力</div></div></div>
+<h2 id="開源-2high-quality-instruction-tuning-data--cambrian-7m" class="headerLink">
+    <a href="#%e9%96%8b%e6%ba%90-2high-quality-instruction-tuning-data--cambrian-7m" class="header-mark"></a>9 開源 2：High-Quality Instruction-Tuning Data — Cambrian-7M</h2><p>當我們把 LLM 訓練成 VLM 時，會將 LLM Fine-Tune 在 Vision-Language 的 Instruction Following Data 上，但是這會導致 LLM 的對話能力降低（也就是發生了 Catastrophic Forgetting），常見的做法是在 Instruction Following Data 中加入一些 Language-Only 的 Instruction-Following Data。</p>
+<p>本篇論文收集了所有公開的 Instruction-Tuning Dataset，並透過一些 Data Engine &amp; Prompting 的方法得到更多 Vision Question-Answer 樣本，然後整理出 Cambrian-10M 的資料集。最後再透過一些 Data Curation 方法，得到 High-Quality 的 Instruction-Tuning Data — <a href="https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment" target="_blank" rel="noopener noreferrer">Cambrian-7M</a>。</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/ds.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/ds.png" data-sub-html="<h2>[Table 7] Performance improves with better instruction tuning data curation.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/ds.png'    height="212" width="1600"></a><figcaption class="image-caption">[Table 7] Performance improves with better instruction tuning data curation.</figcaption>
+    </figure>
+<p>從上表 Table 7 可以看到 VLM 訓練在 Cambrian-7M 和 <a href="https://huggingface.co/datasets/liuhaotian/LLaVA-Instruct-150K/blob/main/llava_v1_5_mix665k.json" target="_blank" rel="noopener noreferrer">LLaVA-665K</a> 在 Benchmark 上表現的差異。</p>
+<h2 id="分析-6透過-system-prompt-控制-vlm-的輸出內容" class="headerLink">
+    <a href="#%e5%88%86%e6%9e%90-6%e9%80%8f%e9%81%8e-system-prompt-%e6%8e%a7%e5%88%b6-vlm-%e7%9a%84%e8%bc%b8%e5%87%ba%e5%85%a7%e5%ae%b9" class="header-mark"></a>10 分析 6：透過 System Prompt 控制 VLM 的輸出內容</h2><p>作者發現當成功的透過兩階段（Two Stage）訓練把 LLM 訓練成 VLM 後，VLM 容易變成一個「Answer Machine」。如下圖 Figure 12（w/o system prompt）所示，輸入一個 Question 到 VLM 中，VLM 輸出一個簡短直接的答案：</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sp.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sp.png" data-sub-html="<h2>[Figure 12] System prompts in Cambrian-7M improve chat ability while retaining strong question-answering performance.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sp.png'    height="1054" width="1600"></a><figcaption class="image-caption">[Figure 12] System prompts in Cambrian-7M improve chat ability while retaining strong question-answering performance.</figcaption>
+    </figure>
+<p>會有這樣的狀況，主要是因為在 VLM 的 Fine-Tuning 階段中，我們所準備的 Instruction-Following Dataset（<a href="https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment" target="_blank" rel="noopener noreferrer">Cambrian-7M</a>）中包含很多 Visual Question-Answer 樣本。</p>
+<p>而很多樣本的 Answer 比較簡短，使得 VLM 也學習到了只透過簡短的方式來回答 Visual Question。 針對此問題，作者透過替 Instruction-Following Dataset（<a href="https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment" target="_blank" rel="noopener noreferrer">Cambrian-7M</a>）中的每一個資料集加上「System Prompt」的方式來解決這個問題。</p>
+<p>舉例來說，如果這個訓練樣本的 Answer 是很簡短的，那就會加上一個 System Prompt：&ldquo;Answer the question using a single word or phrase.” <strong>讓 VLM 學習根據 System Prompt 修改自己的輸出</strong>。</p>
+<p>在下表 Table 16 中，呈現的是每一個資料集所對應的 System Prompt：</p>
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sp-2.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sp-2.png" data-sub-html="<h2>[Table 16] Response formatting prompts for Cambrian Data</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/sp-2.png'    height="1699" width="1600"></a><figcaption class="image-caption">[Table 16] Response formatting prompts for Cambrian Data</figcaption>
+    </figure>
+<p>如上圖 Figure 12（w/ system prompt）的範例所示，透過具有正確的 System Prompt 的 Instruction-Following Dataset 來訓練 VLM，可以幫助 VLM 在 Inference 時根據 System Prompt 修改自己的輸出。從這邊的分析所得到的 Finding：</p>
+<div class="details admonition success open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/></svg></span>Finding<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">根據 Instruction-Following Dataset 中 VQA 樣本的 Answer 長度給予適合的 System Prompt，可以幫助 VLM 學習透過 System Prompt 來調整輸出</div></div></div>
+<h2 id="開源-3vision-language-model--cambrian-1" class="headerLink">
+    <a href="#%e9%96%8b%e6%ba%90-3vision-language-model--cambrian-1" class="header-mark"></a>11 開源 3：Vision-Language Model — Cambrian-1</h2><p>最後，作者透過前面的所有的分析，訓練一個全新的 VLM — <a href="https://huggingface.co/collections/nyu-visionx/cambrian-1-models-666fa7116d5420e514b0f23c" target="_blank" rel="noopener noreferrer">Cambrian-1</a>。Cambrian-1 基於不同的 LLM 有不同的規模（8B、13B、34B）。</p>
+<p>Cambrian-1 透過其所設計的 Connector (SVA)，將四種不同 Visual Encoder 整合在一起。在訓練上，Cambrian-1 採取兩階段（Two Stage）訓練，在 Pre-Training 階段中使用了 2.5M 的 Adapter Data；在 Fine-Tuning 階段中使用了自己建立的 <a href="https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment" target="_blank" rel="noopener noreferrer">Cambrian-7M</a>。</p>
+<p>在下表 Table 8 中可以看到 Cambrian-1 的表現相當厲害：
+<figure><a class="lightgallery" href="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/final-bench.png" title="" data-thumbnail="/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/final-bench.png" data-sub-html="<h2>Cambrian-1 excels in benchmarks, outperforming open-source models and competing with proprietary ones, using only 576 visual tokens.</h2>"><img  loading="lazy" src='/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/final-bench.png'    height="746" width="1600"></a><figcaption class="image-caption">Cambrian-1 excels in benchmarks, outperforming open-source models and competing with proprietary ones, using only 576 visual tokens.</figcaption>
+    </figure></p>
+<h2 id="結語" class="headerLink">
+    <a href="#%e7%b5%90%e8%aa%9e" class="header-mark"></a>12 結語</h2><p>在本篇文章中，我們分享了 <a href="https://arxiv.org/abs/2406.16860" target="_blank" rel="noopener noreferrer">Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs</a> 這篇論文，作者以「視覺能力」的角度出發，分析 VLM 中各種面向的設計，包含 Benchmark、Visual Encoder、Connector、Training Recipe 以及 Instruction-Following Data，理解這些變因是如何影響 VLM 的視覺能力。相信讀完這篇文章的你，一定也相當佩服作者們可以將 VLM 的研究做得這麼徹底，也希望你也從中得到滿滿的收穫！</p>
+<p>以下是這篇論文的 Key Takeaways：</p>
+<ul>
+<li>目前多數的 VLM Benchmark 都沒有真的衡量 VLM 的「視覺能力」，而太大程度的在衡量「語言能力」。因此，本篇論文也製作並開源了以衡量 VLM 視覺能力的 Visual-Centric Benchmark（<a href="https://huggingface.co/datasets/nyu-visionx/CV-Bench" target="_blank" rel="noopener noreferrer">CV-Bench</a>）</li>
+<li>Language-Supervised Model（ex. CLIP）更擅長理解圖像中的文字，因此在 OCR-Related 的問題上比 Self-Supervised Model（ex. DINO）表現得更好</li>
+<li>無論哪一種 Visual Encoder，提高圖像解析度對 VLM 都有好的影響</li>
+<li>在 Fine-Tune VLM 中的 Connector 與 LLM 之前，先 Pre-Train Connector 確實能夠提升 VLM 的表現</li>
+<li>在 Pre-Training 階段中，訓練資料（Adapter Data）愈多，也可以提升 VLM 的表現</li>
+<li>在 Pre-Training 階段中，除了訓練 Connector 之外，也將 Visual Encoder 一起加入訓練也能夠提升 VLM 的表現</li>
+<li>在 VLM 中結合愈多不同類型的 Visual Encoder 能夠提升 VLM 的視覺能力進而在 Benchmark 上表現得更好</li>
+<li>在設計 VLM 中的 Connector 時，考慮圖像特徵的空間資訊整合多個 Visual Encoder 的輸出，並將圖像資訊融入到 LLM 之中（而不只是在 LLM 之前）有助於提升 VLM 的視覺能力</li>
+<li>根據 Instruction-Following Dataset 中 VQA 樣本的 Answer 長度給予適合的 System Prompt，可以幫助 VLM 學習透過 System Prompt 來調整輸出</li>
+<li>作者開源了以下資料集與模型：
+<ul>
+<li><a href="https://huggingface.co/datasets/nyu-visionx/CV-Bench" target="_blank" rel="noopener noreferrer">CV-Bench</a>：衡量 VLM 視覺能力的 Visual-Centric Benchmark</li>
+<li><a href="https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment" target="_blank" rel="noopener noreferrer">Cambrian-7M</a>：High-Quality Instruction-Tuning Data</li>
+<li><a href="https://huggingface.co/collections/nyu-visionx/cambrian-1-models-666fa7116d5420e514b0f23c" target="_blank" rel="noopener noreferrer">Cambrian-1</a>：State-Of-The-Art Vision-Language Model</li>
+</ul>
+</li>
+</ul></div>
+
+        <div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新於 2025-05-10</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line print:!tw-hidden">
+            <div class="post-info-md"><span><a class="link-to-mardown" href=/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/index.md target="_blank" rel="noopener noreferrer">閱讀原始文檔</a>
+                    </span></div>
+            <div class="post-info-share"><button title="分享到 Twitter" data-sharer="twitter" data-url="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" data-title="[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs" data-hashtags="Vision Language Model"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></button><button title="分享到 Facebook" data-sharer="facebook" data-url="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" data-hashtag="Vision Language Model"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></button><button title="分享到 Linkedin" data-sharer="linkedin" data-url="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></button><button title="分享到 Hacker News" data-sharer="hackernews" data-url="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" data-title="[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M0 32v448h448V32H0zm21.2 197.2H21c.1-.1.2-.3.3-.4 0 .1 0 .3-.1.4zm218 53.9V384h-31.4V281.3L128 128h37.3c52.5 98.3 49.2 101.2 59.3 125.6 12.3-27 5.8-24.4 60.6-125.6H320l-80.8 155.1z"/></svg></button><button title="分享到 Reddit" data-sharer="reddit" data-url="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M201.5 305.5c-13.8 0-24.9-11.1-24.9-24.6 0-13.8 11.1-24.9 24.9-24.9 13.6 0 24.6 11.1 24.6 24.9 0 13.6-11.1 24.6-24.6 24.6zM504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zm-132.3-41.2c-9.4 0-17.7 3.9-23.8 10-22.4-15.5-52.6-25.5-86.1-26.6l17.4-78.3 55.4 12.5c0 13.6 11.1 24.6 24.6 24.6 13.8 0 24.9-11.3 24.9-24.9s-11.1-24.9-24.9-24.9c-9.7 0-18 5.8-22.1 13.8l-61.2-13.6c-3-.8-6.1 1.4-6.9 4.4l-19.1 86.4c-33.2 1.4-63.1 11.3-85.5 26.8-6.1-6.4-14.7-10.2-24.1-10.2-34.9 0-46.3 46.9-14.4 62.8-1.1 5-1.7 10.2-1.7 15.5 0 52.6 59.2 95.2 132 95.2 73.1 0 132.3-42.6 132.3-95.2 0-5.3-.6-10.8-1.9-15.8 31.3-16 19.8-62.5-14.9-62.5zM302.8 331c-18.2 18.2-76.1 17.9-93.6 0-2.2-2.2-6.1-2.2-8.3 0-2.5 2.5-2.5 6.4 0 8.6 22.8 22.8 87.3 22.8 110.2 0 2.5-2.2 2.5-6.1 0-8.6-2.2-2.2-6.1-2.2-8.3 0zm7.7-75c-13.6 0-24.6 11.1-24.6 24.9 0 13.6 11.1 24.6 24.6 24.6 13.8 0 24.9-11.1 24.9-24.6 0-13.8-11-24.9-24.9-24.9z"/></svg></button><button title="分享到 Line" data-sharer="line" data-url="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" data-title="[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs"><svg class="icon" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>LINE</title><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg></button><button title="分享到 Telegram" data-sharer="telegram" data-url="http://localhost:1313/paper-intro/cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/" data-title="[論文介紹] Cambrian-1: A Fully Open, Vision-Centric Exploration of Multimodal LLMs" data-web><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M446.7 98.6l-67.6 318.8c-5.1 22.5-18.4 28.1-37.3 17.5l-103-75.9-49.7 47.8c-5.5 5.5-10.1 10.1-20.7 10.1l7.4-104.9 190.9-172.5c8.3-7.4-1.8-11.5-12.9-4.1L117.8 284 16.2 252.2c-22.1-6.9-22.5-22.1 4.6-32.7L418.2 66.4c18.4-6.9 34.5 4.1 28.5 32.2z"/></svg></button></div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg>&nbsp;<a href="/tags/vision-language-model/">Vision Language Model</a></section>
+        <section class="print:!tw-hidden">
+            <span><button class="tw-text-fgColor-link-muted hover:tw-text-fgColor-link-muted-hover" onclick="window.history.back();">返回</button></span>&nbsp;|&nbsp;<span><a href="/">主頁</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav print:tw-hidden"><a href="/paper-intro/multi-token/" class="prev" rel="prev" title="[論文介紹] Better &amp; Faster Large Language Models via Multi-token Prediction"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"/></svg>[論文介紹] Better &amp; Faster Large Language Models via Multi-token Prediction</a>
+            <a href="/python-tutorial/small-integer-cache-in-python/" class="next" rel="next" title="Python 中的 Integer Cache 介紹">Python 中的 Integer Cache 介紹<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></a></div>
+</div>
+</article></main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 448c-110.532 0-200-89.451-200-200 0-110.531 89.451-200 200-200 110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200zm107.351-101.064c-9.614 9.712-45.53 41.396-104.065 41.396-82.43 0-140.484-61.425-140.484-141.567 0-79.152 60.275-139.401 139.762-139.401 55.531 0 88.738 26.62 97.593 34.779a11.965 11.965 0 0 1 1.936 15.322l-18.155 28.113c-3.841 5.95-11.966 7.282-17.499 2.921-8.595-6.776-31.814-22.538-61.708-22.538-48.303 0-77.916 35.33-77.916 80.082 0 41.589 26.888 83.692 78.277 83.692 32.657 0 56.843-19.039 65.726-27.225 5.27-4.857 13.596-4.039 17.82 1.738l19.865 27.17a11.947 11.947 0 0 1-1.152 15.518z"/></svg>2022 - 2025<span class="author">&nbsp;<a href="https://www.linkedin.com/in/johnnyhwu/" target="_blank" rel="noopener noreferrer">Hong-Wei Wu</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span></div>
+            <div class="footer-line"></div>
+            <div class="footer-line">
+            </div>
+        </div></footer><div class="print:!tw-hidden tw-flex tw-flex-col tw-fixed tw-right-4 tw-bottom-4 tw-gap-2"><a href="#back-to-top" id="back-to-top-button" class="tw-transition-opacity tw-opacity-0 tw-block tw-bg-bgColor-secondary tw-rounded-full" style="padding: 0.6rem; line-height: 1.3rem; font-size: 1rem;" title="回到頂部">
+      <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg>
+  </a>
+
+  <button id="toc-drawer-button" class="tw-block tw-bg-bgColor-secondary tw-rounded-full md:tw-hidden" style="padding: 0.6rem; line-height: 1.3rem; font-size: 1rem;">
+      <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/></svg>
+  </button></div>
+<script type="module">
+        (async () => {
+            const supportSpeculationRules = HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules");
+            if (!supportSpeculationRules) {
+              await import("\/lib\/instant.page\/instantpage.min.js");
+            }
+        })();
+    </script><link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="/lib/lightgallery/lightgallery.min.css">
+        <noscript><link rel="stylesheet" href="/lib/lightgallery/lightgallery.min.css"></noscript>
+<script>window.config={"autocomplete.min.js":"/lib/autocomplete/autocomplete.min.js","comment":{},"fuse.min.js":"/lib/fuse/fuse.min.js","lightGallery":{"actualSize":false,"exThumbImage":"data-thumbnail","hideBarsDelay":2000,"selector":".lightgallery","speed":400,"thumbContHeight":80,"thumbWidth":80,"thumbnail":true},"search":{"distance":100,"findAllMatches":false,"fuseIndexURL":"/index.json","highlightTag":"em","ignoreFieldNorm":false,"ignoreLocation":true,"isCaseSensitive":false,"location":0,"maxResultLength":10,"minMatchCharLength":2,"noResultsFound":"沒有找到結果","snippetLength":50,"threshold":0.1,"type":"fuse","useExtendedSearch":false},"sharerjs":true,"table":{"sort":true}};</script><script
+    src="/lib/tablesort/tablesort.min.js"
+    
+  ></script><script
+    src="/lib/lightgallery/lightgallery.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/lightgallery/lg-thumbnail.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/lightgallery/lg-zoom.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/sharer/sharer.min.js"
+    
+  ></script><script
+    src="/js/theme.min.js"
+    
+      defer
+    
+  ></script>
+
+<script type="speculationrules">
+  {
+    "prerender": [
+      {
+        "where": { "href_matches": "/*" },
+        "eagerness": "moderate"
+      }
+    ]
+  }
+</script>
+</body>
+
+</html>

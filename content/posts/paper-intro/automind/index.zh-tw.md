@@ -52,7 +52,9 @@ AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理
 建立了 Knowledge Base 後，接著就是要處理 Retrieval 的問題。最直覺的方法，就是透過比較 Task Description 與 Knowledge Base 中 Approach Description 的 Embedding，來進行 Dense Retrieval，但是這樣的作法明顯效果會很差，因為 Task 與 Approach 之間有時候不會有很強的相關性，導致沒辦法取出有幫助的知識。
 
 {{< admonition tip 補充資訊 >}}
-實際上，這確實也是 Multi-Hop RAG 領域經常遇到的挑戰：針對一個問題，中間需要經過多個步驟的推理（先回答幾個 Intermediate Question）才有辦法得到真正要回答的核心問題，也才有辦法基於這個核心問題，透過 Dense Retrieval 從 Knowledge Base 中取出相關的資料。如果對於 Multi-Hop RAG 初次認識，不妨閱讀 [Demonstrate-Search-Predict](https://arxiv.org/abs/2212.14024) 這篇經典論文！
+實際上，這確實也是 Multi-Hop RAG 領域經常遇到的挑戰：針對一個問題，中間需要經過多個步驟的推理（先回答幾個 Intermediate Question）才有辦法得到真正要回答的核心問題，也才有辦法基於這個核心問題，透過 Dense Retrieval 從 Knowledge Base 中取出相關的資料。
+
+如果對於 Multi-Hop RAG 初次認識，不妨閱讀 [Demonstrate-Search-Predict](https://arxiv.org/abs/2212.14024) 這篇經典論文，或者是另外一篇同樣於 2025 年所發表且方法非常簡單的 [NotesWriting](../notes-writing/)。
 {{< /admonition >}}
 
 在 AutoMind 中，針對 Knowledge Retieval 的方法有些暴力，作者會透過 LLM 事先將每個 **Kaggle Competition Solution** 標上標籤。具體流程是，作者定義了 11 種 Top-Level 的主類別，每種主類別底下又有自己的子類別。讓 LLM 先分辨目前這個 Solution 屬於哪些主類別，再提供相對應的子類別讓 LLM 判斷。作者也透過 [Self-Consistency](https://arxiv.org/abs/2203.11171) 的方法，確保標籤的選擇是穩定的。

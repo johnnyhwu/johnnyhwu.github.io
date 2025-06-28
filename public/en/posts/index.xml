@@ -1,0 +1,44 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>All Posts - DataSci Ocean</title>
+        <link>http://localhost:1313/en/posts/</link>
+        <description>All Posts | DataSci Ocean</description>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><managingEditor>l066858998@gmail.com (Hong-Wei Wu)</managingEditor>
+            <webMaster>l066858998@gmail.com (Hong-Wei Wu)</webMaster><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sat, 28 Jun 2025 00:00:00 &#43;0000</lastBuildDate><atom:link href="http://localhost:1313/en/posts/" rel="self" type="application/rss+xml" /><item>
+    <title>Better &amp; Faster Large Language Models via Multi-token Prediction</title>
+    <link>http://localhost:1313/en/paper-intro/multi-token/</link>
+    <pubDate>Thu, 18 Jul 2024 00:00:00 &#43;0000</pubDate><author>
+        <name>Hong-Wei Wu</name>
+    </author><guid>http://localhost:1313/en/paper-intro/multi-token/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="/paper-intro/multi-token/featured-image.png" referrerpolicy="no-referrer">
+            </div>Explore Meta AI's groundbreaking Multi-Token Prediction Model. This deep dive explains how predicting multiple tokens at once can enhance LLM performance, detailing its unique architecture and clever techniques for reducing GPU memory usage. A must-read for AI and ML enthusiasts.]]></description>
+</item><item>
+    <title>AutoMind: Adaptive Knowledgeable Agent for Automated Data Science</title>
+    <link>http://localhost:1313/en/paper-intro/automind/</link>
+    <pubDate>Sat, 28 Jun 2025 00:00:00 &#43;0000</pubDate><author>
+        <name>Hong-Wei Wu</name>
+    </author><guid>http://localhost:1313/en/paper-intro/automind/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="/paper-intro/automind/featured-image.jpg" referrerpolicy="no-referrer">
+            </div>Explore AutoMind, a state-of-the-art AI agent designed to master complex data science challenges. This deep dive breaks down its powerful LLM-based framework, which uses an expert knowledge base, agentic tree search, and adaptive coding to achieve top results in Kaggle competitions with remarkable efficiency. Learn how the future of automated data science is being shaped.]]></description>
+</item><item>
+    <title>Coding Agents with Multimodal Browsing are Generalist Problem Solvers</title>
+    <link>http://localhost:1313/en/paper-intro/openhands-versa/</link>
+    <pubDate>Mon, 16 Jun 2025 00:00:00 &#43;0000</pubDate><author>
+        <name>Hong-Wei Wu</name>
+    </author><guid>http://localhost:1313/en/paper-intro/openhands-versa/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="featured-image.jpg" referrerpolicy="no-referrer">
+            </div>]]></description>
+</item><item>
+    <title>OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning</title>
+    <link>http://localhost:1313/en/paper-intro/octo-tools/</link>
+    <pubDate>Mon, 02 Jun 2025 00:00:00 &#43;0000</pubDate><author>
+        <name>Hong-Wei Wu</name>
+    </author><guid>http://localhost:1313/en/paper-intro/octo-tools/</guid>
+    <description><![CDATA[<div class="featured-image">
+                <img src="/paper-intro/octo-tools/featured-image.jpg" referrerpolicy="no-referrer">
+            </div>Introducing Agentic AI: OctoTools! Understand how OctoTools enhances the performance of LLM Agents on complex tasks through its well-defined and extensible Tool Cards, and the ingenious interplay between its Planner and Executor.]]></description>
+</item></channel>
+</rss>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noodp" /><title>[論文介紹] MemGPT: Towards LLMs as Operating Systems - DataSci Ocean</title><meta name="Description" content="本篇文章介紹 MemGPT 如何管理 LLM 的 Short-Term 與 Long-Term Memory。說明 MemGPT 如何基於 ReAct-Based Agent，透過連續的 Thinking 以及 Tool Calling 來操作 Core Memory, Chat History, Archival Memory 以及 Recall Memory 等多種不同 Memory 類型，達到 Persistent Conversation 的目的。"><meta property="og:url" content="http://localhost:1313/paper-intro/memgpt/">
+  <meta property="og:site_name" content="DataSci Ocean">
+  <meta property="og:title" content="[論文介紹] MemGPT: Towards LLMs as Operating Systems">
+  <meta property="og:description" content="本篇文章介紹 MemGPT 如何管理 LLM 的 Short-Term 與 Long-Term Memory。說明 MemGPT 如何基於 ReAct-Based Agent，透過連續的 Thinking 以及 Tool Calling 來操作 Core Memory, Chat History, Archival Memory 以及 Recall Memory 等多種不同 Memory 類型，達到 Persistent Conversation 的目的。">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-05-18T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-05-18T11:12:02+08:00">
+    <meta property="article:tag" content="Large Language Model">
+    <meta property="article:tag" content="Agent Memory">
+    <meta property="og:image" content="http://localhost:1313/paper-intro/memgpt/featured-image.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="http://localhost:1313/paper-intro/memgpt/featured-image.png">
+  <meta name="twitter:title" content="[論文介紹] MemGPT: Towards LLMs as Operating Systems">
+  <meta name="twitter:description" content="本篇文章介紹 MemGPT 如何管理 LLM 的 Short-Term 與 Long-Term Memory。說明 MemGPT 如何基於 ReAct-Based Agent，透過連續的 Thinking 以及 Tool Calling 來操作 Core Memory, Chat History, Archival Memory 以及 Recall Memory 等多種不同 Memory 類型，達到 Persistent Conversation 的目的。">
+<meta name="application-name" content="DataSci Ocean">
+<meta name="apple-mobile-web-app-title" content="DataSci Ocean">
+
+<meta name="theme-color" content="#f8f8f8">
+
+
+<meta name="google-site-verification" content="JjNbQx4bl50OFX5gOcj61_gSVFqJ0d9LdfGLKQ2XX9I" /><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<link rel="canonical" href="http://localhost:1313/paper-intro/memgpt/" /><link rel="prev" href="http://localhost:1313/paper-intro/mem0/" /><link rel="next" href="http://localhost:1313/paper-intro/pre-act/" />
+<link rel="stylesheet" href="/css/main.min.css"><link rel="stylesheet" href="/css/style.min.css"><script type="application/ld+json">{"@context": "https://schema.org","@type": "BlogPosting",
+        "headline": "[論文介紹] MemGPT: Towards LLMs as Operating Systems",
+        "inLanguage": "zh-TW",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "http://localhost:1313/paper-intro/memgpt/"
+        },"image": [{
+                            "@type": "ImageObject",
+                            "url": "http://localhost:1313/paper-intro/memgpt/featured-image.png",
+                            "width":  790 ,
+                            "height":  192 
+                        }],"genre": "posts","keywords":["Large Language Model","Agent Memory"],"wordcount":  2932 ,
+        "url": "http://localhost:1313/paper-intro/memgpt/","datePublished": "2025-05-18T00:00:00+00:00","dateModified": "2025-05-18T11:12:02+08:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
+            "@type": "Organization",
+            "name": "Hong-Wei Wu","logo": {
+                    "@type": "ImageObject",
+                    "url": "http://localhost:1313/images/avatar.png",
+                    "width":  1080 ,
+                    "height":  1080 
+                }},"author": {
+                "@type": "Person",
+                "name": "Hong-Wei Wu",
+                "url": "https://www.linkedin.com/in/johnnyhwu/"
+            },"description": "本篇文章介紹 MemGPT 如何管理 LLM 的 Short-Term 與 Long-Term Memory。說明 MemGPT 如何基於 ReAct-Based Agent，透過連續的 Thinking 以及 Tool Calling 來操作 Core Memory, Chat History, Archival Memory 以及 Recall Memory 等多種不同 Memory 類型，達到 Persistent Conversation 的目的。"
+    }</script></head>
+
+
+<body data-instant-intensity="viewport" class="tw-flex tw-min-h-screen tw-flex-col"><script type="text/javascript">
+    function setTheme(theme) {
+      document.body.setAttribute('theme', theme); 
+      document.documentElement.className = theme;
+      document.documentElement.style.setProperty('color-scheme', theme === 'light' ? 'light' : 'dark');
+      if (theme === 'light') {
+        document.documentElement.classList.remove('tw-dark')
+      } else {
+        document.documentElement.classList.add('tw-dark')
+      }
+      window.theme = theme;   
+      window.isDark = window.theme !== 'light' 
+    }
+    function saveTheme(theme) {window.localStorage && localStorage.setItem('theme', theme);}
+    function getMeta(metaName) {const metas = document.getElementsByTagName('meta'); for (let i = 0; i < metas.length; i++) if (metas[i].getAttribute('name') === metaName) return metas[i]; return '';}
+    if (window.localStorage && localStorage.getItem('theme')) {
+        let theme = localStorage.getItem('theme');
+        if (theme === 'light' || theme === 'dark') {
+        setTheme(theme);
+        } else {
+            if ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                setTheme('dark');
+            } else {
+                setTheme('light');
+            }
+        }
+      } else { 
+        if ('auto' === 'light' || 'auto' === 'dark') 
+            setTheme('auto'), saveTheme('auto'); 
+        else saveTheme('auto'), window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? setTheme('dark') : setTheme('light');
+    }
+    let metaColors = {'light': '#f8f8f8','dark': '#161b22'}
+    getMeta('theme-color').content = metaColors[document.body.getAttribute('theme')];
+    window.switchThemeEventSet = new Set()
+</script><div id="back-to-top"></div>
+    <div id="mask"></div><header class="desktop print:!tw-hidden" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="DataSci Ocean">DataSci Ocean</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item"
+                    href="/posts/" > 所有文章 </a><a class="menu-item"
+                    href="/tags/" > 標籤 </a><a class="menu-item"
+                    href="/categories/" > 分類 </a><span class="menu-item delimiter"></span><button class="menu-item language" aria-label="選擇語言">繁體中文<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
+                    <select class="language-select" aria-label="選擇語言" id="language-select-desktop"
+                        onchange="location = this.value;"><option value="/paper-intro/memgpt/"  selected>繁體中文</option><option value="/en/paper-intro/memgpt/" >English</option></select>
+                </button><span class="menu-item search" id="search-desktop">
+                    <input type="text"
+                        placeholder="搜索文章標題或內容..."
+                        id="search-input-desktop">
+                    <button class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+                    </button>
+                    <button class="search-button search-clear" id="search-clear-desktop" title="清空">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                    </button>
+                    <span class="search-button search-loading tw-animate-spin" id="search-loading-desktop">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M304 48c0 26.51-21.49 48-48 48s-48-21.49-48-48 21.49-48 48-48 48 21.49 48 48zm-48 368c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm208-208c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zM96 256c0-26.51-21.49-48-48-48S0 229.49 0 256s21.49 48 48 48 48-21.49 48-48zm12.922 99.078c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.491-48-48-48zm294.156 0c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.49-48-48-48zM108.922 60.922c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.491-48-48-48z"/></svg>
+                    </span>
+                </span><button class="menu-item theme-select" aria-label="切換主題">
+                    <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M8 256c0 136.966 111.033 248 248 248s248-111.034 248-248S392.966 8 256 8 8 119.033 8 256zm248 184V72c101.705 0 184 82.311 184 184 0 101.705-82.311 184-184 184z"/></svg>
+                    <select class="color-theme-select" id="theme-select-desktop" aria-label="切換主題">
+                        <option value="light">淺色</option>
+                        <option value="dark">深色</option>
+                        <option value="auto">系统預設</option>
+                    </select>
+                </button></div>
+        </div>
+    </div>
+</header><header class="mobile print:!tw-hidden" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="DataSci Ocean">DataSci Ocean</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                <div class="search mobile" id="search-mobile">
+                    <input type="text"
+                        placeholder="搜索文章標題或內容..."
+                        id="search-input-mobile">
+                    <button class="search-button search-toggle tw-h-10" id="search-toggle-mobile" title="搜索">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+                    </button>
+                    <button class="search-button search-clear tw-h-fit" id="search-clear-mobile" title="清空">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                    </button>
+                    <span class="search-button search-loading tw-animate-spin" id="search-loading-mobile">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M304 48c0 26.51-21.49 48-48 48s-48-21.49-48-48 21.49-48 48-48 48 21.49 48 48zm-48 368c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm208-208c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zM96 256c0-26.51-21.49-48-48-48S0 229.49 0 256s21.49 48 48 48 48-21.49 48-48zm12.922 99.078c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.491-48-48-48zm294.156 0c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.49-48-48-48zM108.922 60.922c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.491-48-48-48z"/></svg>
+                    </span>
+                </div>
+                <button class="search-cancel" id="search-cancel-mobile">
+                    取消
+                </button>
+            </div><a class="menu-item" href="/posts/" title="" >所有文章</a><a class="menu-item" href="/tags/" title="" >標籤</a><a class="menu-item" href="/categories/" title="" >分類</a><button class="menu-item theme-select tw-w-full" aria-label="切換主題">
+                <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M8 256c0 136.966 111.033 248 248 248s248-111.034 248-248S392.966 8 256 8 8 119.033 8 256zm248 184V72c101.705 0 184 82.311 184 184 0 101.705-82.311 184-184 184z"/></svg>
+                <select class="color-theme-select" id="theme-select-mobile" aria-label="切換主題">
+                    <option value="light">淺色</option>
+                    <option value="dark">深色</option>
+                    <option value="auto">系统預設</option>
+                </select>
+            </button><button class="menu-item tw-w-full" title="">繁體中文<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
+                <select class="language-select" title="" onchange="location = this.value;"><option value="/paper-intro/memgpt/"  selected>繁體中文</option><option value="/en/paper-intro/memgpt/" >English</option></select>
+            </button></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div><main class="tw-mx-4 tw-flex-1"><div class="toc print:!tw-hidden" id="toc-auto">
+        <h2 class="toc-title">目錄</h2>
+        <div class="toc-content" id="toc-content-auto"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#memgpt-想解決的問題">MemGPT 想解決的問題</a></li>
+    <li><a href="#memgpt-的核心概念">MemGPT 的核心概念</a></li>
+    <li><a href="#memgpt-的記憶管理方式">MemGPT 的記憶管理方式</a>
+      <ul>
+        <li><a href="#memgpt-的-core-memory">MemGPT 的 Core Memory</a></li>
+        <li><a href="#memgpt-的-chat-history">MemGPT 的 Chat History</a></li>
+        <li><a href="#memgpt-的-recall-memory">MemGPT 的 Recall Memory</a></li>
+        <li><a href="#memgpt-的-archival-memory">MemGPT 的 Archival Memory</a></li>
+        <li><a href="#memgpt-的-ar-stats">MemGPT 的 A/R Stats</a></li>
+      </ul>
+    </li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+    </div><dialog id="toc-dialog" class="tw-max-w-full tw-w-full tw-max-h-full tw-h-full tw-ml-16">
+        <div class="toc tw-mx-4 tw-max-w-full">
+            <h2 class="tw-mx-0 tw-my-6 tw-uppercase tw-text-2xl">目錄</h2>
+            <div class="toc-content"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#memgpt-想解決的問題">MemGPT 想解決的問題</a></li>
+    <li><a href="#memgpt-的核心概念">MemGPT 的核心概念</a></li>
+    <li><a href="#memgpt-的記憶管理方式">MemGPT 的記憶管理方式</a>
+      <ul>
+        <li><a href="#memgpt-的-core-memory">MemGPT 的 Core Memory</a></li>
+        <li><a href="#memgpt-的-chat-history">MemGPT 的 Chat History</a></li>
+        <li><a href="#memgpt-的-recall-memory">MemGPT 的 Recall Memory</a></li>
+        <li><a href="#memgpt-的-archival-memory">MemGPT 的 Archival Memory</a></li>
+        <li><a href="#memgpt-的-ar-stats">MemGPT 的 A/R Stats</a></li>
+      </ul>
+    </li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+        </div>
+    </dialog><script>document.getElementsByTagName("main")[0].setAttribute("autoTOC", "true")</script><article class="page single print:!tw-w-full print:!tw-max-w-none print:!tw-m-0 print:!tw-p-0"><h1 class="single-title" data-pagefind-meta="date:2025-05-18" data-pagefind-body>[論文介紹] MemGPT: Towards LLMs as Operating Systems</h1><div class="post-meta">
+            <div class="post-meta-line">
+                <span class="post-author"><img class="tw-inline-block tw-max-h-4 tw-rounded-full tw-translate-y-[-2px] tw-mr-1"  src='/images/avatar.png'   alt="Hong-Wei Wu avatar" height="16" width="16"><a href="https://www.linkedin.com/in/johnnyhwu/" title="Author" target="_blank" rel="noopener noreferrer author" class="author">Hong-Wei Wu</a>
+                </span>&nbsp;<span class="post-category"></span>&nbsp;<span class="post-category">收錄於 <a href="/categories/paper-intro/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>論文介紹</a></span></div>
+            <div class="post-meta-line"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;<time datetime="2025-05-18">2025-05-18</time>&nbsp;<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;約 2932 字&nbsp;
+                    <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>&nbsp;預計閱讀 13 分鐘&nbsp;</div>
+        </div><div class="featured-image"><img  loading="eager" src='/paper-intro/memgpt/featured-image.png'   alt="本篇文章介紹 MemGPT 如何管理 LLM 的 Short-Term 與 Long-Term Memory。說明 MemGPT 如何基於 ReAct-Based Agent，透過連續的 Thinking 以及 Tool Calling 來操作 Core Memory, Chat History, Archival Memory 以及 Recall Memory 等多種不同 Memory 類型，達到 Persistent Conversation 的目的。" height="192" width="790"></div><div class="details toc print:!tw-block" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目錄</span>
+                    <span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#memgpt-想解決的問題">MemGPT 想解決的問題</a></li>
+    <li><a href="#memgpt-的核心概念">MemGPT 的核心概念</a></li>
+    <li><a href="#memgpt-的記憶管理方式">MemGPT 的記憶管理方式</a>
+      <ul>
+        <li><a href="#memgpt-的-core-memory">MemGPT 的 Core Memory</a></li>
+        <li><a href="#memgpt-的-chat-history">MemGPT 的 Chat History</a></li>
+        <li><a href="#memgpt-的-recall-memory">MemGPT 的 Recall Memory</a></li>
+        <li><a href="#memgpt-的-archival-memory">MemGPT 的 Archival Memory</a></li>
+        <li><a href="#memgpt-的-ar-stats">MemGPT 的 A/R Stats</a></li>
+      </ul>
+    </li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content" data-pagefind-body><h2 id="前言" class="headerLink">
+    <a href="#%e5%89%8d%e8%a8%80" class="header-mark"></a>1 前言</h2><p>本篇文章介紹 <a href="https://arxiv.org/pdf/2310.08560" target="_blank" rel="noopener noreferrer">MemGPT: Towards LLMs as Operating Systems</a> 論文，MemGPT 由 UC Berkeley 的研究人員於 2023 年 10 月被發布到 arXiv 上，截至 2025 年 5 月 14 日已經累積了 154 次 Citation，目前被收錄在 <a href="https://openreview.net/forum?id=0Kk142lP62" target="_blank" rel="noopener noreferrer">CoRR 2023</a>。</p>
+<p>談到 LLM 的 Perceptual Conversation 或是 Long-Term Memory，MemGPT 也算是一篇經典之作，目前 MemGPT 所開源的專案稱為 <a href="https://github.com/letta-ai/letta" target="_blank" rel="noopener noreferrer">Letta</a>，與其說是一個專案我覺得它倒是更像一間<a href="https://www.letta.com/" target="_blank" rel="noopener noreferrer">新創公司</a>。</p>
+<p>此外，截至 2025 年 5 月 14 日，Letta 目前在 GitHub 上已經累積了 16.4K 個 Star，代表它確實是一個相當熱門的專案。當我們在網路上搜尋 Agent Memory 相關的開源專案時候，除了 <a href="https://github.com/mem0ai/mem0" target="_blank" rel="noopener noreferrer">Mem0</a> 之外，<a href="https://github.com/letta-ai/letta" target="_blank" rel="noopener noreferrer">Letta</a> 也是一個受歡迎的選擇，甚至大大超越由 LangChain 所開源的 <a href="https://github.com/langchain-ai/langmem" target="_blank" rel="noopener noreferrer">LangMem</a>。</p>
+<div class="details admonition info open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"/></svg></span>補充資訊<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content"><p>身為 AI 領域的工程師或研究者，如果你還不了解 Mem0 以及 LangMem 的概念，務必閱讀以下兩篇文章：</p>
+<ul>
+<li><a href="../../other/langmem-intro/" rel="">LangMem 概念介紹</a></li>
+<li><a href="../mem0/" rel="">Mem0 概念介紹</a></li>
+</ul></div></div></div>
+<p>本篇文章為 DeepLearning.AI 上 <a href="https://www.deeplearning.ai/short-courses/llms-as-operating-systems-agent-memory/" target="_blank" rel="noopener noreferrer">LLMs as Operating Systems: Agent Memory</a> 的課程筆記，主要著重於介紹 MemGPT 的方法本身，而不會提及實驗結果等細節，有興趣的讀者再請自行閱讀<a href="https://arxiv.org/pdf/2310.08560" target="_blank" rel="noopener noreferrer">原論文</a>！</p>
+<h2 id="memgpt-想解決的問題" class="headerLink">
+    <a href="#memgpt-%e6%83%b3%e8%a7%a3%e6%b1%ba%e7%9a%84%e5%95%8f%e9%a1%8c" class="header-mark"></a>2 MemGPT 想解決的問題</h2><figure><a class="lightgallery" href="/paper-intro/memgpt/llm.jpeg" title="" data-thumbnail="/paper-intro/memgpt/llm.jpeg" data-sub-html="<h2>LLM 的輸入與輸出</h2>"><img  loading="lazy" src='/paper-intro/memgpt/llm.jpeg'    height="194" width="592"></a><figcaption class="image-caption">LLM 的輸入與輸出</figcaption>
+    </figure>
+<p>如上圖所示，基於我們的 Prompt，LLM 會以 Auto-Regressive 的方式進行「文字接龍」產生 Completion。如果這一個 LLM 是一個你所開發的 Chatbot，專門解決你的客戶的疑難雜症，那麼你可能會在 Prompt 中提供：客戶的資訊, Chatbot 與客戶的對話紀錄, 外部資料, Chatbot 能夠使用的工具, Chatbot 已經經過的 Reasoning Steps 以及 Observation &hellip;</p>
+<p>隨著 Chatbot 與客戶的互動時間變長，可以想像的是，Prompt 再也容不下這麼多資訊。即使你是用的是一個 Context Window 非常大的 LLM，也會發現隨著 Context Window 中的資訊愈來愈多，LLM 似乎開始出現失憶的狀況。</p>
+<p>因此，LLM 在進行長時間的對話任務時，所經常面對的挑戰就是如何有效的管理「長期記憶」，這也正式 <strong><a href="../mem0/" rel="">Mem0</a></strong> 與 <strong><a href="../../other/langmem-intro/" rel="">LangMem</a></strong> 等方法所處理的問題。</p>
+<h2 id="memgpt-的核心概念" class="headerLink">
+    <a href="#memgpt-%e7%9a%84%e6%a0%b8%e5%bf%83%e6%a6%82%e5%bf%b5" class="header-mark"></a>3 MemGPT 的核心概念</h2><figure><a class="lightgallery" href="/paper-intro/memgpt/memgpt-core.jpeg" title="" data-thumbnail="/paper-intro/memgpt/memgpt-core.jpeg" data-sub-html="<h2>MemGPT 的核心概念</h2>"><img  loading="lazy" src='/paper-intro/memgpt/memgpt-core.jpeg'    height="413" width="874"></a><figcaption class="image-caption">MemGPT 的核心概念</figcaption>
+    </figure>
+<p>同理，MemGPT 也是為了處理這樣的問題而誕生！如上圖所述，MemGPT 的核心概念，正是希望透過 LLM 打造一個作業系統（Operating System）來管理自己的狀態，<strong>決定要把什麼資訊放到 Prompt 中</strong>。</p>
+<figure><a class="lightgallery" href="/paper-intro/memgpt/prompt-compilation.jpeg" title="" data-thumbnail="/paper-intro/memgpt/prompt-compilation.jpeg" data-sub-html="<h2>Prompt Compilation</h2>"><img  loading="lazy" src='/paper-intro/memgpt/prompt-compilation.jpeg'    height="407" width="875"></a><figcaption class="image-caption">Prompt Compilation</figcaption>
+    </figure>
+<p>舉例來說，如上圖所示，對於一個 Agent 而言，它目前的狀態 (State) 可以由它的記憶 (Memories), 能夠使用的工具 (Tools) 以及對話紀錄 (Messages) 來表示。可以想像 Agent State 裡頭存放著與 Agent 本身的所有資訊。</p>
+<p>而賦予 Agent 對話能力的即是 LLM 模型，LLM 模型的 Context Window 有所限制，導致我們沒辦法把整個 Agent State 都放到 Prompt 裡面。</p>
+<div class="details admonition success open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"/></svg></span>重點概念<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">因此，MemGPT 的最終目標就是：基於目前的任務，<strong>從 Agent State 中取出必要的資訊放到 Prompt 中</strong>，讓 LLM 基於 Prompt 成功產生正確的輸出。而把大量資訊從 Agent State 精鍊到 Prompt 中的這個過程又稱為 <strong>Prompt Compilation</strong>。</div></div></div>
+<p>為了賦予 MemGPT 有這樣的能力，MemGPT 被設計出以下四個特色：</p>
+<ul>
+<li><strong>Self-Editing Memory</strong>: Agent 能夠透過 Tool Calling 修改自己的記憶內容</li>
+<li><strong>Inner Thoughts</strong>: Agent 每次在輸出之前都可以進行一些思考，而這些思考過程不會輸出給使用者</li>
+<li><strong>Every Output as Tool</strong>: Agent 的所有輸出都是 Tool Calling (Inner Thought 除外)，就連要輸出資訊給使用者時，都要使用 <code>send_message()</code> 工具</li>
+<li><strong>Looping via Heartbeats</strong>: Agent 每次在 Tool Calling 時，都可以指定 <code>request_heartbeat</code> 這個參數，來自己決定要不要再拿 Tool 的執行結果 Invoke 自己一次，來得到新的輸出</li>
+</ul>
+<h2 id="memgpt-的記憶管理方式" class="headerLink">
+    <a href="#memgpt-%e7%9a%84%e8%a8%98%e6%86%b6%e7%ae%a1%e7%90%86%e6%96%b9%e5%bc%8f" class="header-mark"></a>4 MemGPT 的記憶管理方式</h2><figure><a class="lightgallery" href="/paper-intro/memgpt/general-context.jpeg" title="" data-thumbnail="/paper-intro/memgpt/general-context.jpeg" data-sub-html="<h2>一般 Agent 的 Prompt 內容</h2>"><img  loading="lazy" src='/paper-intro/memgpt/general-context.jpeg'    height="623" width="908"></a><figcaption class="image-caption">一般 Agent 的 Prompt 內容</figcaption>
+    </figure>
+<p>如上圖所示，在一般的 Agent 中，Prompt 的組成通常都是 <strong>&ldquo;System Prompt&rdquo;</strong> 加上 <strong>&ldquo;Chat Hostory&rdquo;</strong>。而在 MemGPT 中，為了做好 Prompt Compilation，將 Prompt 的組成分成很多特別保留區塊 (Special Reserved Section)，作為不同資訊存放的目的。</p>
+<h3 id="memgpt-的-core-memory" class="headerLink">
+    <a href="#memgpt-%e7%9a%84-core-memory" class="header-mark"></a>4.1 MemGPT 的 Core Memory</h3><figure><a class="lightgallery" href="/paper-intro/memgpt/core-memory.jpeg" title="" data-thumbnail="/paper-intro/memgpt/core-memory.jpeg" data-sub-html="<h2>MemGPT 會在 Prompt 中保留一個 Core Memory 區塊</h2>"><img  loading="lazy" src='/paper-intro/memgpt/core-memory.jpeg'    height="532" width="1131"></a><figcaption class="image-caption">MemGPT 會在 Prompt 中保留一個 Core Memory 區塊</figcaption>
+    </figure>
+<p>MemGPT 在 Prompt 中規劃了一個 Core Memory 區塊用來保存最重要的少量資訊，Core Memory 中可以分成很多 Block，每個 Block 可以保存不同的資訊 (例如：使用者資訊, Agent 自己的 Persona 等等)。</p>
+<p>為了讓 LLM 本身知道有這個區塊的存在，會在 System Prompt 的區塊中紀錄 Core Memory 相關的資訊，包含可以透過一些 Tool 來修改 Core Memory 中的資訊 (例如：<code>core_memory_replace</code>, <code>core_memory_append</code>)。</p>
+<p>當接收到使用者的輸入後，MemGPT 會先進行 Inner Thought 後再輸出。如同<a href="#memgpt-%e7%9a%84%e6%a0%b8%e5%bf%83%e6%a6%82%e5%bf%b5" rel="">上文</a>所述，MemGPT 的所有輸出都會是 Tool Calling，因此如果在 Inner Thought 中 MemGPT 覺得這個資訊值得被紀錄在 Core Memory，那這一次的輸出就會是一個 <code>core_memory_append</code> 的 Tool Calling，來將此資訊紀錄到 Core Memory 中。</p>
+<h3 id="memgpt-的-chat-history" class="headerLink">
+    <a href="#memgpt-%e7%9a%84-chat-history" class="header-mark"></a>4.2 MemGPT 的 Chat History</h3><p>如上圖所示，MemGPT 在 Prompt 中除了規劃一個 Core Memory 之外，還會有一個區塊來放置 Chat History。這裡的 Chat History 就是 MemGPT 與使用者互動的 Multi-Turn Conversation。</p>
+<p>當 Conversation 的內容超過 Chat History 區塊大小的限制時，MemGPT 會將一個 Chunk 的 Chat History 透過 LLM 轉為 Chat Summary，並將 Chat Summary 取代原本的 Chunk。</p>
+<p>這個 Chunk 的大小可以透過 <code>desired_memory_token_pressure</code> (<a href="https://github.com/letta-ai/letta/blob/e4a7bb1489392142c7cdc4b90f87d1cbff999b93/letta/settings.py#L51" target="_blank" rel="noopener noreferrer">letta/letta/settings.py</a>) 來控制，在 <code>calculate_summarizer_cutoff</code> (<a href="https://github.com/letta-ai/letta/blob/e4a7bb1489392142c7cdc4b90f87d1cbff999b93/letta/llm_api/helpers.py#L317" target="_blank" rel="noopener noreferrer">letta/letta/llm_api/helpers.py</a>) 中就會透過這個參數來計算有多少 Token 需要被 Summarize。</p>
+<p>在 MemGPT 中，LLM 所生成的 Chat Summary 實際上是一種 <strong>Recursive Summary</strong>，因為 LLM 在對 Chunk 生成 Summary 時， Chunk 中可能也會包含前一次的 Chat Summary。</p>
+<h3 id="memgpt-的-recall-memory" class="headerLink">
+    <a href="#memgpt-%e7%9a%84-recall-memory" class="header-mark"></a>4.3 MemGPT 的 Recall Memory</h3><figure><a class="lightgallery" href="/paper-intro/memgpt/recall-memory.jpeg" title="" data-thumbnail="/paper-intro/memgpt/recall-memory.jpeg" data-sub-html="<h2>MemGPT 透過 Recall Memory 儲存所有 Chat History</h2>"><img  loading="lazy" src='/paper-intro/memgpt/recall-memory.jpeg'    height="594" width="1492"></a><figcaption class="image-caption">MemGPT 透過 Recall Memory 儲存所有 Chat History</figcaption>
+    </figure>
+<p>承接 <a href="#memgpt-%e7%9a%84-chat-history" rel="">MemGPT 的 Chat History</a>，被 Summarize 的 Chunk 並不會被丟棄，而是會存入一個外部的 Database，我們稱其為 <strong>Recall Memory</strong>。換句話說，MemGPT 與使用者所有的對話紀錄都不會遺失，全部都會存在 Recall Memory 中。</p>
+<p>既然它是一種 Memory，那勢必就能夠從中查找資訊。沒錯！MemGPT 的 System Prompt 中也會告訴 MemGPT 能夠透過 <code>conversation_search</code> 的 Tool 來從 Recall Memory 中查找資訊。</p>
+<h3 id="memgpt-的-archival-memory" class="headerLink">
+    <a href="#memgpt-%e7%9a%84-archival-memory" class="header-mark"></a>4.4 MemGPT 的 Archival Memory</h3><figure><a class="lightgallery" href="/paper-intro/memgpt/archival-memory.jpeg" title="" data-thumbnail="/paper-intro/memgpt/archival-memory.jpeg" data-sub-html="<h2>Core Memory 存不下的資訊就放到 Archival Memory</h2>"><img  loading="lazy" src='/paper-intro/memgpt/archival-memory.jpeg'    height="562" width="1700"></a><figcaption class="image-caption">Core Memory 存不下的資訊就放到 Archival Memory</figcaption>
+    </figure>
+<p>既然 Chat History 有自己的外部 Database, <strong>Recall Memory</strong>, 來儲存 Chat History 放不下的資訊，那麼 Core Memory 當然也有自己的外部 Database 來儲存 Core Memory 放不下的資訊。我們稱其為 <strong>Archival Memory</strong>。</p>
+<p>MemGPT 與使用者的互動過程中，如果覺得某一個資訊 (例如：使用者的喜好) 需要被記住，然而 Core Memory (例如：Core Memory 中的 &ldquo;User&rdquo; Block) 已經滿了，這時候 MemGPT 可以根據這個資訊的<strong>重要程度</strong>，進行以下兩種操作：</p>
+<ul>
+<li>新的資訊很重要：將 Core Memory 中的內容搬到 Archival Memory，然後把這個新的重要資訊存到 Core Memory</li>
+<li>新的資訊沒那麼重要：直接將新的資訊存到 Archival Memory</li>
+</ul>
+<p>Archival Memory 的用途除了可以當 Core Memory 的額外的外部儲存空間之外，也是 <strong>RAG</strong> (Retrieval-Augmented Generation) 應用中，外部資料會存放的地方。也就是說，當使用者希望 MemGPT 可以根據一份 PDF 回答問題時，這份 PDF 就會被存放在 Archival Memory 中。</p>
+<p>當然，在 MemGPT 的 System Prompt 中，我們也會告訴 MemGPT 可以透過 <code>archival_memory_search</code> 的 Tool，來查找 Archival Memory 中的資訊。</p>
+<h3 id="memgpt-的-ar-stats" class="headerLink">
+    <a href="#memgpt-%e7%9a%84-ar-stats" class="header-mark"></a>4.5 MemGPT 的 A/R Stats</h3><p>到目前為止，我們已經了解到 MemGPT 有兩個外部的 Database：<strong>Archival Memory</strong> 和 <strong>Recall Memory</strong>，分別作為 Core Memory 以及 Chat History 的額外儲存空間。</p>
+<blockquote>
+  <p>然而，這兩個外部儲存空間的資訊不會在 MemGPT 的 Context 中，MemGPT 要如何知道他們的狀態呢？</p>
+</blockquote><p>在 MemGPT 中，透過在 Context 中加入一個 <strong>A/R Stats</strong> 區塊，來紀錄 Archival 與 Recall Memory 中目前的資訊量，得以讓 MemGPT 判斷是否該去兩個 Memory 中查找資訊。</p>
+<p>舉例來說，當 Archival 與 Recall Memory 中有存放一些資訊時，透過 A/R Stats，MemGPT 就知道可以去兩個 Memory 中查找資訊：</p>
+<figure><a class="lightgallery" href="/paper-intro/memgpt/ar-stats.png" title="" data-thumbnail="/paper-intro/memgpt/ar-stats.png" data-sub-html="<h2>MemGPT 根據 A/R Stats 得知 Archival 與 Recall Memory 的狀態</h2>"><img  loading="lazy" src='/paper-intro/memgpt/ar-stats.png'    height="546" width="1141"></a><figcaption class="image-caption">MemGPT 根據 A/R Stats 得知 Archival 與 Recall Memory 的狀態</figcaption>
+    </figure>
+<h2 id="結語" class="headerLink">
+    <a href="#%e7%b5%90%e8%aa%9e" class="header-mark"></a>5 結語</h2><p>本篇文章介紹 <a href="https://arxiv.org/pdf/2310.08560" target="_blank" rel="noopener noreferrer">MemGPT: Towards LLMs as Operating Systems</a> 論文，內容主要為 <a href="https://www.deeplearning.ai/short-courses/llms-as-operating-systems-agent-memory/" target="_blank" rel="noopener noreferrer">LLMs as Operating Systems: Agent Memory</a> 的課程筆記。</p>
+<p>MemGPT 想處理的挑戰就是 <strong>Prompt Compilation</strong>：如何將<strong>大量資訊從 Agent State 精鍊到 Prompt</strong>，讓 LLM 基於 Prompt 成功產生正確的輸出。</p>
+<p>為了克服此挑戰，MemGPT 將 LLM 的 Context Window (Short-Term Memory) 分為多個區塊，包含 System Prompt, Core Memory, A/R Stats, Chat Summary 以及 Chat History。並設計兩種 Long-Term Memory: Archival Memory 以及 Recall Memory 分別作為 Core Memory 以及 Chat History 的額外儲存空間。</p>
+<p>此外，MemGPT 也讓 LLM 以 <a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener noreferrer">ReAct-Based Agent</a> 的方式，透過連續循環的 Thinking, Action (Tool Calling), Thinking, Action (Tool Calling)&hellip;, 來從不同的 Memory 中查找與精鍊資訊。</p>
+<p>最後，以 Long/Short-Term Memory 的角度來看，MemGPT 與 <a href="../../other/langmem-intro/" rel="">LangMem</a>, <a href="../mem0/" rel="">Mem0</a> 相似的地方在於， 他們都有針對 <strong>Long-Term Memory</strong> 提出自己的方法，但比較特別的是 MemGPT 針對 <strong>Short-Term Memory</strong> (LLM 的 Context Windows) 中應該放置什麼樣的內容有更多的設計與著墨。</p></div>
+
+        <div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新於 2025-05-18</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line print:!tw-hidden">
+            <div class="post-info-md"><span><a class="link-to-mardown" href=/paper-intro/memgpt/index.md target="_blank" rel="noopener noreferrer">閱讀原始文檔</a>
+                    </span></div>
+            <div class="post-info-share"><button title="分享到 Twitter" data-sharer="twitter" data-url="http://localhost:1313/paper-intro/memgpt/" data-title="[論文介紹] MemGPT: Towards LLMs as Operating Systems" data-hashtags="Large Language Model,Agent Memory"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></button><button title="分享到 Facebook" data-sharer="facebook" data-url="http://localhost:1313/paper-intro/memgpt/" data-hashtag="Large Language Model"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></button><button title="分享到 Linkedin" data-sharer="linkedin" data-url="http://localhost:1313/paper-intro/memgpt/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></button><button title="分享到 Hacker News" data-sharer="hackernews" data-url="http://localhost:1313/paper-intro/memgpt/" data-title="[論文介紹] MemGPT: Towards LLMs as Operating Systems"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M0 32v448h448V32H0zm21.2 197.2H21c.1-.1.2-.3.3-.4 0 .1 0 .3-.1.4zm218 53.9V384h-31.4V281.3L128 128h37.3c52.5 98.3 49.2 101.2 59.3 125.6 12.3-27 5.8-24.4 60.6-125.6H320l-80.8 155.1z"/></svg></button><button title="分享到 Reddit" data-sharer="reddit" data-url="http://localhost:1313/paper-intro/memgpt/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M201.5 305.5c-13.8 0-24.9-11.1-24.9-24.6 0-13.8 11.1-24.9 24.9-24.9 13.6 0 24.6 11.1 24.6 24.9 0 13.6-11.1 24.6-24.6 24.6zM504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zm-132.3-41.2c-9.4 0-17.7 3.9-23.8 10-22.4-15.5-52.6-25.5-86.1-26.6l17.4-78.3 55.4 12.5c0 13.6 11.1 24.6 24.6 24.6 13.8 0 24.9-11.3 24.9-24.9s-11.1-24.9-24.9-24.9c-9.7 0-18 5.8-22.1 13.8l-61.2-13.6c-3-.8-6.1 1.4-6.9 4.4l-19.1 86.4c-33.2 1.4-63.1 11.3-85.5 26.8-6.1-6.4-14.7-10.2-24.1-10.2-34.9 0-46.3 46.9-14.4 62.8-1.1 5-1.7 10.2-1.7 15.5 0 52.6 59.2 95.2 132 95.2 73.1 0 132.3-42.6 132.3-95.2 0-5.3-.6-10.8-1.9-15.8 31.3-16 19.8-62.5-14.9-62.5zM302.8 331c-18.2 18.2-76.1 17.9-93.6 0-2.2-2.2-6.1-2.2-8.3 0-2.5 2.5-2.5 6.4 0 8.6 22.8 22.8 87.3 22.8 110.2 0 2.5-2.2 2.5-6.1 0-8.6-2.2-2.2-6.1-2.2-8.3 0zm7.7-75c-13.6 0-24.6 11.1-24.6 24.9 0 13.6 11.1 24.6 24.6 24.6 13.8 0 24.9-11.1 24.9-24.6 0-13.8-11-24.9-24.9-24.9z"/></svg></button><button title="分享到 Line" data-sharer="line" data-url="http://localhost:1313/paper-intro/memgpt/" data-title="[論文介紹] MemGPT: Towards LLMs as Operating Systems"><svg class="icon" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>LINE</title><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg></button><button title="分享到 Telegram" data-sharer="telegram" data-url="http://localhost:1313/paper-intro/memgpt/" data-title="[論文介紹] MemGPT: Towards LLMs as Operating Systems" data-web><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M446.7 98.6l-67.6 318.8c-5.1 22.5-18.4 28.1-37.3 17.5l-103-75.9-49.7 47.8c-5.5 5.5-10.1 10.1-20.7 10.1l7.4-104.9 190.9-172.5c8.3-7.4-1.8-11.5-12.9-4.1L117.8 284 16.2 252.2c-22.1-6.9-22.5-22.1 4.6-32.7L418.2 66.4c18.4-6.9 34.5 4.1 28.5 32.2z"/></svg></button></div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg>&nbsp;<a href="/tags/large-language-model/">Large Language Model</a>,&nbsp;<a href="/tags/agent-memory/">Agent Memory</a></section>
+        <section class="print:!tw-hidden">
+            <span><button class="tw-text-fgColor-link-muted hover:tw-text-fgColor-link-muted-hover" onclick="window.history.back();">返回</button></span>&nbsp;|&nbsp;<span><a href="/">主頁</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav print:tw-hidden"><a href="/paper-intro/mem0/" class="prev" rel="prev" title="[論文介紹] Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"/></svg>[論文介紹] Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory</a>
+            <a href="/paper-intro/pre-act/" class="next" rel="next" title="[論文介紹] Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents">[論文介紹] Pre-Act: Multi-Step Planning and Reasoning Improves Acting in LLM Agents<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></a></div>
+</div>
+</article></main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 448c-110.532 0-200-89.451-200-200 0-110.531 89.451-200 200-200 110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200zm107.351-101.064c-9.614 9.712-45.53 41.396-104.065 41.396-82.43 0-140.484-61.425-140.484-141.567 0-79.152 60.275-139.401 139.762-139.401 55.531 0 88.738 26.62 97.593 34.779a11.965 11.965 0 0 1 1.936 15.322l-18.155 28.113c-3.841 5.95-11.966 7.282-17.499 2.921-8.595-6.776-31.814-22.538-61.708-22.538-48.303 0-77.916 35.33-77.916 80.082 0 41.589 26.888 83.692 78.277 83.692 32.657 0 56.843-19.039 65.726-27.225 5.27-4.857 13.596-4.039 17.82 1.738l19.865 27.17a11.947 11.947 0 0 1-1.152 15.518z"/></svg>2022 - 2025<span class="author">&nbsp;<a href="https://www.linkedin.com/in/johnnyhwu/" target="_blank" rel="noopener noreferrer">Hong-Wei Wu</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span></div>
+            <div class="footer-line"></div>
+            <div class="footer-line">
+            </div>
+        </div></footer><div class="print:!tw-hidden tw-flex tw-flex-col tw-fixed tw-right-4 tw-bottom-4 tw-gap-2"><a href="#back-to-top" id="back-to-top-button" class="tw-transition-opacity tw-opacity-0 tw-block tw-bg-bgColor-secondary tw-rounded-full" style="padding: 0.6rem; line-height: 1.3rem; font-size: 1rem;" title="回到頂部">
+      <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg>
+  </a>
+
+  <button id="toc-drawer-button" class="tw-block tw-bg-bgColor-secondary tw-rounded-full md:tw-hidden" style="padding: 0.6rem; line-height: 1.3rem; font-size: 1rem;">
+      <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/></svg>
+  </button></div>
+<script type="module">
+        (async () => {
+            const supportSpeculationRules = HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules");
+            if (!supportSpeculationRules) {
+              await import("\/lib\/instant.page\/instantpage.min.js");
+            }
+        })();
+    </script><link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="/lib/lightgallery/lightgallery.min.css">
+        <noscript><link rel="stylesheet" href="/lib/lightgallery/lightgallery.min.css"></noscript>
+<script>window.config={"autocomplete.min.js":"/lib/autocomplete/autocomplete.min.js","comment":{},"fuse.min.js":"/lib/fuse/fuse.min.js","lightGallery":{"actualSize":false,"exThumbImage":"data-thumbnail","hideBarsDelay":2000,"selector":".lightgallery","speed":400,"thumbContHeight":80,"thumbWidth":80,"thumbnail":true},"search":{"distance":100,"findAllMatches":false,"fuseIndexURL":"/index.json","highlightTag":"em","ignoreFieldNorm":false,"ignoreLocation":true,"isCaseSensitive":false,"location":0,"maxResultLength":10,"minMatchCharLength":2,"noResultsFound":"沒有找到結果","snippetLength":50,"threshold":0.1,"type":"fuse","useExtendedSearch":false},"sharerjs":true,"table":{"sort":true}};</script><script
+    src="/lib/tablesort/tablesort.min.js"
+    
+  ></script><script
+    src="/lib/lightgallery/lightgallery.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/lightgallery/lg-thumbnail.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/lightgallery/lg-zoom.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/sharer/sharer.min.js"
+    
+  ></script><script
+    src="/js/theme.min.js"
+    
+      defer
+    
+  ></script>
+
+<script type="speculationrules">
+  {
+    "prerender": [
+      {
+        "where": { "href_matches": "/*" },
+        "eagerness": "moderate"
+      }
+    ]
+  }
+</script>
+</body>
+
+</html>

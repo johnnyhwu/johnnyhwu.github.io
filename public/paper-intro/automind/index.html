@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noodp" /><title>[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science - DataSci Ocean</title><meta name="Description" content="在本篇文章中，我們介紹了 AutoMind 論文，理解如何透過 Large Reasoning Model (e.g. o3-mini, deepseek-v3) 結合 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy 建立一個 Agentic Framework 來處理 Data Science Task。"><meta property="og:url" content="http://localhost:1313/paper-intro/automind/">
+  <meta property="og:site_name" content="DataSci Ocean">
+  <meta property="og:title" content="[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science">
+  <meta property="og:description" content="在本篇文章中，我們介紹了 AutoMind 論文，理解如何透過 Large Reasoning Model (e.g. o3-mini, deepseek-v3) 結合 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy 建立一個 Agentic Framework 來處理 Data Science Task。">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-06-28T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-06-28T17:12:00+08:00">
+    <meta property="article:tag" content="Large Language Model">
+    <meta property="article:tag" content="Multi-Agent">
+    <meta property="article:tag" content="Retrieval-Augmented Generation">
+    <meta property="article:tag" content="Test-Time Scaling">
+    <meta property="og:image" content="http://localhost:1313/paper-intro/automind/featured-image.jpg">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="http://localhost:1313/paper-intro/automind/featured-image.jpg">
+  <meta name="twitter:title" content="[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science">
+  <meta name="twitter:description" content="在本篇文章中，我們介紹了 AutoMind 論文，理解如何透過 Large Reasoning Model (e.g. o3-mini, deepseek-v3) 結合 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy 建立一個 Agentic Framework 來處理 Data Science Task。">
+<meta name="application-name" content="DataSci Ocean">
+<meta name="apple-mobile-web-app-title" content="DataSci Ocean">
+
+<meta name="theme-color" content="#f8f8f8">
+
+
+<meta name="google-site-verification" content="JjNbQx4bl50OFX5gOcj61_gSVFqJ0d9LdfGLKQ2XX9I" /><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<link rel="canonical" href="http://localhost:1313/paper-intro/automind/" /><link rel="prev" href="http://localhost:1313/paper-intro/notes-writing/" />
+<link rel="stylesheet" href="/css/main.min.css"><link rel="stylesheet" href="/css/style.min.css"><script type="application/ld+json">{"@context": "https://schema.org","@type": "BlogPosting",
+        "headline": "[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science",
+        "inLanguage": "zh-TW",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "http://localhost:1313/paper-intro/automind/"
+        },"image": [{
+                            "@type": "ImageObject",
+                            "url": "http://localhost:1313/paper-intro/automind/featured-image.jpg",
+                            "width":  640 ,
+                            "height":  426 
+                        }],"genre": "posts","keywords":["Large Language Model","Multi-Agent","Retrieval-Augmented Generation","Test-Time Scaling"],"wordcount":  2305 ,
+        "url": "http://localhost:1313/paper-intro/automind/","datePublished": "2025-06-28T00:00:00+00:00","dateModified": "2025-06-28T17:12:00+08:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
+            "@type": "Organization",
+            "name": "Hong-Wei Wu","logo": {
+                    "@type": "ImageObject",
+                    "url": "http://localhost:1313/images/avatar.png",
+                    "width":  1080 ,
+                    "height":  1080 
+                }},"author": {
+                "@type": "Person",
+                "name": "Hong-Wei Wu",
+                "url": "https://www.linkedin.com/in/johnnyhwu/"
+            },"description": "在本篇文章中，我們介紹了 AutoMind 論文，理解如何透過 Large Reasoning Model (e.g. o3-mini, deepseek-v3) 結合 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy 建立一個 Agentic Framework 來處理 Data Science Task。"
+    }</script></head>
+
+
+<body data-instant-intensity="viewport" class="tw-flex tw-min-h-screen tw-flex-col"><script type="text/javascript">
+    function setTheme(theme) {
+      document.body.setAttribute('theme', theme); 
+      document.documentElement.className = theme;
+      document.documentElement.style.setProperty('color-scheme', theme === 'light' ? 'light' : 'dark');
+      if (theme === 'light') {
+        document.documentElement.classList.remove('tw-dark')
+      } else {
+        document.documentElement.classList.add('tw-dark')
+      }
+      window.theme = theme;   
+      window.isDark = window.theme !== 'light' 
+    }
+    function saveTheme(theme) {window.localStorage && localStorage.setItem('theme', theme);}
+    function getMeta(metaName) {const metas = document.getElementsByTagName('meta'); for (let i = 0; i < metas.length; i++) if (metas[i].getAttribute('name') === metaName) return metas[i]; return '';}
+    if (window.localStorage && localStorage.getItem('theme')) {
+        let theme = localStorage.getItem('theme');
+        if (theme === 'light' || theme === 'dark') {
+        setTheme(theme);
+        } else {
+            if ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                setTheme('dark');
+            } else {
+                setTheme('light');
+            }
+        }
+      } else { 
+        if ('auto' === 'light' || 'auto' === 'dark') 
+            setTheme('auto'), saveTheme('auto'); 
+        else saveTheme('auto'), window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? setTheme('dark') : setTheme('light');
+    }
+    let metaColors = {'light': '#f8f8f8','dark': '#161b22'}
+    getMeta('theme-color').content = metaColors[document.body.getAttribute('theme')];
+    window.switchThemeEventSet = new Set()
+</script><div id="back-to-top"></div>
+    <div id="mask"></div><header class="desktop print:!tw-hidden" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="DataSci Ocean">DataSci Ocean</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item"
+                    href="/posts/" > 所有文章 </a><a class="menu-item"
+                    href="/tags/" > 標籤 </a><a class="menu-item"
+                    href="/categories/" > 分類 </a><span class="menu-item delimiter"></span><button class="menu-item language" aria-label="選擇語言">繁體中文<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
+                    <select class="language-select" aria-label="選擇語言" id="language-select-desktop"
+                        onchange="location = this.value;"><option value="/paper-intro/automind/"  selected>繁體中文</option><option value="/en/paper-intro/automind/" >English</option></select>
+                </button><span class="menu-item search" id="search-desktop">
+                    <input type="text"
+                        placeholder="搜索文章標題或內容..."
+                        id="search-input-desktop">
+                    <button class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+                    </button>
+                    <button class="search-button search-clear" id="search-clear-desktop" title="清空">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                    </button>
+                    <span class="search-button search-loading tw-animate-spin" id="search-loading-desktop">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M304 48c0 26.51-21.49 48-48 48s-48-21.49-48-48 21.49-48 48-48 48 21.49 48 48zm-48 368c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm208-208c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zM96 256c0-26.51-21.49-48-48-48S0 229.49 0 256s21.49 48 48 48 48-21.49 48-48zm12.922 99.078c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.491-48-48-48zm294.156 0c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.49-48-48-48zM108.922 60.922c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.491-48-48-48z"/></svg>
+                    </span>
+                </span><button class="menu-item theme-select" aria-label="切換主題">
+                    <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M8 256c0 136.966 111.033 248 248 248s248-111.034 248-248S392.966 8 256 8 8 119.033 8 256zm248 184V72c101.705 0 184 82.311 184 184 0 101.705-82.311 184-184 184z"/></svg>
+                    <select class="color-theme-select" id="theme-select-desktop" aria-label="切換主題">
+                        <option value="light">淺色</option>
+                        <option value="dark">深色</option>
+                        <option value="auto">系统預設</option>
+                    </select>
+                </button></div>
+        </div>
+    </div>
+</header><header class="mobile print:!tw-hidden" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="DataSci Ocean">DataSci Ocean</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                <div class="search mobile" id="search-mobile">
+                    <input type="text"
+                        placeholder="搜索文章標題或內容..."
+                        id="search-input-mobile">
+                    <button class="search-button search-toggle tw-h-10" id="search-toggle-mobile" title="搜索">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+                    </button>
+                    <button class="search-button search-clear tw-h-fit" id="search-clear-mobile" title="清空">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                    </button>
+                    <span class="search-button search-loading tw-animate-spin" id="search-loading-mobile">
+                        <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M304 48c0 26.51-21.49 48-48 48s-48-21.49-48-48 21.49-48 48-48 48 21.49 48 48zm-48 368c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm208-208c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zM96 256c0-26.51-21.49-48-48-48S0 229.49 0 256s21.49 48 48 48 48-21.49 48-48zm12.922 99.078c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.491-48-48-48zm294.156 0c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48c0-26.509-21.49-48-48-48zM108.922 60.922c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.491-48-48-48z"/></svg>
+                    </span>
+                </div>
+                <button class="search-cancel" id="search-cancel-mobile">
+                    取消
+                </button>
+            </div><a class="menu-item" href="/posts/" title="" >所有文章</a><a class="menu-item" href="/tags/" title="" >標籤</a><a class="menu-item" href="/categories/" title="" >分類</a><button class="menu-item theme-select tw-w-full" aria-label="切換主題">
+                <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M8 256c0 136.966 111.033 248 248 248s248-111.034 248-248S392.966 8 256 8 8 119.033 8 256zm248 184V72c101.705 0 184 82.311 184 184 0 101.705-82.311 184-184 184z"/></svg>
+                <select class="color-theme-select" id="theme-select-mobile" aria-label="切換主題">
+                    <option value="light">淺色</option>
+                    <option value="dark">深色</option>
+                    <option value="auto">系统預設</option>
+                </select>
+            </button><button class="menu-item tw-w-full" title="">繁體中文<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
+                <select class="language-select" title="" onchange="location = this.value;"><option value="/paper-intro/automind/"  selected>繁體中文</option><option value="/en/paper-intro/automind/" >English</option></select>
+            </button></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div><main class="tw-mx-4 tw-flex-1"><div class="toc print:!tw-hidden" id="toc-auto">
+        <h2 class="toc-title">目錄</h2>
+        <div class="toc-content" id="toc-content-auto"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#automind-想解決的問題">AutoMind 想解決的問題</a></li>
+    <li><a href="#automind-方法-1-expert-knowledge-base">AutoMind 方法 (1): Expert Knowledge Base</a></li>
+    <li><a href="#automind-方法-2-agentic-knowledgeable-tree-search">AutoMind 方法 (2): Agentic Knowledgeable Tree Search</a>
+      <ul>
+        <li><a href="#node-definition">Node Definition</a></li>
+        <li><a href="#search-policy">Search Policy</a></li>
+        <li><a href="#action-type">Action Type</a></li>
+      </ul>
+    </li>
+    <li><a href="#automind-方法-3-self-adpative-coding-strategy">AutoMind 方法 (3): Self-Adpative Coding Strategy</a></li>
+    <li><a href="#automind-實驗結果">AutoMind 實驗結果</a></li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+    </div><dialog id="toc-dialog" class="tw-max-w-full tw-w-full tw-max-h-full tw-h-full tw-ml-16">
+        <div class="toc tw-mx-4 tw-max-w-full">
+            <h2 class="tw-mx-0 tw-my-6 tw-uppercase tw-text-2xl">目錄</h2>
+            <div class="toc-content"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#automind-想解決的問題">AutoMind 想解決的問題</a></li>
+    <li><a href="#automind-方法-1-expert-knowledge-base">AutoMind 方法 (1): Expert Knowledge Base</a></li>
+    <li><a href="#automind-方法-2-agentic-knowledgeable-tree-search">AutoMind 方法 (2): Agentic Knowledgeable Tree Search</a>
+      <ul>
+        <li><a href="#node-definition">Node Definition</a></li>
+        <li><a href="#search-policy">Search Policy</a></li>
+        <li><a href="#action-type">Action Type</a></li>
+      </ul>
+    </li>
+    <li><a href="#automind-方法-3-self-adpative-coding-strategy">AutoMind 方法 (3): Self-Adpative Coding Strategy</a></li>
+    <li><a href="#automind-實驗結果">AutoMind 實驗結果</a></li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+        </div>
+    </dialog><script>document.getElementsByTagName("main")[0].setAttribute("autoTOC", "true")</script><article class="page single print:!tw-w-full print:!tw-max-w-none print:!tw-m-0 print:!tw-p-0"><h1 class="single-title" data-pagefind-meta="date:2025-06-28" data-pagefind-body>[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science</h1><div class="post-meta">
+            <div class="post-meta-line">
+                <span class="post-author"><img class="tw-inline-block tw-max-h-4 tw-rounded-full tw-translate-y-[-2px] tw-mr-1"  src='/images/avatar.png'   alt="Hong-Wei Wu avatar" height="16" width="16"><a href="https://www.linkedin.com/in/johnnyhwu/" title="Author" target="_blank" rel="noopener noreferrer author" class="author">Hong-Wei Wu</a>
+                </span>&nbsp;<span class="post-category"></span>&nbsp;<span class="post-category">收錄於 <a href="/categories/paper-intro/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>論文介紹</a></span></div>
+            <div class="post-meta-line"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;<time datetime="2025-06-28">2025-06-28</time>&nbsp;<svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;約 2305 字&nbsp;
+                    <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>&nbsp;預計閱讀 11 分鐘&nbsp;</div>
+        </div><div class="featured-image"><img  loading="eager" src='/paper-intro/automind/featured-image.jpg'   alt="在本篇文章中，我們介紹了 AutoMind 論文，理解如何透過 Large Reasoning Model (e.g. o3-mini, deepseek-v3) 結合 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy 建立一個 Agentic Framework 來處理 Data Science Task。" height="426" width="640"></div><div class="details toc print:!tw-block" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目錄</span>
+                    <span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#automind-想解決的問題">AutoMind 想解決的問題</a></li>
+    <li><a href="#automind-方法-1-expert-knowledge-base">AutoMind 方法 (1): Expert Knowledge Base</a></li>
+    <li><a href="#automind-方法-2-agentic-knowledgeable-tree-search">AutoMind 方法 (2): Agentic Knowledgeable Tree Search</a>
+      <ul>
+        <li><a href="#node-definition">Node Definition</a></li>
+        <li><a href="#search-policy">Search Policy</a></li>
+        <li><a href="#action-type">Action Type</a></li>
+      </ul>
+    </li>
+    <li><a href="#automind-方法-3-self-adpative-coding-strategy">AutoMind 方法 (3): Self-Adpative Coding Strategy</a></li>
+    <li><a href="#automind-實驗結果">AutoMind 實驗結果</a></li>
+    <li><a href="#結語">結語</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content" data-pagefind-body><h2 id="前言" class="headerLink">
+    <a href="#%e5%89%8d%e8%a8%80" class="header-mark"></a>1 前言</h2><p>本篇文章介紹 <a href="https://arxiv.org/abs/2506.10974" target="_blank" rel="noopener noreferrer">AutoMind: Adaptive Knowledgeable Agent for Automated Data Science</a> 論文，AutoMind 由 Zhejiang University 與 Ant Group 的研究人員於 2025 年 6 月被發布到 arXiv 上。</p>
+<p>AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理 Data Science Challenge (e.g. Kaggle Competition)。</p>
+<figure><a class="lightgallery" href="/paper-intro/automind/automind.png" title="" data-thumbnail="/paper-intro/automind/automind.png" data-sub-html="<h2>[Figure 1] AutoMind 方法</h2>"><img  loading="lazy" src='/paper-intro/automind/automind.png'    height="583" width="1220"></a><figcaption class="image-caption">[Figure 1] AutoMind 方法</figcaption>
+    </figure>
+<p>如上圖所示，AutoMind 框架中包含 3 個核心方法：</p>
+<ul>
+<li>Expert Knowledge Base for Data Science: 針對 Data Science Task 建立知識庫</li>
+<li>Agentic Knowledge Tree Search Algorithm: 透過 Tree 來組織 Agent 於 Solution Space 中的探索過程</li>
+<li>Self-Adaptive Coding Strategy: 針對複雜的問題，拆解為多個步驟，單獨針對每個步驟產生程式碼</li>
+</ul>
+<h2 id="automind-想解決的問題" class="headerLink">
+    <a href="#automind-%e6%83%b3%e8%a7%a3%e6%b1%ba%e7%9a%84%e5%95%8f%e9%a1%8c" class="header-mark"></a>2 AutoMind 想解決的問題</h2><p>如同上文所述，AutoMind 的目標在於提出一個 LLM-Based Agentic Framework 來處理 Data Science Task (可以想像 AutoMind 就是一個 Data Science Agent)。作者認為過去的方法 (e.g. <a href="https://arxiv.org/abs/2502.13138" target="_blank" rel="noopener noreferrer">AIDE</a>, <a href="https://arxiv.org/abs/2402.18679" target="_blank" rel="noopener noreferrer">Data Interpreter</a>, <a href="https://arxiv.org/abs/2410.02958" target="_blank" rel="noopener noreferrer">AutoML-Agent</a>) 具有以下兩個缺失，導致這些 Data Science Agent 的表現不夠好：</p>
+<ol>
+<li><strong>LLM 在 Data Science Task 的知識不足</strong>: 雖然 LLM 已經被預訓練在大量的 Code-Based Corpus 上，但是在處理 Data Science Task 時所使用的方法(程式碼)大多是人類專家透過反覆的實驗所得到的，LLM 在這部份的知識其實是不夠的</li>
+<li><strong>LLM 生成程式碼的過程缺乏彈性</strong>: 過去方法使用缺乏彈性的策略來讓 LLM 生成程式碼，導致 LLM 僅能夠針對一些比較簡單或是經典的任務來生成程式碼</li>
+</ol>
+<p>可以很明顯的觀察到，AutoMind 中的第一個 (Expert Knowledge Base for Data Science) 與第二個 (Agentic Knowledge Tree Search Algorithm) 方法，對應到第一個問題，而第三個方法 (Self-Adaptive Coding Strategy) 對應到第二個問題。</p>
+<h2 id="automind-方法-1-expert-knowledge-base" class="headerLink">
+    <a href="#automind-%e6%96%b9%e6%b3%95-1-expert-knowledge-base" class="header-mark"></a>3 AutoMind 方法 (1): Expert Knowledge Base</h2><p>為了讓 LLM 能夠理解 Data Science Task 所需的知識，AutoMind 建立了一個 Knowledge Base，裡頭主要有兩種類型的知識：</p>
+<ul>
+<li>
+<p><strong>Kaggle Competition Solution</strong>: 作者從此<a href="https://farid.one/kaggle-solutions/" target="_blank" rel="noopener noreferrer">網站</a>中篩選出 455 個 Kaggle Competition，並且收集了 3237 篇 Post，每篇 Post 其實就是 Competition 的 Solution</p>
+</li>
+<li>
+<p><strong>Top Conference Paper</strong>: 作者收集了 ICLR, NeurIPS, KDD, ICML, EMNLP 等頂尖會議最近三年的 Paper</p>
+</li>
+</ul>
+<p>建立了 Knowledge Base 後，接著就是要處理 Retrieval 的問題。最直覺的方法，就是透過比較 Task Description 與 Knowledge Base 中 Approach Description 的 Embedding，來進行 Dense Retrieval，但是這樣的作法明顯效果會很差，因為 Task 與 Approach 之間有時候不會有很強的相關性，導致沒辦法取出有幫助的知識。</p>
+<div class="details admonition tip open">
+    <div class="details-summary admonition-title">
+        <span class="icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M96.06 454.35c.01 6.29 1.87 12.45 5.36 17.69l17.09 25.69a31.99 31.99 0 0 0 26.64 14.28h61.71a31.99 31.99 0 0 0 26.64-14.28l17.09-25.69a31.989 31.989 0 0 0 5.36-17.69l.04-38.35H96.01l.05 38.35zM0 176c0 44.37 16.45 84.85 43.56 115.78 16.52 18.85 42.36 58.23 52.21 91.45.04.26.07.52.11.78h160.24c.04-.26.07-.51.11-.78 9.85-33.22 35.69-72.6 52.21-91.45C335.55 260.85 352 220.37 352 176 352 78.61 272.91-.3 175.45 0 73.44.31 0 82.97 0 176zm176-80c-44.11 0-80 35.89-80 80 0 8.84-7.16 16-16 16s-16-7.16-16-16c0-61.76 50.24-112 112-112 8.84 0 16 7.16 16 16s-7.16 16-16 16z"/></svg></span>補充資訊<span class="details-icon"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/></svg></span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content"><p>實際上，這確實也是 Multi-Hop RAG 領域經常遇到的挑戰：針對一個問題，中間需要經過多個步驟的推理（先回答幾個 Intermediate Question）才有辦法得到真正要回答的核心問題，也才有辦法基於這個核心問題，透過 Dense Retrieval 從 Knowledge Base 中取出相關的資料。</p>
+<p>如果對於 Multi-Hop RAG 初次認識，不妨閱讀 <a href="https://arxiv.org/abs/2212.14024" target="_blank" rel="noopener noreferrer">Demonstrate-Search-Predict</a> 這篇經典論文，或者是另外一篇同樣於 2025 年所發表且方法非常簡單的 <a href="../notes-writing/" rel="">NotesWriting</a>。</p>
+</div></div></div>
+<p>在 AutoMind 中，針對 Knowledge Retieval 的方法有些暴力，作者會透過 LLM 事先將每個 <strong>Kaggle Competition Solution</strong> 標上標籤。具體流程是，作者定義了 11 種 Top-Level 的主類別，每種主類別底下又有自己的子類別。讓 LLM 先分辨目前這個 Solution 屬於哪些主類別，再提供相對應的子類別讓 LLM 判斷。作者也透過 <a href="https://arxiv.org/abs/2203.11171" target="_blank" rel="noopener noreferrer">Self-Consistency</a> 的方法，確保標籤的選擇是穩定的。</p>
+<p>針對 <strong>Top Conference Paper</strong>，由於 Paper 的內容比 Competition Solution 更為彈性，要給予明確的標籤並不容易，因此作者直接透過 LLM 針對每一篇 Paper 產生 Summary，這個 Summary 包含：Data, Task, Approach 以及 Contribution 等資訊。</p>
+<p>實際在 Retrieval 時，AutoMind 一樣會透過 LLM 對 Input Task 進行標籤的分類，然後再針對每個標籤下的 Solution 進行 Retrieval。然而，作者在論文中沒有很清楚的交待清楚實做上是 Dense, Sparse 還是 Hybrid Retrieval。</p>
+<h2 id="automind-方法-2-agentic-knowledgeable-tree-search" class="headerLink">
+    <a href="#automind-%e6%96%b9%e6%b3%95-2-agentic-knowledgeable-tree-search" class="header-mark"></a>4 AutoMind 方法 (2): Agentic Knowledgeable Tree Search</h2><h3 id="node-definition" class="headerLink">
+    <a href="#node-definition" class="header-mark"></a>4.1 Node Definition</h3><p>如 Figure 1 所示，在 AutoMind 中，透過一個 Tree 來組織 Agent 在 <strong>Solution Space 中的探索</strong>。Tree 中的每個節點稱為 Solution Node，每個 Node 都包含以下資訊：</p>
+<ul>
+<li><strong>Plan</strong>: 一段文字描述解決目前 Data Science Task 的計畫 (Sequential Stage)，Plan 中包含 Data Preprocessing, Feature Engineering, Model Training, Model Validation</li>
+<li><strong>Code</strong>: 一段 Python Code 來實做 Plan</li>
+<li><strong>Metric</strong>: 從 Code Execution Reuslt 中取出的 Validation Score</li>
+<li><strong>Output</strong>: Code Execution 輸出在 Terminal 中的 Output</li>
+<li><strong>Summary</strong>: 由 LLM-Based Verifier 針對 Plan, Code, Metric 以及 Output 給予這個 Node 的一個 Summary，同時也判斷這個 Node 是 &ldquo;Valid Node&rdquo; 還是 &ldquo;Buggy Node&rdquo;</li>
+</ul>
+<h3 id="search-policy" class="headerLink">
+    <a href="#search-policy" class="header-mark"></a>4.2 Search Policy</h3><p>基於一個 Tree，要如何在這個 Tree 上做搜索，主要由 Search Policy 來決定。Search Policy 的輸入是目前整個 Tree 的狀態，而輸出是一個 Tuple 包含: 選定的 Node 以及要進行的 Action。</p>
+<p>在 AutoMind 中，Search Policy 是透過一連串的 Rule-Based 的機率判斷來決定輸出，過程中沒有 LLM 的介入。如下方 Algorithm 所示：</p>
+<figure><a class="lightgallery" href="/paper-intro/automind/search-policy.png" title="" data-thumbnail="/paper-intro/automind/search-policy.png" data-sub-html="<h2>[Algorithm 1] Search Policy</h2>"><img  loading="lazy" src='/paper-intro/automind/search-policy.png'    height="831" width="1228"></a><figcaption class="image-caption">[Algorithm 1] Search Policy</figcaption>
+    </figure>
+<h3 id="action-type" class="headerLink">
+    <a href="#action-type" class="header-mark"></a>4.3 Action Type</h3><p>針對每個 Node 可以進行的 Action 以下 3 種，每種 Action 都是讓 LLM 基於不同的輸入來輸出新的 Plan：</p>
+<ul>
+<li><strong>Drafting</strong>: 輸入 Task Description 以及從 Knolwedge Base 中取出的相關 <strong>Paper</strong>，輸出一個 Initial Plan</li>
+<li><strong>Improving</strong>: 輸入 Tree 中隨機挑選出來的 Valid Node (Plan, Code, Output) 以及從 Knolwedge Base 中取出的相關 <strong>Solution</strong>，輸出一個改善過後的 Plan</li>
+<li><strong>Debugging</strong>: 輸入 Tree 中隨機挑選出來的 Buggy Node (Plan, Code, Output) ，輸出一個 Debug 過後的 Plan</li>
+</ul>
+<p>不管是哪一種 Action 被執行，一旦新的 Plan 被產生出來後，就會基於 Plan 進行 Code Implementation 以及 Code Excution，最後將 (Plan, Code, Metric, Output, Summary) 組成為一個新的 Node 存放回 Tree 中。</p>
+<h2 id="automind-方法-3-self-adpative-coding-strategy" class="headerLink">
+    <a href="#automind-%e6%96%b9%e6%b3%95-3-self-adpative-coding-strategy" class="header-mark"></a>5 AutoMind 方法 (3): Self-Adpative Coding Strategy</h2><p>為了提昇 Code Implementation 的正確性，AutoMind 透過 LLM-as-a-Judge 的方法，針對 Plan 產生一個分數，代表這個 Plan 的複雜度。如果分數低於事先設定好的門檻，則直接讓 LLM 產生完整的 Code；反之，如果高於門檻，則表示 Plan 蠻複雜的，就會讓 LLM 先將 Plan 拆解為多個 Sub-Step，然後依序針對每個 Sub-Step 進行 Code Implementation。</p>
+<p>在針對每個 Sub-Step 進行 Code Implementation 時，會先讓 Code 經過 Abstract Syntax Tree 的檢查再執行，並將執行結果作為 Execution Feeback，讓 LLM 繼續進行下一個 Sub-Step 的 Code Implementation。</p>
+<h2 id="automind-實驗結果" class="headerLink">
+    <a href="#automind-%e5%af%a6%e9%a9%97%e7%b5%90%e6%9e%9c" class="header-mark"></a>6 AutoMind 實驗結果</h2><figure><a class="lightgallery" href="/paper-intro/automind/experiment.png" title="" data-thumbnail="/paper-intro/automind/experiment.png" data-sub-html="<h2>[Table 1] AutoMind 實驗結果</h2>"><img  loading="lazy" src='/paper-intro/automind/experiment.png'    height="675" width="1213"></a><figcaption class="image-caption">[Table 1] AutoMind 實驗結果</figcaption>
+    </figure>
+<p>從上表 Table 1 可以發現到 AutoMind 在 MLE-Bench 以及 TOP AI Competitions 上，都透過相對更少的 Submission 次數，達到接近或是比 Baseline 方法更好的表現。</p>
+<figure><a class="lightgallery" href="/paper-intro/automind/ablation.png" title="" data-thumbnail="/paper-intro/automind/ablation.png" data-sub-html="<h2>[Figure 2] AutoMind 中 Expert Knowledge Base 以及 Self-Adpative Coding Strategy 的影響</h2>"><img  loading="lazy" src='/paper-intro/automind/ablation.png'    height="599" width="620"></a><figcaption class="image-caption">[Figure 2] AutoMind 中 Expert Knowledge Base 以及 Self-Adpative Coding Strategy 的影響</figcaption>
+    </figure>
+<p>有趣的是，我原本以為 AutoMind 之所以可以有這麼好的表現，很大一部份應該來自於作者特別建立了一個 Data Science Expert Knowledge Base。然而，從上圖的 Abalaton 實驗可以發現到，如果將 Expert Knowledge Base 移除的話，表現雖然會下降但是不多；如果把 Self-Adpative Coding Strategy 移除 (所有 Plan 都透過 One-Pass Generation 產生 Code)，對於 AutoMind 的影響非常大。</p>
+<h2 id="結語" class="headerLink">
+    <a href="#%e7%b5%90%e8%aa%9e" class="header-mark"></a>7 結語</h2><p>在本篇文章中，我們介紹了 <a href="https://arxiv.org/abs/2506.10974" target="_blank" rel="noopener noreferrer">AutoMind: Adaptive Knowledgeable Agent for Automated Data Science</a> 論文，理解如何透過 Large Reasoning Model (e.g. 論文中使用的 <code>o3-mini</code>, <code>deepseek-v3</code>) 建立一個 Agentic Framework 來處理 Data Science Task。</p>
+<p>AutoMind 核心方法在於 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy，使其在 MLE-Bench 以及 Top AI Competitions 兩個 Benchmark 上表現的過去的 SOTA 方法更好。</p></div>
+
+        <div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新於 2025-06-28</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line print:!tw-hidden">
+            <div class="post-info-md"><span><a class="link-to-mardown" href=/paper-intro/automind/index.md target="_blank" rel="noopener noreferrer">閱讀原始文檔</a>
+                    </span></div>
+            <div class="post-info-share"><button title="分享到 Twitter" data-sharer="twitter" data-url="http://localhost:1313/paper-intro/automind/" data-title="[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science" data-hashtags="Large Language Model,Multi-Agent,Retrieval-Augmented Generation,Test-Time Scaling"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></button><button title="分享到 Facebook" data-sharer="facebook" data-url="http://localhost:1313/paper-intro/automind/" data-hashtag="Large Language Model"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></button><button title="分享到 Linkedin" data-sharer="linkedin" data-url="http://localhost:1313/paper-intro/automind/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></button><button title="分享到 Hacker News" data-sharer="hackernews" data-url="http://localhost:1313/paper-intro/automind/" data-title="[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M0 32v448h448V32H0zm21.2 197.2H21c.1-.1.2-.3.3-.4 0 .1 0 .3-.1.4zm218 53.9V384h-31.4V281.3L128 128h37.3c52.5 98.3 49.2 101.2 59.3 125.6 12.3-27 5.8-24.4 60.6-125.6H320l-80.8 155.1z"/></svg></button><button title="分享到 Reddit" data-sharer="reddit" data-url="http://localhost:1313/paper-intro/automind/"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M201.5 305.5c-13.8 0-24.9-11.1-24.9-24.6 0-13.8 11.1-24.9 24.9-24.9 13.6 0 24.6 11.1 24.6 24.9 0 13.6-11.1 24.6-24.6 24.6zM504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zm-132.3-41.2c-9.4 0-17.7 3.9-23.8 10-22.4-15.5-52.6-25.5-86.1-26.6l17.4-78.3 55.4 12.5c0 13.6 11.1 24.6 24.6 24.6 13.8 0 24.9-11.3 24.9-24.9s-11.1-24.9-24.9-24.9c-9.7 0-18 5.8-22.1 13.8l-61.2-13.6c-3-.8-6.1 1.4-6.9 4.4l-19.1 86.4c-33.2 1.4-63.1 11.3-85.5 26.8-6.1-6.4-14.7-10.2-24.1-10.2-34.9 0-46.3 46.9-14.4 62.8-1.1 5-1.7 10.2-1.7 15.5 0 52.6 59.2 95.2 132 95.2 73.1 0 132.3-42.6 132.3-95.2 0-5.3-.6-10.8-1.9-15.8 31.3-16 19.8-62.5-14.9-62.5zM302.8 331c-18.2 18.2-76.1 17.9-93.6 0-2.2-2.2-6.1-2.2-8.3 0-2.5 2.5-2.5 6.4 0 8.6 22.8 22.8 87.3 22.8 110.2 0 2.5-2.2 2.5-6.1 0-8.6-2.2-2.2-6.1-2.2-8.3 0zm7.7-75c-13.6 0-24.6 11.1-24.6 24.9 0 13.6 11.1 24.6 24.6 24.6 13.8 0 24.9-11.1 24.9-24.6 0-13.8-11-24.9-24.9-24.9z"/></svg></button><button title="分享到 Line" data-sharer="line" data-url="http://localhost:1313/paper-intro/automind/" data-title="[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science"><svg class="icon" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>LINE</title><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg></button><button title="分享到 Telegram" data-sharer="telegram" data-url="http://localhost:1313/paper-intro/automind/" data-title="[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science" data-web><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M446.7 98.6l-67.6 318.8c-5.1 22.5-18.4 28.1-37.3 17.5l-103-75.9-49.7 47.8c-5.5 5.5-10.1 10.1-20.7 10.1l7.4-104.9 190.9-172.5c8.3-7.4-1.8-11.5-12.9-4.1L117.8 284 16.2 252.2c-22.1-6.9-22.5-22.1 4.6-32.7L418.2 66.4c18.4-6.9 34.5 4.1 28.5 32.2z"/></svg></button></div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg>&nbsp;<a href="/tags/large-language-model/">Large Language Model</a>,&nbsp;<a href="/tags/multi-agent/">Multi-Agent</a>,&nbsp;<a href="/tags/retrieval-augmented-generation/">Retrieval-Augmented Generation</a>,&nbsp;<a href="/tags/test-time-scaling/">Test-Time Scaling</a></section>
+        <section class="print:!tw-hidden">
+            <span><button class="tw-text-fgColor-link-muted hover:tw-text-fgColor-link-muted-hover" onclick="window.history.back();">返回</button></span>&nbsp;|&nbsp;<span><a href="/">主頁</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav print:tw-hidden"><a href="/paper-intro/notes-writing/" class="prev" rel="prev" title="Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"/></svg>Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA</a></div>
+</div>
+</article></main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M256 8C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 448c-110.532 0-200-89.451-200-200 0-110.531 89.451-200 200-200 110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200zm107.351-101.064c-9.614 9.712-45.53 41.396-104.065 41.396-82.43 0-140.484-61.425-140.484-141.567 0-79.152 60.275-139.401 139.762-139.401 55.531 0 88.738 26.62 97.593 34.779a11.965 11.965 0 0 1 1.936 15.322l-18.155 28.113c-3.841 5.95-11.966 7.282-17.499 2.921-8.595-6.776-31.814-22.538-61.708-22.538-48.303 0-77.916 35.33-77.916 80.082 0 41.589 26.888 83.692 78.277 83.692 32.657 0 56.843-19.039 65.726-27.225 5.27-4.857 13.596-4.039 17.82 1.738l19.865 27.17a11.947 11.947 0 0 1-1.152 15.518z"/></svg>2022 - 2025<span class="author">&nbsp;<a href="https://www.linkedin.com/in/johnnyhwu/" target="_blank" rel="noopener noreferrer">Hong-Wei Wu</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span></div>
+            <div class="footer-line"></div>
+            <div class="footer-line">
+            </div>
+        </div></footer><div class="print:!tw-hidden tw-flex tw-flex-col tw-fixed tw-right-4 tw-bottom-4 tw-gap-2"><a href="#back-to-top" id="back-to-top-button" class="tw-transition-opacity tw-opacity-0 tw-block tw-bg-bgColor-secondary tw-rounded-full" style="padding: 0.6rem; line-height: 1.3rem; font-size: 1rem;" title="回到頂部">
+      <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg>
+  </a>
+
+  <button id="toc-drawer-button" class="tw-block tw-bg-bgColor-secondary tw-rounded-full md:tw-hidden" style="padding: 0.6rem; line-height: 1.3rem; font-size: 1rem;">
+      <svg class="icon"
+    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/></svg>
+  </button></div>
+<script type="module">
+        (async () => {
+            const supportSpeculationRules = HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules");
+            if (!supportSpeculationRules) {
+              await import("\/lib\/instant.page\/instantpage.min.js");
+            }
+        })();
+    </script><link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="/lib/lightgallery/lightgallery.min.css">
+        <noscript><link rel="stylesheet" href="/lib/lightgallery/lightgallery.min.css"></noscript>
+<script>window.config={"autocomplete.min.js":"/lib/autocomplete/autocomplete.min.js","comment":{},"fuse.min.js":"/lib/fuse/fuse.min.js","lightGallery":{"actualSize":false,"exThumbImage":"data-thumbnail","hideBarsDelay":2000,"selector":".lightgallery","speed":400,"thumbContHeight":80,"thumbWidth":80,"thumbnail":true},"search":{"distance":100,"findAllMatches":false,"fuseIndexURL":"/index.json","highlightTag":"em","ignoreFieldNorm":false,"ignoreLocation":true,"isCaseSensitive":false,"location":0,"maxResultLength":10,"minMatchCharLength":2,"noResultsFound":"沒有找到結果","snippetLength":50,"threshold":0.1,"type":"fuse","useExtendedSearch":false},"sharerjs":true,"table":{"sort":true}};</script><script
+    src="/lib/tablesort/tablesort.min.js"
+    
+  ></script><script
+    src="/lib/lightgallery/lightgallery.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/lightgallery/lg-thumbnail.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/lightgallery/lg-zoom.min.js"
+    
+      defer
+    
+  ></script><script
+    src="/lib/sharer/sharer.min.js"
+    
+  ></script><script
+    src="/js/theme.min.js"
+    
+      defer
+    
+  ></script>
+
+<script type="speculationrules">
+  {
+    "prerender": [
+      {
+        "where": { "href_matches": "/*" },
+        "eagerness": "moderate"
+      }
+    ]
+  }
+</script>
+</body>
+
+</html>
