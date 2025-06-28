@@ -1,13 +1,13 @@
 ---
 # weight: 1
 title: "AutoMind: Adaptive Knowledgeable Agent for Automated Data Science"
-date: 2025-06-27
-lastmod: 2025-06-27
-draft: true
-description: ""
-featuredImage: "featured-image.png"
+date: 2025-06-28
+lastmod: 2025-06-28
+draft: false
+description: "Explore AutoMind, a state-of-the-art AI agent designed to master complex data science challenges. This deep dive breaks down its powerful LLM-based framework, which uses an expert knowledge base, agentic tree search, and adaptive coding to achieve top results in Kaggle competitions with remarkable efficiency. Learn how the future of automated data science is being shaped."
+featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model"]
+tags: ["Large Language Model", "Multi-Agent", "Retrieval-Augmented Generation", "Test-Time Scaling"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1
@@ -21,123 +21,94 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This article introduces the paper "[MemGPT: Towards LLMs as Operating Systems](https://arxiv.org/pdf/2310.08560)". MemGPT was published on arXiv by researchers from UC Berkeley in October 2023. As of May 14, 2025, it has accumulated 154 citations and is currently included in [CoRR 2023](https://openreview.net/forum?id=0Kk142lP62).
+This article introduces the paper "[AutoMind: Adaptive Knowledgeable Agent for Automated Data Science](https://arxiv.org/abs/2506.10974)," published on arXiv in June 2025 by researchers from Zhejiang University and Ant Group.
 
-When discussing perpetual conversation or long-term memory in LLMs, MemGPT is considered a classic work. The open-source project for MemGPT is now called [Letta](https://github.com/letta-ai/letta). More than just a project, it feels like it's evolving into a [startup company](https://www.letta.com/).
+The goal of the AutoMind paper is to propose an LLM-based agentic framework for tackling data science challenges, such as Kaggle competitions.
 
-Furthermore, as of May 14, 2025, Letta has already garnered 16.4K stars on GitHub, indicating its significant popularity. When searching for open-source projects related to agent memory online, besides [Mem0](https://github.com/mem0ai/mem0), [Letta](https://github.com/letta-ai/letta) is another popular choice, even surpassing [LangMem](https://github.com/langchain-ai/langmem) developed by LangChain.
+{{< image src="automind.png" caption="[Figure 1] The AutoMind Framework" >}}
 
-{{< admonition info >}}
-As an AI engineer or researcher, if you're not yet familiar with the concepts of Mem0 and LangMem, be sure to read these two articles:
+As shown in the figure above, the AutoMind framework includes three core methods:
 
-- [LangMem Concept Introduction](../../other/langmem-intro/)
-- [Mem0 Concept Introduction](../mem0/)
+- **Expert Knowledge Base for Data Science:** Building a specialized knowledge base for data science tasks.
+- **Agentic Knowledge Tree Search Algorithm:** Using a tree structure to organize the agent's exploration of the solution space.
+- **Self-Adaptive Coding Strategy:** Decomposing complex problems into multiple steps and generating code for each step individually.
+
+## The Problem AutoMind Aims to Solve
+
+As mentioned, AutoMind's objective is to create an LLM-based agentic framework for data science tasks (you can think of AutoMind as a data science agent). The authors argue that previous methods (e.g., [AIDE](https://arxiv.org/abs/2502.13138), [Data Interpreter](https://arxiv.org/abs/2402.18679), [AutoML-Agent](https://arxiv.org/abs/2410.02958)) suffer from two key shortcomings that limit their performance:
+
+1. **Insufficient Data Science Knowledge in LLMs:** Although LLMs are pre-trained on vast code-based corpora, the methods (and code) used in data science are often the result of iterative experiments by human experts. LLMs lack sufficient knowledge in this specialized domain.
+2. **Inflexible Code Generation Process:** Previous methods employ rigid strategies for code generation, restricting LLMs to generating effective code only for simpler or well-established tasks.
+
+It's clear that AutoMind's first two methods (Expert Knowledge Base and Agentic Knowledge Tree Search) address the first problem, while the third method (Self-Adaptive Coding Strategy) tackles the second.
+
+## AutoMind's Method (1): Expert Knowledge Base
+
+To equip the LLM with the necessary knowledge for data science tasks, AutoMind constructs a knowledge base containing two main types of information:
+
+- **Kaggle Competition Solutions:** The authors selected 455 Kaggle competitions from [this website](https://farid.one/kaggle-solutions/) and collected 3,237 posts, where each post represents a solution to a competition.
+- **Top Conference Papers:** The authors gathered papers from top conferences like ICLR, NeurIPS, KDD, ICML, and EMNLP published in the last three years.
+
+After building the knowledge base, the next challenge is retrieval. The most straightforward approach is dense retrieval, comparing the embeddings of the task description with the approach descriptions in the knowledge base. However, this method is often ineffective because the correlation between a task and an approach can be weak, making it difficult to retrieve helpful knowledge.
+
+{{< admonition tip "Additional Information" >}}
+This is a common challenge in the field of Multi-Hop RAG. For complex questions, a series of intermediate reasoning steps (answering intermediate questions) is often required to identify the core question that needs to be answered. Only then can dense retrieval effectively pull relevant data from the knowledge base. If you are new to Multi-Hop RAG, the classic paper [Demonstrate-Search-Predict](https://arxiv.org/abs/2212.14024) is a great starting point!
 {{< /admonition >}}
 
-This article serves as course notes for "LLMs as Operating Systems: Agent Memory" on DeepLearning.AI. It primarily focuses on introducing the MemGPT methodology itself, without delving into experimental results or other details. Interested readers are encouraged to consult the [original paper](https://arxiv.org/pdf/2310.08560) for more information!
+AutoMind's approach to knowledge retrieval is somewhat brute-force. The authors use an LLM to pre-tag each **Kaggle Competition Solution**. The process involves defining 11 top-level categories, each with its own sub-categories. The LLM first identifies the relevant top-level categories for a solution and is then prompted to select the appropriate sub-categories. The authors also employ the [Self-Consistency](https://arxiv.org/abs/2203.11171) method to ensure the stability of the tagging process.
 
-## The Problem MemGPT Aims to Solve
+For **Top Conference Papers**, which are more diverse in content than competition solutions, assigning specific tags is challenging. Therefore, the authors use an LLM to generate a summary for each paper, including information on the Data, Task, Approach, and Contribution.
 
-{{< image src="llm.jpeg" caption="LLM Input and Output" >}}
+During actual retrieval, AutoMind uses an LLM to classify the input task with tags and then retrieves solutions under those tags. However, the paper does not clearly specify whether the implementation uses dense, sparse, or hybrid retrieval.
 
-As shown in the image above, based on our prompt, an LLM generates a completion in an auto-regressive manner, essentially "continuing the text." If this LLM powers a chatbot you've developed to solve customer issues, your prompt might include: customer information, chat history between the chatbot and the customer, external data, tools available to the chatbot, reasoning steps the chatbot has already taken, and observations, etc.
+## AutoMind's Method (2): Agentic Knowledgeable Tree Search
 
-As the interaction time between the chatbot and the customer lengthens, it's conceivable that the prompt can no longer accommodate so much information. Even if you use an LLM with a very large context window, you might find that as more information fills the context window, the LLM seems to start "forgetting" or losing context.
+### Node Definition
 
-Therefore, a common challenge LLMs face during long-running conversational tasks is how to effectively manage "long-term memory." This is precisely the problem that methods like **[Mem0](../mem0/)** and **[LangMem](../../other/langmem-intro/)** address.
+As shown in Figure 1, AutoMind uses a tree to organize the agent's **exploration within the solution space**. Each node in the tree is called a Solution Node and contains the following information:
 
-## Core Concept of MemGPT
+- **Plan:** A text description outlining the plan to solve the current data science task in sequential stages, including Data Preprocessing, Feature Engineering, Model Training, and Model Validation.
+- **Code:** A Python script to implement the plan.
+- **Metric:** The validation score extracted from the code execution result.
+- **Output:** The terminal output from the code execution.
+- **Summary:** A summary of the node provided by an LLM-based verifier, based on the Plan, Code, Metric, and Output. It also determines if the node is a "Valid Node" or a "Buggy Node."
 
-{{< image src="memgpt-core.jpeg" caption="Core Concept of MemGPT" >}}
+### Search Policy
 
-Similarly, MemGPT was created to tackle this issue! As illustrated above, the core idea of MemGPT is to enable an LLM to act like an operating system, managing its own state and **deciding what information to place into the prompt**.
+The search process on the tree is governed by a Search Policy. The policy takes the current state of the entire tree as input and outputs a tuple containing a selected node and the action to perform on it.
 
-{{< image src="prompt-compilation.jpeg" caption="Prompt Compilation" >}}
+In AutoMind, the Search Policy is determined by a series of rule-based probabilistic judgments, with no LLM involvement. The process is outlined in the algorithm below:
 
-For example, as shown in the image, an agent's current state can be represented by its memories, available tools, and message history. You can imagine the Agent State as holding all information related to the agent.
+{{< image src="search-policy.png" caption="[Algorithm 1] Search Policy" >}}
 
-The LLM model is what gives the agent its conversational abilities. However, the LLM's context window has limitations, preventing us from putting the entire Agent State into the prompt.
+### Action Types
 
-{{< admonition success Key Concept >}}
-Therefore, MemGPT's ultimate goal is: based on the current task, **to extract necessary information from the Agent State and place it into the prompt**, allowing the LLM to successfully generate the correct output based on that prompt. This process of distilling vast amounts of information from the Agent State into the prompt is known as **Prompt Compilation**.
-{{< /admonition >}}
+There are three types of actions that can be performed on each node. Each action prompts an LLM to generate a new plan based on different inputs:
 
-To empower MemGPT with this capability, it was designed with the following four features:
+- **Drafting:** Takes the Task Description and relevant **Papers** from the knowledge base as input to output an initial plan.
+- **Improving:** Takes a randomly selected Valid Node (Plan, Code, Output) from the tree and relevant **Solutions** from the knowledge base as input to output an improved plan.
+- **Debugging:** Takes a randomly selected Buggy Node (Plan, Code, Output) from the tree as input to output a debugged plan.
 
-- **Self-Editing Memory**: The agent can modify its own memory content through tool calling.
-- **Inner Thoughts**: Before each output, the agent can engage in some thinking, and these thought processes are not shown to the user.
-- **Every Output as a Tool Call**: All outputs from the agent are tool calls (except for inner thoughts). Even when sending a message to the user, it must use the `send_message()` tool.
-- **Looping via Heartbeats**: Whenever the agent makes a tool call, it can specify the `request_heartbeat` parameter to decide whether to invoke itself again with the tool's execution result to get a new output.
+Regardless of which action is executed, once a new plan is generated, it undergoes code implementation and execution. The resulting (Plan, Code, Metric, Output, Summary) is then packaged into a new node and added to the tree.
 
-## MemGPT's Memory Management Approach
+## AutoMind's Method (3): Self-Adaptive Coding Strategy
 
-{{< image src="general-context.jpeg" caption="Prompt Content for a General Agent" >}}
+To improve the correctness of code implementation, AutoMind uses an LLM-as-a-Judge to generate a complexity score for the plan. If the score is below a predefined threshold, the LLM generates the complete code in one go. Conversely, if the score is above the threshold, it indicates a complex plan. The LLM then first breaks the plan down into multiple sub-steps and proceeds to implement the code for each sub-step sequentially.
 
-As shown above, in a typical agent, the prompt usually consists of a **"System Prompt"** plus **"Chat History."** In MemGPT, to achieve effective Prompt Compilation, the prompt's composition is divided into several special reserved sections, each serving to store different types of information.
+When implementing code for each sub-step, the code is first checked using an Abstract Syntax Tree (AST) before execution. The execution result serves as feedback, which the LLM uses to proceed with the code implementation for the next sub-step.
 
-### MemGPT's Core Memory
+## AutoMind's Experimental Results
 
-{{< image src="core-memory.jpeg" caption="MemGPT reserves a Core Memory section in the prompt" >}}
+{{< image src="experiment.png" caption="[Table 1] Experimental Results of AutoMind" >}}
 
-MemGPT designates a Core Memory section within the prompt to store a small amount of the most crucial information. Core Memory can be divided into multiple blocks, each storing different information (e.g., user information, the agent's persona, etc.).
+Table 1 shows that AutoMind achieves performance close to or better than baseline methods on both MLE-Bench and Top AI Competitions, and does so with significantly fewer submissions.
 
-To make the LLM aware of this section, information about Core Memory is included in the System Prompt. This includes that Core Memory can be modified using tools (e.g., `core_memory_replace`, `core_memory_append`).
+{{< image src="ablation.png" caption="[Figure 2] The Impact of the Expert Knowledge Base and Self-Adaptive Coding Strategy in AutoMind" >}}
 
-Upon receiving user input, MemGPT first performs an inner thought process before generating an output. As mentioned [earlier](#core-concept-of-memgpt), all of MemGPT's outputs are tool calls. Therefore, if MemGPT deems certain information worthy of being recorded in Core Memory during its inner thought, that output will be a `core_memory_append` tool call to save this information to Core Memory.
-
-### MemGPT's Chat History
-
-As shown in the image above, besides Core Memory, MemGPT also allocates a section in the prompt for Chat History. This Chat History is the multi-turn conversation between MemGPT and the user.
-
-When the conversation content exceeds the size limit of the Chat History section, MemGPT will use the LLM to summarize a chunk of the Chat History, and this Chat Summary will replace the original chunk.
-
-The size of this chunk can be controlled by `desired_memory_token_pressure` ([letta/letta/settings.py](https://github.com/letta-ai/letta/blob/e4a7bb1489392142c7cdc4b90f87d1cbff999b93/letta/settings.py#L51)). The `calculate_summarizer_cutoff` function ([letta/letta/llm_api/helpers.py](https://github.com/letta-ai/letta/blob/e4a7bb1489392142c7cdc4b90f87d1cbff999b93/letta/llm_api/helpers.py#L317)) uses this parameter to calculate how many tokens need to be summarized.
-
-In MemGPT, the Chat Summary generated by the LLM is actually a **Recursive Summary**, because when the LLM generates a summary for a chunk, the chunk itself might contain a previous Chat Summary.
-
-### MemGPT's Recall Memory
-
-{{< image src="recall-memory.jpeg" caption="MemGPT uses Recall Memory to store all Chat History" >}}
-
-Continuing from [MemGPT's Chat History](#memgpts-chat-history), summarized chunks are not discarded but are stored in an external database called **Recall Memory**. In other words, no part of MemGPT's conversation history with the user is lost; it's all preserved in Recall Memory.
-
-Since it's a type of memory, it must be searchable. Correct! MemGPT's System Prompt also informs the LLM that it can use the `conversation_search` tool to retrieve information from Recall Memory.
-
-### MemGPT's Archival Memory
-
-{{< image src="archival-memory.jpeg" caption="Information that doesn't fit in Core Memory goes into Archival Memory" >}}
-
-Just as Chat History has its external database, **Recall Memory**, to store information that doesn't fit, Core Memory also has its own external database for overflow. This is called **Archival Memory**.
-
-During MemGPT's interaction with a user, if it decides a piece of information (e.g., user preferences) needs to be remembered, but Core Memory (e.g., the "User" block in Core Memory) is full, MemGPT can take one of two actions based on the **importance** of the information:
-
-- The new information is very important: Move existing content from Core Memory to Archival Memory, then store the new important information in Core Memory.
-- The new information is not as important: Store the new information directly into Archival Memory.
-
-Besides serving as extra external storage for Core Memory, Archival Memory is also where external data for **RAG** (Retrieval-Augmented Generation) applications is stored. That is, if a user wants MemGPT to answer questions based on a PDF document, that PDF will be stored in Archival Memory.
-
-Naturally, MemGPT's System Prompt will also tell the LLM it can use the `archival_memory_search` tool to find information in Archival Memory.
-
-### MemGPT's A/R Stats
-
-So far, we've learned that MemGPT has two external databases: **Archival Memory** and **Recall Memory**, serving as additional storage for Core Memory and Chat History, respectively.
-
-> However, since the information in these two external storage spaces is not directly in MemGPT's context, how does MemGPT know their status?
-
-In MemGPT, an **A/R Stats** section is included in the context. This section records the current amount of information in Archival and Recall Memory, allowing MemGPT to determine if it should search these two memories.
-
-For example, when Archival and Recall Memory contain some information, A/R Stats lets MemGPT know it can search them:
-
-{{< image src="ar-stats.png" caption="MemGPT understands the status of Archival and Recall Memory via A/R Stats" >}}
+Interestingly, I initially assumed that AutoMind's strong performance was largely due to its custom-built Data Science Expert Knowledge Base. However, the ablation study in the figure above reveals that removing the Expert Knowledge Base leads to only a slight decrease in performance. In contrast, removing the Self-Adaptive Coding Strategy (by generating code for all plans in a single pass) has a major negative impact on AutoMind's performance.
 
 ## Conclusion
 
-This article introduced the paper "[MemGPT: Towards LLMs as Operating Systems](https://arxiv.org/pdf/2310.08560)," with content primarily based on notes from the "LLMs as Operating Systems: Agent Memory" course on DeepLearning.AI.
+In this article, we explored the paper "[AutoMind: Adaptive Knowledgeable Agent for Automated Data Science](https://arxiv.org/abs/2506.10974)," learning how an agentic framework can be built using Large Reasoning Models (like `o3-mini` and `deepseek-v3` used in the paper) to handle data science tasks.
 
-The challenge MemGPT aims to address is **Prompt Compilation**: how to distill **large amounts of information from the Agent State into the prompt** so that the LLM can successfully generate accurate output based on that prompt.
-
-To overcome this challenge, MemGPT divides the LLM's context window (Short-Term Memory) into multiple sections, including System Prompt, Core Memory, A/R Stats, Chat Summary, and Chat History. It also designs two types of Long-Term Memory: Archival Memory and Recall Memory, serving as additional storage for Core Memory and Chat History, respectively.
-
-Furthermore, MemGPT enables the LLM to operate as a [ReAct-Based Agent](https://arxiv.org/abs/2210.03629), using a continuous loop of Thinking, Action (Tool Calling), Thinking, Action (Tool Calling)..., to search and refine information from different memory stores.
-
-Finally, from a Long/Short-Term Memory perspective, MemGPT is similar to [LangMem](../../other/langmem-intro/) and [Mem0](../mem0/) in that they all propose their own methods for **Long-Term Memory**. However, MemGPT uniquely places more emphasis on the design and content of **Short-Term Memory** (the LLM's context window).
+AutoMind's core methods—(1) the Expert Knowledge Base, (2) the Agentic Knowledgeable Tree Search, and (3) the Self-Adaptive Coding Strategy—enable it to outperform previous state-of-the-art methods on the MLE-Bench and Top AI Competitions benchmarks.

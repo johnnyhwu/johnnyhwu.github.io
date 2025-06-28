@@ -1,13 +1,13 @@
 ---
 # weight: 1
 title: "[論文介紹] AutoMind: Adaptive Knowledgeable Agent for Automated Data Science"
-date: 2025-06-27
-lastmod: 2025-06-27
-draft: true
-description: ""
-featuredImage: "featured-image.png"
+date: 2025-06-28
+lastmod: 2025-06-28
+draft: false
+description: "在本篇文章中，我們介紹了 AutoMind 論文，理解如何透過 Large Reasoning Model (e.g. o3-mini, deepseek-v3) 結合 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy 建立一個 Agentic Framework 來處理 Data Science Task。"
+featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model"]
+tags: ["Large Language Model", "Multi-Agent", "Retrieval-Augmented Generation", "Test-Time Scaling"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1
@@ -24,13 +24,13 @@ url: "paper-intro/:contentbasename"
 
 AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理 Data Science Challenge (e.g. Kaggle Competition)。
 
-{{< image src="automind.png" caption="AutoMind 方法" >}}
+{{< image src="automind.png" caption="[Figure 1] AutoMind 方法" >}}
 
 如上圖所示，AutoMind 框架中包含 3 個核心方法：
 
-- Expert Knowledge Base for Data Science: 就是針對 Data Science Task 所建立的知識庫
-- Agentic Knowledge Tree Search Algorithm: ???
-- Self-Adaptive Coding Strategy: ???
+- Expert Knowledge Base for Data Science: 針對 Data Science Task 建立知識庫
+- Agentic Knowledge Tree Search Algorithm: 透過 Tree 來組織 Agent 於 Solution Space 中的探索過程
+- Self-Adaptive Coding Strategy: 針對複雜的問題，拆解為多個步驟，單獨針對每個步驟產生程式碼
 
 ## AutoMind 想解決的問題
 
@@ -41,7 +41,7 @@ AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理
 
 可以很明顯的觀察到，AutoMind 中的第一個 (Expert Knowledge Base for Data Science) 與第二個 (Agentic Knowledge Tree Search Algorithm) 方法，對應到第一個問題，而第三個方法 (Self-Adaptive Coding Strategy) 對應到第二個問題。
 
-## AutoMind: Expert Knowledge Base
+## AutoMind 方法 (1): Expert Knowledge Base
 
 為了讓 LLM 能夠理解 Data Science Task 所需的知識，AutoMind 建立了一個 Knowledge Base，裡頭主要有兩種類型的知識：
 
@@ -61,7 +61,7 @@ AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理
 
 實際在 Retrieval 時，AutoMind 一樣會透過 LLM 對 Input Task 進行標籤的分類，然後再針對每個標籤下的 Solution 進行 Retrieval。然而，作者在論文中沒有很清楚的交待清楚實做上是 Dense, Sparse 還是 Hybrid Retrieval。
 
-## AutoMind: Agentic Knowledgeable Tree Search
+## AutoMind 方法 (2): Agentic Knowledgeable Tree Search
 
 ### Node Definition
 
@@ -79,8 +79,7 @@ AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理
 
 在 AutoMind 中，Search Policy 是透過一連串的 Rule-Based 的機率判斷來決定輸出，過程中沒有 LLM 的介入。如下方 Algorithm 所示：
 
-{{< image src="search-policy.png" caption="Search Policy" >}}
-{{< image src="image.png" caption="Search Policy" >}}
+{{< image src="search-policy.png" caption="[Algorithm 1] Search Policy" >}}
 
 ### Action Type
 
@@ -90,4 +89,26 @@ AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理
 - **Improving**: 輸入 Tree 中隨機挑選出來的 Valid Node (Plan, Code, Output) 以及從 Knolwedge Base 中取出的相關 **Solution**，輸出一個改善過後的 Plan
 - **Debugging**: 輸入 Tree 中隨機挑選出來的 Buggy Node (Plan, Code, Output) ，輸出一個 Debug 過後的 Plan
 
-不管是哪一種 Action 被執行，一旦新的 Plan 被產生出來後，就會基於 Plan 進行 Code 的生成，並且執行 Code 得到 Execution Result。最後將 (Plan, Code, Metric, Output, Summary) 組成為一個新的 Node 存放回 Tree 中。
+不管是哪一種 Action 被執行，一旦新的 Plan 被產生出來後，就會基於 Plan 進行 Code Implementation 以及 Code Excution，最後將 (Plan, Code, Metric, Output, Summary) 組成為一個新的 Node 存放回 Tree 中。
+
+## AutoMind 方法 (3): Self-Adpative Coding Strategy
+
+為了提昇 Code Implementation 的正確性，AutoMind 透過 LLM-as-a-Judge 的方法，針對 Plan 產生一個分數，代表這個 Plan 的複雜度。如果分數低於事先設定好的門檻，則直接讓 LLM 產生完整的 Code；反之，如果高於門檻，則表示 Plan 蠻複雜的，就會讓 LLM 先將 Plan 拆解為多個 Sub-Step，然後依序針對每個 Sub-Step 進行 Code Implementation。
+
+在針對每個 Sub-Step 進行 Code Implementation 時，會先讓 Code 經過 Abstract Syntax Tree 的檢查再執行，並將執行結果作為 Execution Feeback，讓 LLM 繼續進行下一個 Sub-Step 的 Code Implementation。
+
+## AutoMind 實驗結果
+
+{{< image src="experiment.png" caption="[Table 1] AutoMind 實驗結果" >}}
+
+從上表 Table 1 可以發現到 AutoMind 在 MLE-Bench 以及 TOP AI Competitions 上，都透過相對更少的 Submission 次數，達到接近或是比 Baseline 方法更好的表現。
+
+{{< image src="ablation.png" caption="[Figure 2] AutoMind 中 Expert Knowledge Base 以及 Self-Adpative Coding Strategy 的影響" >}}
+
+有趣的是，我原本以為 AutoMind 之所以可以有這麼好的表現，很大一部份應該來自於作者特別建立了一個 Data Science Expert Knowledge Base。然而，從上圖的 Abalaton 實驗可以發現到，如果將 Expert Knowledge Base 移除的話，表現雖然會下降但是不多；如果把 Self-Adpative Coding Strategy 移除 (所有 Plan 都透過 One-Pass Generation 產生 Code)，對於 AutoMind 的影響非常大。
+
+## 結語
+
+在本篇文章中，我們介紹了 [AutoMind: Adaptive Knowledgeable Agent for Automated Data Science](https://arxiv.org/abs/2506.10974) 論文，理解如何透過 Large Reasoning Model (e.g. 論文中使用的 `o3-mini`, `deepseek-v3`) 建立一個 Agentic Framework 來處理 Data Science Task。
+
+AutoMind 核心方法在於 (1) Expert Knowledge Base (2) Agentic Knowledgeable Tree Search 以及 (3) Self-Adpative Coding Strategy，使其在 MLE-Bench 以及 Top AI Competitions 兩個 Benchmark 上表現的過去的 SOTA 方法更好。
