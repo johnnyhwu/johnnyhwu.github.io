@@ -3,7 +3,7 @@
 title: "Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA"
 date: 2025-06-28
 lastmod: 2025-06-28
-draft: true
+draft: false
 description: "本篇文章介紹 Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA 論文。NotesWriting 的目標在於減少 Multi-Hop RAG 中，由於進行多次的 Retrieval，使得過多不相關資訊進入到 LLM Context 中，而使得 LLM 表現變差的問題。NotesWriting 針對每個 Retrieved Document 進行 Notes Extract，再將所有 Extract 出來的 Note 進行 Aggregation，得到最終少量且重要的資訊，來提昇 LLM Context 的品質進而提昇 LLM 的表現。"
 featuredImage: "featured-image.jpg"
 

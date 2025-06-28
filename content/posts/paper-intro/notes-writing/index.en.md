@@ -3,7 +3,7 @@
 title: "Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA"
 date: 2025-06-28
 lastmod: 2025-06-28
-draft: true
+draft: false
 description: "Discover NotesWriting, a simple yet effective technique to boost LLM performance in Multi-Hop RAG. Learn how it refines retrieved documents to create a clean, focused context, solving key challenges in complex question answering."
 featuredImage: "featured-image.jpg"
 
