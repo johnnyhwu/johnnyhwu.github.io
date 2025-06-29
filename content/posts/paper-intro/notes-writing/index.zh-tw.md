@@ -1,6 +1,6 @@
 ---
 # weight: 1
-title: "Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA"
+title: "[論文介紹] Augmenting LLM Reasoning with Dynamic Notes Writing for Complex QA"
 date: 2025-06-28
 lastmod: 2025-06-28
 draft: false
