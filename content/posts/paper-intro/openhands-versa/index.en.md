@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "Coding Agents with Multimodal Browsing are Generalist Problem Solvers"
-date: 2025-06-16
-lastmod: 2025-06-16
+title: "MIRIX: Multi-Agent Memory System for LLM-Based Agents"
+date: 2025-07-17
+lastmod: 2025-07-17
 draft: true
 description: ""
 featuredImage: "featured-image.jpg"
