@@ -2,9 +2,9 @@
 # weight: 1
 title: "[論文介紹] MIRIX: Multi-Agent Memory System for LLM-Based Agents"
 date: 2025-07-17
-lastmod: 2025-07-17
-draft: true
-description: ""
+lastmod: 2025-07-21
+draft: false
+description: "本篇文章介紹 MIRIX Agent 論文，理解 MIRIX Agent 設計了哪 6 種 Memory Component 以及如何透過 Memory 更新以及對話 Workflow 在 LOCOMO 資料集上達到 SOTA 的表現。"
 
 featuredImage: "featured-image.jpg"
 
@@ -78,7 +78,22 @@ MIRIX 的方法設計大致上可以分為以下 3 個面向：
 
 {{< image src="conversation.png" caption="[Figure 3] MIRIX 中的 Conversation Workflow" >}}
 
-MIRIX Agent 實際在與使用者對話的過程如上圖所示：基於使用者所輸入的內容，先到 Memory Base 中取出 6 種 Memory Component 的相關資訊 (簡潔的資訊而非所有細節)。Chat Agent 判斷目前使用者輸入的內容，應該是由哪一種 Memory Component 處理，觸發 "Conduct Specific Search"，從該特定的 Memory Component 中取出更詳細更完整的相關資訊。最後則根據這些取出的相關資訊來生成最後的回覆。如果 Chat Agent 認定使用者提供的內容需要進行 Memory Update，則可以直接觸發特定的 Memory Manager 來對特定的 Memory Component 進行更新。
+當 MIRIX Agent 收集足夠多的 Memory 後，就可以開始基於 Memory 回答使用者的問題。MIRIX Agent 實際在與使用者對話的過程如上圖所示：基於使用者所輸入的內容，先到 Memory Base 中取出 6 種 Memory Component 的相關資訊 (簡潔的資訊而非所有細節)。Chat Agent 判斷目前使用者輸入的內容，應該是由哪一種 Memory Component 處理，觸發 "Conduct Specific Search"，從該特定的 Memory Component 中取出更詳細更完整的相關資訊。最後則根據這些取出的相關資訊來生成最後的回覆。如果 Chat Agent 認定使用者提供的內容需要進行 Memory Update，則可以直接觸發特定的 Memory Manager 來對特定的 Memory Component 進行更新。
 
 ## 實驗結果
 
+在實驗階段，MIRIX 論文中使用了兩個 Deataset — ScreenshotVQA 以及 LOCOMO。
+
+ScreenshotVQA 是本篇論文自行建立的 Multimodal LLM Memory Dataset，這個 Benchmark 包含了 3 位使用者在電腦使用天數為 1 天, 20 天與 1 個月情況下，所收集到的 5886, 18178 與 5349 張螢幕畫面截圖以及相對應的 11, 21 與 55 個問題。而 LOCOMO 則是 Text-Only LLM Memory Dataset，包含了 600 次 Conversation，每次 Conversation 平均包含 26K 個 Token 與相對應的 200 個問題。
+
+在 Evaluation Metric 上，作者基於 `GPT-4.1` 設計 LLM-as-a-Judge 的方法。此外，MIRIX Agent 在 ScreenshotVQA 與 LOCOMO Dataset 分別以 `gemini-2.5-flash-preview-04-17` 與 `gpt-4.1-mini` 作 Backbone Model。
+
+{{< image src="exp-1.png" caption="[Table 1] MIRIX 在 ScreenshotVQA 實驗結果" >}}
+
+{{< image src="exp-2.png" caption="[Table 2] MIRIX 在 LOCOMO 實驗結果" >}}
+
+由上方的實驗結果可以看到 MIRIX Agent 在兩個 Dataset 上都取得了相當厲害的表現！
+
+## 結語
+
+本篇文章介紹了 [MIRIX](https://arxiv.org/abs/2507.07957) 論文所提出的 LLM Memory 方法。讀完本篇論文，最令我印象深刻的是 MIRIX 中定義的 6 種 Memory Component，幾乎涵蓋了各種不同的使用情境，也補足了 [LangMem](../../other/langmem-intro/), [Mem0](../mem0/) 與 [MemGPT](../memgpt/) 中針對 Memory Component 種類設計的不足。至於 Memory Update Worflow 與 Conversation Workflow 我覺得並沒有太特別的地方，但是 MIRIX 特別針對每一種 Memory Component 設計 Memory Agent，也比其他 Baseline 方法有更好的表現，可以想像在 [Prompt 設計](https://github.com/Mirix-AI/MIRIX/tree/main/mirix/prompts/system)上應該值得參考。
