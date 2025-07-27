@@ -7,7 +7,7 @@ draft: false
 description: "Dive into ChatEval, an easy-to-understand multi-agent LLM framework from ICLR 2024. Learn how multiple LLM agents with unique personas debate to evaluate model outputs. An ideal starting point for understanding multi-agent systems."
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Vision Language Model", "Fine-Tuning"]
+tags: ["LLM-as-a-Judge", "Large Language Model", "Multi-Agent", "Evaluation"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1
