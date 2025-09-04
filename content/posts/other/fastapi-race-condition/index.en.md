@@ -486,7 +486,7 @@ In short, always remember: **Thread-Safe ≠ Async-Safe**. Choosing async-native
 
 Here are the design guidelines for creating such universally safe code, ordered by importance:
 
-#### Rule 1: Pursue Pure Functions and Statelessness (The Golden Rule)
+### Pursue Pure Functions and Statelessness (The Golden Rule)
 
 This is the most important and effective rule. If a function or method has no state, or if its output is determined entirely by its input, then there is nothing to protect.
 
@@ -508,7 +508,7 @@ This is the most important and effective rule. If a function or method has no st
     ```
     This function will always be safe, whether it's called by 100 threads or 100 coroutines simultaneously.
 
-#### Rule 2: Use Immutability
+### Use Immutability
 
 If you must have state, make it immutable. Once created, it cannot be changed.
 
@@ -539,7 +539,7 @@ If you must have state, make it immutable. Once created, it cannot be changed.
             return self._config.timeout
     ```
 
-#### Rule 3: Externalize State Management
+### Externalize State Management
 
 This is a key architectural principle. Don't manage complex shared state within your application's memory. Instead, delegate this responsibility to external services designed specifically for concurrency.
 

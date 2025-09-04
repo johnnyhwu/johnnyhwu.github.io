@@ -485,7 +485,7 @@ class DangerousRetriever:
 
 以下是實現這種 Universally Safe 程式碼的設計規範，按重要性排序：
 
-#### 規範 1：追求純函式與無狀態 (Statelessness) - 黃金法則
+### 追求純函式與無狀態 (Statelessness) - 黃金法則
 
 這是最重要、最有效的一條。如果一個函式或方法沒有狀態，或者說它的輸出完全由其輸入決定，那麼它就沒有任何需要保護的東西。
 
@@ -507,7 +507,7 @@ class DangerousRetriever:
     ```
     這個函式無論被 100 個 Thread 還是 100 個 Coroutine 同時呼叫，永遠都是安全的。
 
-#### 規範 2：使用不可變狀態 (Immutability)
+### 使用不可變狀態 (Immutability)
 
 如果必須要有狀態，那就讓它成為不可變的。一旦建立，就不能修改。
 
@@ -537,7 +537,7 @@ class DangerousRetriever:
             return self._config.timeout
     ```
 
-#### 規範 3：將狀態管理外部化 (Externalize State Management)
+### 將狀態管理外部化 (Externalize State Management)
 
 這是架構層面的關鍵。不要在你的應用程式記憶體中自己管理複雜的共享狀態，而是將這個責任交給專門為並行而設計的外部服務。
 
