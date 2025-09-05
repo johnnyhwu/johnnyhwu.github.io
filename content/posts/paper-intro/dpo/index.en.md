@@ -25,7 +25,7 @@ In the article [LLM Fine-Tuning: Reinforcement Learning from Human Feedback](../
 
 The paper we are sharing in this article, [DPO (Direct Preference Optimization)](https://arxiv.org/abs/2305.18290), was accepted at NeurIPS 2023. It primarily focuses on improving the third stage of the training process, RLHF, by proposing a more efficient training method.
 
-Quick reminder: Before reading this article, please make sure you fully understand the [concept of RLHF](http://54.150.87.240/deep-learning-core-concept/llm-fine-tuning-rlhf/)!
+Quick reminder: Before reading this article, please make sure you fully understand the [concept of RLHF](../../ai-concept/llm-fine-tuning-rlhf/)!
 
 ## Why is RLHF Necessary?
 

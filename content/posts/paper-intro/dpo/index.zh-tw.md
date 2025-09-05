@@ -24,7 +24,7 @@ url: "paper-intro/:contentbasename"
 
 本篇文章所要分享的論文 [DPO (Direct Preference Optimization)](https://arxiv.org/abs/2305.18290) 是一篇被收錄於 NeurIPS 2023 的論文，主要針對第三階段 RLHF 的訓練流程進行改善，提出一個更有效率的訓練方法。
 
-小提醒：在閱讀本篇文章之前，請先務必完全了解 [RLHF 的概念](http://54.150.87.240/deep-learning-core-concept/llm-fine-tuning-rlhf/)！
+小提醒：在閱讀本篇文章之前，請先務必完全了解 [RLHF 的概念](../../ai-concept/llm-fine-tuning-rlhf/)！
 
 ## 為什麼需要 RLHF？
 
