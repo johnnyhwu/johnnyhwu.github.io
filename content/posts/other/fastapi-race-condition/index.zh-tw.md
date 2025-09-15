@@ -332,7 +332,7 @@ class Retriever:
 
 不會。因為在任何一個時間點，**Stack 上只會有當前正在執行的那一個 Coroutine 的資料**。不同 Coroutine 的資料是透過在 Heap 上的物件進行隔離儲存的，它們永遠不會同時出現在堆疊上，因此不可能發生衝突或 Race Condition。
 
-## 什麼情況下 Async 比 Multi-Thrading 更有效率?
+## 什麼情況下 Async 比 Multi-Threading 更有效率?
 
 >  在 I/O 密集型 (I/O-Bound) 的應用中，Async 的運作模式能以更低的成本實現更高的資源利用率
 
