@@ -1,13 +1,13 @@
 ---
 # weight: 1
-title: "Let AI Write Flawless SQL: A Deep Dive into the SQL-of-Thought Multi-Agent Framework"
-date: 2025-10-12
-lastmod: 2025-10-12
-draft: true
-description: "Dive into SQL-of-Thought, a novel multi-agent framework designed to significantly boost LLM performance on Text-to-SQL tasks. This article breaks down its unique agentic workflow, guided error correction, and how providing an SQL Error Taxonomy leads to more accurate queries."
+title: "Dynamic Cheatsheet: The Secret to Self-Improving LLMs that Learn During Inference"
+date: 2025-10-15
+lastmod: 2025-10-22
+draft: false
+description: "Unlock self-improving LLMs with the Dynamic Cheatsheet method. Learn how test-time learning and adaptive memory with retrieval and curation can boost agent performance."
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Retrieval-Augmented Generation", "Multi-Agent", "Agent Memory"]
+tags: ["Large Language Model", "Retrieval-Augmented Generation", "Single-Agent", "Agent Memory"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1
@@ -20,189 +20,83 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This article shares insights from the paper "[SQL-of-Thought: Multi-agentic Text-to-SQL with Guided Error Correction](https://arxiv.org/abs/2509.00581)," which was uploaded to arXiv in September 2025 and accepted by the Deep Learning for Code Workshop at NeurIPS 2025!
+This article will share insights from the paper "[Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952)," which was uploaded to arXiv in April 2025. I wanted to discuss this paper because its methods form the basis for a recent and popular Self-Improving Agent paper, "[Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)." The authors of Dynamic Cheatsheet have also open-sourced their code on [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet), which interested readers can explore and test for themselves!
 
-The authors have also open-sourced the code on [GitHub](https://github.com/shollercoaster/SQL-of-Thought). Interested readers are encouraged to test it out!
+## The Problem Dynamic Cheatsheet Aims to Solve
 
-## The Problem SQL-of-Thought Aims to Solve
+The problem that the [Dynamic Cheatsheet](https://arxiv.org/abs/2504.07952) paper aims to solve is very straightforward:
 
-The problem this paper, [SQL-of-Thought](https://arxiv.org/abs/2509.00581), aims to solve is very straightforward:
+> How can an LLM Agent continuously learn during the inference phase, so that its performance improves as the number of inferences increases?
 
-> How to design an Agentic Workflow to improve the performance of LLMs in Text-to-SQL tasks.
+The Dynamic Cheatsheet method is designed for Black-Box LLMs. Therefore, it does not aim to alter the LLM's weights through Gradient Descent. Instead, it seeks to modify the LLM's input context, allowing the model to incorporate past experiences to produce correct outputs. This technique falls under the popular field of [Context Engineering](https://www.philschmid.de/context-engineering).
 
-{{< admonition tip "Additional Note" >}}
-Besides Text-to-SQL, Text-to-Python is another common method for allowing an LLM to interact with a database. For instance, the [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) method wraps some database operations as Python functions, enabling the LLM to call these functions by generating Python code to manipulate the database.
-{{< /admonition >}}
+## How Dynamic Cheatsheet (DC) Works
 
-## The SQL-of-Thought Method
+In this paper, the authors propose two main methods:
 
-{{< image src="sql-of-thought.png" caption="The Agentic Workflow of SQL-of-Thought" >}}
+- **DC-Cumulative (DC-Cu)**
+- **DC with Retrieval & Synthesis (DC-RS)**
 
-The image above illustrates the complete SQL-of-Thought workflow. Let's briefly describe the tasks each agent in this workflow is responsible for:
+The core concept behind both methods is to allow the LLM to autonomously manage a non-parametric memory. By recording noteworthy information from the inference process into this memory, the memory itself can evolve adaptively. With each new inference, the model references the information in the memory to generate a better output.
 
-- **Schema Linking Agent**: Based on the user's question and the database table schemas, this agent selects the most relevant (1) table schemas and (2) the necessary columns within each schema.
-    
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Schema Linking Agent"}
-    You are a Schema Linking Agent in an NL2SQL framework.Return the relevant schema links for generating SQL query for the question."
+### DC-Cumulative (DC-Cu)
 
-    Given:
-    - A natural language question
-    - Database schemas with columns, primary keys (PK), and foreign keys (FK)
+{{< image src="solution.png" caption="The DC-Cumulative (DC-Cu) Method" >}}
 
-    Cross-check your schema for:
-    - Missing or incorrect FK-PK relationships and add them
-    - Incomplete column selections (especially join keys)
-    - Table alias mismatches
-    - Linkage errors that would lead to incorrect joins or groupBy clauses
+Let's start with the DC-Cumulative (DC-Cu) method. The image above illustrates its complete workflow, which is primarily divided into two stages: Solution Generation and Memory Curation.
 
-    Question: $question
+- **Solution Generation**: The model generates an answer based on (1) the current Input Query and (2) all the content within the Memory.
+- **Memory Curation**: The model generates a new Memory based on (1) the current Input Query, (2) all the content within the Memory, and (3) the answer it just produced. Memory Curation involves the following three operations:
+    - Extracting meaningful insights from the newly generated answer and storing them in the Memory.
+    - Deleting or modifying incorrect or outdated information in the Memory.
+    - Making the Memory more concise.
 
-    Table Schema:
-    $table_schema
+From this process, it's clear that the success of the DC-Cumulative method hinges on the **LLM's ability to determine whether the current answer is correct during the Memory Curation stage and, consequently, update the Memory reasonably**.
 
-    Return the schema links in given format:
+### DC with Retrieval & Synthesis (DC-RS)
 
-    Table: primary_key_col, foreign_key_col, col1, col2, ... all other columns in Table
+As its name suggests, DC with Retrieval & Synthesis (DC-RS) adds retrieval and synthesis steps to the DC method. DC-RS is designed to address two main drawbacks of DC-Cu:
 
-    ONLY list relevant tables and columns and Foreign Keys in given format and no other extra characters.
-    ```
-- **Subproblem Agent**: Based on the output from the Schema Linking Agent, this agent breaks down the original question into multiple SQL subproblems. Each SQL subproblem is represented by an SQL clause (e.g., WHERE, GROUPBY, JOIN, DISTINCT, ORDER BY, HAVING, EXCEPT, LIMIT, UNION) and its corresponding value.
+- During Solution Generation, the content in the Memory is outdated and not perfectly suited for the current Input Query.
+- During Memory Curation, the model can only reference the immediately preceding input-output pair, rather than a wider range of past examples.
 
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Subproblem Agent"}
-    You are a Subproblem Agent in an NL2SQL framework. Your task is to decompose a natural language question into SQL subproblems.
+Therefore, the DC-RS method consists of the following steps:
 
-    You will be provided:
-    - A natural language question
-    - A textual schema summary that lists relevant tables and columns (generated by a Schema Agent)
+- **Example Retrieval**: Based on (1) the current Input Query, use an Embedding Model to retrieve the Top-K most similar input-output examples.
+- **Memory Curation**: The model generates a new Memory based on (1) the current Input Query, (2) all the content within the Memory, and (3) the Top-K input-output examples just retrieved.
+- **Solution Generation**: The model generates an answer based on (1) the current Input Query and (2) all the content within the Memory.
 
-    Use this information to infer which SQL clauses are likely needed (e.g., WHERE, GROUPBY, JOIN, DISTINCT, ORDER BY, HAVING, EXCEPT, LIMIT, UNION).
+## Dynamic Cheatsheet Experiments
 
-    Question:
-    $question
+### Baselines
 
-    Schema:
-    $schema
+- **Baseline prompting (BL).**: Directly prompting the LLM to generate an answer without the aid of Memory Curation or Example Retrieval.
+- **DC-\( \emptyset \) (empty memory).**: Using the DC method but with an initially empty memory.
+- **Full-History Appending (FH).**: Continuously accumulating the entire history of interactions within the LLM's input context.
+- **Dynamic Retrieval (DR).**: For each inference, retrieving the input-output examples most similar to the current query and placing them in the LLM's input context (this is equivalent to performing retrieval without curation, as the raw examples are used directly instead of first being distilled into insights).
 
-    Output a JSON object containing a list of subproblems:
-    {
-    "subproblems": [
-        { "clause": "SELECT", "expression": "..." },
-        { "clause": "JOIN", "expression": "..." },
-        ...
-    ]
-    }
+### Benchmarks
 
-    Only output valid JSON — no markdown, no extra commentary.
-    ```
-- **Query Plan Agent**: Using the outputs from the Schema Linking Agent and the Subproblem Agent, the Query Plan Agent's task is to generate a step-by-step SQL plan based on the question. Each item in the SQL plan is an incomplete SQL statement.
+- AIME 2020–2025 Exam Questions
+- GPQA-Diamond
+- Game of 24
+- Math Equation Balancer
+- MMLU-Pro (Engineering and Physics)
 
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Query Plan Agent"}
-    You are a Query Plan Agent in an NL2SQL Framework. Using the question, schema info, and subproblems, generate a step-by-step SQL query plan. Use Chain of Thought to think through the process.
+### Results
 
-    Question: $question
-    Schema Info:
-    $schema_info
-    Subproblems:
-    $subproblem_json
+{{< image src="exp.png" caption="Table 1: Experimental results of Dynamic Cheatsheet (DC) and various baseline methods across multiple benchmarks" >}}
 
-    $critic_feedback
+Taking the Game of 24 from Table 1 as an example, we can see that the DC-RS method achieves the best performance with GPT-4o. In contrast, the performance of DC-\( \emptyset \) is quite poor, which indicates that empowering the LLM with memory retrieval and curation capabilities can indeed enhance its performance.
 
-    $subprob_plan
+However, when using Claude 3.5 Sonnet, the improvement of DC-RS over the baseline method is less significant. The paper explains that while Dynamic Cheatsheet provides the LLM with the potential for test-time adaptation, the effectiveness of this adaptation still depends on the inherent capabilities of the LLM itself.
 
-    Return plan steps with specific table, column names like:
-    1. FROM tableA
-    2. JOIN tableB ON tableA.colX = tableB.colY
-    3. JOIN tableC ON tableB.colZ = tableC.colW
+{{< image src="exp-2.png" caption="Table 2: A comparison between the Full-History Appending (FH) baseline and the Dynamic Cheatsheet (DC) method" >}}
 
-    Return only the plan (no SQL or extra text).
-    ```
-- **SQL Agent**: This agent generates the complete and correct SQL code based on the outputs from the Schema Linking Agent, Subproblem Agent, and Query Plan Agent. The generated SQL code is then executed by the database engine to get the result.
+From Table 2, we can observe that simply retaining all past experiences (input-output examples) in the LLM's input context (the FH method) not only fails to significantly improve performance but can sometimes perform worse than the baseline method of simply prompting the LLM (BL).
 
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for SQL Agent"}
-    You are a world-class SQL writer AI in an NL2SQL multiagent framework. Your task is to write a single, syntactically correct SQL query that perfectly implements the provided query plan.
-    Pay close attention to the table and column names in the schema.
-
-    $question
-
-    Plan:
-    $plan
-
-    $schema
-
-    $subprob_sql
-
-    $critic_feedback
-
-    Write ONLY the final valid SQL query. Do NOT include commentary or unnecessary characters in the query.
-    ```
-- **Correction Plan Agent**: If an error occurs during the execution of the SQL code, this agent is triggered to generate a plan on how to correct the SQL. It's worth noting that the paper emphasizes that the prompt for this agent not only asks the LLM to use a Chain of Thought approach to generate the correction plan but also **provides an SQL Error Taxonomy** to further enhance the agent's performance. The SQL Error Taxonomy is a classification of potential errors in SQL code, as shown in the figure below:
-
-    {{< image src="sql-error-taxonomy.png" caption="SQL Error Taxonomy" >}}
-
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Correction Plan Agent"}
-    You are a Senior SQL Debugger in an NL2SQL multiagent framework. Your sole task is to analyze a failed SQL query to create a clear, step-by-step correction plan using Chain of Thought. Do NOT write the corrected SQL yourself.
-
-    You are an expert in a comprehensive error taxonomy, including categories like:
-
-    - `schema.mismatch`: The query references tables, columns, or functions that do not exist in the schema, or uses them ambiguously.
-    - `join.logic_error`: Tables are connected incorrectly. This includes missing JOIN conditions, wrong foreign keys, using the wrong columns to join, or including unnecessary tables.
-    - `filter.condition_error`: The WHERE or HAVING clauses are incorrect. This can mean filtering on the wrong column, using the wrong operator or value, or confusing the use of HAVING with WHERE.
-    - `aggregation.grouping_error`: Errors related to aggregate functions like COUNT or SUM. This typically involves a missing or incomplete GROUP BY clause, or incorrect use of HAVING.
-    - `select.output_error`: The final columns being selected are wrong. The query might be returning extra columns, missing required columns, or presenting them in the wrong order.
-    - `syntax.structural_error`: The query has fundamental syntax errors or is missing critical clauses required by the question, such as ORDER BY, LIMIT, or set operators like UNION and INTERSECT.
-    - `intent.semantic_error`: The query is syntactically valid but fails to capture the user's true intent. This includes using incorrect hardcoded values or failing to implement a required subquery or leaving out a logical solution.
-
-    **Your Reasoning Process:*:
-    1.  **Pinpoint the Mismatch:** Read the question and compare it to the `Failed SQL Query` and the `Pruned Schema` to find the exact source of the error.
-    2.  **Find error type:** Read error taxonomy categories given above and try to identify the error in this query. Analyze the joins, aggregation, distinction, limits and except clauses applied carefully.
-    3.  **Formulate a Hypothesis:** State the root cause of the error in a single sentence. Look out for simple errors in column names like 'name' instead of 'song_name' etc.
-    4.  **Create the Plan:** Write a concise, step-by-step natural language plan that a junior SQL developer can follow to fix the query.
-
-    **Input for Analysis:**
-
-    **1. Original Question:**
-    "$question"
-
-    **2. Relevant Schema:**
-    $schema
-
-    **3. Failed SQL Query:**
-    $wrong_sql
-
-    $database_error
-
-    There IS an error in the query. DO NOT return "no error, query seems fine". Provide a clear, step-by-step explanation of why the query is wrong and exactly how to fix it. Return ONLY the query error and correction plan, don't generate SQL.
-    ```
-- **Correction SQL Agent**: Based on the correction plan proposed by the Correction Plan Agent, this agent generates new SQL code. Like the SQL Agent, the SQL code produced by this agent is executed by the database engine. If it fails again, the process returns to the Correction Plan Agent, forming a loop.
-
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Correction SQL Agent"}
-    You are an expert SQL debugger AI in NL2SQL multiagent framework. Your previous attempt to write a query failed.
-    Your new task is to analyze the feedback and your incorrect query, then generate a new, corrected query after reading the question and analyzing the relevant schema.
-
-    Question:
-    $question 
-
-    Incorrect SQL:
-    $wrong_sql
-
-    Correction query plan- You MUST follow these steps to fix the query:
-    $correction_plan
-
-    $schema
-
-    Write ONLY the final valid SQL query. Do NOT include commentary or unnecessary characters in the query.
-    ```
-
-## SQL-of-Thought Experimental Results
-
-This paper primarily evaluates the performance of SQL-of-Thought using the following two benchmarks:
-- [Spider](https://arxiv.org/abs/1809.08887): Contains 20 database settings and 1,034 Text-SQL pairs.
-- [Spider Realistic](https://arxiv.org/abs/2010.12773): Based on the Spider dev set, this benchmark removes explicitly mentioned column names, containing 508 samples.
-
-The experimental results for SQL-of-Thought are shown in the table below:
-
-{{< image src="exp.png" caption="SQL-of-Thought Experimental Results" >}}
+This highlights the importance of the retrieval and curation steps in the DC-RS method. Retrieving truly relevant past experiences and curating them into more concise and generalizable insights is crucial for effective performance enhancement.
 
 ## Conclusion
 
-This article introduced the paper "[SQL-of-Thought: Multi-agentic Text-to-SQL with Guided Error Correction](https://arxiv.org/abs/2509.00581)," explaining how its multi-agent workflow design enhances performance on Text-to-SQL tasks. Furthermore, we learned from this paper that providing an **SQL Error Taxonomy** can further improve performance when having an LLM correct SQL code based on execution feedback.
+This article introduced the "[Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952)" paper, explaining how to implement a simple Self-Improving LLM using the technique of adaptive memory. The experimental results also show us that merely stuffing all information into memory or retrieving everything from it yields limited performance gains. To achieve effective improvement, these steps must be combined with Memory Retrieval and Curation.

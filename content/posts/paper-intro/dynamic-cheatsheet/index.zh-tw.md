@@ -1,13 +1,13 @@
 ---
 # weight: 1
-title: ""
+title: "AI 如何邊工作邊學習？深入解析《Dynamic Cheatsheet》的自我提升之道"
 date: 2025-10-15
-lastmod: 2025-10-15
-draft: true
-description: ""
+lastmod: 2025-10-22
+draft: false
+description: "如何讓 LLM 在上線後還能不斷學習進化？本文介紹《Dynamic Cheatsheet》的關鍵技術，理解其如何透過 Adaptive Memory 與 Retrieval 技術，實現一個簡單卻強大的 Self-Improving LLM。"
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Retrieval-Augmented Generation", "Multi-Agent", "Agent Memory"]
+tags: ["Large Language Model", "Retrieval-Augmented Generation", "Single-Agent", "Agent Memory"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1
@@ -20,189 +20,83 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-本篇文章和大家分享 [SQL-of-Thought: Multi-agentic Text-to-SQL with Guided Error Correction](https://arxiv.org/abs/2509.00581) 論文，該論文於 2025 年 9 月上傳至 arXiv 並被 NeurIPS 2025 的 Deep Learning for Code Workshop 給接受!
+本篇文章和大家分享 [Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952) 論文，該論文於 2025 年 4 月上傳至 arXiv。之所以想分享這篇論文，是因為最近很熱門的一篇 Self-Improving Agent 類型的論文 － [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618) 其方法就是基於此篇論文進行優化。本篇論文作者也有開源程式碼於 [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet)，有興趣的讀者可以再自行測試看看!
 
-論文作者也有開源程式碼於 [GitHub](https://github.com/shollercoaster/SQL-of-Thought)，有興趣的讀者可以再自行測試看看!
+## Dynamic Cheatsheet 想解決的問題
 
-## SQL-of-Thought 想解決的問題
+本篇論文 [Dynamic Cheatsheet](https://arxiv.org/abs/2504.07952) 想解決的問題非常直觀:
 
-本篇論文 [SQL-of-Thought](https://arxiv.org/abs/2509.00581) 想解決的問題非常直觀:
+> 如何讓 LLM Agent 在 Inference 階段也能夠不斷學習，以致隨著 Inference 次數變多，Agent 的表現也提升
 
-> 如何設計一個 Agentic Workflow 來提升 LLM 在 Text-to-SQL 的表現
+Dynamic Cheatsheet 方法定位在 Black-Box LLM 上，因此其方法並不是希望透過 Gradient Descent 來改變 LLM 的權重進行學習，而是希望透過改變 LLM 的 Input Context 使得 LLM 能夠在 Input Context 中塞入過去的經驗來產生正確的輸出。其實就是目前熱門的 [Context Engineering](https://www.philschmid.de/context-engineering) 領域的技術。
 
-{{< admonition tip 補充說明>}}
-讓 LLM 自己來操作 Database 的方法除了 Text-to-SQL 外，Text-to-Python 也是常見的方法之一。舉例來說，在 [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) 方法中，正是將一些 Database 操作包裝為 Python Function，然後讓 LLM 透過產生 Python Code 來呼叫這些 Function，進而對 Database 進行操作。
-{{< /admonition >}}
+## Dynamic Cheatsheet (DC) 方法介紹
 
-## SQL-of-Thought 方法介紹
+在本篇論文中，作者總共提出兩種方法:
 
-{{< image src="sql-of-thought.png" caption="SQL-of-Thought 的 Agentic Workflow" >}}
+- **DC-Cumulative (DC-Cu)**
+- **DC with Retrieval & Synthesis (DC-RS)**
 
-上圖呈現的是完整的 SQL-of-Thought 的 Workflow，接著我們來簡單描述 Workflow 中每一個 Agent 所負責的任務:
+無論是哪一種方法，其核心的概念都是讓 LLM 自主操作一個 Non-Parametric Memory: 將 Inference 過程中值得注意的資訊記載到 Memory 中，使得 Memory 本身能夠不斷演化 (Adpative)。每次 Inference 也會參考 Memory 中的資訊來得到更好的輸出。
 
-- **Schema Linking Agent**: 基於 Question 以及 Database 中 Table Schema，來挑選出與目前 Question 最相符的 (1) Table Schema 與 (2) 每個 Schema 中需要使用到的 Column
-    
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Schema Linking Agent"}
-    You are a Schema Linking Agent in an NL2SQL framework.Return the relevant schema links for generating SQL query for the question."
+### DC-Cumulative (DC-Cu)
 
-    Given:
-    - A natural language question
-    - Database schemas with columns, primary keys (PK), and foreign keys (FK)
+{{< image src="solution.png" caption="DC-Cumulative (DC-Cu) 方法" >}}
 
-    Cross-check your schema for:
-    - Missing or incorrect FK-PK relationships and add them
-    - Incomplete column selections (especially join keys)
-    - Table alias mismatches
-    - Linkage errors that would lead to incorrect joins or groupBy clauses
+我們首先從 DC-Cumulative (DC-Cu) 方法開始介紹，上圖呈現的是其完整的 Workflow，主要分為 Solution Generation 與 Memory Curation 兩個階段:
 
-    Question: $question
+- **Solution Generation**: 模型基於現在的 (1) Input Query (2) Memory 中的所有內容 → 來產生回答
+- **Memory Curation**: 模型基於現在的 (1) Input Query (2) Memory 中的所有內容 (3) 剛剛產生的回答 → 來產生新的 Memory。Memory Curation 主要會針對 Memory 進行以下 3 種操作:
+    - 從剛剛所產生的回答中萃取出有意義的 Insight 存入 Memory
+    - 將 Memory 中錯誤或過時的資訊刪除或修改
+    - 將 Memory 變得更簡潔
 
-    Table Schema:
-    $table_schema
+從上述流程可以發現到，DC-Cumulative 方法能不能成功的關鍵其實在於 **LLM 能不能在 Memory Curation 階段，判斷目前的回答是否是正確的，進而對 Memory 進行合理的更新**。
 
-    Return the schema links in given format:
+### DC with Retrieval & Synthesis (DC-RS)
 
-    Table: primary_key_col, foreign_key_col, col1, col2, ... all other columns in Table
+DC with Retrieval & Synthesis (DC-RS) 顧名思義就是比 DC 多了 Retrieval & Synthesis 的步驟，DC-RS 主要想解決 DC-Cu 的兩個缺點:
 
-    ONLY list relevant tables and columns and Foreign Keys in given format and no other extra characters.
-    ```
-- **Subproblem Agent**: 基於 Schema Linking Agent 的輸出，來將原本的 Question 拆解為多個 SQL Subproblem，每個 SQL Subproblem 由一種 SQL Clause (e.g., WHERE, GROUPBY, JOIN, DISTINCT, ORDER BY, HAVING, EXCEPT, LIMIT, UNION) 以及其對應的值來表示
+- 在進行 Solution Generation 時，Memory 中的內容其實是過時的，而非完全適合目前的 Input Query
+- 在進行 Memory Curation 時，只能參考前一個 Input-Output 而無法參考過去更多的 Input-Output Example
 
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Subproblem Agent Agent"}
-    You are a Subproblem Agent in an NL2SQL framework. Your task is to decompose a natural language question into SQL subproblems.
+因此，DC-RS 的方法由以下步驟組成:
 
-    You will be provided:
-    - A natural language question
-    - A textual schema summary that lists relevant tables and columns (generated by a Schema Agent)
+- **Example Retrieval**: 基於現在的 (1) Input Query → 透過 Embedding Model 抽取出 Top-K 個最相似的 Input-Output Example
+- **Memory Curation**: 模型基於現在的 (1) Input Query (2) Memory 中的所有內容 (3) 剛剛抽取出的 Top-K Input-Output Example → 來產生新的 Memory
+- **Solution Generation**: 模型基於現在的 (1) Input Query (2) Memory 中的所有內容 → 來產生回答
 
-    Use this information to infer which SQL clauses are likely needed (e.g., WHERE, GROUPBY, JOIN, DISTINCT, ORDER BY, HAVING, EXCEPT, LIMIT, UNION).
+## Dynamic Cheatsheet 實驗
 
-    Question:
-    $question
+### Baseline
 
-    Schema:
-    $schema
+- **Baseline prompting (BL).**: 沒有任何 Memory Curation 或是 Example Retrieval 的幫助下，直接 Prompt LLM 來產生回答
+- **DC-\( \emptyset \) (empty memory).**: 基於 DC 方法但是在 Memory 中不保留任何內容
+- **Full-History Appending (FH).**: 直接將所有 Iteration 過程不斷累積在 LLM 的 Input Context 中
+- **Dynamic Retrieval (DR).**: 每次都先抽取出與現在 Input Query 最相似的 Input-Output Examples 放在 LLM 的 Input Context 中 (相當於有進行 Retrieval 但沒有 Curation: 直接把原始的 Input-Output Examples 放入 Input Context，而非先 Distill 出一些 Insight)
 
-    Output a JSON object containing a list of subproblems:
-    {
-    "subproblems": [
-        { "clause": "SELECT", "expression": "..." },
-        { "clause": "JOIN", "expression": "..." },
-        ...
-    ]
-    }
+### Benchmark
 
-    Only output valid JSON — no markdown, no extra commentary.
-    ```
-- **Query Plan Agent**: 基於 Schema Linking Agent 與 Subproblem Agent 的輸出，Query Plan Agent 的任務是基於 Question 來生成 Step-by-Step 的 SQL Plan。 SQL Plan 中的每個項目都是一段不完整的 SQL 語句
+- AIME 2020–2025 Exam Questions
+- GPQA-Diamond
+- Game of 24
+- Math Equation Balancer
+- MMLU-Pro (Engineering and Physics)
 
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Query Plan Agent"}
-    You are a Query Plan Agent in an NL2SQL Framework. Using the question, schema info, and subproblems, generate a step-by-step SQL query plan. Use Chain of Thought to think through the process.
+### Result
 
-    Question: $question
-    Schema Info:
-    $schema_info
-    Subproblems:
-    $subproblem_json
+{{< image src="exp.png" caption="Table 1: Dynamic Cheatsheet (DC) 以及各種 Baseline 方法在多個 Benchmark 的實驗結果" >}}
 
-    $critic_feedback
+從上表 Table 1 中以 Game of 24 舉例，可以看到 DC-RS 方法基於 GPT-4o 表現是最好的，而 DC-\( \emptyset \) 的表現相當差，說明了賦予 LLM 進行 Memory 的 Retrieval 與 Curation，確實能夠提升 LLM 的表現。
 
-    $subprob_plan
+然而，若以 Claude 3.5 Sonnet 來看，DC-RS 相對於 Baseline 方法的改善卻不多。論文中解釋雖然 Dynamic Cheatsheet 賦予 LLM 進行 Test-Time Adaption 的可能，但是效果如何還是取決於 LLM 本身的能力。
 
-    Return plan steps with specific table, column names like:
-    1. FROM tableA
-    2. JOIN tableB ON tableA.colX = tableB.colY
-    3. JOIN tableC ON tableB.colZ = tableC.colW
+{{< image src="exp-2.png" caption="Table 2: 針對 Baseline 中的 Full-History Appending (FH) 方法與 Dynamic Cheatsheet (DC) 比較" >}}
 
-    Return only the plan (no SQL or extra text).
-    ```
-- **SQL Agent**: 基於 Schema Linking Agent, Subproblem Agent 與 Query Plan Agent 的輸出來產生完整正確的 SQL Code。SQL Code 會被 Database Engine 執行後，得到執行結果
+從上表 Table 2 可以發現到單純地將過去的經驗 (Input-Output Example) 保留於 LLM 的 Input Context 中的方法 (FH)，不僅沒有辦法顯著提升表現，反而有時還可能比完全不放這些經驗、單純 Prompt LLM 的方法 (BL) 來得差。
 
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for SQL Agent"}
-    You are a world-class SQL writer AI in an NL2SQL multiagent framework. Your task is to write a single, syntactically correct SQL query that perfectly implements the provided query plan.
-    Pay close attention to the table and column names in the schema.
-
-    $question
-
-    Plan:
-    $plan
-
-    $schema
-
-    $subprob_sql
-
-    $critic_feedback
-
-    Write ONLY the final valid SQL query. Do NOT include commentary or unnecessary characters in the query.
-    ```
-- **Correction Plan Agent**: 如果 SQL Code 的執行過程中有 Error 產生，則透過此 Agent 來產生如何修正 SQL 的計畫。值得注意的是，本篇論文特別強調，在這個 Agent 的 Prompt 中不只要要求 LLM 透過 Chain of Thought 的方式來產生修正計畫，還**提供 SQL Error Taxonomy**，進一步提升此 Agent 的表現。SQL Error Taxonomy 其實就是 SQL Code 中可能出現的 Error 種類，如下圖所示:
-
-    {{< image src="sql-error-taxonomy.png" caption="SQL Error Taxonomy" >}}
-
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Correction Plan Agent"}
-    You are a Senior SQL Debugger in an NL2SQL multiagent framework. Your sole task is to analyze a failed SQL query to create a clear, step-by-step correction plan using Chain of Thought. Do NOT write the corrected SQL yourself.
-
-    You are an expert in a comprehensive error taxonomy, including categories like:
-
-    - `schema.mismatch`: The query references tables, columns, or functions that do not exist in the schema, or uses them ambiguously.
-    - `join.logic_error`: Tables are connected incorrectly. This includes missing JOIN conditions, wrong foreign keys, using the wrong columns to join, or including unnecessary tables.
-    - `filter.condition_error`: The WHERE or HAVING clauses are incorrect. This can mean filtering on the wrong column, using the wrong operator or value, or confusing the use of HAVING with WHERE.
-    - `aggregation.grouping_error`: Errors related to aggregate functions like COUNT or SUM. This typically involves a missing or incomplete GROUP BY clause, or incorrect use of HAVING.
-    - `select.output_error`: The final columns being selected are wrong. The query might be returning extra columns, missing required columns, or presenting them in the wrong order.
-    - `syntax.structural_error`: The query has fundamental syntax errors or is missing critical clauses required by the question, such as ORDER BY, LIMIT, or set operators like UNION and INTERSECT.
-    - `intent.semantic_error`: The query is syntactically valid but fails to capture the user's true intent. This includes using incorrect hardcoded values or failing to implement a required subquery or leaving out a logical solution.
-
-    **Your Reasoning Process:*:
-    1.  **Pinpoint the Mismatch:** Read the question and compare it to the `Failed SQL Query` and the `Pruned Schema` to find the exact source of the error.
-    2.  **Find error type:** Read error taxonomy categories given above and try to identify the error in this query. Analyze the joins, aggregation, distinction, limits and except clauses applied carefully.
-    3.  **Formulate a Hypothesis:** State the root cause of the error in a single sentence. Look out for simple errors in column names like 'name' instead of 'song_name' etc.
-    4.  **Create the Plan:** Write a concise, step-by-step natural language plan that a junior SQL developer can follow to fix the query.
-
-    **Input for Analysis:**
-
-    **1. Original Question:**
-    "$question"
-
-    **2. Relevant Schema:**
-    $schema
-
-    **3. Failed SQL Query:**
-    $wrong_sql
-
-    $database_error
-
-    There IS an error in the query. DO NOT return "no error, query seems fine". Provide a clear, step-by-step explanation of why the query is wrong and exactly how to fix it. Return ONLY the query error and correction plan, don't generate SQL.
-    ```
-- **Correction SQL Agent**: 基於 Correction Plan Agent 所提出的修正計畫，實際生成新的 SQL Code。與 SQL Agent 一樣，此 Agent 所產生的 SQL Code 會被 Database Engine 執行，若有錯誤則會回到 Correction Plan Agent 形成一個迴圈
-
-    ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Correction SQL Agent"}
-    You are an expert SQL debugger AI in NL2SQL multiagent framework. Your previous attempt to write a query failed.
-    Your new task is to analyze the feedback and your incorrect query, then generate a new, corrected query after reading the question and analyzing the relevant schema.
-
-    Question:
-    $question 
-
-    Incorrect SQL:
-    $wrong_sql
-
-    Correction query plan- You MUST follow these steps to fix the query:
-    $correction_plan
-
-    $schema
-
-    Write ONLY the final valid SQL query. Do NOT include commentary or unnecessary characters in the query.
-    ```
-
-## SQL-of-Thought 實驗結果
-
-本篇論文主要透過以下兩個 Benchmark 來衡量 SQL-of-Thought 的表現:
-- [Spider](https://arxiv.org/abs/1809.08887): 包含 20 種 Database 設定以及 1034 個 Text-SQL Pairs
-- [Spider Realistic](https://arxiv.org/abs/2010.12773):  主要基於  Spider Det Set 將實際提到的 Colume Name 去除，包含 508 個樣本
-
-SQL-of-Thought 實驗結果如下表所示:
-
-{{< image src="exp.png" caption="SQL-of-Thought 實驗結果" >}}
+這也說明了 DC-RS 方法中，透過 Retrieval 來取出真正相似的過去經驗 (Input-Output Example) 以及將這些過去經驗進行 Curation 得到更精簡更泛化的 Insight 的重要性。
 
 ## 結語
 
-本篇文章介紹了 [SQL-of-Thought: Multi-agentic Text-to-SQL with Guided Error Correction](https://arxiv.org/abs/2509.00581) 論文，理解其 Multi-Agent Workflow 的設計如何提升 Text-to-SQL 的表現。此外，從本篇論文中，我們也了解到在讓 LLM 基於 SQL Execution Feedback 修正 SQL Code 時，若提供 **SQL Error Taxonomy** 可以更進一步提升表現!
+本篇文章介紹了 [Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952) 論文，理解如何加入 Adaptive Memory 的技巧，實現一個簡單的 Self-Improving LLM。同時，透過實驗結果我們也可以了解到，單純地將所有資訊放入 Memory 或是從 Memory 中取出所有資訊，所帶來的表現提升是很有限制的，必須搭配 Memory Retrieval 與 Curation 才能夠有效率的提升整體表現。
