@@ -18,10 +18,6 @@ url: "paper-intro/:contentbasename"
 
 <!--more-->
 
-Here is the English translation of the blog post, optimized for SEO and formatted in Markdown.
-
-***
-
 ## Introduction
 
 This article shares a fascinating paper resulting from a collaboration between Microsoft Research Asia and Harvard University: **[Mutual Reasoning Makes Smaller LLM Stronger Problem-Solvers (rStar)](https://arxiv.org/abs/2408.06195)**. Published in August 2024, this paper has been successfully accepted as an **ICLR 2025 Poster**!
@@ -192,12 +188,12 @@ I categorize these 5 Actions into three groups: **Linear Reasoning**, **Decompos
 #### Group 1: Linear Reasoning
 These actions are most like standard Chain-of-Thought (CoT), suitable for handling parts where logic flows smoothly.
 
-##### Action 1 ($A_1$): Propose a one-step thought
+##### Action 1 (\(A_1\)): Propose a one-step thought
 *   **What:** Based on the current context, generate only "this step's" reasoning, without rushing to write everything to the end.
 *   **Why:** To avoid the "snowballing error" of CoT. Standard CoT is written in one go; if the middle is wrong, the rest is wrong.
 *   **MCTS View:** Expands a child node containing only the "next sentence."
 
-##### Action 2 ($A_2$): Propose the remaining thought steps
+##### Action 2 (\(A_2\)): Propose the remaining thought steps
 *   **What:** Based on the current state, write out all remaining reasoning steps in one go until the answer is reached.
 *   **Why:** To simulate human "fast thinking." If the remaining problem has become simple, or the model is confident, solving it step-by-step is unnecessary; charging to the finish line is more efficient.
 *   **MCTS View:** Expands a child node containing the full subsequent path (usually leading directly to a terminal node).
@@ -205,12 +201,12 @@ These actions are most like standard Chain-of-Thought (CoT), suitable for handli
 #### Group 2: Decomposition & Refinement
 These actions are designed for complex, error-prone problems, inspired by "Least-to-Most Prompting."
 
-##### Action 3 ($A_3$): Propose next sub-question along with its answer
+##### Action 3 (\(A_3\)): Propose next sub-question along with its answer
 *   **What:** The model doesn't solve the original problem directly but asks itself: "To solve this big problem, which small problem do I need to solve first?" and then answers that small problem.
 *   **Why:** Complex problems (like multi-step math) are easy to get wrong if solved directly. Breaking them into sub-questions lowers the difficulty.
 *   **MCTS View:** Expands a node containing a structure like "Q: Sub-problem... A: Sub-answer...".
 
-##### Action 4 ($A_4$): Answer the sub-question again
+##### Action 4 (\(A_4\)): Answer the sub-question again
 *   **Constraint:** This action can only be used after $A_3$.
 *   **What:** **Re-answer** the sub-question just proposed by $A_3$. But this time, force the model to use Few-shot CoT to answer in detail.
 *   **Why:** Sometimes, although $A_3$ breaks down the right problem, the answer is sloppy or wrong. $A_4$ acts like a "check mechanism" or "serious solving mode," ensuring this key sub-step is calculated correctly.
@@ -219,7 +215,7 @@ These actions are designed for complex, error-prone problems, inspired by "Least
 #### Group 3: Reformulation
 These actions address "misreading the question" or "tunnel vision."
 
-##### Action 5 ($A_5$): Rephrase the question/sub-question
+##### Action 5 (\(A_5\)): Rephrase the question/sub-question
 *   **Constraint:** Usually used after the Root (original question) or after sub-questions.
 *   **What:** List the conditions in the question (List conditions) or rephrase the question to make it clearer.
 *   **Why:** Often models err because they missed a hidden condition (e.g., "positive integer", "excluding"). This simulates a human saying when stuck: "Wait, let me re-read the question and list the known conditions..."
