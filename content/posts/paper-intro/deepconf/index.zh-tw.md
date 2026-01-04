@@ -7,7 +7,7 @@ draft: false
 description: "探索 Meta AI 與 UCSD 最新發表的 DeepConf 技術！本文深入解析如何讓大型語言模型 (LLM) 具備「信心感知」能力，在推理過程中自動識別並終止低品質的思考路徑。了解 DeepConf 如何在不犧牲準確率的前提下，解決平行思維 (Parallel Thinking) 成本過高的問題，並大幅節省 Token 消耗，是 AI 開發者優化模型效能的必讀指南。"
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Test-Time Scaling", "Inference Optimization"]
+tags: ["Large Language Model", "Test-Time Scaling", "Inference Optimization", "Uncertainty Estimation"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1

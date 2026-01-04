@@ -7,7 +7,7 @@ draft: false
 description: "Discover DeepConf (Deep Think with Confidence), a new AI framework by Meta AI & UCSD that significantly reduces LLM inference costs while improving accuracy. Learn how measuring \"Token Confidence\" enables AI to stop low-quality reasoning paths early, solving the efficiency issues of Parallel Thinking. Perfect for developers looking to optimize AI performance."
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Test-Time Scaling", "Inference Optimization"]
+tags: ["Large Language Model", "Test-Time Scaling", "Inference Optimization", "Uncertainty Estimation"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1

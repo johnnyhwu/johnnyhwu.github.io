@@ -118,14 +118,14 @@ $$
 \end{aligned}
 $$
 
-#### Step 5: 定義 \(\gamma\) 與結論
+#### 定義 \(\gamma\) 與結論
 我們定義縮放係數 \(\gamma = 1 + \frac{\alpha}{\beta}\)，最終得到: 
 
 $$
 \pi^*(y \mid x) \propto \pi_{\text{ref}}(y \mid x)^{\gamma} \exp\left( \frac{r_{\text{true}}(x, y)}{\beta} \right)
 $$
 
-#### 關鍵結論:
+#### 關鍵結論
 
 由於 \(\alpha > 0\) (典型性偏差存在) 且 \(\beta > 0\)，因此 **\(\gamma > 1\)**。
 這意味著我們對 Base Model 的概率分佈取了一個大於 1 的冪次。數學上，這會導致**強者越強，弱者越弱** (例如 \(0.9^2=0.81\), \(0.1^2=0.01\)，差距被拉大了) 。

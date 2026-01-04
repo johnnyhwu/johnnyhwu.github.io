@@ -118,14 +118,14 @@ $$
 \end{aligned}
 $$
 
-#### Step 5: Defining \(\gamma\) and Conclusion
+#### Defining \(\gamma\) and Conclusion
 We define the scaling coefficient \(\gamma = 1 + \frac{\alpha}{\beta}\), finally obtaining:
 
 $$
 \pi^*(y \mid x) \propto \pi_{\text{ref}}(y \mid x)^{\gamma} \exp\left( \frac{r_{\text{true}}(x, y)}{\beta} \right)
 $$
 
-#### Key Conclusion:
+#### Key Conclusion
 
 Since \(\alpha > 0\) (Typicality Bias exists) and \(\beta > 0\), it follows that **\(\gamma > 1\)**.
 This means we are taking the probability distribution of the Base Model to a power greater than 1. Mathematically, this leads to **the strong getting stronger, and the weak getting weaker** (e.g., \(0.9^2=0.81\), \(0.1^2=0.01\), the gap widens).
