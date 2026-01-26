@@ -7,7 +7,7 @@ draft: false
 description: "Discover VideoDR, a new benchmark for AI Video Deep Research that bridges the gap between Video Understanding and Agentic Search. Learn how this paper reveals the \"Goal Drift\" challenge in multimodal agents, compares Workflow vs. Agentic paradigms, and introduces the concept of Visual Anchors for open-web reasoning. Essential reading for AI researchers interested in Video QA and RAG."
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Prompting"]
+tags: ["Vision Language Model", "Deep Research", "Benchmark"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1
