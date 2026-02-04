@@ -29,7 +29,7 @@ url: "paper-intro/:contentbasename"
 今天這篇文章，就來深度拆解這篇論文，看看它如何用**工程思維**解決學術問題。
 
 {{< admonition abstract "本文重點速覽 (TL;DR)" >}}
-1.  **典範轉移**：ReDE-RF 不像 HyDE 依賴 LLM 生成虛構文檔，而是採用 **「先檢索真實文檔，再讓 LLM 評分」**的策略。
+1.  **典範轉移**：ReDE-RF 不像 HyDE 依賴 LLM 生成虛構文檔，而是採用**先檢索真實文檔，再讓 LLM 評分**的策略。
 2.  **極致效能**：它不讓 LLM 生成文字，而是直接抽取 Output Logits 的機率值（Yes/No），避開了昂貴的 Decoding Loop，速度提升 **4-11 倍**。
 3.  **消除幻覺**：透過錨定「真實存在」的文檔來修正 Query，大幅提升了在生醫、財經等低資源領域的準確度。
 4.  **模型蒸餾**：這套流程甚至可以蒸餾（Distill）給小模型，上線時完全不需要 LLM 參與。
@@ -55,7 +55,7 @@ url: "paper-intro/:contentbasename"
 
 ## ReDE-RF 的核心機制：從「寫作」轉向「選拔」
 
-ReDE-RF 的架構非常優雅，可以拆解為**「先撒網，後過濾，再導航」**的三部曲。
+ReDE-RF 的架構非常優雅，可以拆解為**先撒網，後過濾，再導航**的三部曲。
 
 {{< image src="figure1.png" caption="ReDE-RF 架構圖：展示從初步檢索 (Initial Retrieval)、LLM 相關性反饋 (Relevance Feedback) 到查詢更新 (Query Refinement) 的完整流程。" >}}
 
