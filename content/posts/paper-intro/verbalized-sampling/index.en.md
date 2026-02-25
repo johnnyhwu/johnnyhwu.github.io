@@ -7,7 +7,7 @@ draft: false
 description: "Unlock LLM creativity with Verbalized Sampling (VS). This article explains how Typicality Bias causes Mode Collapse in RLHF models and provides a training-free prompting strategy to restore diversity and improve synthetic data generation."
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Generation Diversity"]
+tags: ["Large Language Model", "Generation Diversity", "Prompting"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1

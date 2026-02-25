@@ -7,7 +7,7 @@ draft: false
 description: "透過 Verbalized Sampling (VS) 解鎖 LLM 的創造力。本文深入解析 RLHF 導致模型發生「模式坍縮」的數學原理（典型性偏差），並提供一種無需訓練的 Prompting 策略，能有效提升模型輸出的多樣性並優化合成數據生成的效果。"
 featuredImage: "featured-image.jpg"
 
-tags: ["Large Language Model", "Generation Diversity"]
+tags: ["Large Language Model", "Generation Diversity", "Prompting"]
 categories: ["paper-intro"]
 # series: ["getting-start"]
 # series_weight: 1
