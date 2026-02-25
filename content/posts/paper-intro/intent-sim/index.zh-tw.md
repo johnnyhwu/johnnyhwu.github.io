@@ -35,7 +35,7 @@ url: "paper-intro/:contentbasename"
 *   **對話 > 完美指令**: 實驗發現，透過「一問一答」釐清後的表現，竟然比直接給定「完美無歧義的指令」還要好，這顛覆了我們對 Prompt Engineering 的認知。
 {{< /admonition >}}
 
-## 1. 為什麼「決定何時發問」這麼難？
+## 為什麼「決定何時發問」這麼難？
 
 在進入演算法之前，我們先來拆解一下問題。為什麼我們不能簡單地設定一個 Threshold，當模型信心分數 (Confidence Score) 低的時候就發問？
 

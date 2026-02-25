@@ -35,7 +35,7 @@ The paper we are discussing today, **"Clarify When Necessary" (NAACL 2025)**, pr
 *   **Dialogue > Perfect Instruction**: Experiments found that clarifying through a "Q&A" process actually performs better than directly providing a "perfect, unambiguous instruction." This overturns our understanding of Prompt Engineering.
 {{< /admonition >}}
 
-## 1. Why is "Deciding When to Ask" So Hard?
+## Why is "Deciding When to Ask" So Hard?
 
 Before diving into the algorithm, let's break down the problem. Why can't we simply set a Threshold and ask whenever the model's Confidence Score is low?
 
