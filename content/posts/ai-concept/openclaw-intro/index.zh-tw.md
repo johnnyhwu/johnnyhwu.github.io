@@ -39,7 +39,7 @@ url: "paper-intro/:contentbasename"
 *   **2025 年 Claude Code / Gemini CLI (CLI Agent)**：這標誌著 Agent 走向實用化與專精化。它們深度整合於開發者的 Terminal 中，具備讀寫 Codebase 與執行測試的能力。但其本質仍是「需人類在旁監督」的輔助工具，缺乏全天候的自主排程能力。
 *   **2025-2026 年 OpenClaw 世代 (General Agent)**：這類架構支援透過通訊軟體 (WhatsApp, Line) 互動，具備長效記憶管理、背景排程 (Cron Job) ，並能動態繁衍 Sub-Agent 處理複雜專案。
 
-### 核心認知：Agent 系統 $\neq$ 語言模型
+### 核心認知：Agent 系統 $$\neq$$ 語言模型
 
 在架構設計上，我們必須確立一個觀念：**Agent 框架本身並不具備任何智慧**。
 

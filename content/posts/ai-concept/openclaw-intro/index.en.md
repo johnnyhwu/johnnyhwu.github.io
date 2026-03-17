@@ -39,7 +39,7 @@ Before diving into the low-level details, we must align on the evolutionary traj
 *   **2025: Claude Code / Gemini CLI (CLI Agent)**: This marked the transition of Agents toward practical and specialized applications. Deeply integrated into the developer's terminal, they can read/write codebases and run tests. However, they remain tools that require "human supervision" and lack 24/7 autonomous scheduling.
 *   **2025-2026: The OpenClaw Generation (General Agent)**: These architectures support interaction via messaging apps (WhatsApp, Line), feature long-term memory management, background scheduling (Cron Jobs), and can dynamically spawn Sub-Agents to handle complex projects.
 
-### Core Insight: Agent System $\neq$ Language Model
+### Core Insight: Agent System $$\neq$$ Language Model
 
 In architectural design, we must establish one concept: **The Agent framework itself possesses no intelligence.**
 
