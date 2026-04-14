@@ -13,7 +13,7 @@ categories: ["ai-concept"]
 # series_weight: 1
 lightgallery: true
 
-url: "paper-intro/:contentbasename"
+url: "ai-concept/:contentbasename"
 ---
 
 <!--more-->
