@@ -29,11 +29,11 @@ url: "other/:contentbasename"
 
 作者舉一個能夠自動回覆 Email 的 Agent 來說明。如下圖示，這個 LLM 需要在讀取信件內容後，透過 Tool Calling 查看收件者的行事曆 (Calendar Tool)，再透過 Tool Calling 進行 Email 內容的撰寫 (Email Writing Tool)：
 
-{{< image src="email-agent.png" caption="一個能夠自動回覆 Email 的 Agent" >}}
+{{< image src="email-agent.png" alt="手繪的 Email Agent 示意圖，Email 收件匣連接到 LLM，LLM 可呼叫兩個工具：行事曆工具與 Email 撰寫工具" caption="一個能夠自動回覆 Email 的 Agent" >}}
 
 在這個過程中，LLM 需要過去的經驗，幫助它克服一些挑戰。如下圖中的紅字所述：
 
-{{< image src="email-agent-challenge.png" caption="Email Agent 會遇到的挑戰" >}}
+{{< image src="email-agent-challenge.png" alt="同一張 Email Agent 示意圖以紅色標註其面臨的挑戰：我該忽略什麼、我過去對這個人說過什麼、我的會議偏好是什麼、以及我該如何撰寫" caption="Email Agent 會遇到的挑戰" >}}
 
 如果 Agent 有記憶能力 (Memory)，就能夠參考過去的經驗來處理新的任務。如此一來，Agent 就能夠隨著處理的任務愈多，收集到愈多經驗，而變得更厲害。
 
@@ -41,7 +41,7 @@ url: "other/:contentbasename"
 
 Agent 的 Memory 主要可以分為三種類型:
 
-{{< image src="memory-type.png" caption="Agent Memory 的類型" >}}
+{{< image src="memory-type.png" alt="Agent 記憶類型的表格，欄位為記憶類型、儲存內容、人類範例與 Agent 範例：語意記憶儲存事實、情節記憶儲存經驗、程序記憶儲存指令" caption="Agent Memory 的類型" >}}
 
 - Semantic Memory: 存放與「事實」相關的內容（我覺得以廣義來說「文件」也可以當成這個類別）
 - Episodic Memory: 存放與「經驗」相關的內容（Ex. 放在 Prompt 中的 Few-Shot Examples）
@@ -49,7 +49,7 @@ Agent 的 Memory 主要可以分為三種類型:
 
 而 Agent Memory 的運作時機主要有兩種：
 
-{{< image src="memory-work.png" caption="Agent Memory 的類型" >}}
+{{< image src="memory-work.png" alt="示意圖比較兩種記憶更新時機：在 hot path 中每則使用者訊息後立即更新記憶，以及在 background 中由另一個程序於 30 分鐘後才更新記憶" caption="Agent Memory 的類型" >}}
 
 - In the hot path: 在收到 User 的每次 Query 時都會進行 Memory 的讀取與寫入
 - In the background: 在 Agent 的運行過程中，會定期進行 Memory 的讀取與寫入
@@ -58,11 +58,11 @@ Agent 的 Memory 主要可以分為三種類型:
 
 理解了 Agent Memory 的基本概念後，我們來看看在 Email Agent 中，Memory 的運作方式。下圖為一個基本的 Email Agent，沒有使用 Memory 的情況下的 Worflow:
 
-{{< image src="email-agent-wo-memory.png" caption="Email Agent 沒有 Memory" >}}
+{{< image src="email-agent-wo-memory.png" alt="沒有記憶的 Email Agent 手繪流程：收件匣先經過分流 (triage)，成功後再交給使用行事曆與撰寫工具的 LLM Agent" caption="Email Agent 沒有 Memory" >}}
 
 而下圖為一個使用 Memory 的 Email Agent 的 Workflow:
 
-{{< image src="email-agent-w-memory.png" caption="Email Agent 有 Memory" >}}
+{{< image src="email-agent-w-memory.png" alt="加入記憶的 Email Agent 流程：情節記憶提供 few-shot 範例給分流步驟，程序記憶提供系統提示給工具，語意記憶的 Profile 與 Collection 則餵給記憶工具" caption="Email Agent 有 Memory" >}}
 
 可以發現到：
 - Episodic Memory: 其實就是放在 Prompt 中的 Few-Shot Examples，幫助 LLM 判斷這個 Email 是否需要回覆
@@ -73,7 +73,7 @@ Agent 的 Memory 主要可以分為三種類型:
 
 接著，先實做一個基本的 Email Agent，這個 Agent 不具備 Memory 的功能:
 
-{{< image src="email-agent-wo-memory.png" caption="Email Agent 沒有 Memory" >}}
+{{< image src="email-agent-wo-memory.png" alt="沒有記憶的 Email Agent 手繪流程：收件匣先經過分流 (triage)，成功後再交給使用行事曆與撰寫工具的 LLM Agent" caption="Email Agent 沒有 Memory" >}}
 
 ### Triage 的實做
 
@@ -346,7 +346,7 @@ email_agent = email_agent.compile()
 
 Email Agent 的整體 Workflow 如下圖所示：
 
-{{< image src="email-agent-langgraph.png" caption="Email Agent 的整體 Workflow" >}}
+{{< image src="email-agent-langgraph.png" alt="Email Agent 的 LangGraph 圖：start 節點連到 triage_router，接著若非結束就進入 response_agent 子圖，其中 agent 節點與 tools 節點循環後抵達 end" caption="Email Agent 的整體 Workflow" >}}
 
 ### Email Agent 範例輸入與輸出
 - 範例輸入 1: 不需要回覆的 Email

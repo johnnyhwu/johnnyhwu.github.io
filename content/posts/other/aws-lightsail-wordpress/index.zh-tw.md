@@ -32,13 +32,13 @@ url: "other/:contentbasename"
 
 在開始建立網站之前，你需要先擁有一個 AWS 帳號。註冊 AWS 帳號的流程非常簡單，這邊就不再贅述！註冊完成後，找到 Lightsail 服務並點擊他，你會來到下方的頁面：
 
-{{< image src="aws-lightsail.png" caption="進入 AWS 的 Lightsail 服務" >}}
+{{< image src="aws-lightsail.png" alt="瀏覽器中的 Amazon Lightsail 首頁，顯示 Good evening 問候語、目前尚無任何執行個體的訊息，以及橘色的 Create instance 按鈕" caption="進入 AWS 的 Lightsail 服務" >}}
 
 ## 透過 Lightsail 建立一台 Instance
 
 接著，我們要透過 Lightsail 服務向 AWS 租用一台 Instance。可以簡單想成就是租用一台電腦，我們的網站將會部署在這台電腦上。點擊目前右面中的「Create Instance」後，會來到 Instance 的設定頁面。 首先是選擇 Instance 要放在地球上的哪一個位置：
 
-{{< image src="lightsail-zone.png" caption="選擇 Instance 的 Availability Zone 與 Region" >}}
+{{< image src="lightsail-zone.png" alt="Lightsail 的 Select your instance location 畫面，區域選項網格中 Tokyo ap-northeast-1 被標示選取，下方的 Availability Zone 選擇 Zone A" caption="選擇 Instance 的 Availability Zone 與 Region" >}}
 
 在 AWS 中 Availability Zone 與 Region 是兩個重要的觀念，一個 Region 裡頭會包含多個 Availability Zone，可以參考此[文件](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/RegionsAndAZs.html)來更深入的理解，這邊就不詳細的介紹！
 
@@ -46,19 +46,19 @@ url: "other/:contentbasename"
 
 接著，要選擇 Instance Image，也就是你希望這個 Instance 要使用什麼作業系統，甚至是需要再多安裝什麼軟體：
 
-{{< image src="lightsail-image.png" caption="選擇 Lightsail Instance Image" >}}
+{{< image src="lightsail-image.png" alt="Lightsail 的 Pick your instance image 畫面，平台選擇 Linux/Unix，blueprint 選擇 Ubuntu 22.04 LTS" caption="選擇 Lightsail Instance Image" >}}
 
 這邊我只想要在 Instance 上安裝一個乾淨的 Ubuntu 22.04 作業系統即可！在下方的「Optional」欄位則不需要特別填寫。 接著，需要選擇 Instance 的硬體規格。這邊就比較因人而異了，因為我只想要單純建立一個自己的部落格，瞬間流量應該不至於太高，租用每個月 5 鎂或 10 鎂的規格就相當夠用：
 
-{{< image src="lightsail-spec.png" caption="選擇 Lightsail Instance 硬體規格" >}}
+{{< image src="lightsail-spec.png" alt="Lightsail 的 Choose your instance plan 畫面，顯示每月 3.5 至 40 美元的方案，其中選取 10 美元方案 (2 GB RAM、2 vCPUs、60 GB SSD)" caption="選擇 Lightsail Instance 硬體規格" >}}
 
 最後則是需要給你的 Instance 一個名稱，因為這台 Instance 是要來建立 WordPress 網站，因此我給他取了個名字：
 
-{{< image src="instance-name.png" caption="幫你的 Instance 取個名字吧" >}}
+{{< image src="instance-name.png" alt="Lightsail 的 Identify your instance 畫面，執行個體命名為 Ubuntu-Wordpress，數量為 1" caption="幫你的 Instance 取個名字吧" >}}
 
 上述的設定都完成之後，就點擊最後的「Create Instance」囉！如果你看到以下畫面，就代表你成功的在 Lightsail 上建立一台 Instance 囉！
 
-{{< image src="lightsail-instance.png" caption="成功在 Lightsail 上建立一台 Instance" >}}
+{{< image src="lightsail-instance.png" alt="Lightsail 儀表板卡片，顯示 Ubuntu-Wordpress 執行個體具有 2 GB RAM、2 vCPUs、60 GB SSD，位於 Tokyo Zone A 且狀態為 Running" caption="成功在 Lightsail 上建立一台 Instance" >}}
 
 ## 安裝 Web Server (Nginx)
 
@@ -66,11 +66,11 @@ url: "other/:contentbasename"
 
 首先，點擊剛剛建立的 Instance，並透過 SSH 連線到 Instance 上：
 
-{{< image src="connect-to-instance.png" caption="連線到 Instance 上" >}}
+{{< image src="connect-to-instance.png" alt="Ubuntu-Wordpress 執行個體詳細頁面的 Connect 分頁，提供瀏覽器版 SSH 用戶端的 Connect using SSH 按鈕" caption="連線到 Instance 上" >}}
 
 如果你出現以下畫面，代表你成功的透過 SSH 連線到 Instance 上了！接下來，你想對這台 Instance 做任何事情都可以：Ｄ
 
-{{< image src="ssh-connection.png" caption="成功透過 SSH 連線到 Instance 上" >}}
+{{< image src="ssh-connection.png" alt="終端機顯示成功以 SSH 登入 Ubuntu 22.04.1 LTS，列出系統負載、記憶體與磁碟使用量等系統資訊，最後停在 ubuntu 的命令提示字元" caption="成功透過 SSH 連線到 Instance 上" >}}
 
 接著，執行以下指令來啟動 Ubuntu 上的 Firewall，並且允許 SSH 的連線：
 
@@ -101,7 +101,7 @@ sudo ufw allow 'Nginx HTTPS'
 
 此時，在瀏覽器的網址列輸入你的 Instance 的 Public IP 如果出現以下頁面就表示 Web Server 建立成功囉：
 
-{{< image src="nginx-welcome.png" caption="在瀏覽器輸入 Public IP 可以存取到 Nginx 的 Welcome 頁面" >}}
+{{< image src="nginx-welcome.png" alt="瀏覽器顯示 Nginx 預設的 Welcome to nginx! 頁面，確認 Web 伺服器已成功安裝並運作" caption="在瀏覽器輸入 Public IP 可以存取到 Nginx 的 Welcome 頁面" >}}
 
 ## 安裝 Database Management System (MySQL)
 
@@ -336,7 +336,7 @@ sudo systemctl restart nginx
 
 在瀏覽器中輸入 Instance 的 Public IP，如果看到以下頁面表示 Nginx 已經成功的執行 WordPress 這支程式：
 
-{{< image src="install-wordpress.png" caption="安裝 WordPress" >}}
+{{< image src="install-wordpress.png" alt="WordPress 安裝精靈的第一個畫面，顯示 WordPress 標誌與語言選擇清單，English (United States) 被標示選取，並有 Continue 按鈕" caption="安裝 WordPress" >}}
 
 接下來，就按照 WordPress 的安裝程序，你的 WordPress 網站就誕生囉！
 
@@ -346,17 +346,17 @@ sudo systemctl restart nginx
 
 首先，來到 Networking 的 Tab 之下，並在「Public IP」的地方點擊「Attach Static IP」：
 
-{{< image src="set-static-ip.png" caption="替你的 Instance 設定 Static IP" >}}
+{{< image src="set-static-ip.png" alt="Lightsail 的 Networking 分頁顯示 IPv4 networking，包含 public 與 private IP 欄位以及 Attach static IP 連結" caption="替你的 Instance 設定 Static IP" >}}
 
 並且給你的這組 Static IP 取一個名字然後把他 Attach 到目前這台 Instance 上：
 
-{{< image src="static-ip-name.png" caption="給你的 Static IP 取一個名字吧" >}}
+{{< image src="static-ip-name.png" alt="Lightsail 的 Create and attach a static IP 對話框，靜態 IP 命名為 Ubuntu-Wordpress-IP，並有 Create and attach 按鈕" caption="給你的 Static IP 取一個名字吧" >}}
 
 這樣做的目的是為了避免 Instancce 如果重新開機後，換成另外一組 Public IP。
 
 完成之後，再回到「Connect」的 Tab，並點擊最下方的「Download default key」：
 
-{{< image src="ssh-key.png" caption="下載 Instance 的 Default Key" >}}
+{{< image src="ssh-key.png" alt="Lightsail 的 Connect 分頁顯示 Use your own SSH client 區塊，使用者名稱為 ubuntu，並有 Download default key 連結" caption="下載 Instance 的 Default Key" >}}
 
 在自己的本機上，將透過上圖提供的 Username、Public IP 與 SSH Key 連線到這台 Instance 上。在你的本機端將剛剛下載下來的 pem file 權限修改成 400：
 

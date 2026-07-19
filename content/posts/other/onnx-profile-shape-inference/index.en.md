@@ -34,7 +34,7 @@ From my own experience, I find that Netron has the best compatibility with ONNX 
 
 The image below shows the result of visualizing an ONNX file with Netron: (You can also open it via this [link](https://netron.app/?url=https://media.githubusercontent.com/media/onnx/models/main/vision/classification/squeezenet/model/squeezenet1.0-3.onnx))
 
-{{< image src="onnx-example.png" caption="Visualizing an ONNX model in Netron" >}}
+{{< image src="onnx-example.png" alt="Netron visualization of an ONNX model graph, starting from a data_0 input of shape 1x3x224x224 and flowing through Conv, Relu, MaxPool and Concat nodes with their weight and bias shapes labeled" caption="Visualizing an ONNX model in Netron" >}}
 
 ## ONNX Profile & Shape Inference
 
@@ -44,13 +44,13 @@ Whenever I visualize an ONNX model with [Netron](https://github.com/lutzroeder/n
 
 As shown in the image below:
 
-{{< image src="onnx-example-2.png" caption="(Left) Displaying only the initial and final shapes; (Right) Displaying the shapes of all operations" >}}
+{{< image src="onnx-example-2.png" alt="Side-by-side ONNX graphs of the same CNN; the left graph labels only the input 1x1x28x28 and final shapes, while the right graph labels the intermediate tensor shape on every edge between Conv, Relu, MaxPool, Flatten and Gemm nodes" caption="(Left) Displaying only the initial and final shapes; (Right) Displaying the shapes of all operations" >}}
 
 To make Netron display all the shapes, you must ensure that the ONNX file contains the shape information for the output of every operation. To achieve this, we need to perform "Shape Inference" on the ONNX model. The official ONNX library provides a simple shape inference function. However, this method has some limitations: it cannot handle dynamically generated shapes, such as those from Reshape or Concat operations.
 
 This is where the shape inference feature of [onnx-tool](https://github.com/ThanatosShinji/onnx-tool) comes in, as it can handle such cases! Besides shape inference, [onnx-tool](https://github.com/ThanatosShinji/onnx-tool) can also perform profiling:
 
-{{< image src="onnx-profile.png" caption="Profiling an ONNX model" >}}
+{{< image src="onnx-profile.png" alt="Profiling table listing each ONNX node with its MACs, compute percent, memory, parameter count and input and output shapes, ending in a total of about 666 million MACs and 61 million parameters" caption="Profiling an ONNX model" >}}
 
 Through its profiling feature, we can find out the number of parameters (Params), multiply-accumulate operations (MACs), and the input/output shapes for each operation or the entire model. In addition to shape inference and profiling, [onnx-tool](https://github.com/ThanatosShinji/onnx-tool) has many other useful features waiting for you to explore!
 

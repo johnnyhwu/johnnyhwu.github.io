@@ -30,11 +30,11 @@ Before understanding Agent Memory, let's first consider this question:
 
 The author uses an Agent capable of automatically replying to emails as an example. As shown in the figure below, this LLM needs to read the email content, then check the recipient's calendar using Tool Calling (Calendar Tool), and finally use Tool Calling to draft the email content (Email Writing Tool):
 
-{{< image src="email-agent.png" caption="An Agent capable of automatically replying to emails" >}}
+{{< image src="email-agent.png" alt="Hand-drawn diagram of an email agent where an email inbox connects to an LLM that can call two tools, a calendar tool and an email writing tool" caption="An Agent capable of automatically replying to emails" >}}
 
 In this process, the LLM needs past experience to help it overcome some challenges. As described in the red text in the figure below:
 
-{{< image src="email-agent-challenge.png" caption="Challenges an Email Agent might encounter" >}}
+{{< image src="email-agent-challenge.png" alt="The same email agent diagram annotated in red with the challenges it faces: what should I ignore, what have I said to this person before, what are my meeting preferences, and how should I write" caption="Challenges an Email Agent might encounter" >}}
 
 If the Agent has memory capability, it can refer to past experience to handle new tasks. This way, the Agent can become more capable as it processes more tasks and gathers more experience.
 
@@ -42,7 +42,7 @@ If the Agent has memory capability, it can refer to past experience to handle ne
 
 Agent Memory can mainly be divided into three types:
 
-{{< image src="memory-type.png" caption="Types of Agent Memory" >}}
+{{< image src="memory-type.png" alt="Table of agent memory types with columns for memory type, what is stored, a human example and an agent example: semantic stores facts, episodic stores experiences, and procedural stores instructions" caption="Types of Agent Memory" >}}
 
 - Semantic Memory: Stores content related to "facts" (I think broadly speaking, "documents" can also fall into this category).
 - Episodic Memory: Stores content related to "experiences" (Ex. Few-Shot Examples placed in the Prompt).
@@ -50,7 +50,7 @@ Agent Memory can mainly be divided into three types:
 
 And there are two main operating times for Agent Memory:
 
-{{< image src="memory-work.png" caption="When Agent Memory operates" >}}
+{{< image src="memory-work.png" alt="Diagram contrasting updating memory in the hot path, immediately after each user message, versus in the background, where a separate process updates memory 30 minutes later" caption="When Agent Memory operates" >}}
 
 - In the hot path: Memory is read and written every time a User Query is received.
 - In the background: Memory is periodically read and written during the Agent's operation.
@@ -59,11 +59,11 @@ And there are two main operating times for Agent Memory:
 
 Having understood the basic concepts of Agent Memory, let's look at how Memory operates in the Email Agent. The figure below shows the workflow of a basic Email Agent without using Memory:
 
-{{< image src="email-agent-wo-memory.png" caption="Email Agent without Memory" >}}
+{{< image src="email-agent-wo-memory.png" alt="Hand-drawn flow of an email agent without memory: the inbox goes to a triage step, then on success to the LLM agent that uses calendar and writing tools" caption="Email Agent without Memory" >}}
 
 And the figure below shows the workflow of an Email Agent using Memory:
 
-{{< image src="email-agent-w-memory.png" caption="Email Agent with Memory" >}}
+{{< image src="email-agent-w-memory.png" alt="The email agent flow augmented with memory: episodic memory feeds few-shot examples into triage, procedural memory supplies system prompts to the tools, and a semantic memory profile and collection feed a memory tool" caption="Email Agent with Memory" >}}
 
 It can be observed that:
 - Episodic Memory: Essentially, it's the Few-Shot Examples placed in the Prompt, helping the LLM decide if the email needs a reply.
@@ -74,7 +74,7 @@ It can be observed that:
 
 Next, let's first implement a basic Email Agent without Memory functionality:
 
-{{< image src="email-agent-wo-memory.png" caption="Email Agent without Memory" >}}
+{{< image src="email-agent-wo-memory.png" alt="Hand-drawn flow of an email agent without memory: the inbox goes to a triage step, then on success to the LLM agent that uses calendar and writing tools" caption="Email Agent without Memory" >}}
 
 ### Triage Implementation
 
@@ -347,7 +347,7 @@ email_agent = email_agent.compile()
 
 The overall workflow of the Email Agent is shown in the figure below:
 
-{{< image src="email-agent-langgraph.png" caption="Overall Workflow of the Email Agent" >}}
+{{< image src="email-agent-langgraph.png" alt="LangGraph graph of the email agent: a start node leads to a triage_router that either ends or enters the response_agent subgraph, where an agent node loops with a tools node before reaching end" caption="Overall Workflow of the Email Agent" >}}
 
 ### Email Agent Example Input and Output
 

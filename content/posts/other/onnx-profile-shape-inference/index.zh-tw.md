@@ -35,7 +35,7 @@ url: "other/:contentbasename"
 
 下圖為將一個 ONNX 檔案透過 Netron 視覺化的結果：（也可以透過此[連結](https://netron.app/?url=https://media.githubusercontent.com/media/onnx/models/main/vision/classification/squeezenet/model/squeezenet1.0-3.onnx)開啟）
 
-{{< image src="onnx-example.png" caption="Visualize ONNX in Netron" >}}
+{{< image src="onnx-example.png" alt="Netron 呈現的 ONNX 模型圖，從形狀為 1x3x224x224 的 data_0 輸入開始，經過 Conv、Relu、MaxPool 與 Concat 節點，並標註各節點的權重與偏差形狀" caption="Visualize ONNX in Netron" >}}
 
 ## ONNX Profile & Shape Inference
 
@@ -45,13 +45,13 @@ url: "other/:contentbasename"
 
 如下圖所示：
 
-{{< image src="onnx-example-2.png" caption="(左) 僅顯示模型一開始與最後的 Shape；(右) 顯示所有 Operation 的 Shape" >}}
+{{< image src="onnx-example-2.png" alt="同一個 CNN 的兩張 ONNX 圖並列，左圖僅標註輸入 1x1x28x28 與最後的形狀，右圖則在 Conv、Relu、MaxPool、Flatten 與 Gemm 節點之間的每條邊都標註中間張量形狀" caption="(左) 僅顯示模型一開始與最後的 Shape；(右) 顯示所有 Operation 的 Shape" >}}
 
 如果要讓 Netron 把所有 Shape 都顯示出來，就必須確保 ONNX 檔案中有紀錄每一個 Operation 輸出的 Shape 的資訊。為了達到這樣的目的，我們需要對 ONNX 模型進行「Shape Inference」。ONNX 官方也有提供一個簡單的 Shape Inference 範例。然而，這個方法卻有一些限制：針對 Reshape 或是 Concat 等動態產生的 Shape，在官方的 Shape Inference 方法中就無法處理。
 
 而 [onnx-tool](https://github.com/ThanatosShinji/onnx-tool) 的 Shape Inference 功能就能夠處理這樣的問題！ [onnx-tool](https://github.com/ThanatosShinji/onnx-tool) 除了能夠進行 Shape Inference 外，也能進行 Profile：
 
-{{< image src="onnx-profile.png" caption="針對 ONNX 進行 Profile" >}}
+{{< image src="onnx-profile.png" alt="Profile 表格列出每個 ONNX 節點的 MACs、運算佔比、記憶體、參數量與輸入輸出形狀，最後總計約 6.66 億 MACs 與 6100 萬個參數" caption="針對 ONNX 進行 Profile" >}}
 
 透過 Profile 功能，我們可以知道每一個 Operation 或是整個 Model 的參數量 (Params)、運算量 (MACs) 以及輸入與輸出的形狀。除了 Shape Inference 與 Profile 外，[onnx-tool](https://github.com/ThanatosShinji/onnx-tool) 還有很多好用的功能，就等著讀者自己去探索囉！
 

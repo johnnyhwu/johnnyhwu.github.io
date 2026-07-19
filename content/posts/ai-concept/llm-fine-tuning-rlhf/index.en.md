@@ -27,7 +27,7 @@ A quick heads-up: This article contains many terms that might seem technical but
 
 ## The 3 Stages of LLM Training
 
-{{< image src="llm-training-stages.png" caption="The three steps of LLM training: Self-Supervised Pre-Training, Supervised Fine-Tuning, and Reinforcement Learning from Human Feedback" >}}
+{{< image src="llm-training-stages.png" alt="Flowchart of the three LLM training stages: self-supervised pre-training on internet text, supervised fine-tuning on demonstration data, and RLHF using a reward model trained on human comparison data, with the data scale and example models listed under each stage" caption="The three steps of LLM training: Self-Supervised Pre-Training, Supervised Fine-Tuning, and Reinforcement Learning from Human Feedback" >}}
 
 As shown in the diagram above, the complete training pipeline for a chat-based LLM typically involves these three steps: Self-Supervised Pre-Training, Supervised Fine-Tuning, and Reinforcement Learning from Human Feedback. There are specific terms to note in each stage:
 
@@ -63,11 +63,11 @@ I emphasize "prefer" here because the primary goal of this stage and the next (R
 
 The third stage of training is **Reinforcement Learning from Human Feedback**, abbreviated as RLHF.
 
-{{< image src="instructgpt-sft.png" caption="InstructGPT (SFT+RLHF) outperforms the SFT Model" >}}
+{{< image src="instructgpt-sft.png" alt="Line chart of human quality Likert scores versus model size from 1.5B to 175B parameters, showing InstructGPT scoring highest, above supervised fine-tuning, prompted GPT, and plain GPT" caption="InstructGPT (SFT+RLHF) outperforms the SFT Model" >}}
 
 As the figure above shows, from an experimental results perspective, a model trained with RLHF (InstructGPT) performs better than models that have only undergone Supervised Fine-Tuning or Self-Supervised Pre-training.
 
-{{< image src="rlhf.png" caption="The concept of RLHF" >}}
+{{< image src="rlhf.png" alt="Diagram where a prompt is fed to a base model that produces Response A and Response B, which a preference model scores, preferring A at 61 percent over B at 39 percent, with feedback looping back to the base model" caption="The concept of RLHF" >}}
 
 The diagram above illustrates the process of training an LLM with RLHF: the Base Model is the SFT LLM obtained from the second stage, and the Preference Model is the Reward Model. We give the SFT LLM a prompt and generate multiple different responses through sampling. These responses are then fed into the Reward Model to be scored (each response is given a reward).
 
@@ -81,7 +81,7 @@ In other words, if the Reward Model is of poor quality, one can imagine that the
 
 To train such a Reward Model, we need to create a Preference Dataset:
 
-{{< image src="preference-dataset.png" caption="An example of a Preference Dataset" >}}
+{{< image src="preference-dataset.png" alt="Example preference dataset table with prompt, winning_response, and losing_response columns, illustrated with one sample row" caption="An example of a Preference Dataset" >}}
 
 The image above shows a sample from the Preference Dataset:
 
@@ -93,7 +93,7 @@ We want the Reward Model to output a winning_reward that is as high as possible 
 
 Specifically, we want to minimize the following Loss Function:
 
-{{< image src="reward-loss-function.png" caption="The Loss Function for the Reward Model" >}}
+{{< image src="reward-loss-function.png" alt="Equation of the reward model loss as the negative expected log-sigmoid of the reward difference between the winning and losing responses" caption="The Loss Function for the Reward Model" >}}
 
 Because of the negative sign at the beginning, when the Reward Model minimizes this Loss Function, it is actually maximizing the difference between winning_reward and losing_reward within the Sigmoid function, thereby making winning_reward larger and losing_reward smaller.
 
@@ -101,7 +101,7 @@ Finally, since the quality of the Reward Model is extremely important, we must e
 
 At this point, you should have a general understanding of the role of the Reward Model and how it is trained! With the Reward Model, we can then proceed to train the SFT LLM using RLHF. In RLHF training, we aim to solve the following optimization problem:
 
-{{< image src="rlhf-optimization.png" caption="The optimization problem in RLHF" >}}
+{{< image src="rlhf-optimization.png" alt="Mathematical formula for the RLHF optimization objective, which maximizes the reward model score for the model's responses while keeping the policy close to the reference model via a KL-divergence penalty" caption="The optimization problem in RLHF" >}}
 
 From this mathematical expression, we can understand that this optimization problem aims to find a set of LLM parameters, \(\pi_{\theta}\), such that given a prompt \(x\) sampled from a dataset \(D\), the LLM \(\pi_{\theta}\) will output a response \(y\):
 

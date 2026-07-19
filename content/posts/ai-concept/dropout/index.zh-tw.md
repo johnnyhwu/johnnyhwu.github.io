@@ -42,7 +42,7 @@ Dropout 的概念來自於 Hinton 於 2012 年所發表的論文「[Improving ne
 
 接著，讓我們從簡易的觀點理解 Dropout 的運作原理！
 
-{{< image src="concept.png" caption="Dropout 會隨機選擇部分 Neuron 使得其 Activation 為 0" >}}
+{{< image src="concept.png" alt="標準全連接神經網路與套用 Dropout 後的網路並列比較圖，被隨機丟棄的神經元以打叉標示" caption="Dropout 會隨機選擇部分 Neuron 使得其 Activation 為 0" >}}
 
 如上圖（a）所示，我們建立了一個 Neural Network。在一般情況下，我們會輸入 x 到 Neural Network，並根據 Neural Network 的輸出 y 計算這一個 Batch 的 Cost。有了 Cost 後，我們就可以利用 Gradient Descent 的概念更新 Neural Network 中的所有參數。
 
@@ -71,13 +71,13 @@ Dropout 的概念來自於 Hinton 於 2012 年所發表的論文「[Improving ne
 
 如果你已經看懂 Dropout 的基本觀念，讓我們再以數學的角度來理解 Dropout 的原理吧！
 
-{{< image src="concept-2.png" caption="Dropout 會使得每一個 Neuron 以固定的機率將其輸出設為 0" >}}
+{{< image src="concept-2.png" alt="標準網路單元與 Dropout 單元的比較圖，Dropout 版本中每個輸入會先乘上 Bernoulli 遮罩 r 產生稀疏輸出後再進行加權" caption="Dropout 會使得每一個 Neuron 以固定的機率將其輸出設為 0" >}}
 
 如上圖所示，在一般的 Neural Network 中，前一層的輸出 y 會直接與這一層的 Weight 相乘，並加上 Bias；若加上 Dropout 機制，會使得前一層的每一個輸出 y，都會再乘以一個 r 才會與這一層的 Weight 相乘，並加上 Bias。
 
 這裡的 r 是由 Bernoulli Distribution 以機率 p 生成的一個數字，r 可能為 0 或 1。當 r 為 0 時，表示這一個 Neuron 停止運作，因為其輸出將會被設為 0。
 
-{{< image src="concept-3.png" caption="Dropout Network 公式" >}}
+{{< image src="concept-3.png" alt="標準網路與 Dropout 網路前向傳播公式的比較，Dropout 額外加入 Bernoulli 遮罩 r 與稀疏化後的 Activation 再進行加權加總" caption="Dropout Network 公式" >}}
 
 上圖是以數學算式呈現一般的 Neural Network 與加入 Dropout 機制的不同之處，可以發現其實只有多了紅色部分，也就是每一個 Neuron 都會從 Bernoulli Distribution 以機率 p 生成出 0、以機率 (1-p) 生成出 1。
 
@@ -85,7 +85,7 @@ Dropout 的概念來自於 Hinton 於 2012 年所發表的論文「[Improving ne
 
 需要特別注意的是，我們必須確保每一個 Neuron 在「訓練階段」與「測試階段」其**輸出的期望值不變**。
 
-{{< image src="concept-4.png" caption="Dropout 機制下 Neuron 的輸出期望值為 (1-p) * y" >}}
+{{< image src="concept-4.png" alt="公式顯示 Dropout 訓練階段神經元的輸出期望值為 p 乘以 0 加上 (1 減 p) 乘以 y，化簡後等於 (1 減 p) 乘以 y" caption="Dropout 機制下 Neuron 的輸出期望值為 (1-p) * y" >}}
 
 如上圖算式所示，在「訓練階段」受到 Dropout 機制影響下的 Neuron 有 p 的機率輸出會變成 0（停止運作），有 (1-p) 的機率輸出維持不變。因此，該 Neuron 的輸出期望值會是 (1-p) * y。
 
