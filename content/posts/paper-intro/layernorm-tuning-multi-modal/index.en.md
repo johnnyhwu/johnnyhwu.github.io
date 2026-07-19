@@ -75,7 +75,7 @@ In the experimental phase, the authors compared a total of 6 fine-tuning methods
 
 Note: During the fine-tuning stage, the (Vision-Language) Connector, LLM Word Embedding, and LLM Output Head are also fine-tuned! From Table 1 below, we can see that among all fine-tuning methods, tuning only the LayerNorm can achieve surprisingly good performance:
 
-{{< image src="exp.png" caption="[Table 1] Experimental Results" >}}
+{{< image src="exp.png" alt="Large results table across MME, VQAv2, MSCOCO, Flickr30k and POPE for baseline models and several MM-LLaMA2 and MM-Vicuna backbones, comparing full finetuning, LoRA, attention projection, attention MLP and LayerNorm tuning, where LayerNorm tuning is frequently bolded as best despite updating far fewer parameters" caption="[Table 1] Experimental Results" >}}
 
 The parameters actually fine-tuned in the "LayerNorm" setting in Table 1 include not only the LayerNorm in the Attention Block but also:
 
@@ -89,13 +89,13 @@ But can we just fine-tune LayerNorm alone and leave the other three untouched? I
 
 Table 2 below shows the memory consumption of various fine-tuning methods:
 
-{{< image src="exp-1.png" caption="[Table 2] Memory Consumption" >}}
+{{< image src="exp-1.png" alt="Table of GPU memory and trainable-parameter percentage at 7B and 13B scale, where full finetuning and attention-MLP run out of memory, while LayerNorm tuning uses only 24.2 GB and 3.78 percent of parameters and LayerNorm-simple just 0.004 percent" caption="[Table 2] Memory Consumption" >}}
 
 It is evident that the "LayerNorm" and "LayerNorm-simp." fine-tuning methods place a much smaller burden on GPU memory.
 
 ---
 
-{{< image src="exp-2.png" caption="[Figure 2] The Impact of Different Training Datasets" >}}
+{{< image src="exp-2.png" alt="Four scatter plots for MM-LLaMA2-7B and MM-LLaMA2-chat-7B plotting Flickr30k and VQAv2 scores, comparing training on the full 80K data against 20K subsets of random, conversations, details or reasoning data, where the conversations 20K subset lands closest to or above the full-data point while the details subset performs worst" caption="[Figure 2] The Impact of Different Training Datasets" >}}
 
 Additionally, the authors analyzed the contribution of different types of training datasets used in the fine-tuning stage to the MLLM's capabilities. The instruction-following data used in the fine-tuning stage can be mainly divided into three types:
 
@@ -115,7 +115,7 @@ As mentioned earlier, the Vision-Language Connector is allowed to be fine-tuned 
 
 From Table 4 below, we can see that fine-tuning both LayerNorm and the Connector yields better overall performance. However, if only the Connector is fine-tuned, the performance drops significantly. If only LayerNorm is fine-tuned, the MLLM's performance also decreases, but the drop is not as severe:
 
-{{< image src="exp-3.png" caption="[Table 4] The Impact of the Vision-Language Connector on Training" >}}
+{{< image src="exp-3.png" alt="Table on MM-LLaMA2-7B and 13B comparing tuning LayerNorm plus the connector, the connector alone, and LayerNorm alone across MME, VQAv2, MSCOCO, Flickr30k and POPE, where LayerNorm plus connector is best on most captioning metrics" caption="[Table 4] The Impact of the Vision-Language Connector on Training" >}}
 
 ---
 
@@ -127,7 +127,7 @@ To understand why fine-tuning only LayerNorm yields better results than fine-tun
 
 Table 6 below shows the average similarity between all layer representations for three different models trained with two different fine-tuning methods. It can be observed that the similarity is lower when only LayerNorm is fine-tuned:
 
-{{< image src="exp-4.png" caption="[Table 6] Training LayerNorm Leads to Lower Layer Similarity" >}}
+{{< image src="exp-4.png" alt="Small table of layer-similarity scores for MM-Vicuna, MM-LLaMA2 and MM-LLaMA2-chat, where LayerNorm tuning yields lower similarity than full finetuning in every row, indicating more diverse layer representations" caption="[Table 6] Training LayerNorm Leads to Lower Layer Similarity" >}}
 
 When the similarity between a model's layers is low, it indicates that the model has stronger expressive power and can capture more patterns within the data. This is one of the reasons proposed by the authors. They also attempted to explain it from the perspective of gradient variance during the training process. If you are interested, you can read the paper for more details.
 

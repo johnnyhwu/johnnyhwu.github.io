@@ -55,7 +55,7 @@ HuatuoGPT-o1 的方法主要可以分為以下 4 個步驟：
 
 這個步驟的目的是要針對 Verifiable Dataset 中的 Data Sample，產生 Question 到 Answer 中間所經過的 Rationale。 
 
-{{< image src="step2-rationale-generation.png" caption="Figure 1: Left: Constructing verifiable medical problems using challenging close-set exam questions. Right: The verifier checks the model’s answer against the ground-truth answer." width="2450" height="1562" >}}
+{{< image src="step2-rationale-generation.png" alt="兩部分示意圖：左側將 MedQA 與 MedMCQA 中具挑戰性的封閉式醫學考題篩選並轉換成帶有標準答案的開放式可驗證醫學問題；右側由 LLM 產生思維鏈與答案，再由 verifier 將其與標準答案比對以判斷推理是否正確" caption="Figure 1: Left: Constructing verifiable medical problems using challenging close-set exam questions. Right: The verifier checks the model’s answer against the ground-truth answer." width="2450" height="1562" >}}
 
 如 Figure 1 所示，由於每一個 Question 都有一個已知的 Ground-truth Answer，因此當我們透過 Prompting 方式，讓 LLM 基於 Question 產生 Rationale 與 Answer 時，就可以去檢查 LLM 的 Answer 是否與 Ground-truth Answer 匹配，來確定這個 Rationale 是否正確。
 
@@ -77,11 +77,11 @@ HuatuoGPT-o1 的方法主要可以分為以下 4 個步驟：
 
 針對一個 Question，作者設定 LLM 的 Maximum Search Iteration 是 3 次。如果 3 次 Iteration 後仍然沒有推理出正確的答案，就會全部重頭來再嘗試一次，也就是生成新的 Initial CoT 以及 Answer。最多嘗試 3 次後，如果仍然沒有找到答案，那就會丟棄這一個 Question。 
 
-{{< image src="data-synthesis.png" caption="Figure 3: Example of data synthesis. Left: strategy search on medical verifiable problems until the answer is validated. Right: Merging the entire search process into efficient complex CoTs, facilitating effective deep reasoning to refine answers. The complex CoTs and responses are used to train the model to adopt thinks-before-it-answers behavior akin to o1." width="2450" height="1562" >}}
+{{< image src="data-synthesis.png" alt="以一個心臟科病例示範資料合成：左欄先呈現一個錯誤的初始思維鏈，接著依序以驗證、修正與探索新路徑等策略搜尋，直到驗證出正確答案；右欄將整個搜尋過程合併成一段連貫、帶有暫停重新評估語氣的複雜思維鏈，並附上精簡的最終回應，用來訓練模型養成類似 o1 的先思考再回答行為" caption="Figure 3: Example of data synthesis. Left: strategy search on medical verifiable problems until the answer is validated. Right: Merging the entire search process into efficient complex CoTs, facilitating effective deep reasoning to refine answers. The complex CoTs and responses are used to train the model to adopt thinks-before-it-answers behavior akin to o1." width="2450" height="1562" >}}
 
 到目前為止，針對每一個 Question 我們已經擁有一個 Trajectory 的 CoT 以及 Answer。舉例來說，如果 LLM 在 Search 3次後成功得到正確的答案，那麼這個 Trajectory 中會包含 [e<sub>0</sub>, e<sub>1</sub>,  e<sub>2</sub>, e<sub>3</sub>, y<sub>3</sub>]（只保留最後的正確答案）。接著，我們需要將這個 Trajectory 轉為一個 Single Complex CoT。具體的 Input 和 Output 如下方算式所示，而結果如上圖 Figure 3 所示。
 
-{{< image src="trajectory-conversion.png" caption="Formula: Convert Trajectory of CoT into Single Complex CoT" >}}
+{{< image src="trajectory-conversion.png" alt="公式定義重新格式化後的推理：由 LLM 將串接起來的搜尋軌跡 (各階段的中間思維鏈與其結論) 改寫成單一段複雜思維鏈" caption="Formula: Convert Trajectory of CoT into Single Complex CoT" >}}
 
 從 Fig 3 可以發現一個有趣的事情，將這個 Trajectory 轉為一個 Complex CoT 後，整個思考過程就像是人類一樣：做更 Deep 與 Long 的 Chain-of-Thought，且在這過程中還會修改自己的結果 (ex. "But, wait", "But hold on")，而且思考過程的 Transition 也是自然的。將 CoT Trajectory 轉為一個 Single Complex CoT 的 Prompt 如下所示：
 
@@ -129,7 +129,7 @@ The <Internal Thinking> represents your internal thoughts about the <Question>. 
 
 為了更進一步優化模型的推理能力，作者還透過剩下的 20k 個 (Question, Answer) Pairs 搭配 PPO 來訓練模型。在 Reward 的計算上，主要是透過 Verifier 來比較 LLM 的 Output 以及 Ground-truth Answer 來決定：
 
-{{< image src="raward_function.png" caption="Reward Function in HuatuoGPT-o1" >}}
+{{< image src="raward_function.png" alt="分段獎勵函數：當 verifier 判定預測答案正確時給 1，判定錯誤時給 0.1，預測為 null 時給 0" caption="Reward Function in HuatuoGPT-o1" >}}
 
 比較有趣的是，如果 LLM 推理出錯誤的答案，然仍會得到一個 Positive Reward（只是比較少），但是當 LLM 的 Output 沒有遵守先 Think-before-Answering 的行為模式時，就不會得到 Reward。為了在 Sparse Reward 下能有穩定的學習，最後的 Reward Function 中還會加上 KL Divergence，避免 Update 太多和 Initial Policy 差距太大。
 
@@ -137,7 +137,7 @@ The <Internal Thinking> represents your internal thoughts about the <Question>. 
 
 在模型訓練的細節上，作者基於 Llama-3.1-8B-Instruct 與 70B 訓練出 HuatuoGPT-o1-8B 與 70B。值得注意的是，在 Stage 1 的 SFT 的 LR 僅設定 5e-6 而 Stage 2 的 RL 的 LR 僅設定 5e-7。從下表 Table 1 也可以看到 HuatuoGPT 的表現比 Baseline 來得更好。 
 
-{{< image src="table-1.png" caption="Table 1: Main Results on Medical Benchmarks. LLMs with 'capsule' emoji are specifically trained for the medical domain, and indicates LLMs training for long chain-of-thought reasoning. 'w/o' means 'without'. Within each segment, bold highlights the best scores, and underlines indicate the second-best." >}}
+{{< image src="table-1.png" alt="醫學基準 MedQA、MedMCQA、PubMedQA、MMLU-Pro 與 GPQA 的主要結果表格，分為約 8B 與超過 10B 兩組模型，其中 HuatuoGPT-o1-8B 與 HuatuoGPT-o1-70B (以底色標示) 取得最佳平均分 63.9 與 73.4，勝過其去除 RL 的版本以及其他醫學與通用 LLM" caption="Table 1: Main Results on Medical Benchmarks. LLMs with 'capsule' emoji are specifically trained for the medical domain, and indicates LLMs training for long chain-of-thought reasoning. 'w/o' means 'without'. Within each segment, bold highlights the best scores, and underlines indicate the second-best." >}}
 
 ## 結語
 

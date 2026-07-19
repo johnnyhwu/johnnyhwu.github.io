@@ -56,7 +56,7 @@ First, the authors first collected 192k "multiple-choice questions" from existin
 
 The purpose of this step is to generate the Rationale that the process from Question to Answer goes through for each Data Sample in the Verifiable Dataset.
 
-{{< image src="step2-rationale-generation.png" caption="Figure 1: Left: Constructing verifiable medical problems using challenging close-set exam questions. Right: The verifier checks the model’s answer against the ground-truth answer." width="2450" height="1562" >}}
+{{< image src="step2-rationale-generation.png" alt="Two-part diagram: on the left, challenging closed-set medical exam questions from MedQA and MedMCQA are filtered and transformed into open-ended verifiable medical problems with a ground-truth answer; on the right, an LLM produces a chain-of-thought and answer that a verifier checks against the ground-truth answer to judge whether the reasoning is correct" caption="Figure 1: Left: Constructing verifiable medical problems using challenging close-set exam questions. Right: The verifier checks the model’s answer against the ground-truth answer." width="2450" height="1562" >}}
 
 As shown in Figure 1, since each Question has a known Ground-truth Answer, therefore, when we use Prompting to make the LLM generate the Rationale and Answer based on the Question, we can check if the LLM's Answer matches the Ground-truth Answer to confirm if the Rationale is correct.
 
@@ -77,11 +77,11 @@ In order for the LLM to learn such a complex thinking process, the method for Ra
 
 For a given Question, the authors set the LLM's Maximum Search Iteration to 3 times. If the correct answer is still not deduced after 3 Iterations, it will start all over and try again, which means generating a new Initial CoT and Answer. After trying a maximum of 3 times, if the answer is still not found, that Question will be discarded.
 
-{{< image src="data-synthesis.png" caption="Figure 3: Example of data synthesis. Left: strategy search on medical verifiable problems until the answer is validated. Right: Merging the entire search process into efficient complex CoTs, facilitating effective deep reasoning to refine answers. The complex CoTs and responses are used to train the model to adopt thinks-before-it-answers behavior akin to o1." width="2450" height="1562" >}}
+{{< image src="data-synthesis.png" alt="Data synthesis example for a cardiology case: the left column shows an initial chain-of-thought that is wrong, then verification, correction and exploring-new-paths strategies searched in sequence until a correct answer is validated; the right column merges that whole search into a single flowing complex chain-of-thought with pause-and-reconsider phrasing, plus a final concise response, used to train o1-like think-before-answering behavior" caption="Figure 3: Example of data synthesis. Left: strategy search on medical verifiable problems until the answer is validated. Right: Merging the entire search process into efficient complex CoTs, facilitating effective deep reasoning to refine answers. The complex CoTs and responses are used to train the model to adopt thinks-before-it-answers behavior akin to o1." width="2450" height="1562" >}}
 
 Up to this point, for each Question, we already have a Trajectory of CoT and Answer. For example, if the LLM successfully gets the correct answer after 3 Searches, then this Trajectory will include [e<sub>0</sub>, e<sub>1</sub>,  e<sub>2</sub>, e<sub>3</sub>, y<sub>3</sub>] (only the final correct answer is kept). Next, we need to convert this Trajectory into a Single Complex CoT. The specific Input and Output are shown in the formula below, and the result is as shown in Figure 3 above.
 
-{{< image src="trajectory-conversion.png" caption="Formula: Convert Trajectory of CoT into Single Complex CoT" >}}
+{{< image src="trajectory-conversion.png" alt="Equation defining the reformatted reasoning as an LLM reformatting the concatenated search trajectory of intermediate chains-of-thought and their conclusions into a single complex chain-of-thought" caption="Formula: Convert Trajectory of CoT into Single Complex CoT" >}}
 
 From Fig 3, an interesting observation can be made: after converting this Trajectory into a Complex CoT, the entire thinking process is like that of a human: performing deeper and longer Chain-of-Thought, revising its own results during the process (ex. "But, wait", "But hold on"), and the transitions in the thinking process are also natural. The Prompt for converting the CoT Trajectory into a Single Complex CoT is shown below:
 
@@ -128,14 +128,14 @@ The purpose of this step is to train the LLM to first output the Long Chain-of-T
 To further optimize the model's reasoning ability, the authors also trained the model using the remaining 20k (Question, Answer) Pairs combined with PPO.
 
 Regarding the calculation of Reward, it is mainly determined by comparing the LLM's Output and the Ground-truth Answer through a Verifier:
-{{< image src="raward_function.png" caption="Reward Function in HuatuoGPT-o1" >}}
+{{< image src="raward_function.png" alt="Piecewise reward function giving 1 when the verifier judges the predicted answer correct, 0.1 when it is judged incorrect, and 0 when the prediction is null" caption="Reward Function in HuatuoGPT-o1" >}}
 
 What's more interesting is that, if the LLM deduces a wrong answer, it will still receive a Positive Reward (just a smaller one), but when the LLM's Output does not follow the Think-before-Answering behavior pattern, it will not receive any Reward. To ensure stable learning under Sparse Reward, KL Divergence is also added to the final Reward Function to prevent updates from deviating too much from the Initial Policy.
 
 ## Experimental Performance of HuatuoGPT-o1
 Regarding the details of model training, the authors trained HuatuoGPT-o1-8B and 70B based on Llama-3.1-8B-Instruct and 70B. It is worth noting that the LR for SFT in Stage 1 was set to only 5e-6 and the LR for RL in Stage 2 was set to only 5e-7. From the table below, Table 1, it can also be seen that HuatuoGPT performs better than the Baseline.
 
-{{< image src="table-1.png" caption="Table 1: Main Results on Medical Benchmarks. LLMs with 'capsule' emoji are specifically trained for the medical domain, and indicates LLMs training for long chain-of-thought reasoning. 'w/o' means 'without'. Within each segment, bold highlights the best scores, and underlines indicate the second-best." >}}
+{{< image src="table-1.png" alt="Main results table on medical benchmarks MedQA, MedMCQA, PubMedQA, MMLU-Pro and GPQA, split into around-8B and over-10B model groups, where HuatuoGPT-o1-8B and HuatuoGPT-o1-70B (highlighted rows) achieve the best average scores of 63.9 and 73.4, above their no-RL ablations and other medical and general LLMs" caption="Table 1: Main Results on Medical Benchmarks. LLMs with 'capsule' emoji are specifically trained for the medical domain, and indicates LLMs training for long chain-of-thought reasoning. 'w/o' means 'without'. Within each segment, bold highlights the best scores, and underlines indicate the second-best." >}}
 
 ## Conclusion
 

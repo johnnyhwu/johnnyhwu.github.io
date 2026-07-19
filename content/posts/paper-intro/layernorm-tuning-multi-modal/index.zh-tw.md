@@ -73,7 +73,7 @@ Single Modality 的 LLM 已經不足為奇，各大科技巨頭爭先恐後的�
 
 注意：在 Fine-Tuning 階段中，（Vision-Language）Connector、LLM Word Embedding 和 LLM Output Head 也有一起被微調！ 從下表 Table 1 可以發現，在所有的 Fine-tuning 方法中，只有微調 LayerNorm 竟然也可以得到不錯的表現：
 
-{{< image src="exp.png" caption="[Table 1] 實驗結果" >}}
+{{< image src="exp.png" alt="橫跨 MME、VQAv2、MSCOCO、Flickr30k 與 POPE 的大型結果表格，涵蓋 baseline 模型與數個 MM-LLaMA2、MM-Vicuna 骨幹，比較完整微調、LoRA、attention 投影、attention MLP 與 LayerNorm 微調，其中 LayerNorm 微調在更新遠少參數的情況下仍經常以粗體居冠" caption="[Table 1] 實驗結果" >}}
 
 Table 1 中的 LayerNorm 實際微調的參數除了有 Attention Block 中的 LayerNorm 外，還有：
 
@@ -87,13 +87,13 @@ Table 1 中的 LayerNorm 實際微調的參數除了有 Attention Block 中的 L
 
 從下表的 Table 2 也可以看到各種不同 Fine-Tuning 方法的 Memory Consumption：
 
-{{< image src="exp-1.png" caption="[Table 2] 記憶體使用量" >}}
+{{< image src="exp-1.png" alt="7B 與 13B 規模下 GPU 記憶體與可訓練參數比例的表格，完整微調與 attention MLP 會記憶體不足 (OOM)，而 LayerNorm 微調僅用 24.2 GB、3.78% 參數，LayerNorm-simple 更只需 0.004%" caption="[Table 2] 記憶體使用量" >}}
 
 可以發現 "LayerNorm" 和 "LayerNorm-simp." 的微調方法，對於 GPU Memory 的負擔真的小很多。
 
 ---
 
-{{< image src="exp-2.png" caption="[Figure 2] 不同訓練資料集的影響" >}}
+{{< image src="exp-2.png" alt="MM-LLaMA2-7B 與 MM-LLaMA2-chat-7B 的四張散點圖，繪出 Flickr30k 與 VQAv2 分數，比較以完整 80K 資料訓練與以 random、conversations、details、reasoning 各 20K 子集訓練，其中 conversations 20K 子集最接近甚至超過完整資料的點，而 details 子集表現最差" caption="[Figure 2] 不同訓練資料集的影響" >}}
 
 除此之外，作者也分析在 Fine-Tuning 階段所使用的訓練資料集類型，對於 MLLM 能力的貢獻為和。在 Fine-Tuning 階段所使用的 Instruction-Following Data 主要可以分為三種類型
 
@@ -113,7 +113,7 @@ Table 1 中的 LayerNorm 實際微調的參數除了有 Attention Block 中的 L
 
 從下表 Table 4 可以看到，當然同時微調 LayerNorm 和 Connector 整體來說會有比較好的表現。然而，如果只微調 Connector 的話，可以發現表現變差很多；如果只微調 LayerNorm 的話，MLLM 的表現也會變差，但是相對來說沒有掉那麼多：
 
-{{< image src="exp-3.png" caption="[Table 4] Vision-Language Connector 對於訓練的影響" >}}
+{{< image src="exp-3.png" alt="MM-LLaMA2-7B 與 13B 的表格，比較「LayerNorm 加 connector」、「僅 connector」與「僅 LayerNorm」在 MME、VQAv2、MSCOCO、Flickr30k 與 POPE 的表現，其中 LayerNorm 加 connector 在多數描述生成指標上最佳" caption="[Table 4] Vision-Language Connector 對於訓練的影響" >}}
 
 ---
 
@@ -125,7 +125,7 @@ Table 1 中的 LayerNorm 實際微調的參數除了有 Attention Block 中的 L
 
 下表 Table 6 呈現的是三種不同的模型透過兩種不同的微調方法訓練後，所有的 Layer Representation 之間相似度的平均值，可以發現只微調 LayerNorm 的相似度會比較低：
 
-{{< image src="exp-4.png" caption="[Table 6] LayerNorm 的訓練使得 Layer Similarity 較低" >}}
+{{< image src="exp-4.png" alt="MM-Vicuna、MM-LLaMA2 與 MM-LLaMA2-chat 層相似度分數的小型表格，LayerNorm 微調在每一列的相似度都低於完整微調，代表各層表示更為多樣" caption="[Table 6] LayerNorm 的訓練使得 Layer Similarity 較低" >}}
 
 當一個模型的 Layer 之間的相似度低，就表示這個模型的表達能力更強，可以掌握更多 Data 內的 Pattern。這是作者所提出的一個理由之一，作者也有試著從訓練過程中 Gradient Variance 的角度切入來解釋，如果有興趣可以再閱讀這篇論文。
 

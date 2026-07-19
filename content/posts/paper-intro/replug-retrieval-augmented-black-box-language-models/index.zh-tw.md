@@ -28,7 +28,7 @@ Retrieval-Augmented Generation (RAG) 的技術在最近幾年可以說是超級�
 
 一般的 LLM 經常會遇到的問題是，當 User 詢問一些  LLM 在 Pre-Training 或 Fine-Tuning 階段不曾學習過得知識時，LLM 很有可能會用瞎掰的方式來回答（Halluciantion）。因為要讓 LLM 學習知道自己所不知道的事情，其實不太容易。相反的，透過 RAG 的技巧，LLM 可以透過外部資料庫，得到這個問題的相關資料，來減少 Hallucination。
 
-{{< image src="replug.png" caption="[Figure 1] REPLUG augments black-box LMs with a frozen or tunable retriever, enabling use with large API-based LMs (>100B parameters)." >}}
+{{< image src="replug.png" alt="比較示意圖：先前作法中 frozen retriever 將文件餵給可訓練、參數少於 10B 的 white-box 語言模型；RE-PLUG 則讓參數超過 100B 的大型 black-box 語言模型維持凍結，改以 retriever 作為 frozen 或可訓練的元件" caption="[Figure 1] REPLUG augments black-box LMs with a frozen or tunable retriever, enabling use with large API-based LMs (>100B parameters)." >}}
 
 從上圖的 Figure 1 可以發現，過去的 RAG 的方法，大多是使用 Freeze 住（不能被訓練）的 Retriever 搭配一個可以訓練的 LLM，讓 LLM 學習根據 Retriever 所提供的 Document 生成輸出。這樣的作法有以下缺點：
 
@@ -41,7 +41,7 @@ Retrieval-Augmented Generation (RAG) 的技術在最近幾年可以說是超級�
 
 REPLUG 所提出的方法可以分為兩個部份，分別是 Inference Time 以及 Training Time。這個部份會先介紹 Inference Time 如何透過 Ensemble 的技巧來提昇 LLM 的輸出品質。
 
-{{< image src="replug-approach.png" caption="[Figure 2] REPLUG retrieves relevant documents, prepends them to the input, and ensembles output probabilities." >}}
+{{< image src="replug-approach.png" alt="REPLUG 推論流程示意圖：retriever 為測試上下文「Jobs is the CEO of」擷取數份文件，將每份文件分別接在上下文前面送入 black-box LM 取得下一個 token 的分佈，再將這些分佈集成為最終分佈並預測出 Apple" caption="[Figure 2] REPLUG retrieves relevant documents, prepends them to the input, and ensembles output probabilities." >}}
 
 如上圖 Figure 2 所示，給定一個 Query（希望 LLM 回答  "Job is the CEO of ???"），Retriever 會去 External Database 中取出與這個 Query 最相似的 Document。這邊的作法其實就是一般 RAG 的方法：將 Query 與 External Database 中所有的 Document 都個別通過一個 Sentence Embedding Model 得到自己的 Embedding。接著，計算 Query 的 Embedding 與所有 Document 的 Embedding 之間的 Cosine Similarity。取出 Top-K 最相似的 Document！
 
@@ -62,7 +62,7 @@ REPLUG 所提出的方法可以分為兩個部份，分別是 Inference Time 以
 
 REPLUG 所提出的第二種方法，是在 Training Stage 中針對 Retriever 進行訓練。換句話說，因為是聚焦在 Block-Box LLM，所以不可能訓練 LLM，但是應該要如何訓練 Retriever，使其 Retrieve 出能夠提昇 LLM 輸出品質的 Document。
 
-{{< image src="replug-training.png" caption="[Figure 3] The retriever is trained using the output of a frozen language model as supervision signals." >}}
+{{< image src="replug-training.png" alt="REPLUG LSR 訓練示意圖：retriever 產生對各文件的檢索概率分佈，凍結的語言模型則依各文件能降低答案困惑度的程度產生目標概率分佈，接著以最小化兩個分佈間的 KL 散度來訓練 retriever" caption="[Figure 3] The retriever is trained using the output of a frozen language model as supervision signals." >}}
 
 從上圖 Figure 3 可以發現到，遵循一般 RAG 的作法，首先基於目前的 Query ("Job is the CEO of ???")，Retriever 可以從 External Database 中取出 K 個 Document。透過這 K 個 Document 與 Query 的 Similarity，可以計算出這 K 個 Document 被選擇的機率值，稱為 Retrieval Likelihood。具體做法其實就是將這 K 個 Similarity 做 Softmax。
 
@@ -81,10 +81,10 @@ REPLUG 所提出的第二種方法，是在 Training Stage 中針對 Retriever �
 
 ## REPLUG 實驗結果
 
-{{< image src="exp-1.png" caption="[Table 1] Both REPLUG and REPLUG LSR consistently enhanced the performance of different language models." >}}
+{{< image src="exp-1.png" alt="語言建模困惑度表格，涵蓋各種 GPT-2 規模與 black-box GPT-3 模型，顯示加入 REPLUG 與 REPLUG LSR 後困惑度較原始版本持續下降，提升達數個百分點，例如 GPT-3 Davinci 搭配 REPLUG LSR 提升 6.3%" caption="[Table 1] Both REPLUG and REPLUG LSR consistently enhanced the performance of different language models." >}}
 
 從 Table 1 實驗結果可以看到，不管是哪一種版本的 GPT2 or GPT3，在搭配 REPLUG 的 Inference Time 技巧後表現都提升（+ REPLUG）。如果進一步對 Retriever 做訓練，表現又會更好（+ REPLUG LSR）。
-{{< image src="exp-2.png" caption="[Table 2] REPLUG and REPLUG LSR improve Codex performance on MMLU categories, with 4.5% and 5.1% gains respectively." >}}
+{{< image src="exp-2.png" alt="依 MMLU 類別 (humanities、social、STEM、other 與整體) 呈現準確率的表格，比較 Codex、PaLM、Flan-PaLM 與 Atlas 及 Codex 加 REPLUG、Codex 加 REPLUG LSR，REPLUG 版本將 Codex 整體分數從 68.3 提升到 71.4 與 71.8" caption="[Table 2] REPLUG and REPLUG LSR improve Codex performance on MMLU categories, with 4.5% and 5.1% gains respectively." >}}
 
 在 Table 2 實驗中，作者使用 MMLU Dataset，這個資料集又分為 4 個類別。其中 Codex, PaLM 與 Flan-PaLM 是 MMLU Dataset 的 Leaderboard 中表現最好的三個 Baseline。 Atlas 則是作為 RAG 方法的 Baseline。可以發現將 Codex 加上本篇論文所提出的技巧後，皆能提升其表現。
 

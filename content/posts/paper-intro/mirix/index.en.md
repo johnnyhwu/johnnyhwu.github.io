@@ -35,7 +35,7 @@ The design of the MIRIX method can be broadly divided into the following three a
 
 ### Memory Component Design
 
-{{< image src="memory-component.png" caption="[Figure 1] The 6 Memory Components defined in MIRIX" >}}
+{{< image src="memory-component.png" alt="Row of six labeled icons for MIRIX's memory components: Core Memory for user information and preferences always in context, Episodic Memory for events about the user, Semantic Memory for new concepts and names, Procedural Memory for step-by-step guides, Resource Memory for files and documents, and Knowledge Vault for addresses, phone numbers and credentials" caption="[Figure 1] The 6 Memory Components defined in MIRIX" >}}
 
 As shown in the figure above, MIRIX defines a total of 6 Memory Components. These components appear to be a synthesis of the memory components designed in [LangMem](../../other/langmem-intro/) and [MemGPT](../memgpt/). For instance, [LangMem](../../other/langmem-intro/) also includes Episodic, Semantic, and Procedural Memory, while Core Memory and Resource Memory correspond to Core Memory and Archival Memory in [MemGPT](../memgpt/).
 
@@ -70,13 +70,13 @@ Here is a breakdown of the information stored in each Memory Component:
 
 ### Memory Update Workflow
 
-{{< image src="memory-update.png" caption="[Figure 2] The Memory Update Workflow in MIRIX" >}}
+{{< image src="memory-update.png" alt="Sequence diagram of the MIRIX memory update workflow where user input is sent to a Meta Memory Manager that analyzes the content type and routes it to the relevant Memory Managers, which process the information and update the Memory Base, then confirmations flow back and an acknowledgement returns to the user" caption="[Figure 2] The Memory Update Workflow in MIRIX" >}}
 
 The figure above illustrates how memory is updated in the MIRIX method. Based on the user's input, relevant information is first retrieved from the 6 Memory Components. The Meta Memory Manager then determines which Memory Component the current user input belongs to and assigns the update task to the corresponding Memory Manager.
 
 ### Conversation Workflow
 
-{{< image src="conversation.png" caption="[Figure 3] The Conversation Workflow in MIRIX" >}}
+{{< image src="conversation.png" alt="Sequence diagram of the MIRIX conversation workflow where a user query goes to a Chat Agent that analyzes the question, calls search_in_memory over the Memory Base to retrieve relevant results, optionally triggers urgent memory updates via the Memory Managers, and then synthesizes and generates the response" caption="[Figure 3] The Conversation Workflow in MIRIX" >}}
 
 Once the MIRIX Agent has collected sufficient memory, it can begin to answer the user's questions based on that memory. The actual conversation process of the MIRIX Agent is shown in the figure above. Based on the user's input, relevant (but concise, not all details) information is first retrieved from the Memory Base across the 6 Memory Components. The Chat Agent then determines which Memory Component should handle the current input and triggers a "Conduct Specific Search" to retrieve more detailed and complete information from that specific component. Finally, it generates the final response based on this retrieved information. If the Chat Agent determines that the user's input requires a memory update, it can directly trigger the specific Memory Manager to update the relevant Memory Component.
 
@@ -88,9 +88,9 @@ ScreenshotVQA is a multimodal LLM memory dataset created for this paper. This be
 
 For the evaluation metric, the authors designed an LLM-as-a-Judge method based on `GPT-4.1`. Additionally, the MIRIX Agent used `gemini-2.5-flash-preview-04-17` and `gpt-4.1-mini` as its backbone models for the ScreenshotVQA and LOCOMO datasets, respectively.
 
-{{< image src="exp-1.png" caption="[Table 1] MIRIX experimental results on ScreenshotVQA" >}}
+{{< image src="exp-1.png" alt="Table on ScreenshotVQA reporting accuracy and storage for three students and overall, comparing Gemini, SigLIP@50 and MIRIX, where MIRIX has the highest overall accuracy at 0.5950 while using only 15.89 MB of storage versus SigLIP's 15.07 GB" caption="[Table 1] MIRIX experimental results on ScreenshotVQA" >}}
 
-{{< image src="exp-2.png" caption="[Table 2] MIRIX experimental results on LOCOMO" >}}
+{{< image src="exp-2.png" alt="Table on the LOCOMO benchmark reporting single-hop, multi-hop, open-domain, temporal and overall scores for memory systems like A-Mem, LangMem, Mem0, Zep and MIRIX under gpt-4o-mini and gpt-4.1-mini, where MIRIX leads with an overall 85.38, approaching the full-context upper bound of 87.52" caption="[Table 2] MIRIX experimental results on LOCOMO" >}}
 
 From the experimental results above, it is clear that the MIRIX Agent achieved outstanding performance on both datasets!
 

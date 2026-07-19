@@ -29,7 +29,7 @@ This article aims to introduce a RAG paper from NAACL 2024 — [REPLUG: Retrieva
 
 A common problem with general LLMs is that when a user asks about knowledge that the LLM has not learned during the Pre-Training or Fine-Tuning stages, the LLM is likely to answer by making things up (Hallucination). It is quite difficult to teach an LLM to know what it doesn't know. Conversely, through RAG techniques, LLMs can obtain relevant information for the question from an external database, reducing hallucination.
 
-{{< image src="replug.png" caption="[Figure 1] REPLUG augments black-box LMs with a frozen or tunable retriever, enabling use with large API-based LMs (>100B parameters)." >}}
+{{< image src="replug.png" alt="Comparison diagram: the previous paradigm has a frozen retriever feeding documents into a trainable white-box language model under 10B parameters, whereas RE-PLUG keeps the large black-box language model over 100B parameters frozen and instead makes the retriever the frozen or trainable component" caption="[Figure 1] REPLUG augments black-box LMs with a frozen or tunable retriever, enabling use with large API-based LMs (>100B parameters)." >}}
 
 As shown in Figure 1 above, most past RAG methods used a frozen (cannot be trained) Retriever paired with a trainable LLM, allowing the LLM to learn to generate output based on the documents provided by the Retriever. This approach has the following drawbacks:
 
@@ -42,7 +42,7 @@ Furthermore, most existing State-Of-The-Art LLMs are Black-Box Models, meaning w
 
 The method proposed by REPLUG can be divided into two parts: Inference Time and Training Time. This section will first introduce how Inference Time can improve the output quality of the LLM through Ensemble techniques.
 
-{{< image src="replug-approach.png" caption="[Figure 2] REPLUG retrieves relevant documents, prepends them to the input, and ensembles output probabilities." >}}
+{{< image src="replug-approach.png" alt="Diagram of the REPLUG inference process where a retriever fetches several documents for the test context Jobs is the CEO of, each document is separately prepended to the context and passed through the black-box LM to get next-token distributions, and these are ensembled into a final distribution that predicts Apple" caption="[Figure 2] REPLUG retrieves relevant documents, prepends them to the input, and ensembles output probabilities." >}}
 
 As shown in Figure 2 above, given a Query (hoping the LLM answers "Job is the CEO of ???"), the Retriever will retrieve the documents most similar to this Query from the External Database. The specific method here is actually the standard RAG approach: pass both the Query and all Documents in the External Database individually through a Sentence Embedding Model to get their Embeddings. Then, calculate the Cosine Similarity between the Query's Embedding and all Document Embeddings. Select the Top-K most similar Documents!
 
@@ -62,7 +62,7 @@ My thought is that since the Context Window Limit of SOTA LLMs is constantly exp
 
 The second method proposed by REPLUG is to train the Retriever during the Training Stage. In other words, because the focus is on Block-Box LLM, it's impossible to train the LLM, but the question is how to train the Retriever to retrieve documents that improve the output quality of the LLM.
 
-{{< image src="replug-training.png" caption="[Figure 3] The retriever is trained using the output of a frozen language model as supervision signals." >}}
+{{< image src="replug-training.png" alt="Diagram of REPLUG LSR training where the retriever produces a retrieval likelihood distribution over documents, the frozen language model produces a target likelihood distribution based on how much each document lowers the perplexity of the answer, and the retriever is trained by minimizing the KL divergence between the two distributions" caption="[Figure 3] The retriever is trained using the output of a frozen language model as supervision signals." >}}
 
 As seen in Figure 3 above, following the general RAG approach, first, based on the current Query ("Job is the CEO of ???"), the Retriever can retrieve K documents from the External Database. Through the Similarity between these K documents and the Query, the probability values of these K documents being selected can be calculated, which is called Retrieval Likelihood. The specific method is simply to apply Softmax to these K Similarities.
 
@@ -80,10 +80,10 @@ I think this training method is quite intuitive and effective. Since the trainin
 
 ## REPLUG Experimental Results
 
-{{< image src="exp-1.png" caption="[Table 1] Both REPLUG and REPLUG LSR consistently enhanced the performance of different language models." >}}
+{{< image src="exp-1.png" alt="Language-modeling perplexity table for GPT-2 sizes and black-box GPT-3 models, showing that adding REPLUG and REPLUG LSR consistently lowers perplexity versus the original, with gains of several percent, for example 6.3 percent on GPT-3 Davinci with REPLUG LSR" caption="[Table 1] Both REPLUG and REPLUG LSR consistently enhanced the performance of different language models." >}}
 
 From the experimental results in Table 1, it can be seen that regardless of which version of GPT2 or GPT3 is used, their performance improves when combined with REPLUG's Inference Time technique (+ REPLUG). If the Retriever is further trained, the performance improves even more (+ REPLUG LSR).
-{{< image src="exp-2.png" caption="[Table 2] REPLUG and REPLUG LSR improve Codex performance on MMLU categories, with 4.5% and 5.1% gains respectively." >}}
+{{< image src="exp-2.png" alt="MMLU accuracy table by category (humanities, social, STEM, other and all) comparing Codex, PaLM, Flan-PaLM and Atlas against Codex plus REPLUG and Codex plus REPLUG LSR, where the REPLUG variants raise Codex's overall score from 68.3 to 71.4 and 71.8" caption="[Table 2] REPLUG and REPLUG LSR improve Codex performance on MMLU categories, with 4.5% and 5.1% gains respectively." >}}
 
 In the experiment shown in Table 2, the authors used the MMLU Dataset, which is divided into 4 categories. Among them, Codex, PaLM, and Flan-PaLM are the three Baselines with the best performance on the MMLU Dataset Leaderboard. Atlas is used as a RAG method Baseline. It can be seen that adding the techniques proposed in this paper to Codex improves its performance.
 
