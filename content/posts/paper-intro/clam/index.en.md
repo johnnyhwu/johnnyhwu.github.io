@@ -58,7 +58,7 @@ To test a system that "asks back," human intervention (Human Evaluation) is trad
 
 Let's break down the operational mechanism of **CLAM (CLarify-if-AMbiguous)**. Imagine a user's question entering the system and passing through a "three-stage decision funnel."
 
-{{< image src="figure2.png" caption="CLAM Workflow Overview: Input Question -> Ambiguity Detection -> If ambiguous, generate clarifying question -> Receive feedback -> Generate final answer." width=80% >}}
+{{< image src="figure2.png" alt="Flowchart of the CLAM workflow: the user asks a question, an ambiguity check branches so ambiguous questions trigger the model to ask a clarifying question and the user to provide clarification, while non-ambiguous questions skip straight to the model giving the final answer" caption="CLAM Workflow Overview: Input Question -> Ambiguity Detection -> If ambiguous, generate clarifying question -> Receive feedback -> Generate final answer." width=80% >}}
 
 ### Stage 1: Ambiguity Detection — The Gatekeeper
 
@@ -129,7 +129,7 @@ This is an LLM's strength. The model does not need to explicitly rewrite the que
 
 To solve the "expensive evaluation" problem, the authors introduced an **Oracle model**. This is an LLM that plays the role of the user during the evaluation phase.
 
-{{< image src="figure4.png" caption="Oracle Evaluation Process: Using paired datasets, the Oracle answers CLAM's questions based on the Unambiguous Question." width=80% >}}
+{{< image src="figure4.png" alt="Diagram of the oracle evaluation: a prompt containing the privileged unambiguous question and an ambiguous user question is fed to a generative language model, which asks a clarifying question like Who is he and then answers Alan Bean" caption="Oracle Evaluation Process: Using paired datasets, the Oracle answers CLAM's questions based on the Unambiguous Question." width=80% >}}
 
 #### How it works
 A paired dataset \((Q_{\text{ambiguous}}, Q_{\text{unambiguous}}, A_{\text{ground\_truth}})\) is used.
@@ -157,7 +157,7 @@ To comprehensively evaluate CLAM's capabilities, the authors used three main dat
 
 ### Key Performance: The Sweet Spot of Accuracy and Efficiency
 
-{{< image src="figure5.png" caption="This chart shows CLAM's performance on Ambiguous TriviaQA. (a) shows CLAM leads significantly in Adjusted Accuracy, proving it solves ambiguity without sacrificing efficiency. (b) shows that on purely ambiguous questions, CLAM performs similarly to Force Clarification but far outperforms default GPT." width=80% >}}
+{{< image src="figure5.png" alt="Two bar charts on Ambiguous TriviaQA comparing default GPT, prompting baseline, always prompt for clarification, and CLAM: in (a) adjusted accuracy CLAM is highest at about 49, and in (b) accuracy on purely ambiguous questions CLAM matches always-clarify at about 55 and far exceeds default GPT" caption="This chart shows CLAM's performance on Ambiguous TriviaQA. (a) shows CLAM leads significantly in Adjusted Accuracy, proving it solves ambiguity without sacrificing efficiency. (b) shows that on purely ambiguous questions, CLAM performs similarly to Force Clarification but far outperforms default GPT." width=80% >}}
 
 **Core Finding 1: CLAM Finds the Optimal Balance**
 In **Figure 5(a)**, CLAM's bars are significantly higher than all baselines.
@@ -168,7 +168,7 @@ In **Figure 5(a)**, CLAM's bars are significantly higher than all baselines.
 **Core Finding 2: Simple Prompting Cannot Detect Ambiguity**
 This is a crucial result from the ablation study; please refer to **Figure 6**.
 
-{{< image src="figure6.png" caption="This AUROC curve compares the ambiguity detection capabilities of different methods. CLAM (Red) has an AUROC near 0.9, far higher than the Prompting Baseline (Orange) at 0.5 (random guessing)." >}}
+{{< image src="figure6.png" alt="Grouped bar chart of ambiguity-detection AUROC across Ambiguous TriviaQA, ClariQ, CLAQUA I and CLAQUA II for default GPT, prompting baseline, force clarification and CLAM, where CLAM is far higher, reaching about 0.9 on Ambiguous TriviaQA versus around 0.5 for the others" caption="This AUROC curve compares the ambiguity detection capabilities of different methods. CLAM (Red) has an AUROC near 0.9, far higher than the Prompting Baseline (Orange) at 0.5 (random guessing)." >}}
 
 {{< admonition tip "Surprising Discovery: Prompting is not enough" >}}
 Many believe that simply adding "Please ask if unclear" to a prompt will teach the model. However, the experimental data refutes this assumption.

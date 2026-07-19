@@ -44,11 +44,11 @@ The essence of the Adaptive-k method can be summarized in a single sentence:
 
 > For each set of retrieval results, the Adaptive-k method sorts the similarity scores between the query and each document chunk in descending order and then identifies the largest drop, or "gap," in these scores. Only the document chunks with higher similarity scores preceding this gap are retained.
 
-{{< image src="approach.png" caption="Illustration of the Adaptive-k method" >}}
+{{< image src="approach.png" alt="Diagram of the Adaptive-k retrieval method: a query and context passages are embedded, similarity scores are sorted into a distribution, the largest gap sets the threshold k so only the top passages are retrieved into the prompt for the LLM" caption="Illustration of the Adaptive-k method" >}}
 
 The image above illustrates the Adaptive-k method, while the one below shows its algorithm:
 
-{{< image src="algo.png" caption="Algorithm of the Adaptive-k method" width="50%" >}}
+{{< image src="algo.png" alt="Pseudocode for Adaptive-k estimation via the largest similarity gap: embed the query and context, compute and sort similarities in descending order, take pairwise differences, and pick k at the index of the largest gap" caption="Algorithm of the Adaptive-k method" width="50%" >}}
 
 The authors note that in practice, relying solely on the similarity score gap to select the top k document chunks might cause some relevant chunks distributed after the gap to be excluded. To address this, they introduced a Buffer Size "B." The total number of retrieved document chunks becomes "k+B." (In the paper, B is set to 5).
 

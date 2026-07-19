@@ -35,7 +35,7 @@ When an AI Agent consists of multiple roles (such as planner, executor, critic),
 
 It illustrates how `AgentOpt` treats the Agent workflow as a black box and uses an iterative loop to search for the Pareto frontier.
 
-{{< image src="arch.png" caption="Presents the overall design of AgentOpt. Figure (a) shows the composition relationship between N roles and candidate models, emphasizing that the choice at each step affects downstream states (not per-call routing); Figure (b) depicts the iterative search loop: selecting a combo, executing interception, measuring metrics, and updating the policy." >}}
+{{< image src="arch.png" alt="Two-part AgentOpt diagram: part (a) frames model combination as assigning one candidate model to each of N pipeline roles (Planner, Solver, Critic) to form a combo, and part (b) shows the iterative search loop of select, execute, measure and update that outputs a Pareto frontier and the best combo" caption="Presents the overall design of AgentOpt. Figure (a) shows the composition relationship between N roles and candidate models, emphasizing that the choice at each step affects downstream states (not per-call routing); Figure (b) depicts the iterative search loop: selecting a combo, executing interception, measuring metrics, and updating the policy." >}}
 
 ## Problem Definition
 
@@ -156,7 +156,7 @@ We view the 81 Combos as 81 slot machines.
 
 ### Core Finding 1: The Opus Paradox and Capability Misconceptions
 
-{{< image src="table3.png" caption="This table displays the bottom 11 combinations for HotpotQA" >}}
+{{< image src="table3.png" alt="Table of the bottom-ranked planner and solver model combinations on HotpotQA (ranks 71 to 81) with their accuracy, average latency and cost, most stuck around 32 percent accuracy" caption="This table displays the bottom 11 combinations for HotpotQA" >}}
 
 You can see that the "planners" ranked 71st to 79th are all the strongest model, Claude Opus 4.6. This proves that in multi-hop workflows, a model being too powerful (or overconfident) can cause it to skip necessary tool calls, leading to systemic failure.
 
@@ -164,7 +164,7 @@ In the HotpotQA task, the strongest combination is **(Ministral 3 8B + Opus 4.6)
 
 ### Core Finding 2: The 32x Cost Gap
 
-{{< image src="table9.png" caption="BFCL v3 brute force results (200 samples, 9 models)" >}}
+{{< image src="table9.png" alt="Table ranking 9 models on BFCL v3 by accuracy with their average latency, average calls and cost, led by Claude Opus 4.6, Kimi K2.5 and Qwen3 Next 80B at 70 percent accuracy" caption="BFCL v3 brute force results (200 samples, 9 models)" >}}
 
 This result proves that Qwen3 Next 80B and Claude Opus 4.6 are completely on par in function calling accuracy (both at 70%). However, Qwen3 costs only $1.90, while Opus costs $60.13. There is a terrifying 32x price difference between the two.
 
@@ -172,7 +172,7 @@ This result proves that Qwen3 Next 80B and Claude Opus 4.6 are completely on par
 
 Comparing 8 algorithms, the results show that **Arm Elimination (AE)** is the true all-rounder.
 
-{{< image src="table6.png" caption="HotpotQA selector comparison (199 samples, 81 combinations)." >}}
+{{< image src="table6.png" alt="Table comparing selector algorithms on HotpotQA by mean accuracy, mean evaluations, mean cost and cost savings versus brute force, showing Matrix UCB-E matching brute-force accuracy at over 55 percent cost savings" caption="HotpotQA selector comparison (199 samples, 81 combinations)." >}}
 
 This HotpotQA algorithm comparison table proves that AE (Arm Elimination) used only 4,283 evaluations to find a combination with 73.19% accuracy. Compared to the 16,168 evaluations of brute force search, it saved 76.3% of the testing cost with almost no loss in accuracy.
 

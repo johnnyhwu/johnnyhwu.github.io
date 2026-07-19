@@ -93,7 +93,7 @@ However, CER makes a key modification here: **Prompt Design**.
 
 To enable the program to automatically extract key points later, we must establish a "contract" with the model. Through a carefully designed Prompt (as shown in the figure below), we require the model to output intermediate answers in a specific format at the end of each reasoning step.
 
-{{< image src="figure4.png" caption="CER Prompt example for mathematical reasoning. Note that it requires the model to output using the 'Answer: [answer]' format." width="70%">}}
+{{< image src="figure4.png" alt="CER prompt template box instructing the model to solve a problem step by step, express each intermediate result in the format Answer: [answer], and end with The final answer is [answer]" caption="CER Prompt example for mathematical reasoning. Note that it requires the model to output using the 'Answer: [answer]' format." width="70%">}}
 
 *   **Math Tasks**: Requires outputting `Answer: [value]`.
 *   **QA Tasks**: Requires outputting `Response: [entity/phrase]`.
@@ -167,7 +167,7 @@ We summarize the experimental results into the following noteworthy points:
 
 The authors tested on three math datasets (GSM8K, MATH, MathQA) and two QA datasets (TriviaQA, HotPotQA). The comparison baselines included Greedy Decoding, Self-Consistency (SC), and other probability-based statistical methods.
 
-{{< image src="table1.png" caption="Table 1: Comparison of accuracy on math tasks. Green numbers represent the improvement magnitude over the best Baseline." >}}
+{{< image src="table1.png" alt="Accuracy comparison table on GSM8K, MATH and MathQA across four models, where the CER column is highest in every row with green gains such as plus 5.4 percent on OLMo-2-7B MATH over the best baseline" caption="Table 1: Comparison of accuracy on math tasks. Green numbers represent the improvement magnitude over the best Baseline." >}}
 
 From the table, we can observe:
 *   **Consistent Improvement**: CER achieved better results than the Baseline across all datasets and models.
@@ -188,7 +188,7 @@ This validates CER's filtering capability. When weak models face difficult probl
 
 This is the most scientifically important experiment (Ablation Study) in the entire paper. To prove that "checking intermediate steps" is necessary, the authors designed a control group **CER-LAST**, which ignores the intermediate process and only calculates the confidence of the "final answer."
 
-{{< image src="figure3.png" caption="Figure 3: Performance comparison between CER (Blue, considering all steps) and CER-LAST (Red, only looking at the last step)." >}}
+{{< image src="figure3.png" alt="Grouped bar chart comparing CER using all steps (blue) against CER-LAST using only the last step (red) for LLaMA-3.1-8B and Mistral-7B across GSM8K, MATH, MathQA, TriviaQA and HotpotQA, with the all-steps variant scoring higher on every benchmark" caption="Figure 3: Performance comparison between CER (Blue, considering all steps) and CER-LAST (Red, only looking at the last step)." >}}
 
 The results, shown in the figure above, indicate that **CER (Blue Bar) significantly outperforms CER-LAST (Red Bar) in all cases**.
 
@@ -196,7 +196,7 @@ This directly proves the author's core argument: A model might give a confident 
 
 ### Math vs. Knowledge QA: The Difference Between Reasoning and Memory
 
-{{< image src="table2.png" caption="Table 2: Accuracy comparison on open-domain QA tasks (TriviaQA, HotPotQA). It can be seen that some models (like Llama-3.2-3B) show less significant improvement on knowledge-intensive tasks compared to math tasks." >}}
+{{< image src="table2.png" alt="Accuracy comparison table on the open-domain QA tasks TriviaQA and HotPotQA across four models, where CER still leads each row but with smaller green gains than on the math tasks" caption="Table 2: Accuracy comparison on open-domain QA tasks (TriviaQA, HotPotQA). It can be seen that some models (like Llama-3.2-3B) show less significant improvement on knowledge-intensive tasks compared to math tasks." >}}
 
 Comparing the results of Math tasks and Open-Domain QA, we find that CER's performance on Math is generally more stable than on QA.
 
@@ -208,7 +208,7 @@ This tells us: CER is used to enhance "reasoning ability," not to fill "knowledg
 
 ### Applicable to the Latest Reasoning Models (DeepSeek-R1)
 
-{{< image src="table3.png" caption="Table 3: Performance of CER applied to the DeepSeek-R1-Distill-Qwen-7B model. Even on a strong reasoning model optimized via Reinforcement Learning (RL), CER still pushes GSM8K accuracy further." >}}
+{{< image src="table3.png" alt="Small table showing CER applied to DeepSeek-R1-Distill-Qwen-7B on GSM8K and TriviaQA, where CER reaches the highest accuracy of 90.2 on GSM8K and 24.4 on TriviaQA compared with the other baselines" caption="Table 3: Performance of CER applied to the DeepSeek-R1-Distill-Qwen-7B model. Even on a strong reasoning model optimized via Reinforcement Learning (RL), CER still pushes GSM8K accuracy further." >}}
 
 To verify the universality of the method, the authors also tested the recently popular **DeepSeek-R1** variant (a reasoning model optimized via Reinforcement Learning). The results show that even for this model, which has been specifically fine-tuned for CoT, CER can still boost GSM8K accuracy from 87.2% to **90.2%**.
 

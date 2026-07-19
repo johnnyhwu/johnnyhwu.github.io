@@ -58,7 +58,7 @@ CLAM 賦予了模型一種類似人類的 **後設認知 (Meta-cognition)** 能�
 
 我們將詳細拆解 **CLAM (CLarify-if-AMbiguous)** 的運作機制。請想像一個使用者的問題進入系統後，會經歷一個「三階段的決策漏斗」。
 
-{{< image src="figure2.png" caption="CLAM 流程概覽: 輸入問題 -> 歧義檢測 -> 若歧義則生成澄清問題 -> 獲得反饋 -> 生成最終答案。" width=80% >}}
+{{< image src="figure2.png" alt="CLAM 流程的流程圖：使用者提問後進行歧義判斷分支，若有歧義則由模型提出澄清問題、由使用者提供澄清，若無歧義則直接由模型給出最終答案" caption="CLAM 流程概覽: 輸入問題 -> 歧義檢測 -> 若歧義則生成澄清問題 -> 獲得反饋 -> 生成最終答案。" width=80% >}}
 
 ### 第一階段: 歧義檢測 (Ambiguity Detection) —— 守門員
 
@@ -129,7 +129,7 @@ Bot: To answer this question, I need to ask the following clarifying question:
 
 為了解決「評估太貴」的問題，作者引入了 **Oracle 模型**。這是一個在評估階段扮演使用者的 LLM。
 
-{{< image src="figure4.png" caption="Oracle 評估流程: 利用成對資料集，讓 Oracle 根據 Unambiguous Question 來回答 CLAM 的提問。" width=80% >}}
+{{< image src="figure4.png" alt="Oracle 評估流程示意圖：含有特權的無歧義問題與一個歧義使用者問題的提示被送入生成式語言模型，模型先提出「他是誰」這類澄清問題，接著回答 Alan Bean" caption="Oracle 評估流程: 利用成對資料集，讓 Oracle 根據 Unambiguous Question 來回答 CLAM 的提問。" width=80% >}}
 
 #### 運作原理
 我們使用一個成對的資料集 \((Q_{\text{ambiguous}}, Q_{\text{unambiguous}}, A_{\text{ground\_truth}})\)。
@@ -157,7 +157,7 @@ Bot: To answer this question, I need to ask the following clarifying question:
 
 ### 關鍵成效: 準確與效率的甜蜜點
 
-{{< image src="figure5.png" caption="這張圖展示了 CLAM 在 Ambiguous TriviaQA 上的表現。(a) 顯示 CLAM 在調整後準確率 (Adjusted Accuracy) 上大幅領先，證明它能在不犧牲效率的前提下解決歧義。(b) 顯示在純歧義問題上，CLAM 與強制澄清 (Force Clarification) 表現相當，但遠勝於預設 GPT。" width=80% >}}
+{{< image src="figure5.png" alt="在 Ambiguous TriviaQA 上比較預設 GPT、prompting baseline、總是要求澄清與 CLAM 的兩張長條圖：(a) 調整後準確率中 CLAM 最高約 49，(b) 純歧義問題準確率中 CLAM 與總是澄清相當約 55，並遠高於預設 GPT" caption="這張圖展示了 CLAM 在 Ambiguous TriviaQA 上的表現。(a) 顯示 CLAM 在調整後準確率 (Adjusted Accuracy) 上大幅領先，證明它能在不犧牲效率的前提下解決歧義。(b) 顯示在純歧義問題上，CLAM 與強制澄清 (Force Clarification) 表現相當，但遠勝於預設 GPT。" width=80% >}}
 
 **核心發現 1: CLAM 找到了最佳平衡點**
 在 **Figure 5(a)** 中，我們可以看到 CLAM 的柱狀圖顯著高於所有 Baseline。
@@ -168,7 +168,7 @@ Bot: To answer this question, I need to ask the following clarifying question:
 **核心發現 2: 單純 Prompting 無法檢測歧義**
 這是一個非常重要的消融實驗結果，請參考 **Figure 6**。
 
-{{< image src="figure6.png" caption="這張 AUROC 曲線圖比較了不同方法的歧義檢測能力。CLAM (紅色) 的 AUROC 接近 0.9，遠高於 Prompting Baseline (橘色) 的 0.5 (隨機猜測)。" >}}
+{{< image src="figure6.png" alt="歧義偵測 AUROC 的分組長條圖，橫軸為 Ambiguous TriviaQA、ClariQ、CLAQUA I 與 CLAQUA II，比較預設 GPT、prompting baseline、force clarification 與 CLAM，CLAM 明顯較高，在 Ambiguous TriviaQA 上約 0.9，其餘方法約 0.5" caption="這張 AUROC 曲線圖比較了不同方法的歧義檢測能力。CLAM (紅色) 的 AUROC 接近 0.9，遠高於 Prompting Baseline (橘色) 的 0.5 (隨機猜測)。" >}}
 
 {{< admonition tip "驚人發現: Prompting is not enough" >}}
 許多人認為只要在 Prompt 裡加一句「如果不清楚請發問」，模型就能學會。但實驗數據狠狠打臉了這個假設。

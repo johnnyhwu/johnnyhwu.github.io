@@ -39,7 +39,7 @@ Currently, the mainstream approach to LLM Preference Learning involves the secon
 
 ## What are the Problems with RLHF?
 
-{{< image src="rlhf-equation.png" caption="The Optimization Problem in RLHF" >}}
+{{< image src="rlhf-equation.png" alt="RLHF objective equation that maximizes the expected reward of the policy's responses minus a beta-weighted KL divergence between the policy and the reference model" caption="The Optimization Problem in RLHF" >}}
 
 Next, let's talk about the problems within the RLHF training stage. The image above shows the optimization problem that needs to be addressed during the RLHF stage. At this stage, the goal is to train the LLM to "maximize the reward" while being constrained by "KL Divergence." We can identify two problems here:
 
@@ -55,7 +55,7 @@ The DPO method attempts to solve the two problems mentioned above:
 
 And it proposes a new Loss Function:
 
-{{< image src="dpo-equation.png" caption="DPO Loss Function" >}}
+{{< image src="dpo-equation.png" alt="DPO loss equation: the negative expected log-sigmoid of the difference between beta times the log-ratio of the policy to the reference model on the winning response and the same log-ratio on the losing response" caption="DPO Loss Function" >}}
 
 From the DPO Loss Function, we can see that given a Preference Dataset, we sample a data point containing a prompt (\(x\)), a winning response (\(y_{w}\)), and a losing response (\(y_{l}\)). Based on the prompt (\(x\)), the model (\(\pi_{\theta}\)) must learn to increase the probability of generating the winning response (\(y_{w}\)) and decrease the probability of generating the losing response (\(y_{l}\)).
 

@@ -44,11 +44,11 @@ url: "paper-intro/:contentbasename"
 
 > Adpative-k 方法就是在每一次 Retrieval 結果中，將 Query 與每個 Document Chunks 的 Similarity Score 進行降序排列，然後找到 Similarity Score 下降最大的那個 Gap。僅保留在 Gap 之前 Similarity Score 較高的 Document Chunks。
 
-{{< image src="approach.png" caption="Adpative-k 方法示意圖" >}}
+{{< image src="approach.png" alt="Adaptive-k 檢索方法示意圖：將查詢與內容段落嵌入後計算相似度並排成分佈，以最大落差決定門檻 k，只把最相關的前幾段檢索進提示交給 LLM" caption="Adpative-k 方法示意圖" >}}
 
 上圖呈現的是 Adaptive-k 方法的示意圖；下圖則是 Adaptive-k 方法的演算法:
 
-{{< image src="algo.png" caption="Adpative-k 方法演算法" width="50%" >}}
+{{< image src="algo.png" alt="Adaptive-k 以最大相似度落差估計 k 的虛擬碼：嵌入查詢與內容、計算相似度並由大到小排序、取相鄰差值，最後在最大落差的索引處選定 k" caption="Adpative-k 方法演算法" width="50%" >}}
 
 在論文中作者有特別提到: 在實務上，如果都只根據 Similarity Score Gap 來選擇前 k 個 Document Chunks 時，可能會導致一些與 Query 相關的 Document Chunks 分布在 Gap 之後而未被選取。因此作者有多設定一個 Buffer Size "B"，最後被取出的 Document Chunks 總數為 "k+B"。(論文中設定 B=5)
 

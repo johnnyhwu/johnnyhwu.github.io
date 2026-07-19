@@ -38,7 +38,7 @@ url: "paper-intro/:contentbasename"
 
 ## RLHF 有什麼問題？
 
-{{< image src="rlhf-equation.png" caption="RLHF 中的最佳化問題" >}}
+{{< image src="rlhf-equation.png" alt="RLHF 目標函數公式，最大化策略模型回應的期望獎勵，並減去以 beta 加權的策略模型與參考模型之間的 KL 散度" caption="RLHF 中的最佳化問題" >}}
 
 接著，我們來聊聊 RLHF 訓練階段中的問題。上圖呈現的是 RLHF 階段，需要處理的最佳化問題。在這個階段其實就是要訓練 LLM「最大化 Reward」且同時受到「KL Divergence 的限制」。可以發現兩個問題：
 
@@ -54,7 +54,7 @@ url: "paper-intro/:contentbasename"
 
 而提出了一個新的 Loss Function：
 
-{{< image src="dpo-equation.png" caption="DPO Loss Function" >}}
+{{< image src="dpo-equation.png" alt="DPO 損失函數公式：對「beta 乘以策略模型與參考模型在獲勝回應上的對數比值」減去「同樣在落敗回應上的對數比值」取 log-sigmoid 後的負期望值" caption="DPO Loss Function" >}}
 
 從 DPO Loss Function 可以發現，給定一個 Preference Dataset 並抽樣出一個 Sample 包含 Prompt (\(x\))、Winning Response (\(y_{w}\)) 與 Losing Response (\(y_{l}\))；基於 Prompt (\(x\))，模型 (\(\pi_{\theta}\)) 必須學習讓 Winning Response (\(y_{w}\)) 出現的機率愈高，並讓 Losing Response (\(y_{l}\)) 出現的機率愈小。
 
