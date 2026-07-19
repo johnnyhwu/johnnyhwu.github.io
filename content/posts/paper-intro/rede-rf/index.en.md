@@ -57,7 +57,7 @@ Thus, ReDE-RF (Real Document Embeddings from Relevance Feedback) proposes a coun
 
 The architecture of ReDE-RF is very elegant and can be broken down into a trilogy of **"Cast a Net, Filter, then Navigate."**
 
-{{< image src="figure1.png" caption="ReDE-RF Architecture: Showing the complete flow from Initial Retrieval, LLM Relevance Feedback, to Query Refinement." >}}
+{{< image src="figure1.png" alt="ReDE-RF flow diagram: a query is first retrieved over by BM25 plus Contriever, an LLM then labels each top document as relevant or non-relevant, the non-relevant document is dropped, and the remaining relevant documents are re-embedded by Contriever to produce the final ranked list" caption="ReDE-RF Architecture: Showing the complete flow from Initial Retrieval, LLM Relevance Feedback, to Query Refinement." >}}
 
 ### Step 1: Initial Retrieval — Cast a Net
 Since we don't have Label Data, we first use an off-the-shelf unsupervised retriever (like BM25 or Contriever) to grab the Top-\( k \) documents. This step doesn't need to be perfect, as long as we ensure that some correct answers are "mixed in" with this pile of documents.
@@ -96,7 +96,7 @@ The experimental results directly slap generative methods in the face, especiall
 ### 1. Who is more accurate in niche domains?
 The authors tested on the BEIR Benchmark (which includes datasets for biomedicine, finance, scientific fact-checking, etc.):
 
-{{< image src="table1.png" caption="Table 1: ReDE-RF significantly outperforms HyDE on the BEIR dataset, especially in domains where LLMs lack background knowledge." >}}
+{{< image src="table1.png" alt="Large retrieval table reporting nDCG on high-resource DL19 and DL20 and several low-resource BEIR datasets, grouping BM25 and hybrid baselines, zero-shot methods like HyDE, ReDE-RF, and supervised dense retrievers, where ReDE-RF beats HyDE on the BEIR average and leads on domains like Covid and SciFact" caption="Table 1: ReDE-RF significantly outperforms HyDE on the BEIR dataset, especially in domains where LLMs lack background knowledge." >}}
 
 *   **Failure of HyDE**: In these fields, because the LLM doesn't understand the jargon, the hypothetical documents generated are full of misleading keywords.
 *   **Victory of ReDE-RF**: Because it corrects the Query based on **real documents**, it never "makes things up." The features it captures are all truly existing in the database.
@@ -104,7 +104,7 @@ The authors tested on the BEIR Benchmark (which includes datasets for biomedicin
 ### 2. Speed Revolution
 This chart should excite anyone who designs system architectures:
 
-{{< image src="figure3.png" caption="Figure 3: Query latency comparison. HyDE is extremely long, while ReDE-RF is significantly shorter." >}}
+{{< image src="figure3.png" alt="Horizontal bar charts of query latency on Covid, Robust04 and DBPedia comparing HyDE-PRF, HyDE and the two ReDE-RF variants, where ReDE-RF is far faster, running about 10 times faster than HyDE-PRF with 20 documents" caption="Figure 3: Query latency comparison. HyDE is extremely long, while ReDE-RF is significantly shorter." >}}
 
 The data shows that ReDE-RF is about **4 times** faster than standard HyDE and **7 to 11 times** faster than HyDE-PRF. This proves the massive advantage of "Logits Judgment" in engineering implementation.
 
@@ -113,7 +113,7 @@ What if I don't want to run even that single Forward Pass of the LLM?
 The paper proposes **DistillReDE**: Using the results produced by ReDE-RF as a Teacher to train a small Contriever model.
 The results show that this small model retains the vast majority of performance gains (see the orange Bar below), and requires **absolutely no LLM** when online.
 
-{{< image src="figure4.png" caption="Figure 4: DistillReDE (Orange) performance is very close to the full ReDE-RF (Green), proving the feasibility of knowledge distillation." >}}
+{{< image src="figure4.png" alt="Grouped bar chart of nDCG at 10 on Covid, NFCorpus, FiQA, Robust04 and DBPedia comparing Contriever, DistillReDE and full ReDE-RF, where DistillReDE sits close to full ReDE-RF and both clearly beat plain Contriever" caption="Figure 4: DistillReDE (Orange) performance is very close to the full ReDE-RF (Green), proving the feasibility of knowledge distillation." >}}
 
 ## Conclusion and Inspiration: Grounding on Reality
 

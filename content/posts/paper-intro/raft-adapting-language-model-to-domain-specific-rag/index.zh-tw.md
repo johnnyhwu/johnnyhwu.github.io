@@ -68,7 +68,7 @@ RAFT 的概念在於：將「In-Context Learning + RAG」與「Supervised Fine-T
 
 ## RAFT 的實驗結果
 
-{{< image src="exp-1.png" caption="[Table 1] RAFT outperforms domain-specific finetuning methods across specialized domains, highlighting the importance of training with context." >}}
+{{< image src="exp-1.png" alt="在 PubMed、HotPot、HuggingFace、Torch Hub 與 TensorFlow 上的結果表格，比較 GPT-3.5 加 RAG、有無 RAG 的 LLaMA2-7B、DSF 與 RAFT，其中 LLaMA2-7B 上的 RAFT 在 PubMed、HuggingFace、Torch Hub 與 TensorFlow 皆以粗體居冠" caption="[Table 1] RAFT outperforms domain-specific finetuning methods across specialized domains, highlighting the importance of training with context." >}}
 
 從 Table 1 可以發現到，原始的 Llama 2-7B 不管有沒有使用 RAG (LLaMA2-7B or LLaMA2-7B+RAG) 在一些 Benchmark 上的表現都不是太好。主要是因為 Llama2-7B 的輸出沒有辦法 Align 一些 Benchmark 的格式。因此，將 Llama2-7B 做 Domain-Specific Fine-Tuning 後 (DSF or DSF+RAG)，它的表現就明顯提昇許多。
 
@@ -76,15 +76,15 @@ RAFT 的概念在於：將「In-Context Learning + RAG」與「Supervised Fine-T
 
 在這過程中，都沒有學習從 Context 中取出有用的資訊，導致模型在 Inference 即使加上 RAG 也不會從 Document 中取出有價值的資訊。 這樣的實驗結果也讓我們知道，當我們要把 RAG 的方法 Adapt 到 Specific Domain 時，不可以只單獨訓練 LLM 學習 Question-Answer 的 Mapping，而是也要加入 Retriever，讓 LLM 學習從 Retrieved Document 中取出重要的資訊來回答問題。
 
-{{< image src="exp-2.png" caption="[Table 2] Ablation on Chain-of-Thought: Adding CoT improves RAFT performance significantly, with gains of 9.66% on Hotpot QA and 14.93% on HuggingFace datasets." >}}
+{{< image src="exp-2.png" alt="兩列的消融表格，比較無思維鏈的 RAFT 與完整 RAFT 在 PubMed、HotpotQA、HuggingFace、Torch Hub 與 TensorFlow 的表現，加入 CoT 後多數分數提升，例如 HotpotQA 由 25.62 升到 35.28、HuggingFace 由 59.07 升到 74.00" caption="[Table 2] Ablation on Chain-of-Thought: Adding CoT improves RAFT performance significantly, with gains of 9.66% on Hotpot QA and 14.93% on HuggingFace datasets." >}}
 
 從 Table 2 也可以明顯發現到，在訓練 LLM 進行 QA 任務時，Answer 如果有包含 Reasoning Step 則更能夠提昇 LLM 的表現。其實這個現象應該在很多 Paper 都有被提到過了！
 
-{{< image src="exp-3.png" caption="[Figure 3] RAFT prompts LLM to evaluate its reasoning and answers, identify errors, and extract key insights for improvement during the ‘GenerateExplanation’ step." >}}
+{{< image src="exp-3.png" alt="RAFT 思維鏈訓練樣本的範例，顯示關於 Oberoi 家族飯店總部所在城市的問題、檢索到的內容、要求以「先推理後作答」格式回應的指示，以及一段以 begin_quote 與 end_quote 標記引用文件、最後推得答案為 Delhi 的 CoT 回答" caption="[Figure 3] RAFT prompts LLM to evaluate its reasoning and answers, identify errors, and extract key insights for improvement during the ‘GenerateExplanation’ step." >}}
 
 而要準備 Chain-of-Thought Style 的 Answer 也不難！如 Figure 3 所示，提供 Question 以及 Document，透過 Prompting 的方式讓 SOTA LLM 先產生 Reasoning Step 再產生 Answer。也有其他 Paper (ex. [LongCite](https://arxiv.org/abs/2409.02897)) 僅根據 Document，就 Prompt LLM 去生成 Query 以及 Answer，也可以再進一步 Prompt LLM 根據 Query, Answer 與 Document 去生成中間的 Reasoning Step。
 
-{{< image src="exp-4.png" caption="[Figure 5] Optimal golden document ratio: Results on NQ, TQA, and HotpotQA show that mixing some training data without golden documents improves in-domain RAG performance." >}}
+{{< image src="exp-4.png" alt="三張折線圖，呈現最終準確率與訓練樣本中包含 golden document 比例的關係，分別對應 NQ、TQA 與 HoPo 測試領域，準確率在中間比例達到高峰而非 100%，顯示保留部分不含 golden document 的訓練資料有幫助" caption="[Figure 5] Optimal golden document ratio: Results on NQ, TQA, and HotpotQA show that mixing some training data without golden documents improves in-domain RAG performance." >}}
 
 在訓練 RAG 中的 LLM 時，故意放入一些 Distractor Document 在 Context 中，讓 LLM 學習不受到 Distractor Document 的影響，這是很常見訓練方法 (ex. [RA-DIT](https://arxiv.org/abs/2310.01352))。
 

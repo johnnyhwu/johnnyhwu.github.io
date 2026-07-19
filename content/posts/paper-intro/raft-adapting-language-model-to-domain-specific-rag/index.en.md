@@ -69,7 +69,7 @@ The authors emphasize that the reason for having a portion of Questions paired e
 
 ## RAFT Experimental Results
 
-{{< image src="exp-1.png" caption="[Table 1] RAFT outperforms domain-specific finetuning methods across specialized domains, highlighting the importance of training with context." >}}
+{{< image src="exp-1.png" alt="Results table across PubMed, HotPot, HuggingFace, Torch Hub and TensorFlow comparing GPT-3.5 with RAG, LLaMA2-7B with and without RAG, DSF and RAFT, where RAFT on LLaMA2-7B is bolded as best on PubMed, HuggingFace, Torch Hub and TensorFlow" caption="[Table 1] RAFT outperforms domain-specific finetuning methods across specialized domains, highlighting the importance of training with context." >}}
 
 From Table 1, it can be seen that the performance of the original Llama 2-7B, whether using RAG or not (LLaMA2-7B or LLaMA2-7B+RAG), is not very good on some Benchmarks. This is mainly because Llama2-7B's output cannot align with the format of some Benchmarks. Therefore, after performing Domain-Specific Fine-Tuning on Llama2-7B (DSF or DSF+RAG), its performance significantly improves.
 
@@ -77,15 +77,15 @@ However, it's somewhat surprising that if the Domain-Specific Fine-tuned Llama2 
 
 In this process, it does not learn to extract useful information from the Context, resulting in the model not extracting valuable information from the Documents during Inference even with RAG added. Such experimental results also tell us that when we want to Adapt the RAG method to a Specific Domain, we should not only train the LLM to learn the Question-Answer Mapping independently, but also include a Retriever, allowing the LLM to learn to extract important information from the Retrieved Documents to answer questions.
 
-{{< image src="exp-2.png" caption="[Table 2] Ablation on Chain-of-Thought: Adding CoT improves RAFT performance significantly, with gains of 9.66% on Hotpot QA and 14.93% on HuggingFace datasets." >}}
+{{< image src="exp-2.png" alt="Two-row ablation table comparing RAFT without chain-of-thought against full RAFT on PubMed, HotpotQA, HuggingFace, Torch Hub and TensorFlow, where adding CoT raises most scores, for example HotpotQA from 25.62 to 35.28 and HuggingFace from 59.07 to 74.00" caption="[Table 2] Ablation on Chain-of-Thought: Adding CoT improves RAFT performance significantly, with gains of 9.66% on Hotpot QA and 14.93% on HuggingFace datasets." >}}
 
 From Table 2, it is also clearly observable that when training the LLM for QA tasks, including Reasoning Steps in the Answer can further improve the LLM's performance. This phenomenon has actually been mentioned in many Papers!
 
-{{< image src="exp-3.png" caption="[Figure 3] RAFT prompts LLM to evaluate its reasoning and answers, identify errors, and extract key insights for improvement during the ‘GenerateExplanation’ step." >}}
+{{< image src="exp-3.png" alt="Example of a RAFT chain-of-thought training instance showing a question about the Oberoi family's hotel head office, the retrieved context, an instruction to reason in a Reason-then-Answer format, and a CoT answer that quotes the document with begin_quote and end_quote markers before concluding the answer is Delhi" caption="[Figure 3] RAFT prompts LLM to evaluate its reasoning and answers, identify errors, and extract key insights for improvement during the ‘GenerateExplanation’ step." >}}
 
 And preparing Chain-of-Thought Style Answers is not difficult either! As shown in Figure 3, by providing the Question and Document, Prompting a SOTA LLM to first generate the Reasoning Step and then the Answer. There are also other Papers (ex. [LongCite](https://arxiv.org/abs/2409.02897)) that only based on the Document, Prompt the LLM to generate the Query and Answer, and can further Prompt the LLM to generate the intermediate Reasoning Step based on the Query, Answer, and Document.
 
-{{< image src="exp-4.png" caption="[Figure 5] Optimal golden document ratio: Results on NQ, TQA, and HotpotQA show that mixing some training data without golden documents improves in-domain RAG performance." >}}
+{{< image src="exp-4.png" alt="Three line charts of final accuracy versus the percentage of training examples that include the golden document, for the NQ, TQA and HoPo test domains, where accuracy peaks at an intermediate ratio rather than at 100 percent, showing some no-golden-document training data helps" caption="[Figure 5] Optimal golden document ratio: Results on NQ, TQA, and HotpotQA show that mixing some training data without golden documents improves in-domain RAG performance." >}}
 
 When training the LLM in RAG, intentionally including some Distractor Documents in the Context to teach the LLM not to be affected by Distractor Documents is a common training method (ex. [RA-DIT](https://arxiv.org/abs/2310.01352)).
 

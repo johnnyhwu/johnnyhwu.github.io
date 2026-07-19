@@ -27,7 +27,7 @@ PLAN-AND-ACT introduces a **Planner-Executor framework** and a **data synthesis 
 
 As shown in the diagram below, PLAN-AND-ACT mainly consists of a Planner and an Executor. The Planner first generates a "plan" based on the user's task. This "plan" is essentially a series of higher-level goals. The Executor then translates this plan into specific actions within the environment.
 
-{{< image src="plan-and-act.png" caption="[Figure 1] An illustration of the PLAN-AND-ACT System Diagram." >}}
+{{< image src="plan-and-act.png" alt="High-level PLAN-AND-ACT diagram where a user query goes to a Planner LLM that produces a generated plan, which an Executor LLM turns into actions on the environment, looping through observations until it exits" caption="[Figure 1] An illustration of the PLAN-AND-ACT System Diagram." >}}
 
 {{< admonition warning >}}
 In my opinion, the methods proposed in this paper aren't particularly groundbreaking. From the overall experimental data (Table 1 below), it's also clear that the Planner-Executor framework alone doesn't significantly boost overall performance. The improvements mainly rely on training the Planner and Executor separately with synthetic data to enhance overall results.
@@ -51,7 +51,7 @@ To tackle these four challenges in LLM planning, PLAN-AND-ACT proposes two solut
 
 ## The PLAN-AND-ACT Framework
 
-{{< image src="plan-and-act-workflow.png" caption="[Figure 2] PLAN-AND-ACT System Diagram." >}}
+{{< image src="plan-and-act-workflow.png" alt="Worked PLAN-AND-ACT example for the query follow the top contributor of a GitHub project: the Planner writes Plan 1, the Executor clicks the Contributors link, the observation reveals John Doe, and after a replan the Planner writes Plan 2 to follow John Doe which the Executor then clicks" caption="[Figure 2] PLAN-AND-ACT System Diagram." >}}
 
 The core idea of the PLAN-AND-ACT framework is to avoid using a single model to handle both planning and execution tasks simultaneously. This is why it features a division of labor between the Planner and Executor. The authors explicitly state in the paper:
 
@@ -250,7 +250,7 @@ To motivate the need for creating synthetic data, we first evaluated the perform
 
 As stated in the paper (quoted above), the authors clearly mention that simply relying on prompting is far from sufficient to improve the planning and execution capabilities of LLMs (Planner & Executor) in a web environment. Fine-tuning the Planner and Executor is necessary!
 
-{{< image src="data-gen.png" caption="[Figure 3] Synthetic Data Generation Pipeline" >}}
+{{< image src="data-gen.png" alt="Three-stage synthetic data generation pipeline: Section 4.1 turns seed queries into action trajectories via a query generator and teacher LLM, Section 4.2 has a teacher LLM produce grounded step-by-step plans that map plan steps to those actions, and Section 4.3 expands seed plan data into new synthetic query-plus-plan pairs" caption="[Figure 3] Synthetic Data Generation Pipeline" >}}
 
 As shown in Figure 3 above, to fine-tune the Planner, the authors proposed a Synthetic Data Generation method to create training data for both the Planner and the Executor.
 
@@ -307,7 +307,7 @@ For failed samples where the Planner performs poorly, the authors use an LLM to 
 
 ### Experimental Results
 
-{{< image src="exp.png" caption="[Table 1] Task success rate (SR) of PLAN-AND-ACT on WebArena-Lite, a human-verified subset of WebArena." >}}
+{{< image src="exp.png" alt="Results table of task success rate on WebArena-Lite across planner and executor design variants, where cumulatively adding synthetic trajectories, plan expansion, targeted augmentation, dynamic replanning and finally chain-of-thought lifts PLAN-AND-ACT to a best score of 57.58" caption="[Table 1] Task success rate (SR) of PLAN-AND-ACT on WebArena-Lite, a human-verified subset of WebArena." >}}
 
 Regarding Executor Design:
 - **Base**: LLaMA-3.3-70B-Instruct without fine-tuning.

@@ -54,7 +54,7 @@ Next, let's look at how they "prescribe the right medicine."
 
 The MixRAG system architecture process: **Document Representation, Cross-Modal Retrieval, and Multi-Step Reasoning.**
 
-{{< image src="overview.png" caption="MixRAG Framework Overview: Data starts from heterogeneous documents on the left, is decomposed via H-RCL, enters the two-stage retrieval in the middle, and is finally processed by the RECAP module for reasoning and calculation." >}}
+{{< image src="overview.png" alt="Three-module MixRAG overview: (a) a heterogeneous document representation module splits text into chunks and summarizes hierarchical tables via table-level and H-RCL summaries, (b) a cross-modal retrieval module does ensemble BM25 and embedding retrieval then LLM-based reranking to pick a target hybrid document, and (c) a multi-step reasoning RECAP module analyzes the question, extracts data, reasons, and merges an LLM answer with a calculated answer" caption="MixRAG Framework Overview: Data starts from heterogeneous documents on the left, is decomposed via H-RCL, enters the two-stage retrieval in the middle, and is finally processed by the RECAP module for reasoning and calculation." >}}
 
 ### Heterogeneous Document Representation
 
@@ -115,14 +115,14 @@ This approach of "decoupling logic and calculation" requires only one API call, 
 
 To verify this, the authors built their own high-quality dataset, **DocRAGLib**, containing 2,178 real heterogeneous documents. Let's see how MixRAG performs in this brutal arena.
 
-{{< image src="table1.png" caption="This table proves MixRAG's total dominance over existing methods in retrieval precision. Note especially the abysmal 1.59% for Standard RAG compared to MixRAG's SOTA performance of 54.10%." width=85% >}}
+{{< image src="table1.png" alt="Retrieval table reporting HiT@1, 3, 5, 10 and exact-match for Standard RAG, Table Retrieval, Langchain, Self-RAG, RAG-Critic and MixRAG across GPT-4o-mini, GPT-4o and Mistral-Nemo, where MixRAG with GPT-4o leads at 54.10 HiT@1 versus just 1.59 for Standard RAG" caption="This table proves MixRAG's total dominance over existing methods in retrieval precision. Note especially the abysmal 1.59% for Standard RAG compared to MixRAG's SOTA performance of 54.10%." width=85% >}}
 
 **Retrieval Performance Dominance:**
 
 Did you see in Table 1 that **Standard RAG's HiT@1 was only 1.59%**? This ruthlessly reveals that when you throw a complex table PDF into a default Text Splitter, the structure is completely shattered, and the retrieval system is basically guessing.
 Meanwhile, MixRAG (powered by GPT-4o) reached **54.10%**. This is because it didn't shred the table but gave the Embedding model clear coordinates through H-RCL.
 
-{{< image src="table2.png" caption="This table proves that the RECAP strategy is more robust and reliable than the well-known CoT and PoT when solving complex numerical reasoning, achieving the highest scores across multiple models." >}}
+{{< image src="table2.png" alt="Table comparing reasoning strategies Direct, CoT, EEDP, PoT and RECAP across eight models from GPT-4o to Llama3.1-7B, where RECAP has the highest bolded score in every column, such as 64.66 on GPT-4o and 58.15 on GPT-4o mini" caption="This table proves that the RECAP strategy is more robust and reliable than the well-known CoT and PoT when solving complex numerical reasoning, achieving the highest scores across multiple models." >}}
 
 **Reasoning Robustness:**
 
@@ -130,7 +130,7 @@ In terms of Exact Match, **RECAP (64.66%)** significantly beat CoT (46.87%) and 
 *   It beat CoT because we don't let the LLM do mental math.
 *   It beat PoT (which requires the LLM to write complete Python code to solve the problem) because in real documents full of noise, the code written by the LLM is highly prone to crashing due to variable naming errors. RECAP’s "half-natural language + half-mathematical formula" approach has much higher robustness.
 
-{{< image src="table4.png" caption="This table proves that 'retaining hierarchical paths' is the only correct solution for retrieving heterogeneous tables. H-RCL's performance far exceeds flattened table summaries." >}}
+{{< image src="table4.png" alt="Ablation table comparing table-level summary, general RCL summary and H-RCL summary on HiT@1, 3, 5, 10 and exact-match, where the H-RCL summary is bolded as best across the board, for example 54.10 HiT@1 versus 36.27 for table-level summary" caption="This table proves that 'retaining hierarchical paths' is the only correct solution for retrieving heterogeneous tables. H-RCL's performance far exceeds flattened table summaries." >}}
 
 **Ablation Study:**
 

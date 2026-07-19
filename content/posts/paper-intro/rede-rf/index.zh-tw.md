@@ -57,7 +57,7 @@ url: "paper-intro/:contentbasename"
 
 ReDE-RF 的架構非常優雅，可以拆解為**先撒網，後過濾，再導航**的三部曲。
 
-{{< image src="figure1.png" caption="ReDE-RF 架構圖：展示從初步檢索 (Initial Retrieval)、LLM 相關性反饋 (Relevance Feedback) 到查詢更新 (Query Refinement) 的完整流程。" >}}
+{{< image src="figure1.png" alt="ReDE-RF 流程圖：查詢先以 BM25 加 Contriever 檢索，接著由 LLM 將每份排名靠前的文件標為相關或不相關，捨棄不相關的文件，再由 Contriever 對剩下的相關文件重新嵌入以產生最終排序清單" caption="ReDE-RF 架構圖：展示從初步檢索 (Initial Retrieval)、LLM 相關性反饋 (Relevance Feedback) 到查詢更新 (Query Refinement) 的完整流程。" >}}
 
 ### 第一步：初步檢索 (Initial Retrieval) —— 先撒網
 既然我們沒有 Label Data，那就先用現成的非監督檢索器（如 BM25 或 Contriever）先抓 Top-\( k \) 篇文檔回來。這一步不需要完美，只要確保這堆文檔裡「混有」一些正確答案即可。
@@ -96,7 +96,7 @@ $$ \hat{v}_{q_{ReDE}} = \frac{1}{k^* + 1} \left( f(q) + \sum_{i=1}^{k^*} C_E[d_{
 ### 1. 誰在冷門領域更準？
 作者在 BEIR Benchmark（包含生醫、財經、科學查核等特定領域資料集）上進行測試：
 
-{{< image src="table1.png" caption="Table 1: ReDE-RF 在 BEIR 資料集上顯著超越 HyDE，特別是在那些 LLM 缺乏背景知識的領域。" >}}
+{{< image src="table1.png" alt="大型檢索表格，列出在高資源的 DL19、DL20 與多個低資源 BEIR 資料集上的 nDCG，分為 BM25 與 hybrid 基線、HyDE 等 zero-shot 方法與 ReDE-RF，以及監督式密集檢索器，其中 ReDE-RF 在 BEIR 平均上勝過 HyDE，並於 Covid、SciFact 等領域領先" caption="Table 1: ReDE-RF 在 BEIR 資料集上顯著超越 HyDE，特別是在那些 LLM 缺乏背景知識的領域。" >}}
 
 *   **HyDE 的失敗**：在這些領域，LLM 因為不懂專有名詞，生成的虛構文檔充滿了誤導性的關鍵字。
 *   **ReDE-RF 的勝利**：因為它是基於**真實文檔**來修正 Query，所以永遠不會「無中生有」。它抓到的特徵（Feature）都是資料庫裡真實存在的。
@@ -104,7 +104,7 @@ $$ \hat{v}_{q_{ReDE}} = \frac{1}{k^* + 1} \left( f(q) + \sum_{i=1}^{k^*} C_E[d_{
 ### 2. 速度革命
 這張圖應該會讓所有做系統架構的人感到興奮：
 
-{{< image src="figure3.png" caption="圖 3：各方法的查詢延遲比較。HyDE 極長，而 ReDE-RF 顯著縮短。" >}}
+{{< image src="figure3.png" alt="Covid、Robust04 與 DBPedia 上查詢延遲的水平長條圖，比較 HyDE-PRF、HyDE 與兩種 ReDE-RF 版本，ReDE-RF 明顯更快，約比使用 20 份文件的 HyDE-PRF 快 10 倍" caption="圖 3：各方法的查詢延遲比較。HyDE 極長，而 ReDE-RF 顯著縮短。" >}}
 
 數據顯示，ReDE-RF 比標準 HyDE 快了約 **4 倍**，比 HyDE-PRF 快了 **7 到 11 倍**。這證明了「Logits 判斷」在工程落地上的巨大優勢。
 
@@ -113,7 +113,7 @@ $$ \hat{v}_{q_{ReDE}} = \frac{1}{k^* + 1} \left( f(q) + \sum_{i=1}^{k^*} C_E[d_{
 論文提出 **DistillReDE**：利用 ReDE-RF 產生的結果作為 Teacher，訓練一個小型的 Contriever 模型。
 結果發現，這個小模型保留了絕大部分的效能提升（見下圖橘色 Bar），而且上線時**完全不需要 LLM**。
 
-{{< image src="figure4.png" caption="圖 4：DistillReDE (橘色) 的效能非常接近完整的 ReDE-RF (綠色)，證明了知識蒸餾的可行性。" >}}
+{{< image src="figure4.png" alt="Covid、NFCorpus、FiQA、Robust04 與 DBPedia 上 nDCG@10 的分組長條圖，比較 Contriever、DistillReDE 與完整 ReDE-RF，DistillReDE 接近完整 ReDE-RF，兩者都明顯勝過單純的 Contriever" caption="圖 4：DistillReDE (橘色) 的效能非常接近完整的 ReDE-RF (綠色)，證明了知識蒸餾的可行性。" >}}
 
 ## 結論與啟發：Grounding on Reality
 

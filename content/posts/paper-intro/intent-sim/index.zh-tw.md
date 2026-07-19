@@ -65,7 +65,7 @@ url: "paper-intro/:contentbasename"
 ### 三階段的方法
 這是一個通用的決策框架，模擬真實世界中「預算有限」的場景: 
 
-{{< image src="figure1.png" caption="三階段互動方法示意圖: 從輸入判斷是否發問 (Decision)，若決定發問則生成問題 (Clarify)，最後生成回應 (Respond)。" >}}
+{{< image src="figure1.png" alt="以「誰贏了美國公開賽」這個模糊問題示範三階段釐清或回應方法的示意圖：步驟一判斷未經澄清的答案是否正確、以及發問是否有幫助，步驟二生成如「哪一項賽事」的澄清問題，步驟三利用澄清後的意圖回答 Coco Gauff" caption="三階段互動方法示意圖: 從輸入判斷是否發問 (Decision)，若決定發問則生成問題 (Clarify)，最後生成回應 (Respond)。" >}}
 
 1.  **決策階段 (Clarify or Respond?)**: 計算不確定性分數 \( u(x) \)。如果超過門檻 (例如預算只允許我們對前 10% 最模糊的問題發問) ，就進入階段 2；否則直接回答。
 2.  **釐清階段 (Generate & Ask)**: 系統生成問題 \( q \)，使用者回答 \( a \)。
@@ -76,7 +76,7 @@ url: "paper-intro/:contentbasename"
 
 這個過程分為四步: 
 
-{{< image src="figure2.png" caption="INTENT-SIM 流程: 生成問題 -> 採樣回答 -> NLI 意圖分群 -> 計算 Entropy。" width=60% >}}
+{{< image src="figure2.png" alt="INTENT-SIM 的虛擬碼：先貪婪取樣一個澄清問題，再以溫度取樣多個候選答案，用 NLI 模型連結互相蘊涵的答案，以深度優先搜尋分群，依各群大小估計意圖分佈，最後以其熵值作為不確定性分數" caption="INTENT-SIM 流程: 生成問題 -> 採樣回答 -> NLI 意圖分群 -> 計算 Entropy。" width=60% >}}
 
 #### 讓模型「自問」 (Generate Clarifying Question)
 收到輸入 \( x \) 後，先用 Few-shot prompting 逼模型生成一個它覺得最該問的**釐清問題 \( q \)**。
@@ -121,7 +121,7 @@ $$ u(x) = -\sum_{k=1}^{K} P(c_k|x) \log P(c_k|x) $$
 2.  **Clarify**: 系統提問，獲得答案後再回答。
 3.  **Disambig**: 直接給定人工改寫的「完美無歧義指令」。
 
-{{< image src="table2.png" caption="Table 2: 在 QA 和 NLI 任務中，Clarify (發問後回答) 的表現顯著優於 Direct。" >}}
+{{< image src="table2.png" alt="比較 Direct、Clarify 與 Disambig 三種策略的表格，涵蓋 GPT-3、LLaMA-2 7B Chat 與 13B Chat 在 MT、QA、NLI 任務的 uniform 與 sampled 設定，Clarify (發問後再回答) 相較 Direct 普遍有大幅提升，如括號內的正值所示" caption="Table 2: 在 QA 和 NLI 任務中，Clarify (發問後回答) 的表現顯著優於 Direct。" >}}
 
 這裡有個非常有趣的發現: 
 在 Table 2 中，**`Clarify` (一問一答) 的表現竟然經常優於 `Disambig` (直接給定完美句子) ！**
@@ -136,7 +136,7 @@ $$ u(x) = -\sum_{k=1}^{K} P(c_k|x) \log P(c_k|x) $$
 *   **Self-Ask**: 讓模型自己問自己「需不需要發問？」。
 *   **INTENT-SIM (Ours)**: 本文方法。
 
-{{< image src="table4.png" caption="Table 4: INTENT-SIM 在絕大多數設定中，AUROC 顯著優於 Baseline。" >}}
+{{< image src="table4.png" alt="表格列出 Likelihood、Self-Ask、Sample Entropy 與 INTENT-SIM 在 10%、20%、30% 發問預算下的 AUROC 與準確率提升，涵蓋 MT、NLI、QA 任務與三個模型，INTENT-SIM 在多數列取得最佳或加註星號的 AUROC" caption="Table 4: INTENT-SIM 在絕大多數設定中，AUROC 顯著優於 Baseline。" >}}
 
 **結果分析:**
 1.  **Likelihood 的慘敗**: 在 LLaMA-2 QA 任務上，Likelihood 的表現甚至不如隨機 (Random) 。這證實了「低信心 \(\neq\) 歧義」。

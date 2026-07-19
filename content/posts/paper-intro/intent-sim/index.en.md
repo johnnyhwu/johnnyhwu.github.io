@@ -65,7 +65,7 @@ The authors propose a Three-Stage Pipeline and the core algorithm **INTENT-SIM**
 ### Three-Stage Pipeline
 This is a general decision-making framework that simulates a "limited budget" scenario in the real world:
 
-{{< image src="figure1.png" caption="Schematic of the three-stage interaction method: Judging whether to ask from input (Decision), generating a question if deciding to ask (Clarify), and finally generating a response (Respond)." >}}
+{{< image src="figure1.png" alt="Diagram of the three-stage clarify-or-respond method using the ambiguous question Who won the US Open: step 1 decides whether the answer without clarification is correct or whether asking would help, step 2 generates a clarifying question like Which event, and step 3 responds using the clarified intent to answer Coco Gauff" caption="Schematic of the three-stage interaction method: Judging whether to ask from input (Decision), generating a question if deciding to ask (Clarify), and finally generating a response (Respond)." >}}
 
 1.  **Decision Stage (Clarify or Respond?)**: Calculate the uncertainty score \( u(x) \). If it exceeds the threshold (e.g., the budget only allows us to ask about the top 10% most ambiguous questions), proceed to Stage 2; otherwise, answer directly.
 2.  **Clarification Stage (Generate & Ask)**: The system generates a question \( q \), and the user provides an answer \( a \).
@@ -76,7 +76,7 @@ This is the soul of the paper. The author's idea is intuitive: **To judge if a q
 
 This process is divided into four steps:
 
-{{< image src="figure2.png" caption="INTENT-SIM Process: Generate Question -> Sample Responses -> NLI Intent Clustering -> Calculate Entropy." width=60% >}}
+{{< image src="figure2.png" alt="Pseudocode for INTENT-SIM: greedily sample a clarifying question, sample several candidate answers at temperature, use an NLI model to link answers that entail each other, cluster them with depth-first search, estimate the intent distribution from cluster sizes, and compute its entropy as the uncertainty score" caption="INTENT-SIM Process: Generate Question -> Sample Responses -> NLI Intent Clustering -> Calculate Entropy." width=60% >}}
 
 #### Let the Model "Self-Ask" (Generate Clarifying Question)
 After receiving input \( x \), use Few-shot prompting to force the model to generate the **clarifying question \( q \)** it thinks is most necessary.
@@ -121,7 +121,7 @@ First, we need to confirm: Does asking an extra sentence actually improve Perfor
 2.  **Clarify**: The system asks, gets an answer, and then responds.
 3.  **Disambig**: Directly providing a manually rewritten "perfect unambiguous instruction."
 
-{{< image src="table2.png" caption="Table 2: In QA and NLI tasks, the performance of Clarify (Answer after asking) is significantly better than Direct." >}}
+{{< image src="table2.png" alt="Table comparing Direct, Clarify and Disambig strategies for GPT-3, LLaMA-2 7B Chat and 13B Chat on MT, QA and NLI tasks with uniform and sampled settings, where Clarify (answering after asking) generally gives large gains over Direct, shown by the positive numbers in parentheses" caption="Table 2: In QA and NLI tasks, the performance of Clarify (Answer after asking) is significantly better than Direct." >}}
 
 There is a very interesting finding here:
 In Table 2, **the performance of `Clarify` (Q&A interaction) is frequently better than `Disambig` (giving a perfect sentence directly)!**
@@ -136,7 +136,7 @@ Under a fixed interaction budget (e.g., only allowed to ask about 20% of the que
 *   **Self-Ask**: Letting the model ask itself "Do I need to ask?".
 *   **INTENT-SIM (Ours)**: The method in this paper.
 
-{{< image src="table4.png" caption="Table 4: INTENT-SIM significantly outperforms Baselines in AUROC across the vast majority of settings." >}}
+{{< image src="table4.png" alt="Table reporting AUROC and accuracy gains at 10, 20 and 30 percent asking budgets for Likelihood, Self-Ask, Sample Entropy and INTENT-SIM across MT, NLI and QA tasks and three models, where INTENT-SIM has the best or starred AUROC in most rows" caption="Table 4: INTENT-SIM significantly outperforms Baselines in AUROC across the vast majority of settings." >}}
 
 **Result Analysis:**
 1.  **The Failure of Likelihood**: On the LLaMA-2 QA task, Likelihood performed even worse than Random. This confirms that "Low Confidence \(\neq\) Ambiguity."
