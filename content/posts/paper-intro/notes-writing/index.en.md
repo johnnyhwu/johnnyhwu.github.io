@@ -37,7 +37,7 @@ Therefore, the problem this paper aims to solve is a primary challenge in the fi
 
 ## The NotesWriting Solution
 
-{{< image src="notes-writing.png" caption="[Figure 1] The NotesWriting Method" >}}
+{{< image src="notes-writing.png" alt="Step-by-step trace of the NotesWriting method answering an elevation-range question: at each step the agent generates a chain-of-thought and a search query, a separate Notes LLM reads the top wiki pages and returns concise notes that are added to context, and after two such retrieval rounds the agent finishes with the answer 1,800 to 7,000 ft" caption="[Figure 1] The NotesWriting Method" >}}
 
 As shown in the figure above, the NotesWriting method is very straightforward. In each reasoning step of the LLM-based agent, if a search/retrieval tool is used to fetch the top-K documents, an LLM performs "Note Extraction" on each document to pull out the most relevant information for the current question. Finally, "Note Aggregation" is used to consolidate all the extracted information.
 
@@ -63,11 +63,11 @@ Query: {Query}
 
 In the experimental phase, the authors applied the NotesWriting method to three common Multi-Hop RAG baselines: [ReAct](https://arxiv.org/abs/2210.03629), [IRCoT](https://arxiv.org/abs/2212.10509), and [FLARE](https://arxiv.org/abs/2305.06983). The results are shown in Tables 1, 2, and 3 below.
 
-{{< image src="exp-1.png" caption="[Table 1] NotesWriting + ReAct" >}}
+{{< image src="exp-1.png" alt="Table comparing ReAct against ReAct plus NotesWriting (ReNAct) for GPT-4o-mini and LLaMA-3.1-70B on Fanout-QA, Frames, Hotpot-QA and MultiHop-RAG, where adding NotesWriting raises F1 and GPT-4 score while cutting main-context input tokens by offloading long content into notes" caption="[Table 1] NotesWriting + ReAct" >}}
 
-{{< image src="exp-2.png" caption="[Table 2] NotesWriting + IRCoT" >}}
+{{< image src="exp-2.png" alt="Table comparing IRCoT against IRCoT plus NotesWriting for GPT-4o-mini and LLaMA-3.1-70B on FanoutQA, Frames, HotpotQA and M-RAG, where the NotesWriting variant achieves higher F1 and GPT-4 scores in every row" caption="[Table 2] NotesWriting + IRCoT" >}}
 
-{{< image src="exp-3.png" caption="[Table 3] NotesWriting + FLARE" >}}
+{{< image src="exp-3.png" alt="Table comparing FLARE against FLARE plus NotesWriting for GPT-4o-mini and LLaMA-3.1-70B on Fanout-QA, Frames, HotpotQA and M-RAG, where adding NotesWriting improves F1 and GPT-4 scores across the benchmarks" caption="[Table 3] NotesWriting + FLARE" >}}
 
 Although NotesWriting is an intuitive and simple method, these experimental results once again demonstrate that **Retrieved Document Refinement** is a crucial and highly effective technique in RAG systems.
 

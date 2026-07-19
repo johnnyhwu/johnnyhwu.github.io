@@ -183,7 +183,7 @@ $$ X_{\text{method}} = [P ; P] $$
 *   **戰績：** 在總共 70 個「模型-任務」的組合測試中，Prompt Repetition 取得了 **47 勝 0 敗** 的壓倒性成績 (其餘為平手/無顯著差異) 。
 *   **意義：** 這在機器學習領域極為罕見。通常某個 Trick 可能對 GPT 有效，對 Claude 卻無效。但 Prompt Repetition 跨越了不同的模型架構與參數量級。
 
-{{< image src="figure1.png" caption="Figure 1: Prompt Repetition 與 Baseline 在各種模型及 Benchmark 上的準確率比較。" >}}
+{{< image src="figure1.png" alt="由分組長條圖組成的網格，比較 prompt repetition (斜線填滿) 與 baseline (實心) 在 GPT-4o mini、Claude Haiku、DeepSeek v3 等模型、於 OpenBookQA、ARC、GSM8K、MMLU-Pro 與 MATH 等基準上的準確率，星號標出 repetition 勝出之處，尤其是 options-first 設定" caption="Figure 1: Prompt Repetition 與 Baseline 在各種模型及 Benchmark 上的準確率比較。" >}}
 
 ### 對「輸入順序」的強大修復力
 
@@ -197,7 +197,7 @@ $$ X_{\text{method}} = [P ; P] $$
 
 這證實了我們的理論：**重複輸入讓模型在閱讀第二次的選項時，已經知道了問題是什麼**。這意味著開發者不再需要煩惱 Prompt 該怎麼擺放，Prompt Repetition 為系統帶來了極高的 **Robustness**。
 
-{{< image src="figure1.png" caption="Figure 1: (同上圖) 請特別注意 OpenBookQA 和 MMLU-Pro 中的 \"options-first\" 欄位。" >}}
+{{< image src="figure1.png" alt="同一組 prompt repetition 與 baseline 準確率的分組長條圖，強調在 options-first 的 OpenBookQA 與 MMLU-Pro 面板中，斜線填滿的 prompt repetition 長條在多數模型上明顯高於實心的 baseline 長條" caption="Figure 1: (同上圖) 請特別注意 OpenBookQA 和 MMLU-Pro 中的 \"options-first\" 欄位。" >}}
 
 ### 「免費午餐」的實證：延遲與長度不變
 
@@ -221,7 +221,7 @@ $$ X_{\text{method}} = [P ; P] $$
 
 這告訴我們：**Prompt Repetition 最適合那些「需要精準理解，但不需要複雜多步推理」的任務** (如資訊提取、閱讀測驗) 。
 
-{{< image src="figure4.png" caption="Figure 4: 當開啟推理模式 (step by step) 後，Prompt Repetition 與 Baseline 的準確率差距縮小，效果變得中性。" >}}
+{{< image src="figure4.png" alt="開啟逐步推理後 GSM8K、MMLU-Pro question-first 與 options-first、以及 MATH 的四張分組長條圖，此時 prompt repetition 與 baseline 的長條在各模型上幾乎相等，顯示效果變得中性" caption="Figure 4: 當開啟推理模式 (step by step) 後，Prompt Repetition 與 Baseline 的準確率差距縮小，效果變得中性。" >}}
 
 ### 自定義任務的「顯微鏡效應」
 

@@ -183,7 +183,7 @@ First, the most shocking result is the universality of this method. The authors 
 *   **Record:** across a total of 70 "Model-Task" combination tests, Prompt Repetition achieved an overwhelming score of **47 wins and 0 losses** (the rest were ties/no significant difference).
 *   **Significance:** This is extremely rare in the machine learning field. Usually, a trick might work for GPT but not for Claude. But Prompt Repetition spans across different model architectures and parameter scales.
 
-{{< image src="figure1.png" caption="Figure 1: Accuracy comparison between Prompt Repetition and Baseline across various models and Benchmarks." >}}
+{{< image src="figure1.png" alt="Grid of grouped bar charts comparing prompt repetition (hatched) versus baseline (solid) accuracy across models like GPT-4o mini, Claude Haiku and DeepSeek v3 on benchmarks such as OpenBookQA, ARC, GSM8K, MMLU-Pro and MATH, with stars marking where repetition wins, especially the options-first settings" caption="Figure 1: Accuracy comparison between Prompt Repetition and Baseline across various models and Benchmarks." >}}
 
 ### Powerful Repair of "Input Order"
 
@@ -197,7 +197,7 @@ Experiments found that in the Baseline, `Options-first` usually performed poorly
 
 This confirms our theory: **Repeating the input lets the model know what the question is when reading the options for the second time**. This means developers no longer need to worry about how to place the Prompt; Prompt Repetition brings extremely high **Robustness** to the system.
 
-{{< image src="figure1.png" caption="Figure 1: (Same as above) Please pay special attention to the \"options-first\" columns in OpenBookQA and MMLU-Pro." >}}
+{{< image src="figure1.png" alt="The same grid of grouped bar charts of prompt repetition versus baseline accuracy, highlighting that in the options-first OpenBookQA and MMLU-Pro panels the hatched prompt-repetition bars are noticeably higher than the solid baseline bars for most models" caption="Figure 1: (Same as above) Please pay special attention to the \"options-first\" columns in OpenBookQA and MMLU-Pro." >}}
 
 ### Empirical Evidence of "Free Lunch": Unchanged Latency and Length
 
@@ -221,7 +221,7 @@ To explore the boundaries, the authors conducted an interesting control experime
 
 This tells us: **Prompt Repetition is best suited for tasks that "require precise understanding but do not need complex multi-step reasoning"** (such as information extraction, reading comprehension).
 
-{{< image src="figure4.png" caption="Figure 4: When reasoning mode (step by step) is enabled, the accuracy gap between Prompt Repetition and Baseline narrows, and the effect becomes neutral." >}}
+{{< image src="figure4.png" alt="Four grouped bar charts for GSM8K, MMLU-Pro question-first and options-first, and MATH under step-by-step reasoning, where the prompt-repetition and baseline bars are now nearly equal across models, showing the effect becomes neutral" caption="Figure 4: When reasoning mode (step by step) is enabled, the accuracy gap between Prompt Repetition and Baseline narrows, and the effect becomes neutral." >}}
 
 ### The "Microscope Effect" of Custom Tasks
 

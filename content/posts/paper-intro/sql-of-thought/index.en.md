@@ -36,7 +36,7 @@ Besides Text-to-SQL, Text-to-Python is another common method for allowing an LLM
 
 ## The SQL-of-Thought Method
 
-{{< image src="sql-of-thought.png" caption="The Agentic Workflow of SQL-of-Thought" >}}
+{{< image src="sql-of-thought.png" alt="Agentic workflow of SQL-of-Thought: a natural-language question and database schema pass through a schema linking agent, subproblem agent, query plan agent (guided by chain of thought) and SQL agent, then a DB execution engine feeds any error into a guided correction loop of correction plan and correction SQL agents until the query succeeds" caption="The Agentic Workflow of SQL-of-Thought" >}}
 
 The image above illustrates the complete SQL-of-Thought workflow. Let's briefly describe the tasks each agent in this workflow is responsible for:
 
@@ -137,7 +137,7 @@ The image above illustrates the complete SQL-of-Thought workflow. Let's briefly 
     ```
 - **Correction Plan Agent**: If an error occurs during the execution of the SQL code, this agent is triggered to generate a plan on how to correct the SQL. It's worth noting that the paper emphasizes that the prompt for this agent not only asks the LLM to use a Chain of Thought approach to generate the correction plan but also **provides an SQL Error Taxonomy** to further enhance the agent's performance. The SQL Error Taxonomy is a classification of potential errors in SQL code, as shown in the figure below:
 
-    {{< image src="sql-error-taxonomy.png" caption="SQL Error Taxonomy" >}}
+    {{< image src="sql-error-taxonomy.png" alt="Mind-map of the SQL error taxonomy branching from a central node into categories such as syntax, filter, join, schema link, aggregation, other issues, value, subquery and set operations, each listing specific error types like where_missing, join_wrong_type and agg_no_groupby" caption="SQL Error Taxonomy" >}}
 
     ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Correction Plan Agent"}
     You are a Senior SQL Debugger in an NL2SQL multiagent framework. Your sole task is to analyze a failed SQL query to create a clear, step-by-step correction plan using Chain of Thought. Do NOT write the corrected SQL yourself.
@@ -201,7 +201,7 @@ This paper primarily evaluates the performance of SQL-of-Thought using the follo
 
 The experimental results for SQL-of-Thought are shown in the table below:
 
-{{< image src="exp.png" caption="SQL-of-Thought Experimental Results" >}}
+{{< image src="exp.png" alt="Leaderboard table on the Spider and Spider-Realistic benchmarks listing methods like ChatGPT, GPT-4, DIN-SQL, DAIL-SQL and Chase SQL, where SQL-of-Thought with Claude Opus 3 tops both columns at 91.59 on Spider and 90.16 on Spider-Realistic" caption="SQL-of-Thought Experimental Results" >}}
 
 ## Conclusion
 

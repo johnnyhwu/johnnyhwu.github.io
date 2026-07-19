@@ -63,7 +63,7 @@ The authors propose a **Disentanglement** strategy:
 
 Here is what the end-to-end process looks like when broken down:
 
-{{< image src="figure3.png" caption="Complete MRAG architecture flowchart: The pipeline from Question Processing to Hybrid Ranking." >}}
+{{< image src="figure3.png" alt="Three-stage MRAG pipeline: (1) question processing segments a question into a main content part and a temporal constraint part, (2) retrieval and summarization pulls and condenses relevant Wikipedia passages, and (3) semantic-temporal hybrid ranking combines semantic and temporal scores to rank passages and return the answer" caption="Complete MRAG architecture flowchart: The pipeline from Question Processing to Hybrid Ranking." >}}
 
 Let's break down this pipeline step-by-step.
 
@@ -105,7 +105,7 @@ The authors designed 6 types of mathematical curves to correspond to different t
 | **Last (Find newest)** | `before` | Before the cutoff, the closer the better (Recency Bias). |
 | **First (Find earliest)**| `after` | After the starting point, the closer to the start the better. |
 
-{{< image src="figure8.png" caption="Diagram of six temporal scoring functions. Note the combination of hard constraints (zeroing out) and soft preferences (slopes)." >}}
+{{< image src="figure8.png" alt="Grid of six line plots showing temporal scoring functions for before, after and between constraints on the last and first event dates, each combining a hard cutoff that drops the score to a baseline with a sloped soft preference that peaks near the target year" caption="Diagram of six temporal scoring functions. Note the combination of hard constraints (zeroing out) and soft preferences (slopes)." >}}
 
 The final score formula is:
 $$ S_{final} = S_{sem} \times S_{tem} $$
@@ -122,7 +122,7 @@ For example, changing "Who was PM in 2019?" to "Who was PM **before** 2020?".
 
 The results were telling:
 
-{{< image src="table2.png" caption="Table 2: Performance comparison of MRAG versus other retrieval methods on TempRAGEVAL." >}}
+{{< image src="table2.png" alt="Results table on TempRAGEval TimeQA and SituatedQA comparing retrieval methods such as BM25, contriever and various rerankers against MRAG on answer recall and evidence recall at 1 and 5, where MRAG achieves the best scores including 90.0 answer recall at 5 on TimeQA" caption="Table 2: Performance comparison of MRAG versus other retrieval methods on TempRAGEVAL." >}}
 
 1.  **Traditional Methods Collapse**: Even powerful models like GEMMA (an LLM-based Reranker) saw a significant drop in performance when facing perturbations, confirming they are merely performing advanced keyword matching.
 2.  **MRAG Thrives**: MRAG not only withstood the perturbations but achieved an Evidence Recall (ER@5) of **59.2%**, far exceeding GEMMA's **45.3%**.

@@ -209,7 +209,7 @@ Return the responses in JSON format with the key "responses", including "text" a
 
 ### 多樣性與質量的權衡 (Diversity-Quality Trade-off)
 
-{{< image src="figure4.png" caption="a-c: 在寫詩 (Poem)、故事 (Story)、笑話 (Joke) 任務中，VS 方法 (粉紅色系) 的平均語義多樣性均優於 Direct 和 Sequence 等基線方法。 d: Poem 任務的 Diversity-Quality 帕累托前緣 (Pareto Front)，可以看到 VS-CoT (紅色點) 將曲線往右上方推進，代表在相同品質下具備更高多樣性。 e-f: 展示了 Emergent Trend，即模型能力越強 (如 GPT-4.1)，VS 帶來的多樣性提升越顯著。" >}}
+{{< image src="figure4.png" alt="多面板圖：長條圖 a 到 c 顯示 Verbalized Sampling 各版本 (粉紅) 在寫詩、故事與笑話任務上的多樣性分數高於 Direct 與 Sequence 基線 (藍色)；面板 d 為多樣性對品質的散點圖，VS-Multi 與 VS-CoT 位於右上方的 Pareto 最佳位置；面板 e 與 f 顯示能力越強的模型從 VS 獲得的多樣性提升越大" caption="a-c: 在寫詩 (Poem)、故事 (Story)、笑話 (Joke) 任務中，VS 方法 (粉紅色系) 的平均語義多樣性均優於 Direct 和 Sequence 等基線方法。 d: Poem 任務的 Diversity-Quality 帕累托前緣 (Pareto Front)，可以看到 VS-CoT (紅色點) 將曲線往右上方推進，代表在相同品質下具備更高多樣性。 e-f: 展示了 Emergent Trend，即模型能力越強 (如 GPT-4.1)，VS 帶來的多樣性提升越顯著。" >}}
 
 *   **Pareto Front:** 在 Figure 4(d) 中，VS-CoT（紅線）將整條曲線向右上方推移。這意味著在相同的質量下，VS 提供了更高的多樣性。
 *   **人類評估:** 在 Joke 任務中，VS 的多樣性評分（3.01）顯著高於直接問法（1.83）。
@@ -217,7 +217,7 @@ Return the responses in JSON format with the key "responses", including "text" a
 
 ### 理論驗證：預訓練分佈的還原
 
-{{< image src="figure17.png" caption="比較不同 Prompting 方法生成的 'Name a US State' 分佈與 Ground Truth (預訓練分佈) 的差異。Direct Prompting (藍色) 嚴重坍縮，機率集中在少數州；Sequence Prompting (虛線) 呈現均勻分佈，缺乏真實特徵；而 VS-Standard (紅色) 成功捕捉了長尾特徵，高度還原了真實分佈。" >}}
+{{< image src="figure17.png" alt="Claude-4-Sonnet 與 GPT-4.1 的兩張長條圖，呈現說出各個美國州名的機率：Direct prompting (藍色) 坍縮到一兩個州，預訓練參考分佈 (橘色) 分散於多州，VS-Standard (紅色) 則貼近該參考的長尾，且相對參考分佈的 KL 散度，VS-Standard 遠低於 Direct" caption="比較不同 Prompting 方法生成的 'Name a US State' 分佈與 Ground Truth (預訓練分佈) 的差異。Direct Prompting (藍色) 嚴重坍縮，機率集中在少數州；Sequence Prompting (虛線) 呈現均勻分佈，缺乏真實特徵；而 VS-Standard (紅色) 成功捕捉了長尾特徵，高度還原了真實分佈。" >}}
 
 在 "Name a US State" 的實驗中，作者計算了生成分佈與真實預訓練數據分佈的 **KL Divergence**。
 *   Direct Prompting: KL \(\approx 14.8\) (嚴重坍縮)
@@ -226,7 +226,7 @@ Return the responses in JSON format with the key "responses", including "text" a
 
 ### 下游任務應用：合成數據生成
 
-{{< image src="table4.png" caption="在數學合成數據生成任務中，使用 VS 生成數據並微調後的模型表現。Baseline 是直接使用 1K 數據微調。可以看到 VS-Multi (37.5%) 相比 Direct Prompting (30.6%) 取得了顯著的準確率提升。" >}}
+{{< image src="table4.png" alt="以 GPT-4.1 與 Gemini-2.5-Flash 生成的數學合成資料微調數個 SFT 模型後的準確率表格，比較 baseline、Direct、CoT、Sequence 與 Multi-Turn 以及各 VS 版本，其中 VS-Multi 取得最佳平均 37.5%，優於 Direct 的 30.6%" caption="在數學合成數據生成任務中，使用 VS 生成數據並微調後的模型表現。Baseline 是直接使用 1K 數據微調。可以看到 VS-Multi (37.5%) 相比 Direct Prompting (30.6%) 取得了顯著的準確率提升。" >}}
 
 VS 不僅能寫詩，還能提升數學能力。
 *   實驗設計：使用 VS 生成數學題目來微調小模型。
