@@ -66,7 +66,7 @@ ERL breaks the limitation of trial-and-error by proposing a mechanism that extra
 
 The ERL framework is an elegant "plug-and-play design." It **does not require any changes to the Agent's underlying architecture** (e.g., it keeps the original ReAct loop). Instead, it completes the system's "self-evolution" through two independent stages.
 
-{{< image src="solution.png" caption="Overview of the ERL Framework: The left side shows the process of experience accumulation and Heuristic Generation, while the right side shows the Retrieval-Augmented Execution process for new tasks." >}}
+{{< image src="solution.png" alt="Diagram of the ERL framework: on the left, heuristic generation executes tasks into trajectories with rewards, analyzes them into heuristics and stores them in a heuristics pool; on the right, at test time a new task queries and retrieves the top heuristics, which guide execution into a trajectory that is judged success or failure" caption="Overview of the ERL Framework: The left side shows the process of experience accumulation and Heuristic Generation, while the right side shows the Retrieval-Augmented Execution process for new tasks." >}}
 
 The data flow can be clearly divided into two stages:
 
@@ -134,7 +134,7 @@ Gaia2 is cleverly designed by splitting data into different "Universes." These u
 
 ERL demonstrated strong competitiveness in Gaia2's "Search" and "Execution" tasks.
 
-{{< image src="exp-1.png" caption="Proof that ERL achieved an overall success rate of 56.1%, a 7.8% improvement over the ReAct baseline, and outperformed previous top experience learning methods like ExpeL (50.9%) and AutoGuide (50.8%)." >}}
+{{< image src="exp-1.png" alt="A bar chart and a table of success rates: ERL reaches the highest overall success rate of 56.1 percent, above baseline 48.3, few-shot 46.4, ExpeL 50.9 and AutoGuide 50.8, with the table also breaking down execution versus search splits and ablations" caption="Proof that ERL achieved an overall success rate of 56.1%, a 7.8% improvement over the ReAct baseline, and outperformed previous top experience learning methods like ExpeL (50.9%) and AutoGuide (50.8%)." >}}
 
 **Why did ERL win?**
 *   **Reliability**: As mentioned in our discussion, ERL not only increased the success rate but also significantly improved **\( pass^{3} \)** (meaning the task was completed successfully three times in a row). This indicates the Agent is no longer "getting lucky" but has truly mastered a stable operational SOP.
@@ -147,12 +147,12 @@ Through a series of "decomposition" experiments, the authors proved that every p
 #### Heuristics vs. Raw Trajectories
 This might be the experiment we care about most. What if we just show the Agent past raw dialogues (Raw Trajectories)?
 
-{{< image src="exp-2.png" caption="This chart proves that under the same token budget, the success rate of Heuristics is consistently higher than that of Raw Trajectories. This shows that 'distilled knowledge' is more effective at guiding an Agent than 'stacked data'." >}}
+{{< image src="exp-2.png" alt="Two line charts of success rate versus feedback length in tokens for the execution and search splits, where the no-retrieval heuristics line (orange) stays consistently above the few-shot raw-trajectories line (gray) at every token budget" caption="This chart proves that under the same token budget, the success rate of Heuristics is consistently higher than that of Raw Trajectories. This shows that 'distilled knowledge' is more effective at guiding an Agent than 'stacked data'." >}}
 
 #### Importance of Retrieval Quality
 What if we don't use expensive LLMs for retrieval and just pick rules randomly?
 
-{{< image src="exp-3.png" caption="This chart proves that the 'quality' of rules is more important than the 'quantity.' Including too many random rules (over 60) actually leads to a drop in performance due to noise interference. ERL uses an LLM to precisely select the Top-20 rules, reaching the optimal balance." >}}
+{{< image src="exp-3.png" alt="Line chart of success rate versus number of heuristics that rises to a peak around 60 heuristics then declines toward 100, with a star marking ERL's LLM-selected top-20 heuristics achieving about 56 percent, higher than the curve at that point" caption="This chart proves that the 'quality' of rules is more important than the 'quantity.' Including too many random rules (over 60) actually leads to a drop in performance due to noise interference. ERL uses an LLM to precisely select the Top-20 rules, reaching the optimal balance." >}}
 
 ## Conclusion
 This paper addresses the pain points of LLM Agents "lacking continuous learning capabilities" and "relying on repeated trial-and-error" by proposing the **ERL (Experiential Reflective Learning)** framework.

@@ -40,7 +40,7 @@ url: "paper-intro/:contentbasename"
 
 ## EHRAgent 方法概觀
 
-{{< image src="ehragent-flow.png" caption="Figure 3: Overview of our proposed LLM agent, EHRAgent, for complex few-shot tabular reasoning tasks on EHRs. Given an input clinical question based on EHRs, EHRAgent decomposes the task and generates a plan (i.e., code) based on (a) metadata (i.e., descriptions of tables and columns in EHRs), (b) tool function definitions, (c) few-shot examples, and (d) domain knowledge (i.e., integrated medical information). Upon execution, EHRAgent iteratively debugs the generated code following the execution errors and ultimately generates the final solution." >}}
+{{< image src="ehragent-flow.png" alt="EHRAgent 回答臨床醫師關於最高住院費用問題的總覽圖：不同於傳統的醫師—工程師—EHR 流程，EHRAgent 以自然語言，依據 EHR metadata、工具 API、few-shot 範例與醫學知識生成 Python 程式碼計畫，執行後反覆針對執行錯誤除錯，最終產出答案" caption="Figure 3: Overview of our proposed LLM agent, EHRAgent, for complex few-shot tabular reasoning tasks on EHRs. Given an input clinical question based on EHRs, EHRAgent decomposes the task and generates a plan (i.e., code) based on (a) metadata (i.e., descriptions of tables and columns in EHRs), (b) tool function definitions, (c) few-shot examples, and (d) domain knowledge (i.e., integrated medical information). Upon execution, EHRAgent iteratively debugs the generated code following the execution errors and ultimately generates the final solution." >}}
 
 如上圖 Figure 3 所示，EHRAgent 的根據 User (Clinician) 的 Query 會產生一個 Code Plan 來從 EHR Database 中得到 Answer。
 
@@ -96,7 +96,7 @@ Tool Function Definition 其實就是 Figure 3 Prompt 中的 "[api_name, api_des
 
 ## EHRAgent 實驗結果
 
-{{< image src="ehragent-table-1.png" caption="Table 1: Main results of success rate (i.e., SR.) and completion rate (i.e., CR.) on MIMIC-III, eICU, and TREQS datasets. The complexity of questions increases from Level I (the simplest) to Level IV (the most difficult)." >}}
+{{< image src="ehragent-table-1.png" alt="在 MIMIC-III、eICU 與 TREQS 資料集上、複雜度 I 到 IV 的成功率與完成率主要結果表格，比較有無 code interface 的方法，EHRAgent 在每一欄皆最高，例如 MIMIC-III 成功率達 58.97" caption="Table 1: Main results of success rate (i.e., SR.) and completion rate (i.e., CR.) on MIMIC-III, eICU, and TREQS datasets. The complexity of questions increases from Level I (the simplest) to Level IV (the most difficult)." >}}
 
 Table 1 呈現的是 EHRAgent 和所有 Baseline 的表現。從 Baseline 的選擇上，我覺得蠻棒的，很多經典的 Single Agent 方法 (ex. [ReAct (ICLR 2023)](https://arxiv.org/abs/2210.03629)、[Reflexion (NeurIPS 2023)](https://arxiv.org/abs/2303.11366)、[Chameleon(NeurIPS 2023)](https://arxiv.org/abs/2304.09842)) 都有被納入。從 Table 1 作者提出以下 Insight:
 
@@ -112,7 +112,7 @@ Table 1 呈現的是 EHRAgent 和所有 Baseline 的表現。從 Baseline 的選
 
 最後，作者也提到 Self-Debugging 和 AutoGen 是所有 Baseline 裡面做得比較好的，因為他們有考慮 Feedback，也會根據 Feedback 做分析再進行修改。但是因為他們沒有考慮到 Domain Knowledge 因此表現不好。
 
-{{< image src="ehragent-table-2.png" caption="Table 2: Ablation studies on success rate (i.e., SR.) and completion rate (i.e., CR.) under different question complexity (I-IV) on MIMIC-III dataset." >}}
+{{< image src="ehragent-table-2.png" alt="MIMIC-III 上的消融表格，顯示移除醫學資訊、長期記憶、互動式編碼或 rubber-duck 除錯都會降低 EHRAgent 的成功率與完成率，其中移除互動式編碼使成功率從 58.97 大幅降至 24.55" caption="Table 2: Ablation studies on success rate (i.e., SR.) and completion rate (i.e., CR.) under different question complexity (I-IV) on MIMIC-III dataset." >}}
 
 從 Table 2 的 Ablation Study 中，作者強調兩個重點：
 

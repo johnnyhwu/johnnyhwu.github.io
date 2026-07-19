@@ -41,7 +41,7 @@ Therefore, the EHRAgent proposed in this paper aims to improve the performance o
 
 ## EHRAgent Method Overview
 
-{{< image src="ehragent-flow.png" caption="Figure 3: Overview of our proposed LLM agent, EHRAgent, for complex few-shot tabular reasoning tasks on EHRs. Given an input clinical question based on EHRs, EHRAgent decomposes the task and generates a plan (i.e., code) based on (a) metadata (i.e., descriptions of tables and columns in EHRs), (b) tool function definitions, (c) few-shot examples, and (d) domain knowledge (i.e., integrated medical information). Upon execution, EHRAgent iteratively debugs the generated code following the execution errors and ultimately generates the final solution." >}}
+{{< image src="ehragent-flow.png" alt="Overview diagram of EHRAgent answering a clinician's question about maximum hospital cost: instead of the traditional clinician-engineer-EHR workflow, EHRAgent uses natural language to generate a Python code plan from EHR metadata, tool APIs, few-shot demonstrations and medical knowledge, executes it, and iteratively debugs runtime errors before producing the final answer" caption="Figure 3: Overview of our proposed LLM agent, EHRAgent, for complex few-shot tabular reasoning tasks on EHRs. Given an input clinical question based on EHRs, EHRAgent decomposes the task and generates a plan (i.e., code) based on (a) metadata (i.e., descriptions of tables and columns in EHRs), (b) tool function definitions, (c) few-shot examples, and (d) domain knowledge (i.e., integrated medical information). Upon execution, EHRAgent iteratively debugs the generated code following the execution errors and ultimately generates the final solution." >}}
 
 As shown in Figure 3 above, EHRAgent generates a Code Plan based on the User (Clinician)'s Query to obtain the Answer from the EHR Database.
 
@@ -97,7 +97,7 @@ Therefore, the authors Parse out more Detail from the Executor's execution resul
 
 ## EHRAgent Experimental Results
 
-{{< image src="ehragent-table-1.png" caption="Table 1: Main results of success rate (i.e., SR.) and completion rate (i.e., CR.) on MIMIC-III, eICU, and TREQS datasets. The complexity of questions increases from Level I (the simplest) to Level IV (the most difficult)." >}}
+{{< image src="ehragent-table-1.png" alt="Main results table of success rate and completion rate on the MIMIC-III, eICU and TREQS datasets across complexity levels I to IV, comparing methods with and without a code interface, where EHRAgent achieves the highest scores in every column, such as 58.97 success rate on MIMIC-III" caption="Table 1: Main results of success rate (i.e., SR.) and completion rate (i.e., CR.) on MIMIC-III, eICU, and TREQS datasets. The complexity of questions increases from Level I (the simplest) to Level IV (the most difficult)." >}}
 
 Table 1 presents the performance of EHRAgent and all Baselines. From the choice of Baselines, I think it is quite good, many classic Single Agent methods (ex. [ReAct (ICLR 2023)](https://arxiv.org/abs/2210.03629), [Reflexion (NeurIPS 2023)](https://arxiv.org/abs/2303.11366), [Chameleon(NeurIPS 2023)](https://arxiv.org/abs/2304.09842)) have been included. From Table 1, the authors propose the following Insight:
 
@@ -113,7 +113,7 @@ I think this also echoes the statement in a related paper I read earlier [Toward
 
 Finally, the authors also mentioned that Self-Debugging and AutoGen are among the better performing methods among all Baselines because they considered Feedback and also analyze based on Feedback before making modifications. But because they did not consider Domain Knowledge, their performance is not good.
 
-{{< image src="ehragent-table-2.png" caption="Table 2: Ablation studies on success rate (i.e., SR.) and completion rate (i.e., CR.) under different question complexity (I-IV) on MIMIC-III dataset." >}}
+{{< image src="ehragent-table-2.png" alt="Ablation table on MIMIC-III showing that removing medical information, long-term memory, interactive coding or rubber-duck debugging each lowers EHRAgent's success and completion rates, with interactive coding removal causing the largest drop from 58.97 to 24.55 success rate" caption="Table 2: Ablation studies on success rate (i.e., SR.) and completion rate (i.e., CR.) under different question complexity (I-IV) on MIMIC-III dataset." >}}
 
 From the Ablation Study in Table 2, the authors emphasize two key points:
 
