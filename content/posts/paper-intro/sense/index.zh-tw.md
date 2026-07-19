@@ -96,7 +96,7 @@ Ensure your submission only contains the Domain, Schema, Question, and Answer. R
 
 ## SENSE 實驗結果
 
-{{< image src="exp.png" caption="SENSE 的實驗結果" >}}
+{{< image src="exp.png" alt="Spider 與 Bird 基準上的大型 text-to-SQL 排行榜表格，分為使用閉源 LLM 的 prompting 方法、微調模型與開源 LLM 三組，作者的 SENSE-7B 與 SENSE-13B 位於最下方並取得最高分，如 Spider Dev-EX 84.1、Spider Test 86.6" caption="SENSE 的實驗結果" >}}
 
 由上表實驗結果可以發現，Closed-Source 模型真的很強，單純透過 Prompting 就可以達到接近 SOTA 的效果；反之，Open-Source 模型的表現就相當不好。
 

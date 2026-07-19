@@ -68,7 +68,7 @@ MemRL 的記憶庫則是 **米其林指南**：
 
 MemRL 的運作可以拆解成兩個關鍵步驟：**怎麼找 (檢索)** 與 **怎麼學 (更新)**。
 
-{{< image src="figure1.png" caption="MemRL 概念架構圖：展示 Frozen LLM 與 Evolving Memory 的互動過程。" >}}
+{{< image src="figure1.png" alt="兩部分示意圖，以人類認知作類比：穩定的皮質推理與可塑的情節記憶相互解耦，對應到 MemRL 中被鎖定的 frozen LLM 與一個不斷演化的記憶罐，罐中的意圖、解答嘗試與效用分數由環境回饋更新，且完全不更新模型權重" caption="MemRL 概念架構圖：展示 Frozen LLM 與 Evolving Memory 的互動過程。" >}}
 
 ### 雙階段檢索 (Two-Phase Retrieval)：不只要像，還要有用
 
@@ -103,7 +103,7 @@ MemRL 的運作可以拆解成兩個關鍵步驟：**怎麼找 (檢索)** 與 **
 
 作者在 ALFWorld、BigCodeBench 以及難度極高的 HLE 進行了測試。
 
-{{< image src="table1.png" caption="MemRL 在各項 Benchmark 上的表現，顯著優於傳統的 RAG 與靜態記憶機制。'Last' 表示 Last Epoch Success Rate；'CSR' 表示  Cumulative Success Rate。" >}}
+{{< image src="table1.png" alt="結果表格列出在 BigCodeBench、Lifelong Agent Bench、ALFWorld 與 HLE 上的 Last 與 CSR 分數，比較 No Memory、RAG、Self-RAG、Mem0 與 MemP 等記憶方法，MemRL 在每一欄皆以粗體標為最佳，平均達 0.772 Last 與 0.798 CSR" caption="MemRL 在各項 Benchmark 上的表現，顯著優於傳統的 RAG 與靜態記憶機制。'Last' 表示 Last Epoch Success Rate；'CSR' 表示  Cumulative Success Rate。" >}}
 
 **幾個有趣的觀察：**
 1.  **長期任務表現極佳**：在需要多步驟規劃的 ALFWorld 和 OS Task 中，MemRL 的提升幅度最顯著。這證明了「記住成功路徑」對複雜決策非常有幫助。

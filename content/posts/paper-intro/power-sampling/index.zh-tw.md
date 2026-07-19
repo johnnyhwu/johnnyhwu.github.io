@@ -388,7 +388,7 @@ $$ \frac{q(x_{old} | x_{new})}{q(x_{new} | x_{old})} $$
 
 ## 本篇論文的實驗結果
 
-{{< image src="exp.png" caption="本篇論文提出的 Power Sampling 方法與 GRPO 在多個 Benchmark 上的比較" width=100% >}}
+{{< image src="exp.png" alt="在 MATH500、HumanEval、GPQA 與 AlpacaEval2.0 上針對 Qwen2.5-Math-7B、Qwen2.5-7B 與 Phi-3.5-mini-instruct 的結果表格，比較 base、低溫度、Power Sampling 與 GRPO，Power Sampling 在不需訓練的情況下接近甚至有時超越 GRPO" caption="本篇論文提出的 Power Sampling 方法與 GRPO 在多個 Benchmark 上的比較" width=100% >}}
 
 最後則是附上本篇論文的主要實驗結果，可以發現單純針對 Base Model 進行 Sampling 的作法確實在許多 Benchmark 上達到甚至超越 RL (e.g. GRPO) Model 的表現。
 

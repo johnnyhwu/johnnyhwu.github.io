@@ -46,7 +46,7 @@ In short, VIME's Self-Supervised and Semi-Supervised Learning methods effectivel
 
 How does Self-Supervised Learning work in VIME? Let's take a closer look!
 
-{{< image src="ssl.png" caption="VIME's Self-Supervised Learning Workflow" >}}
+{{< image src="ssl.png" alt="VIME self-supervised learning diagram where a mask generator corrupts an unlabeled feature via a pretext generator, an encoder maps it to a representation, and two estimators recover the original feature and the mask, trained with a reconstruction loss and a mask-estimation loss" caption="VIME's Self-Supervised Learning Workflow" >}}
 
 First, a raw sample is taken from the unlabeled dataset. Let's assume it has 256 dimensions. Next, a Mask Generator randomly creates a Mask Vector of the same dimension. This Mask Vector determines which elements of the sample to keep and which to replace. Then, a Pretext Generator calculates the new values for the elements that are to be replaced.
 
@@ -63,7 +63,7 @@ Through this pretext task training, VIME achieves its goal of effectively utiliz
 
 ## A Deep Dive into Semi-Supervised Learning in VIME
 
-{{< image src="semi-supervised-learning.png" caption="VIME's Semi-Supervised Learning Workflow" >}}
+{{< image src="semi-supervised-learning.png" alt="VIME semi-supervised learning diagram where the mask generator creates several corrupted views of an unlabeled sample that the encoder and predictor process into predictions trained with a consistency loss, while labeled samples flow through the same encoder and predictor under a supervised loss" caption="VIME's Semi-Supervised Learning Workflow" >}}
 
 Finally, let's understand how Semi-Supervised Learning works in VIME! In VIME, Semi-Supervised Learning is primarily used to train the Predictor. The Predictor learns not only from a Supervised Loss but also from a Consistency (Unsupervised) Loss. The raw sample is passed through the Encoder to produce a "good" feature representation, which the Predictor then uses to make a prediction. The goal is to make this output as close to the true label as possible.
 

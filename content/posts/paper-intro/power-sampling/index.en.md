@@ -382,7 +382,7 @@ $$ \frac{q(x_{old} | x_{new})}{q(x_{new} | x_{old})} $$
 
 ## Experimental Results of the Paper
 
-{{< image src="exp.png" caption="Comparison of the Power Sampling method proposed in this paper vs. GRPO on multiple benchmarks" width=100% >}}
+{{< image src="exp.png" alt="Results table on MATH500, HumanEval, GPQA and AlpacaEval2.0 for Qwen2.5-Math-7B, Qwen2.5-7B and Phi-3.5-mini-instruct, comparing base, low-temperature, Power Sampling and GRPO, where Power Sampling is close to and sometimes beats GRPO without any training" caption="Comparison of the Power Sampling method proposed in this paper vs. GRPO on multiple benchmarks" width=100% >}}
 
 Finally, here are the main experimental results. We can see that simply performing Sampling on the Base Model indeed achieves or surpasses the performance of RL (e.g., GRPO) Models on many Benchmarks.
 
