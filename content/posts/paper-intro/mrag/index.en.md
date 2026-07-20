@@ -131,7 +131,7 @@ Interestingly, on the **TimeQA** dataset (which contains more niche, long-tail k
 
 ## Conclusion
 
-1.  **Don't Idolize End-to-End**: In the LLM era, it's easy to get lazy and throw everything into the Context Window for the model to learn. But MRAG proves that for **precise logic (math, time, code execution)**, stripping it away from the neural network and handing it to a deterministic Symbolic System often yields better results.
+1.  **Don't Idolize End-to-End**: In the LLM era, it's easy to get lazy and throw everything into the Context Window for the model to learn. But MRAG proves that for **precise logic (math, time, code execution)**, stripping it away from the neural network and handing it to a deterministic Symbolic System often yields better results. [UniversalRAG](../universal-rag/) applies a similar "disentanglement" philosophy to a different axis of the retrieval problem — modality and granularity instead of time.
 2.  **Architecture Design > Model Size**: This paper didn't train a massive model with hundreds of billions of parameters; instead, it solved the problem through elegant Pipeline design. This is where engineers provide real value.
 3.  **Neuro-Symbolic AI is the Future**: This hybrid architecture—where the neural network handles semantics and symbolic logic handles reasoning—will likely be the mainstream direction for building complex Agents in the future.
 

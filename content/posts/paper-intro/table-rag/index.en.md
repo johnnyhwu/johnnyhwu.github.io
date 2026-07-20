@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 In current enterprise-grade RAG applications, the biggest pain point we face is often not "unable to find documents," but "unable to understand the **structured data** within documents." When a financial report or specification sheet contains both lengthy textual descriptions and precise data tables, traditional RAG often loses sight of one while attending to the other.
 
-This paper, published in **EMNLP 2025** and titled **TableRAG**, was born to solve this real-world puzzle. It proposes an elegant solution: **Do not try to read tables as text; instead, let them return to the essence of data.**
+This paper, published in **EMNLP 2025** and titled **TableRAG**, was born to solve this real-world puzzle. It proposes an elegant solution: **Do not try to read tables as text; instead, let them return to the essence of data.** (If you'd rather keep tables in natural language instead of executing SQL against them, [MixRAG](../mixture-of-rag/) tackles the same heterogeneous text-table problem from a different angle.)
 
 {{< admonition tip "TL;DR" >}}
 TableRAG is a RAG framework designed specifically for "Heterogeneous Documents" (i.e., a mix of text and tables). It abandons the traditional approach of "flattening" tables into text for vector retrieval and instead adopts a **Dual-Track** strategy:
@@ -126,7 +126,7 @@ This is TableRAG's killer feature.
     *   If yes: Activate the SQL engine.
 *   **Execution Flow**:
     1.  Use the Mapping Function \(f\) to obtain the complete Schema.
-    2.  The LLM generates a SQL statement based on the sub-question \(q_t\) and Schema (e.g., `SELECT AVG(score) FROM students`).
+    2.  The LLM generates a SQL statement based on the sub-question \(q_t\) and Schema (e.g., `SELECT AVG(score) FROM students`). If you want to dig deeper into how a dedicated multi-agent pipeline handles this SQL generation step (including guided error correction), [SQL-of-Thought](../sql-of-thought/) is a good follow-up read.
     3.  Send the SQL to MySQL for execution to get the precise result \(e_t\).
 
 #### Compositional Intermediate Answer Generation

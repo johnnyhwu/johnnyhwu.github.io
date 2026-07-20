@@ -31,7 +31,7 @@ The problem this paper, [SQL-of-Thought](https://arxiv.org/abs/2509.00581), aims
 > How to design an Agentic Workflow to improve the performance of LLMs in Text-to-SQL tasks.
 
 {{< admonition tip "Additional Note" >}}
-Besides Text-to-SQL, Text-to-Python is another common method for allowing an LLM to interact with a database. For instance, the [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) method wraps some database operations as Python functions, enabling the LLM to call these functions by generating Python code to manipulate the database.
+Besides Text-to-SQL, Text-to-Python is another common method for allowing an LLM to interact with a database. For instance, the [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) method wraps some database operations as Python functions, enabling the LLM to call these functions by generating Python code to manipulate the database. If you're interested in how SQL generation fits into a broader RAG pipeline over heterogeneous documents, check out [TableRAG](../table-rag/) as well.
 {{< /admonition >}}
 
 ## The SQL-of-Thought Method

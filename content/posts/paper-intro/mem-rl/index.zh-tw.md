@@ -101,7 +101,7 @@ MemRL 的運作可以拆解成兩個關鍵步驟：**怎麼找 (檢索)** 與 **
 
 ## 實驗結果：不僅是理論，實戰也超強
 
-作者在 ALFWorld、BigCodeBench 以及難度極高的 HLE 進行了測試。
+作者在 ALFWorld、BigCodeBench 以及難度極高的 HLE 進行了測試，並將 [Mem0](../mem0/) 等靜態記憶框架作為 Baseline 進行比較。
 
 {{< image src="table1.png" alt="結果表格列出在 BigCodeBench、Lifelong Agent Bench、ALFWorld 與 HLE 上的 Last 與 CSR 分數，比較 No Memory、RAG、Self-RAG、Mem0 與 MemP 等記憶方法，MemRL 在每一欄皆以粗體標為最佳，平均達 0.772 Last 與 0.798 CSR" caption="MemRL 在各項 Benchmark 上的表現，顯著優於傳統的 RAG 與靜態記憶機制。'Last' 表示 Last Epoch Success Rate；'CSR' 表示  Cumulative Success Rate。" >}}
 

@@ -190,7 +190,7 @@ The emergence of **UniversalRAG** marks a significant step for RAG technology fr
 
 ### Routing is the Silver Bullet for Modality Gaps
 
-We used to strive for a universal "aligned vector space," hoping that text, images, and videos could coexist in the same dimension. But UniversalRAG tells us: **forced alignment brings bias**. By routing at the semantic level and allowing each type of data to retain its most original and specialized representation, more fair and accurate retrieval results can be obtained. This idea of "Decoupling" is the key to solving complex multimodal problems.
+We used to strive for a universal "aligned vector space," hoping that text, images, and videos could coexist in the same dimension. But UniversalRAG tells us: **forced alignment brings bias**. By routing at the semantic level and allowing each type of data to retain its most original and specialized representation, more fair and accurate retrieval results can be obtained. This idea of "Decoupling" is the key to solving complex multimodal problems. Interestingly, the same philosophy shows up when disentangling temporal reasoning from semantic search in [MRAG](../mrag/), just applied to a different axis of heterogeneity.
 
 ### A Win-Win for Efficiency and Accuracy
 

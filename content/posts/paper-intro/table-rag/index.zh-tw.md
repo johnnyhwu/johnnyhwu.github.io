@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 在當前的企業級 RAG 應用中，我們面臨最大的痛點往往不是「找不到文件」，而是「讀不懂文件中的結構化數據」。當一份財報或規格書同時包含落落長的文字描述與精密的數據表格時，傳統 RAG 往往會顧此失彼。
 
-這篇發表於 **EMNLP 2025** 的論文 **TableRAG**，正是為了這個真實世界的難題而生。它提出了一個優雅的解決方案: **不要試圖把表格當作文字來讀，而是讓它們回歸數據的本質。**
+這篇發表於 **EMNLP 2025** 的論文 **TableRAG**，正是為了這個真實世界的難題而生。它提出了一個優雅的解決方案: **不要試圖把表格當作文字來讀，而是讓它們回歸數據的本質。**（如果你比較希望讓表格維持自然語言的形式，而不是執行 SQL，[MixRAG](../mixture-of-rag/) 則是從另一個角度處理相同的文字表格混合問題。）
 
 {{< admonition tip "TL;DR" >}}
 TableRAG 是一個專為「異質文檔 (Heterogeneous Documents，即文字與表格混合) 」設計的 RAG 框架。它摒棄了傳統將表格「壓扁」成文字進行向量檢索的做法，轉而採用 **雙軌並行 (Dual-Track)** 策略:
@@ -126,7 +126,7 @@ TableRAG 並不是一個單一的模型，而是一個精心設計的**系統框
     *   若有: 啟動 SQL 引擎。
 *   **執行流程**: 
     1.  利用 Mapping Function \(f\) 獲取完整 Schema。
-    2.  LLM 根據子問題 \(q_t\) 與 Schema 生成 SQL 語句 (例如: `SELECT AVG(score) FROM students`) 。
+    2.  LLM 根據子問題 \(q_t\) 與 Schema 生成 SQL 語句 (例如: `SELECT AVG(score) FROM students`) 。如果想更深入了解專門處理 SQL 生成 (包含 Guided Error Correction) 的 Multi-Agent 架構，可以接著閱讀 [SQL-of-Thought](../sql-of-thought/)。
     3.  將 SQL 丟給 MySQL 執行，得到精確結果 \(e_t\)。
 
 #### Compositional Intermediate Answer Generation

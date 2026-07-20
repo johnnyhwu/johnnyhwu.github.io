@@ -28,7 +28,7 @@ url: "paper-intro/:contentbasename"
 
 ## NotesWriting 想處理的問題
 
-在 Multi-Hop RAG 中，LLM 需要透過多次的 Retrieval 與 Reasoning 穿插進行，才有辦法得到最終答案。舉例來說，LLM 如果想回答 "上一次台灣舉辦國際棒球比賽時有多少人參加？"，LLM 需要先收集 "上一次在台灣舉辦的國際棒球比賽是什麼？" 的相關資料，得到答案之後，才有辦法再進一步收集 "該場比賽有多少人參加？" 的相關資料。
+在 Multi-Hop RAG 中，LLM 需要透過多次的 Retrieval 與 Reasoning 穿插進行，才有辦法得到最終答案（可以參考 [AutoMind](../automind/) 這篇文章來看看 Multi-Hop RAG 的另一個實際應用）。舉例來說，LLM 如果想回答 "上一次台灣舉辦國際棒球比賽時有多少人參加？"，LLM 需要先收集 "上一次在台灣舉辦的國際棒球比賽是什麼？" 的相關資料，得到答案之後，才有辦法再進一步收集 "該場比賽有多少人參加？" 的相關資料。
 
 然而，在回答每一個 Sub-Question 時，LLM 可能會 Retrieve 到非常多相關資料，如果把這些相關資料都放入 LLM 的 Context 中，很有可能會導致 LLM 的 Context 超過其限制，或是因為資料中夾雜的不相關資訊，而導致 LLM 在後續的 Reasoning Step 的表現變差。
 
@@ -71,7 +71,7 @@ Query: {Query}
 雖然 NotesWriting 本身是一個非常直觀且簡單的方法，但是透過上面這些實驗結果也可以再次發現到，在 RAG 方法中做 **Retrieved Document Refinement** 是相當重要且效果顯著的方法。
 
 {{< admonition info 補充資訊 >}}
-如果你覺得讀完 NotesWriting 感到很空虛，不妨閱讀 RAG 中針對 **Retrieved Document Refinement** 的經典論文 [Corrective Retrieval Augmented Generation](https://arxiv.org/abs/2401.15884)，相信一定可以有許多新的收穫！
+如果你覺得讀完 NotesWriting 感到很空虛，不妨閱讀 RAG 中針對 **Retrieved Document Refinement** 的經典論文 [Corrective Retrieval Augmented Generation](https://arxiv.org/abs/2401.15884)，相信一定可以有許多新的收穫！如果你比較關心的是「一開始該檢索多少文件」而不是檢索後的精煉，[Adaptive-k](../adaptive-k/) 處理的正是這個互補的問題。
 {{< /admonition >}}
 
 ## 結語

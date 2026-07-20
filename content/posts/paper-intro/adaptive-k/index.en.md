@@ -54,4 +54,4 @@ The authors note that in practice, relying solely on the similarity score gap to
 
 ## Conclusion
 
-This article reviewed the paper "[Efficient Context Selection for Long-Context QA: No Tuning, No Iteration, Just Adaptive-k](https://arxiv.org/abs/2506.08479)," explaining how it improves upon the traditional Top-k retrieval in RAG. By analyzing the distribution of similarity scores, the authors designed the Adaptive-k retrieval mechanism to overcome the shortcomings of conventional methods.
+This article reviewed the paper "[Efficient Context Selection for Long-Context QA: No Tuning, No Iteration, Just Adaptive-k](https://arxiv.org/abs/2506.08479)," explaining how it improves upon the traditional Top-k retrieval in RAG. By analyzing the distribution of similarity scores, the authors designed the Adaptive-k retrieval mechanism to overcome the shortcomings of conventional methods. Once you have the right set of documents, the next challenge becomes how to keep the LLM's context clean as those documents accumulate — a problem tackled by [NotesWriting](../notes-writing/).

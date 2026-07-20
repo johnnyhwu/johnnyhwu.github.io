@@ -74,6 +74,8 @@ The traditional approach is to let the LLM read the article and then generate "Y
 
 $$ P(\text{Relevant}) = \frac{e^{s_1}}{e^{s_1} + e^{s_0}} $$
 
+This idea of using the LLM's raw output signal — rather than its generated text — as a supervision signal for retrieval echoes the LM-Supervised training approach in [REPLUG](../replug-retrieval-augmented-black-box-language-models/), which trains its retriever to match the LLM's own likelihood on the correct answer instead of relying on generated text.
+
 {{< admonition tip "Why look at Logits?" >}}
 This is a design with immense **Engineering Sense**:
 *   **Speed**: It saves the time of generating text, cutting Latency to the floor.

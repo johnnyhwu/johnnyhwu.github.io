@@ -75,7 +75,7 @@ Through this method, we can calculate the probability value of each document for
 Once the Retriever is updated, the Embeddings of all documents that we pre-calculated and stored in the External Database will become outdated. Therefore, the authors chose to update the Embeddings of all documents in the External Database after updating the Retriever T times!
 
 {{< admonition info >}}
-I think this training method is quite intuitive and effective. Since the training direction of the Retriever is determined by the LLM, subsequent RAG methods often refer to this training method as LLM-Supervised!
+I think this training method is quite intuitive and effective. Since the training direction of the Retriever is determined by the LLM, subsequent RAG methods often refer to this training method as LLM-Supervised! A more recent method, [ReDE-RF](../rede-rf/), takes a similar "let the LLM supervise retrieval" idea but applies it at inference time using output logits instead of a training-time signal.
 {{< /admonition >}}
 
 ## REPLUG Experimental Results
@@ -89,4 +89,4 @@ In the experiment shown in Table 2, the authors used the MMLU Dataset, which is 
 
 ## Conclusion
 
-This article briefly introduced the NAACL 2024 RAG paper — [REPLUG: Retrieval-Augmented Black-Box Language Models](https://aclanthology.org/2024.naacl-long.463/). It mainly focuses on improving the output quality of Block-box LLMs by using the Ensemble Output Distribution technique during the Inference Stage, allowing the LLM's output to consider multiple different documents simultaneously. It also proposes an LLM-Supervised method during the Training Stage to train the Retriever to retrieve documents suitable for the LLM, thus improving the LLM's output quality.
+This article briefly introduced the NAACL 2024 RAG paper — [REPLUG: Retrieval-Augmented Black-Box Language Models](https://aclanthology.org/2024.naacl-long.463/). It mainly focuses on improving the output quality of Block-box LLMs by using the Ensemble Output Distribution technique during the Inference Stage, allowing the LLM's output to consider multiple different documents simultaneously. It also proposes an LLM-Supervised method during the Training Stage to train the Retriever to retrieve documents suitable for the LLM, thus improving the LLM's output quality. If you're interested in the opposite direction — training the LLM itself for a specific domain rather than the Retriever — [RAFT](../raft-adapting-language-model-to-domain-specific-rag/) is a great follow-up read.

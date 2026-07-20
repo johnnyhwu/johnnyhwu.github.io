@@ -75,7 +75,7 @@ REPLUG 所提出的第二種方法，是在 Training Stage 中針對 Retriever �
 一旦 Retriever 被更新後，原先我們存在 External Database 中預先算好的每一篇 Document 的 Embedding 就會過期。因此，作者選擇每次更新 Retriever T 次後，就去更新 External Database 中所有 Document 的 Embedding！
 
 {{< admonition info >}}
-我覺得這樣的訓練方式其實蠻直觀又有效。由於 Retriever 的訓練方向是由 LLM 決定的，因此在後續的一些 RAG 方法中，經常稱這樣的訓練方法為 LLM-Supervised！
+我覺得這樣的訓練方式其實蠻直觀又有效。由於 Retriever 的訓練方向是由 LLM 決定的，因此在後續的一些 RAG 方法中，經常稱這樣的訓練方法為 LLM-Supervised！較新的方法 [ReDE-RF](../rede-rf/) 採用了類似「讓 LLM 監督檢索」的想法，但是是在 Inference Time 透過 Output Logits 來實現，而不是像本篇論文一樣在 Training Time 提供訊號。
 {{< /admonition >}}
 
 
@@ -90,4 +90,4 @@ REPLUG 所提出的第二種方法，是在 Training Stage 中針對 Retriever �
 
 ## 結語
 
-本篇文章簡介了 NAACL 2024 的 RAG 論文 — [REPLUG: Retrieval-Augmented Black-Box Language Models](https://aclanthology.org/2024.naacl-long.463/)，主要針對 Block-box LLM 在 Inference Stage 透過 Ensemble Output Distribution 的技巧讓  LLM 的輸出可以同時考慮多個不同的 Document；也在 Training Stage 提出 LLM-Supervised 的方式，來訓練 Retriever 取出適合 LLM 的 Document，提昇 LLM 的輸出品質。
+本篇文章簡介了 NAACL 2024 的 RAG 論文 — [REPLUG: Retrieval-Augmented Black-Box Language Models](https://aclanthology.org/2024.naacl-long.463/)，主要針對 Block-box LLM 在 Inference Stage 透過 Ensemble Output Distribution 的技巧讓  LLM 的輸出可以同時考慮多個不同的 Document；也在 Training Stage 提出 LLM-Supervised 的方式，來訓練 Retriever 取出適合 LLM 的 Document，提昇 LLM 的輸出品質。如果對於相反方向的做法感興趣 — 也就是直接針對特定 Domain 訓練 LLM 本身，而不是訓練 Retriever — 可以接著閱讀 [RAFT](../raft-adapting-language-model-to-domain-specific-rag/)。

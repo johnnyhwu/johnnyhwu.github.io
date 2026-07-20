@@ -74,6 +74,8 @@ ReDE-RF 的架構非常優雅，可以拆解為**先撒網，後過濾，再導�
 
 $$ P(\text{Relevant}) = \frac{e^{s_1}}{e^{s_1} + e^{s_0}} $$
 
+這種利用 LLM 的原始輸出訊號 (而非生成文字) 作為檢索監督訊號的想法，與 [REPLUG](../replug-retrieval-augmented-black-box-language-models/) 的 LM-Supervised 訓練方式有異曲同工之妙 — REPLUG 同樣是透過 LLM 對正確答案的 Likelihood 來訓練 Retriever，而不是依賴生成的文字。
+
 {{< admonition tip "為什麼要看 Logits？" >}}
 這是一個極具 **Engineering Sense** 的設計：
 *   **速度**：省去了生成文字的時間，Latency 直接砍到地板。

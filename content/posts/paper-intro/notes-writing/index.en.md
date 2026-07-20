@@ -29,7 +29,7 @@ This paper does not present a particularly novel method. Instead, it highlights 
 
 ## The Problem NotesWriting Addresses
 
-In Multi-Hop Retrieval-Augmented Generation (RAG), an LLM must interleave multiple steps of retrieval and reasoning to arrive at a final answer. For example, to answer the question, "How many people attended the last international baseball game held in Taiwan?", the LLM first needs to retrieve information for "What was the last international baseball game held in Taiwan?". Only after finding that answer can it proceed to retrieve information for "How many people attended that specific game?".
+In Multi-Hop Retrieval-Augmented Generation (RAG), an LLM must interleave multiple steps of retrieval and reasoning to arrive at a final answer (see [AutoMind](../automind/) for another example of Multi-Hop RAG in action). For example, to answer the question, "How many people attended the last international baseball game held in Taiwan?", the LLM first needs to retrieve information for "What was the last international baseball game held in Taiwan?". Only after finding that answer can it proceed to retrieve information for "How many people attended that specific game?".
 
 However, when answering each sub-question, the LLM might retrieve a large volume of related documents. Placing all this information into the LLM's context can lead to two problems: exceeding its context window limit or degrading its performance in subsequent reasoning steps due to noise from irrelevant information.
 
@@ -72,7 +72,7 @@ In the experimental phase, the authors applied the NotesWriting method to three 
 Although NotesWriting is an intuitive and simple method, these experimental results once again demonstrate that **Retrieved Document Refinement** is a crucial and highly effective technique in RAG systems.
 
 {{< admonition info "Further Reading" >}}
-If you're looking for a more comprehensive approach after reading about NotesWriting, we recommend exploring the classic paper on **Retrieved Document Refinement** in RAG: [Corrective Retrieval Augmented Generation](https://arxiv.org/abs/2401.15884). It's sure to provide many valuable insights!
+If you're looking for a more comprehensive approach after reading about NotesWriting, we recommend exploring the classic paper on **Retrieved Document Refinement** in RAG: [Corrective Retrieval Augmented Generation](https://arxiv.org/abs/2401.15884). It's sure to provide many valuable insights! If you're more interested in controlling *how many* documents get retrieved in the first place rather than refining them afterward, [Adaptive-k](../adaptive-k/) tackles that complementary problem.
 {{< /admonition >}}
 
 ## Conclusion

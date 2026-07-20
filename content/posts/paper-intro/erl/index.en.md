@@ -155,7 +155,7 @@ What if we don't use expensive LLMs for retrieval and just pick rules randomly?
 {{< image src="exp-3.png" alt="Line chart of success rate versus number of heuristics that rises to a peak around 60 heuristics then declines toward 100, with a star marking ERL's LLM-selected top-20 heuristics achieving about 56 percent, higher than the curve at that point" caption="This chart proves that the 'quality' of rules is more important than the 'quantity.' Including too many random rules (over 60) actually leads to a drop in performance due to noise interference. ERL uses an LLM to precisely select the Top-20 rules, reaching the optimal balance." >}}
 
 ## Conclusion
-This paper addresses the pain points of LLM Agents "lacking continuous learning capabilities" and "relying on repeated trial-and-error" by proposing the **ERL (Experiential Reflective Learning)** framework.
+This paper addresses the pain points of LLM Agents "lacking continuous learning capabilities" and "relying on repeated trial-and-error" by proposing the **ERL (Experiential Reflective Learning)** framework. It sits alongside other memory-driven, fine-tuning-free approaches such as [Dynamic Cheatsheet](../dynamic-cheatsheet/) and [MemRL](../mem-rl/), but distinguishes itself by extracting structured Trigger-Action rules from a single execution attempt rather than an accumulated scratchpad or a learned utility score.
 
 Through **self-reflection after a single execution**, experiences are transformed into structured **Trigger-Action rules**. During execution, **intelligent LLM retrieval** is used to inject the 20 most relevant rules into the context. Ultimately, it achieved performance and stability surpassing SOTA methods on the Gaia2 benchmark.
 

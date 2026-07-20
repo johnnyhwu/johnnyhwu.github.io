@@ -115,7 +115,7 @@ Relationship Generation 則是透過一個 Relationship Generator LLM 來從對�
 
 {{< image src="exp.png" alt="LOCOMO 上的結果表格，列出 single-hop、multi-hop、open-domain 與 temporal 問題的 F1、BLEU-1 與 judge 分數，涵蓋 LoCoMo、MemGPT、A-Mem、LangMem、Zep 與 Mem0 等方法，Mem0 與 Mem0g 在多數欄位領先，例如 Mem0 在 single hop 的 J 達 67.13" caption="[Table 1] Performance comparison of memory-enabled systems across different question types in the LOCOMO dataset." >}}
 
-從 Table 1 的實驗數據中，令我感到相當的驚訝，Mem0 的表現不只在 Single-Hop, Multi-Hop 以及 Temporal 上都達到的 State-of-the-Art (SOTA) 的表現，而且在三個指標上都比第二名高出許多。在 Open-domain 上，雖然不是 SOTA，但是與第一名相較起來也只有一點點落差。
+從 Table 1 的實驗數據中，令我感到相當的驚訝，Mem0 的表現不只在 Single-Hop, Multi-Hop 以及 Temporal 上都達到的 State-of-the-Art (SOTA) 的表現，而且在三個指標上都比包含 [MemGPT](../memgpt/) 在內的第二名高出許多。在 Open-domain 上，雖然不是 SOTA，但是與第一名相較起來也只有一點點落差。
 
 LOCOMO 這個 Benchamrk 的有效性也在 Reddit 上被討論。有人認為 LOCOMO 這個資料集是有一些問題存在的，稍微修改一些實驗設定 [Zep 的表現甚至超越 Mem0 24%](https://www.reddit.com/r/LangChain/comments/1kg5qas/lies_damn_lies_statistics_is_mem0_really_sota_in/)，又或者是許多鄉民認為 [Mem0 的實驗設定有問題，才導致 Mem0 遠遠勝過其他的方法](https://www.reddit.com/r/LangChain/comments/1kash7b/i_benchmarked_openai_memory_vs_langmem_vs_letta/)。
 

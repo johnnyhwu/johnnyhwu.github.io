@@ -31,7 +31,7 @@ url: "paper-intro/:contentbasename"
 > 如何設計一個 Agentic Workflow 來提升 LLM 在 Text-to-SQL 的表現
 
 {{< admonition tip 補充說明>}}
-讓 LLM 自己來操作 Database 的方法除了 Text-to-SQL 外，Text-to-Python 也是常見的方法之一。舉例來說，在 [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) 方法中，正是將一些 Database 操作包裝為 Python Function，然後讓 LLM 透過產生 Python Code 來呼叫這些 Function，進而對 Database 進行操作。
+讓 LLM 自己來操作 Database 的方法除了 Text-to-SQL 外，Text-to-Python 也是常見的方法之一。舉例來說，在 [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) 方法中，正是將一些 Database 操作包裝為 Python Function，然後讓 LLM 透過產生 Python Code 來呼叫這些 Function，進而對 Database 進行操作。如果對於 SQL 生成如何融入更完整的 RAG 流程感興趣，也可以參考 [TableRAG](../table-rag/)。
 {{< /admonition >}}
 
 ## SQL-of-Thought 方法介紹

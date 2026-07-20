@@ -54,4 +54,4 @@ url: "paper-intro/:contentbasename"
 
 ## 結語
 
-本篇文章介紹了 [Efficient Context Selection for Long-Context QA: No Tuning, No Iteration, Just Adaptive-k](https://arxiv.org/abs/2506.08479) 論文，理解其如何透過 Similarity Score 分布的分析，而設計 Adaptive-k Retrieval 的機制，改善傳統 RAG 中 Top-k Retrieval 的缺點。
+本篇文章介紹了 [Efficient Context Selection for Long-Context QA: No Tuning, No Iteration, Just Adaptive-k](https://arxiv.org/abs/2506.08479) 論文，理解其如何透過 Similarity Score 分布的分析，而設計 Adaptive-k Retrieval 的機制，改善傳統 RAG 中 Top-k Retrieval 的缺點。當我們選出適合的文件之後，下一個挑戰就是如何在文件不斷累積的過程中，維持 LLM Context 的乾淨，這正是 [NotesWriting](../notes-writing/) 想解決的問題。

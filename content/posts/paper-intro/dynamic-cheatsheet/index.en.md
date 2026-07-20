@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This article will share insights from the paper "[Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952)," which was uploaded to arXiv in April 2025. I wanted to discuss this paper because its methods form the basis for a recent and popular Self-Improving Agent paper, "[Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)." The authors of Dynamic Cheatsheet have also open-sourced their code on [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet), which interested readers can explore and test for themselves!
+This article will share insights from the paper "[Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952)," which was uploaded to arXiv in April 2025. I wanted to discuss this paper because its methods form the basis for a recent and popular Self-Improving Agent paper, "[Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)" (see [our article on ACE](../agentic-context-engineering/) for more details). The authors of Dynamic Cheatsheet have also open-sourced their code on [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet), which interested readers can explore and test for themselves!
 
 ## The Problem Dynamic Cheatsheet Aims to Solve
 

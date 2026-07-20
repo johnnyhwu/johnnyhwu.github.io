@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-本篇文章和大家分享 [Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952) 論文，該論文於 2025 年 4 月上傳至 arXiv。之所以想分享這篇論文，是因為最近很熱門的一篇 Self-Improving Agent 類型的論文 － [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618) 其方法就是基於此篇論文進行優化。本篇論文作者也有開源程式碼於 [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet)，有興趣的讀者可以再自行測試看看!
+本篇文章和大家分享 [Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952) 論文，該論文於 2025 年 4 月上傳至 arXiv。之所以想分享這篇論文，是因為最近很熱門的一篇 Self-Improving Agent 類型的論文 － [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618) 其方法就是基於此篇論文進行優化（詳見[我們對 ACE 的介紹文章](../agentic-context-engineering/)）。本篇論文作者也有開源程式碼於 [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet)，有興趣的讀者可以再自行測試看看!
 
 ## Dynamic Cheatsheet 想解決的問題
 

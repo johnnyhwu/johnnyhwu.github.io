@@ -155,7 +155,7 @@ ERL 在 Gaia2 的「搜尋 (Search)」與「執行 (Execution)」任務中展現
 {{< image src="exp-3.png" alt="成功率對啟發式規則數量的折線圖，上升到約 60 條時達到高峰後往 100 條下降，並以星號標出 ERL 由 LLM 精選的 Top-20 規則達到約 56%，高於該處曲線" caption="這張圖表證明了規則的『質量』重於『數量』。隨機包含過多規則（超過 60 條）反而會導致效能下降（雜訊干擾）。而 ERL 使用 LLM 精準挑選 Top-20 條規則，達到了最佳平衡點。" >}}
 
 ## 結論
-本篇論文針對 LLM Agent 「缺乏持續學習能力」且「依賴反覆試錯」的痛點，提出了 **ERL (Experiential Reflective Learning)** 框架。
+本篇論文針對 LLM Agent 「缺乏持續學習能力」且「依賴反覆試錯」的痛點，提出了 **ERL (Experiential Reflective Learning)** 框架。它與 [Dynamic Cheatsheet](../dynamic-cheatsheet/)、[MemRL](../mem-rl/) 等同樣不需要 Fine-Tuning、以記憶驅動的方法站在同一陣線，但不同之處在於 ERL 是從單次執行中萃取結構化的 Trigger-Action 規則，而非累積式的 Cheatsheet 或透過學習得到的 Utility Score。
 
 透過**單次執行後的自我反思**，將經驗轉化為結構化的 **Trigger-Action 規則**。在執行期，利用 **LLM 智慧檢索** 將最相關的 20 條規則注入上下文。最終在 Gaia2 基準測試中，實現了超越 SOTA 方法的性能與穩定度。
 

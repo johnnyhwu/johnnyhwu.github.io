@@ -221,7 +221,7 @@ You are a professional Conclusion Summarization Assistant. Your primary responsi
 
 #### Memory Mechanism
 
-To enable more efficient information transfer between Executors, the Coordinator maintains a Memory Repository, which is divided into two types:
+To enable more efficient information transfer between Executors, the Coordinator maintains a Memory Repository, which is divided into two types. Unlike general-purpose long-term memory systems such as [MemGPT](../memgpt/) or [Mem0](../mem0/), this Memory Repository is scoped specifically to a single task's execution and is shared between the Coordinator and Executors:
 
 - **Fact Memory**: Stores facts discovered by the Executor during its reasoning process. Each entry consists of a Fact and its Source.
 - **Resource Memory**: Stores resources explored by the Executor. Each entry consists of a summary of the Resource and its Source.

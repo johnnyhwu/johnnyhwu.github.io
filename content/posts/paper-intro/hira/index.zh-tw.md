@@ -222,7 +222,7 @@ You are a professional Conclusion Summarization Assistant. Your primary responsi
 
 #### Memory Mechanism
 
-為了讓 Executor 之間的資訊可以更有效率的傳遞，Coordinator 還會維護一個 Memory Repository，這個 Repository 又可以分為兩種類型：
+為了讓 Executor 之間的資訊可以更有效率的傳遞，Coordinator 還會維護一個 Memory Repository，這個 Repository 又可以分為兩種類型。與 [MemGPT](../memgpt/) 或 [Mem0](../mem0/) 這類通用型的長期記憶系統不同，這裡的 Memory Repository 是專屬於單一任務執行過程、由 Coordinator 與 Executor 共享的記憶：
 
 - Fact Memory: 存放 Executor 在思考過程中所發現的事實。每個 Entry 由 Fact 以及 Source 組成。
 - Resource Memory: 存放 Executor 在思考過程中探索過得資源。每個 Entry 由 Resource 的 Summary 以及 Source 組成。
