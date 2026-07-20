@@ -30,7 +30,7 @@ Single Modality 的 LLM 已經不足為奇，各大科技巨頭爭先恐後的�
 
 ## 本篇論文想要解決的問題
 
-過去已經有許多研究被提出來，如何將一個 LLM 訓練成 Multimodal LLM，像是 [NeurIPS 2023 Oral Paper：Visual Instruction Tuning](https://llava-vl.github.io/) 中所提出的 **LLaVA** 或是在 [Enhancing Vision-language Understanding with Advanced Large Language Models](https://minigpt-4.github.io/) 這篇論文所提出的 **MiniGPT4**，都已經可以成功的讓 LLM（[Vicuna](https://github.com/lm-sys/FastChat)）變成一個可以進行 Zero-Shot Instruction-Following 的 Multimodal LLM。
+過去已經有許多研究被提出來，如何將一個 LLM 訓練成 Multimodal LLM，像是 [NeurIPS 2023 Oral Paper：Visual Instruction Tuning](https://llava-vl.github.io/) 中所提出的 **LLaVA** 或是在 [Enhancing Vision-language Understanding with Advanced Large Language Models](https://minigpt-4.github.io/) 這篇論文所提出的 **MiniGPT4**，都已經可以成功的讓 LLM（[Vicuna](https://github.com/lm-sys/FastChat)）變成一個可以進行 Zero-Shot Instruction-Following 的 Multimodal LLM。如果想更深入了解這種兩階段訓練配方背後的每個設計選擇，可以搭配閱讀我們的 [Cambrian-1](../cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/) 文章。
 
 在把 LLM 訓練成 Multimodal LLM 的過程，通常需要經歷**兩個階段**的訓練：
 

@@ -100,3 +100,5 @@ These two experimental results support the two scenarios we discussed in the "Wh
 This article provided a brief introduction to the MoE-related paper [Sparse Upcycling](https://arxiv.org/abs/2212.05055), published by Google Research and accepted at ICLR 2023.
 
 This paper shows us that we can leverage existing dense model checkpoints to train a Sparse MoE model. This approach allows us to further enhance the performance of the dense model while avoiding the high cost of training a Sparse MoE model from scratch. The paper contains many more details and descriptions (especially in the experiments section), so I encourage interested readers to check it out. I hope this article was helpful to you.
+
+If you're curious how this idea extends to merging several independently trained dense experts (instead of upcycling a single one), check out [Branch-Train-MiX](../branch-train-mix/), which treats Sparse Upcycling as a special case of its own more general framework.

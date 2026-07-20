@@ -100,3 +100,5 @@ Dense Model 會把所有的參數都和輸入去做運算。換句話說，一�
 本篇文章簡單介紹了一篇由 Google Reserach 發表、被 ICLR 2023 所接受的 MoE 相關論文 — [Sparse Upcycling](https://arxiv.org/abs/2212.05055)。
 
 本篇論文告訴我們：其實我們可以善用既有的 Dense Model Checkpoint 來訓練一個 Sparse MoE Model，一方面可以進一步精進 Dense Model 的表現又可以避免 From Scratch 的訓練 Sparse MoE。論文中還有更多細節與描述（尤其是實驗部分），有興趣的讀者再自行閱讀囉！希望本篇文章對你有幫助！
+
+如果你好奇這個想法如何延伸到合併多個獨立訓練的 Dense Expert（而不是 Upcycle 單一模型），可以參考 [Branch-Train-MiX](../branch-train-mix/)，它將 Sparse Upcycling 視為自己更通用框架下的一個特例。

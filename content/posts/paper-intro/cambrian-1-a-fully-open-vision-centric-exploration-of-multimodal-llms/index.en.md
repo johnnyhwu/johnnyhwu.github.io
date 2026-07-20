@@ -98,7 +98,7 @@ With a benchmark that can truly measure a VLM's visual capabilities, the authors
 -   **First Stage (Pre-Training Stage):** The parameters of the VLM's Visual Encoder and Large Language Model are frozen. **The Connector is trained using Adapter Data.**
 -   **Second Stage (Fine-Tuning Stage):** The parameters of the VLM's Visual Encoder are frozen. **The Connector and Large Language Model are trained using Instruction-Tuning Data.**
 
-In other words, in this two-stage training approach, the VLM's Visual Encoder is always frozen!
+In other words, in this two-stage training approach, the VLM's Visual Encoder is always frozen! If fully fine-tuning the LLM in this second stage sounds expensive, [Tuning LayerNorm in Attention](../layernorm-tuning-multi-modal/) shows that fine-tuning just the LayerNorm layers can get you most of the way there at a fraction of the cost.
 
 From Figure 6 above, it's evident that Language-Supervised Models (e.g., [CLIP](https://arxiv.org/abs/2103.00020)) perform better than Self-Supervised Models (e.g., [DINO](https://arxiv.org/abs/2104.14294)), especially on chat and OCR-related questions.
 

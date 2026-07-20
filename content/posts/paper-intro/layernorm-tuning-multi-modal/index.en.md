@@ -31,7 +31,7 @@ Today, I want to share a paper related to Multimodal Large Language Models. It's
 
 ## The Problem This Paper Aims to Solve
 
-Numerous studies have been published on how to train an LLM into a Multimodal LLM. For example, **LLaVA**, proposed in the [NeurIPS 2023 Oral Paper: Visual Instruction Tuning](https://llava-vl.github.io/), and **MiniGPT4**, proposed in the paper [Enhancing Vision-language Understanding with Advanced Large Language Models](https://minigpt-4.github.io/), have both successfully transformed an LLM ([Vicuna](https://github.com/lm-sys/FastChat)) into a Multimodal LLM capable of Zero-Shot Instruction-Following.
+Numerous studies have been published on how to train an LLM into a Multimodal LLM. For example, **LLaVA**, proposed in the [NeurIPS 2023 Oral Paper: Visual Instruction Tuning](https://llava-vl.github.io/), and **MiniGPT4**, proposed in the paper [Enhancing Vision-language Understanding with Advanced Large Language Models](https://minigpt-4.github.io/), have both successfully transformed an LLM ([Vicuna](https://github.com/lm-sys/FastChat)) into a Multimodal LLM capable of Zero-Shot Instruction-Following. If you want a much deeper dive into every design choice behind this two-stage training recipe, our article on [Cambrian-1](../cambrian-1-a-fully-open-vision-centric-exploration-of-multimodal-llms/) is a great companion read.
 
 The process of training an LLM into an MLLM typically involves **two stages**:
 

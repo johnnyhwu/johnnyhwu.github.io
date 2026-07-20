@@ -95,7 +95,7 @@ Cambrian-1 這篇論文的第一個目的是想**全面性的探討 Multimodal L
 有了可以真正衡量 VLM 的視覺能力的 Benchmark 後，作者採用**兩階段（Two Stage）的訓練**，來比較不同類型的 Visual Encoder 對於 VLM 在不同 Benchmark 上的表現。所謂兩階段（Two Stage）訓練的意思是：
 
 - **第一階段（Pre-Training Stage）**：將 VLM 中的 Visual Encoder 和 Large Language Model 的參數都 Freeze，**透過 Adapter Data 訓練 Connector**
-- **第二階段（Fine-Tuning Stage）**：將 VLM 中的 Visual Encoder 的參數 Freeze，**透過 Instruction-Tuning Data 訓練 Connector 和 Large Language Model**
+- **第二階段（Fine-Tuning Stage）**：將 VLM 中的 Visual Encoder 的參數 Freeze，**透過 Instruction-Tuning Data 訓練 Connector 和 Large Language Model**（如果覺得在這個階段完整微調 LLM 成本太高，[Tuning LayerNorm in Attention](../layernorm-tuning-multi-modal/) 這篇文章告訴我們，其實只微調 LayerNorm 就能用小很多的成本得到接近的效果）
 
 換句話說，在這兩階段的訓練方式中，VLM 中的 Visual Encoder 都是被 Freeze 的！
 
