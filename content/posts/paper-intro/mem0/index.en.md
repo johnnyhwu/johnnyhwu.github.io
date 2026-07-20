@@ -29,7 +29,7 @@ This article will focus on introducing the Mem0 paper, understanding its design 
 
 ## The Problem Mem0 Aims to Solve
 
-{{< image src="problem.png" caption="[Figure 1] Illustration of memory importance in AI agents." >}}
+{{< image src="problem.png" alt="Two side-by-side chat examples: on the left an agent without long-term memory forgets the user is vegetarian and dairy-free and suggests Chicken Alfredo the next day, while on the right an agent with memory correctly recalls those preferences and suggests a vegetarian, dairy-free pasta sauce" caption="[Figure 1] Illustration of memory importance in AI agents." >}}
 
 Mem0 primarily aims to address the long-term memory (LTM) issues faced by AI agents. When an agent lacks LTM, it cannot remember past interactions with humans. This prevents it from tailoring responses to human preferences. As shown in Figure 1 (left), if a user states they are vegetarian and want to avoid dairy at the beginning of a conversation, an agent without LTM might later forget this and offer unsuitable suggestions. Conversely, Figure 1 (right) shows an agent with LTM remembering the user's preferences and providing relevant advice.
 
@@ -46,7 +46,7 @@ Mem0 primarily includes two memory architectures:
 
 ### Mem0's Memory Management
 
-{{< image src="mem0.png" caption="[Figure 2] Architectural overview of the Mem0 system showing extraction and update phase." >}}
+{{< image src="mem0.png" alt="Mem0 architecture diagram with an extraction phase where an LLM combines a conversation summary and recent messages into new extracted memories, and an update phase where a tool-calling LLM compares those against the top similar existing memories and decides to add, update, delete or leave them unchanged" caption="[Figure 2] Architectural overview of the Mem0 system showing extraction and update phase." >}}
 
 Mem0's memory management, as shown in Figure 2, is divided into two main phases: the Extraction Phase and the Update Phase.
 - **Extraction Phase**: Extracts information worth remembering from the conversation history.
@@ -68,7 +68,7 @@ In their experiments, the authors set M = 10 for recent conversation turns in th
 
 ### Mem0<sup>g</sup>'s Memory Management
 
-{{< image src="mem0-g.png" caption="[Figure 3] Graph-based memory architecture of Mem0<sup>g</sup> illustrating entity extraction and update phase." >}}
+{{< image src="mem0-g.png" alt="Mem0g graph-based architecture diagram where an entity extractor and relations generator turn messages into triplets, a conflict detector searches existing graph nodes for contradictions, and an update resolver applies the changes to update the graph memories" caption="[Figure 3] Graph-based memory architecture of Mem0<sup>g</sup> illustrating entity extraction and update phase." >}}
 
 As seen in Figure 3, **Mem0<sup>g</sup>**'s memory architecture is quite similar to **Mem0**'s, featuring both an Extraction Phase and an Update Phase. The key difference is that **Mem0<sup>g</sup>** uses a graph-based approach to manage memory, while **Mem0** uses vector/relational databases.
 
@@ -114,7 +114,7 @@ Besides these, the authors also incorporated **Token Consumption** to measure ho
 
 ### Experimental Results
 
-{{< image src="exp.png" caption="[Table 1] Performance comparison of memory-enabled systems across different question types in the LOCOMO dataset." >}}
+{{< image src="exp.png" alt="Results table on LOCOMO reporting F1, BLEU-1 and judge scores across single-hop, multi-hop, open-domain and temporal questions for methods like LoCoMo, MemGPT, A-Mem, LangMem, Zep and Mem0, where Mem0 and Mem0g lead most columns, for example Mem0 at 67.13 J on single hop" caption="[Table 1] Performance comparison of memory-enabled systems across different question types in the LOCOMO dataset." >}}
 
 The experimental data in Table 1 is quite surprising. Mem0 not only achieved State-of-the-Art (SOTA) performance in Single-Hop, Multi-Hop, and Temporal categories but also surpassed the second-best method significantly across all three metrics. In the Open-domain category, while not SOTA, it was only slightly behind the top performer.
 
@@ -122,9 +122,9 @@ The validity of the LOCOMO benchmark has been discussed on Reddit. Some argue th
 
 Additionally, a second noteworthy point is that Mem0<sup>g</sup>, despite incorporating a more complex graph-based structure for memory storage and more intricate Extraction and Update Phases compared to Mem0, only performed better than Mem0 in the Open-Domain and Temporal categories. The authors did not provide an in-depth analysis of why this was the case.
 
-{{< image src="exp-2.png" caption="[Figure 4a] Comparison of search latency at p50 (median) and p95 (95th percentile) across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, and A-Mem)." >}}
+{{< image src="exp-2.png" alt="Chart plotting search latency p50 and p95 in seconds alongside LLM-as-a-judge score for A-Mem, LangMem, RAG, Zep, Mem0 and Mem0g, where Mem0 has the lowest latency (p50 0.15s) while still scoring competitively at 66.9 percent" caption="[Figure 4a] Comparison of search latency at p50 (median) and p95 (95th percentile) across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, and A-Mem)." >}}
 
-{{< image src="exp-3.png" caption="[Figure 4b] Comparison of total response latency at p50 and p95 across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, OpenAI, full-context, and A-Mem)." >}}
+{{< image src="exp-3.png" alt="Chart plotting total response latency p50 and p95 in seconds alongside LLM-as-a-judge score for A-Mem, OpenAI, LangMem, RAG, Zep, Mem0, Mem0g and full-context, where Mem0 keeps latency low (p50 0.71s) at 66.9 percent while full-context is slowest but scores highest at 72.9 percent" caption="[Figure 4b] Comparison of total response latency at p50 and p95 across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, OpenAI, full-context, and A-Mem)." >}}
 
 Figures 4a and 4b above show the LLM-as-a-Judge Score, Search Latency, and Total Response Latency for different methods across the entire LOCOMO dataset. It's evident that Mem0 and Mem0<sup>g</sup> demonstrate a strong advantage in terms of latency and LLM-as-a-Judge scores.
 

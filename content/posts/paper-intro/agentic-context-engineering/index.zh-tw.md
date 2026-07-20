@@ -28,7 +28,7 @@ url: "paper-intro/:contentbasename"
 
 在現今基於 LLM 所打造的 AI 系統中，絕大多數都是基於 [Context Engineering (Context Adaption)](https://www.philschmid.de/context-engineering) 的概念。整個 AI System 其實就像是一個 Context Scheduler，努力的在每個狀態下提供最適合的 Context 到 LLM 的有限的 Input Context Window 中，使得 LLM 在這個狀態下可以產生正確的輸出。
 
-{{< image src="context-engineering.png" caption="Context 中可以出現的資訊 (Source: https://www.philschmid.de/context-engineering)" width=80% >}}
+{{< image src="context-engineering.png" alt="Context Engineering 的文氏圖，顯示相互重疊的圓圈：指令／系統提示、狀態／歷史 (短期記憶)、長期記憶、檢索資訊 (RAG)、可用工具、結構化輸出與使用者提示，全部包含在最外層的 Context 大圓內" caption="Context 中可以出現的資訊 (Source: https://www.philschmid.de/context-engineering)" width=80% >}}
 
 如上圖所示，在 LLM 的 Input Context 中可以放 System Prompt, User Prompt, Long-Term Memory, Short-Term Memory, ..., 等多種不同的資訊。而在 Context Engineering 中，我們又可以透過多種不同的方式來優化這些 Context。
 
@@ -39,7 +39,7 @@ url: "paper-intro/:contentbasename"
 - **Brevity Bias**: 在 Context 的優化過程中，LLM 容易將 Context 優化的很簡潔，使得許多 Domain-Specific 的資訊消失，進而導致系統的表現變差 (e.g. [GEPA](https://arxiv.org/abs/2507.19457))
 - **Context Collapse**: 在 Context 的優化過程中，當 Context 累積到一定的量時，LLM 傾向大幅的刪減 Context 形成更簡潔的摘要。由於許多資訊從 Context 被移除，導致系統的表現變差 (e.g. [Dynamic Cheatsheet](../dynamic-cheatsheet/))。
 如下圖所示，LLM 在第 60 個 Adaption Step 時，突然將 Context 由原本的 18282 個 Token 縮減為 122 個 Token，讓整個系統的表現突然變差:
-    {{< image src="context-collapse.png" caption="Context Collapse 範例" >}}
+    {{< image src="context-collapse.png" alt="截圖展示 Context Collapse：一段詳細的中間摘要被暴力改寫成單一簡短模糊的句子，遺失了大部分累積下來的任務細節" caption="Context Collapse 範例" >}}
 
 基於上述兩種缺點，Agentic Context Engineering 方法主張的精神在於:
 
@@ -49,7 +49,7 @@ url: "paper-intro/:contentbasename"
 
 本篇論文所提出的方法稱為 Agentic Context Engineering 簡稱 ACE，同時適用於系統在 Offline (e.g. System Prompt Optimization) 與 Online (e.g. Test-Time Memory Adaptation) 狀態時的優化。
 
-{{< image src="solution.png" caption="Agentic Context Engineering (ACE) 方法概念圖" >}}
+{{< image src="solution.png" alt="ACE 流程圖：Generator LLM 依查詢與 context playbook 產生軌跡，Reflector LLM 反覆將軌跡精煉為洞見，Curator LLM 再將洞見轉為 delta context items 以迴圈更新 context playbook" caption="Agentic Context Engineering (ACE) 方法概念圖" >}}
 
 如上圖所示，ACE 方法主要可以拆解為 3 個角色:
 
@@ -91,15 +91,15 @@ ACE 在實驗階段使用以下 2 種類型的 Benchmark:
 
 所有 Benchmark 都遵循原來的 Train/Validation/Test Split 的切割方法。針對 Offline 的 Context Engineering 情境，所有方法都先基於 Train Split 進行優化，再於 Test Split 上透過 Pass@1 指標進行評估。針對 Online 的 Context Engineering 情境，所有方法都是直接測試在 Test Split 上，每進行一次 Inference 就會更新一次 Context，因此理論上愈後面的 Test Sample 會得到愈正確的輸出。
 
-{{< image src="exp-1.png" caption="Table 1: AppWorld Agent Benchmark 的實驗結果" >}}
+{{< image src="exp-1.png" alt="以 DeepSeek-V3.1 為基礎模型在 AppWorld 上的結果表格，比較 ReAct、離線調適方法 (ICL、GEPA、ACE) 與線上調適方法 (DC、ACE)，ACE 提升幅度最大，平均達 59.4 與 59.5，遠高於純 ReAct 的 42.4" caption="Table 1: AppWorld Agent Benchmark 的實驗結果" >}}
 
 上表 Table 1 呈現的是 ACE 與 Baseline 方法在 AppWorld Agent Benchmark 上的表現，其中 "GT labels" 表示 Reflector 在從 Inference Trace 中萃取出 Insight 的過程中，可不可以看到 Groundtruth Label。從 Table 1 可以發現到不管在 Offline 與 Online 情境下，ACE 的表現都勝過其他 Baseline 方法!
 
-{{< image src="exp-2.png" caption="Table 2: Financial Analysis Benchmark 的實驗結果" >}}
+{{< image src="exp-2.png" alt="FINER 與 Formula 兩項金融分析任務的結果表格，比較 base LLM 與 ICL、MIPROv2、GEPA、ACE、DC，帶有標準答案的 ACE 取得最佳平均 81.9，遠高於 base LLM 的 69.1" caption="Table 2: Financial Analysis Benchmark 的實驗結果" >}}
 
 從上表 Table 2 也可以看到 ACE 方法在兩種情境設定下，都表現得比 Baseline 方法更好。
 
-{{< image src="exp-3.png" caption="Table 3: AppWorld Agent Benchmark 的 Ablation Study" >}}
+{{< image src="exp-3.png" alt="AppWorld 上的消融表格，比較 ReAct 加上去除 reflector 或 multi-epoch、僅去除 multi-epoch，以及完整 ACE，涵蓋離線與線上調適，完整 ACE 加上離線暖身在線上平均取得最佳 59.5" caption="Table 3: AppWorld Agent Benchmark 的 Ablation Study" >}}
 
 從上表 Table 3 可以發現到，在 Offline 的情境下，如果把 ACE 中的 Multi-Epoch 機制拿掉，其實表現會變差一些。這說明了在 Offline 情境下，在優化 Context 的過程中，一個 Training Sample 如果看更多次其實是可以帶來效益的!
 

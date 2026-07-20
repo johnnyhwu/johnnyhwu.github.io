@@ -28,7 +28,7 @@ Mem0 的主要目的是要解決 LLM 在長期記憶 (Long-Term Memory) 上的�
 
 ## Mem0 想解決的問題
 
-{{< image src="problem.png" caption="[Figure 1] Illustration of memory importance in AI agents." >}}
+{{< image src="problem.png" alt="兩組並列的聊天範例：左側沒有長期記憶的 Agent 隔天忘記使用者吃素且不吃乳製品，推薦了 Chicken Alfredo；右側有記憶的 Agent 則正確記得這些偏好，推薦了素食且不含乳製品的義大利麵醬" caption="[Figure 1] Illustration of memory importance in AI agents." >}}
 
 Mem0 主要是希望解決 Agent 在長期記憶 (Long-Term Memory) 上的問題。當 Agent 缺乏長期記憶時，就無法記住過去與人類互動的經驗，就無法根據人類的偏好，提供最適合的回答。如上圖 Figure 1 左圖所示，當人類在對話的一開始告訴 Agent 自己是一位素食主義者，要避免含有奶製品的食物時，Agent 在對話的後期因為缺乏記憶能力而忘記這些資訊，導致提供的建議不符合人類的需求。相反的，在 Figure 1 右圖中，Agent 透過長期記憶的能力，能夠記住人類的偏好，並且在後續的對話中提供符合人類需求的建議。
 
@@ -45,7 +45,7 @@ Mem0 主要包含以下兩種 Memory Architecture：
 
 ### Mem0 的記憶管理方式
 
-{{< image src="mem0.png" caption="[Figure 2] Architectural overview of the Mem0 system showing extraction and update phase." >}}
+{{< image src="mem0.png" alt="Mem0 架構圖，擷取階段由 LLM 結合對話摘要與近期訊息產生新的擷取記憶，更新階段則由具工具呼叫能力的 LLM 將其與最相似的既有記憶比對，決定新增、更新、刪除或不做任何動作" caption="[Figure 2] Architectural overview of the Mem0 system showing extraction and update phase." >}}
 
 Mem0 的記憶管理方式如上圖 Figure 2 所示，主要分為兩個階段：Extraction Phase 以及 Update Phase。
 - **Extraction Phase**: 從對話紀錄中，提取值得被記住的資訊
@@ -67,7 +67,7 @@ Mem0 的記憶管理方式如上圖 Figure 2 所示，主要分為兩個階段�
 
 ### Mem0<sup>g</sup> 的記憶管理方式
 
-{{< image src="mem0-g.png" caption="[Figure 3] Graph-based memory architecture of Mem0<sup>g</sup> illustrating entity extraction and update phase." >}}
+{{< image src="mem0-g.png" alt="Mem0g 圖式架構示意圖，entity extractor 與 relations generator 將訊息轉為三元組，conflict detector 在既有圖節點中搜尋衝突，update resolver 再套用變更以更新圖記憶" caption="[Figure 3] Graph-based memory architecture of Mem0<sup>g</sup> illustrating entity extraction and update phase." >}}
 
 從上圖 Figure 3 可以看到，**Mem0<sup>g</sup>** 與 **Mem0** 的 Memory Architecture 相當類似，兩者都有 Extraction Phase 以及 Update Phase。不同的地方在於 **Mem0<sup>g</sup>** 是以 Graph-Based 的方式來管理記憶，而 **Mem0** 則是以 Vector/Relational Database 的方式來管理記憶。
 
@@ -113,7 +113,7 @@ Relationship Generation 則是透過一個 Relationship Generator LLM 來從對�
 
 ### 實驗結果
 
-{{< image src="exp.png" caption="[Table 1] Performance comparison of memory-enabled systems across different question types in the LOCOMO dataset." >}}
+{{< image src="exp.png" alt="LOCOMO 上的結果表格，列出 single-hop、multi-hop、open-domain 與 temporal 問題的 F1、BLEU-1 與 judge 分數，涵蓋 LoCoMo、MemGPT、A-Mem、LangMem、Zep 與 Mem0 等方法，Mem0 與 Mem0g 在多數欄位領先，例如 Mem0 在 single hop 的 J 達 67.13" caption="[Table 1] Performance comparison of memory-enabled systems across different question types in the LOCOMO dataset." >}}
 
 從 Table 1 的實驗數據中，令我感到相當的驚訝，Mem0 的表現不只在 Single-Hop, Multi-Hop 以及 Temporal 上都達到的 State-of-the-Art (SOTA) 的表現，而且在三個指標上都比第二名高出許多。在 Open-domain 上，雖然不是 SOTA，但是與第一名相較起來也只有一點點落差。
 
@@ -121,9 +121,9 @@ LOCOMO 這個 Benchamrk 的有效性也在 Reddit 上被討論。有人認為 LO
 
 此外，第二個值得注意的點是，Mem0<sup>g</sup> 相對於 Mem0 加入了 Graph-Based 的結構來儲存記憶，設計更複雜的 Extraction Phase 以及 Update Phase，然而卻只有在 Open-Domain 與 Temporal 的類別上表現的比 Mem0 好。作者針對原因並沒有做太深入的分析。
 
-{{< image src="exp-2.png" caption="[Figure 4a] Comparison of search latency at p50 (median) and p95 (95th percentile) across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, and A-Mem)." >}}
+{{< image src="exp-2.png" alt="圖表繪出檢索延遲 p50 與 p95 (秒) 並疊加 LLM-as-a-judge 分數，涵蓋 A-Mem、LangMem、RAG、Zep、Mem0 與 Mem0g，Mem0 延遲最低 (p50 0.15 秒) 同時仍有具競爭力的 66.9% 分數" caption="[Figure 4a] Comparison of search latency at p50 (median) and p95 (95th percentile) across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, and A-Mem)." >}}
 
-{{< image src="exp-3.png" caption="[Figure 4b] Comparison of total response latency at p50 and p95 across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, OpenAI, full-context, and A-Mem)." >}}
+{{< image src="exp-3.png" alt="圖表繪出總回應延遲 p50 與 p95 (秒) 並疊加 LLM-as-a-judge 分數，涵蓋 A-Mem、OpenAI、LangMem、RAG、Zep、Mem0、Mem0g 與 full-context，Mem0 延遲維持低點 (p50 0.71 秒) 且有 66.9% 分數，而 full-context 最慢但分數最高達 72.9%" caption="[Figure 4b] Comparison of total response latency at p50 and p95 across different memory methods (Mem0, Mem0<sup>g</sup>, best RAG variant, Zep, LangMem, OpenAI, full-context, and A-Mem)." >}}
 
 上圖的 Figure 4a 與 Figure 4b 分別是針對不同方法衡量在 LOCOMO 整體資料集上的 LLM-as-a-Judge Score, Search Latency 以及 Total Response Latency 的表現。可以發現到 Mem0 和 Mem0<sup>g</sup> 在 Latency 以及 LLM-as-a-Judge 的分數上展現了很強的優勢。
 
