@@ -247,3 +247,5 @@ OpenAI GPT-4o 預設是以 Textual Output 進行 Reasoning，但是必要時 GPT
   - 某些任務要考慮太多面向，LLM 寫出的 Code 沒有完全考慮
   - Code 限制了 LLM 能夠輸出的 Token，而限制了 LLM 思考
 - 讓 LLM 基於兩種 Reasoning 方法的結果再總結出最終答案，能夠得到最好的表現
+
+如果想看看 Code Execution 在結構化資料上勝過純文字 Reasoning 的具體案例，可以參考 [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/)，它將資料庫操作包裝為 Python Function，讓 LLM 透過 Code 而不是文字 Reasoning 來可靠地查詢 EHR 表格資料。

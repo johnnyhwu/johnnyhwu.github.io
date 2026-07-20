@@ -127,3 +127,5 @@ Table 3, 4, 5 分別呈現 HuggingGPT 在這 3 種 Planning Task 上的表現。
 HuggingGPT 的核心概念是透過 LLM 本身強大的推理能力作為 Controller/Coordinator 來進行 Task Planning，每個 Task 中都會使用到相對應的 Model/Tool。再透過後續的 Model Selection, Task Execution 以及 Response Generation 來得到最終的答案。
 
 我個人覺得 HuggingGPT 的方法雖然不難，但它的貢獻在於提出了一個 Single Agent Framework (ex. 應該包含哪寫 Step, 每個 Step 的 Output 要長怎樣, 每個 Step 的 Prompt/Instruction 該怎麼寫)。且還是在 ChatGPT 剛問世不久（ChatGPT 推出的時間為 2022/11/30，而 HuggingGPT 發布的時間在 2023/03），就成功地將 LLM 作為 Controller/Coordinator，來進行 Task Planning 與 Tool Usage 進而處理更複雜的任務!
+
+如果好奇這種單一 Controller 的想法在接下來兩年是如何演進的，可以接著閱讀 [OctoTools](../octo-tools/) 以及 [Plan-and-Act](../plan-and-act/)，它們延續了相同的 Task Planning + Tool Execution 精神，但是將 Controller 拆解為專門的 Planner-Executor 架構。

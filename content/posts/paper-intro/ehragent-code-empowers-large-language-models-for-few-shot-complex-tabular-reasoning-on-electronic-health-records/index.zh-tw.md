@@ -104,7 +104,7 @@ Table 1 呈現的是 EHRAgent 和所有 Baseline 的表現。從 Baseline 的選
 - CoT, Self-Consistency 與 Chameleon 之所以表現不好，主要是因為他們沒有根據 Environment 給的 Feedback 來 Refine 自己的 Plan
 - ReAct 與 Reflexion 雖考慮到 Feedback，但是太「著重在 Tool 所產生的 Error Message，而沒有考慮到整個 Planning」。我猜作者這邊應該是想表達 EHRAgent 的方法確實可以幫助 LLM Agent 根據 Feedback 對 Plan 做出好的修改
 
-一些直接產生 SQL 的方法 (Ex. LLM2SQL 或 DIN-SQL) 表現不好，主要是因為產生出來的 SQL Quality 其實不夠好，此外他們也沒有 Debugging Process 來針對自己產生的 SQL Code 做更好的修改。
+一些直接產生 SQL 的方法 (Ex. LLM2SQL 或 DIN-SQL) 表現不好，主要是因為產生出來的 SQL Quality 其實不夠好，此外他們也沒有 Debugging Process 來針對自己產生的 SQL Code 做更好的修改。較新的方法如 [SQL-of-Thought](../sql-of-thought/) 就是透過專門的 Multi-Agent 架構與 Guided Error Correction 來直接處理這個 SQL 生成品質的問題。
 
 {{< admonition info >}}
 我覺得這邊也呼應我之前所讀到的一篇相關論文 [Toward Conversational Agents with Context and Time Sensitive Long-term Memory (2024/06)](https://arxiv.org/abs/2406.00057) 的說法：「讓 LLM 直接產生 SQL Code 然後再從 Database 中取出相對應的 Data Sample 這樣的作法其實不好。採用類似 [Chain-of-Table (ICLR 2024)](https://arxiv.org/abs/2401.04398) 的方式，讓 LLM 透過一個 Tool Chain 來對 Database 進行多次的操作會更棒。」— 就有點像是本篇論文 EHRAgent 讓 LLM 產生 Sequence of Action (Code Plan) 這樣的做法。

@@ -124,6 +124,7 @@ The model is required to output in a fixed structured format. These three parts 
     *   **Role:** A "Live Document" for the research project.
     *   **Function:** The model must **synthesize** new knowledge from `Obs` with the old `Report`. It performs deduplication, corrects conflicts, supplements data, and distills conclusions.
     *   **Value:** It is the only "essence" carried into the next round, ensuring **High Signal-to-Noise Ratio (High SNR)**.
+    *   **Note:** This curated-memory pattern faces the same risk as the "Context Collapse" problem discussed in [Agentic Context Engineering](../agentic-context-engineering/) and [Dynamic Cheatsheet](../dynamic-cheatsheet/) — if the summarization step is too aggressive, valuable detail can be lost along with the noise.
 3.  **`Action` (Specific Action / Environmental Interaction):**
     *   **Role:** The executor.
     *   **Function:** Deciding the next tool (Search, Scholar, Visit, Python) or providing the Final Answer when evidence is sufficient.

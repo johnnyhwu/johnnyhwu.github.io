@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-本篇文章介紹 [PLAN-AND-ACT: Improving Planning of Agents for Long-Horizon Tasks](https://arxiv.org/abs/2503.09572) 論文，PLAN-AND-ACT 主要由 UC Berkeley 的研究人員提出，並於 2025 年 3 月發表於 Arxiv。
+本篇文章介紹 [PLAN-AND-ACT: Improving Planning of Agents for Long-Horizon Tasks](https://arxiv.org/abs/2503.09572) 論文，PLAN-AND-ACT 主要由 UC Berkeley 的研究人員提出，並於 2025 年 3 月發表於 Arxiv。如果你是第一次接觸 LLM Agent，可以先閱讀我們之前介紹的經典論文 [HuggingGPT](../hugginggpt/) 來暖身，再來理解本篇文章中 Planner-Executor 的拆分方式。
 
 PLAN-AND-ACT 提出一個 **Planner-Executor 框架**以及**資料合成方法**來訓練 LLM，提昇 LLM 的規劃 (Planning) 以及執行 (Execution) 能力。
 

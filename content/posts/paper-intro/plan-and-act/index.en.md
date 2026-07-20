@@ -21,7 +21,7 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This article introduces the paper [PLAN-AND-ACT: Improving Planning of Agents for Long-Horizon Tasks](https://arxiv.org/abs/2503.09572). PLAN-AND-ACT was primarily proposed by researchers from UC Berkeley and published on Arxiv in March 2025.
+This article introduces the paper [PLAN-AND-ACT: Improving Planning of Agents for Long-Horizon Tasks](https://arxiv.org/abs/2503.09572). PLAN-AND-ACT was primarily proposed by researchers from UC Berkeley and published on Arxiv in March 2025. If you're new to LLM Agents, our earlier introduction to the classic [HuggingGPT](../hugginggpt/) paper is a good warm-up before diving into the Planner-Executor split discussed here.
 
 PLAN-AND-ACT introduces a **Planner-Executor framework** and a **data synthesis method** to train Large Language Models (LLMs), enhancing their planning and execution capabilities.
 

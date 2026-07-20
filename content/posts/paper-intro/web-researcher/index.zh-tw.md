@@ -126,6 +126,7 @@ WebResearcher 最具破壞性的創新在於它完全拋棄了傳統 Agent 的�
     *   **角色:** 研究專案的「活文件 (Live Document)」。
     *   **功能:** 模型必須將 `Obs` 中的新知識與舊 `Report` 進行**融合 (Synthesis)**。它需要執行「去重、修正衝突、補充數據、提煉結論」。
     *   **價值:** 它是唯一被帶入下一輪的「精華」，確保了資訊的 **高信噪比 (High SNR)**。
+    *   **注意:** 這種「濃縮記憶」的做法，其實與 [Agentic Context Engineering](../agentic-context-engineering/) 以及 [Dynamic Cheatsheet](../dynamic-cheatsheet/) 所討論的 Context Collapse 問題面臨相同的風險 — 如果摘要步驟過於激進，重要的細節可能會隨著雜訊一起被移除。
 3.  **`Action` (具體行動 / 環境交互):**
     *   **角色:** 執行手。
     *   **功能:** 決定下一階段的工具 (Search, Scholar, Visit, Python) 或在證據充足時給出 Final Answer。

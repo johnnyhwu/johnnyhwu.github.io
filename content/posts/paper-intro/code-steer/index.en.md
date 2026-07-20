@@ -248,3 +248,5 @@ Here are the key takeaways from this paper:
   - Some tasks involve too many aspects, and the LLM-generated code doesn't fully consider them.
   - Code restricts the tokens an LLM can output, thereby limiting its thinking process.
 - Allowing an LLM to summarize a final answer based on the results of both reasoning methods yields the best performance.
+
+For a concrete example of code execution outperforming pure textual reasoning on structured data, see [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/), which wraps database operations as Python functions so the LLM can reliably query tabular EHR data through code instead of reasoning about it in text.
