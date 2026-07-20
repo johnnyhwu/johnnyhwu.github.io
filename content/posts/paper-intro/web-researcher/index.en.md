@@ -26,7 +26,7 @@ url: "paper-intro/:contentbasename"
 
 On the path toward Artificial General Intelligence (AGI), both academia and industry are undergoing a **Paradigm Shift**. In the past, the core of LLM development revolved around the **Scaling Law**—accumulating passive knowledge by expanding parameters and data volume, granting models incredible memory and retrieval capabilities.
 
-However, true human intelligence is manifested in **"Active Knowledge Construction."** This means AI should not merely recite content from a training set; it must act like a senior researcher: **autonomously decomposing complex problems, orchestrating diverse tools (search, computation, code), verifying conflicting information, and ultimately synthesizing a logically rigorous in-depth report.** Systems capable of such "long-horizon" tasks represent the current frontier of **Deep Research**.
+However, true human intelligence is manifested in **"Active Knowledge Construction."** This means AI should not merely recite content from a training set; it must act like a senior researcher: **autonomously decomposing complex problems, orchestrating diverse tools (search, computation, code), verifying conflicting information, and ultimately synthesizing a logically rigorous in-depth report.** Systems capable of such "long-horizon" tasks represent the current frontier of **Deep Research** — though as [VideoDR](../video-deep-research/) points out, this frontier is still mostly text-only, and extending it to video brings its own set of challenges.
 
 ### Current Industry Status: Monopoly of Closed-Source Giants vs. the Open-Source Dead End
 

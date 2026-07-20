@@ -72,4 +72,4 @@ url: "paper-intro/:contentbasename"
 
 我們都知道 RLHF 中用來訓練 Reward Model 的 Preference Dataset 是需要投入很多人力與時間來建立的高成本資料集，我們有沒有可能進一步改善 DPO，避免 Preference Dataset 的建立呢？
 
-是的！在 2024 年 1 月份，就有許多論文（[Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models](https://arxiv.org/abs/2401.01335)、[Self-Rewarding Language Models](https://arxiv.org/abs/2401.10020)）被上傳到 Arxiv 上，正是希望透過一些技巧避免 Preference Dataset 的建立。
+是的！在 2024 年 1 月份，就有許多論文（[Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models](https://arxiv.org/abs/2401.01335)、[Self-Rewarding Language Models](https://arxiv.org/abs/2401.10020)）被上傳到 Arxiv 上，正是希望透過一些技巧避免 Preference Dataset 的建立。[SENSE](../sense/) 就是這個想法很好的應用案例，它利用強弱 LLM 合成 Text-to-SQL 的 Preference Dataset，而不是依賴人工標注。

@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 In current AI research, we often observe a frustrating phenomenon: models that undergo fine-grained alignment (such as RLHF or DPO), while becoming safer and more obedient, also become "more boring." Their creativity seems to be stifled, and their outputs are often monotonous. The paper [Verbalized Sampling: How to Mitigate Mode Collapse and Unlock LLM Diversity](https://arxiv.org/abs/2510.01171) offers a brand-new perspective on this issue.
 
-Unlike past approaches that blamed algorithmic defects, this paper points out that the root of the problem lies in the **data**—specifically, the **Typicality Bias** in human preference data. To overcome this, the authors propose a training-free inference strategy: **Verbalized Sampling (VS)**.
+Unlike past approaches that blamed algorithmic defects, this paper points out that the root of the problem lies in the **data**—specifically, the **Typicality Bias** in human preference data. To overcome this, the authors propose a training-free inference strategy: **Verbalized Sampling (VS)**. If you enjoy this kind of "fix a model pathology with a clever prompt, not more training" result, [Prompt Repetition](../prompt-repetition/) is another great example, tackling the causal attention bottleneck instead of Mode Collapse.
 
 In this article, we will step through the paper's derivation to understand why models "collapse" and how to "awaken" the suppressed diversity of models through simple prompting techniques.
 

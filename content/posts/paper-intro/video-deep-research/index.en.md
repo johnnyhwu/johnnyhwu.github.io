@@ -33,7 +33,7 @@ Before we dive deep, we must clarify what "pain points" this paper solves.
     Traditional Video LLM evaluations (like Video-MME) assume all answers are inside the video. But in real life, videos are often just an "intro." For example, seeing a nameless statue in a travel Vlog and wanting to know its historical background. This requires the model to **step out of the video and into the web**.
 
 2.  **Bridging the "Text-Only Search" Gap**:
-    Existing Search Agents (like Search-o1) mostly start from text questions. However, **visual information is irreplaceable**. Often, we cannot precisely describe an object in a video using text and must rely on the model's understanding and extraction of "multi-frame visual signals."
+    Existing Search Agents (like Search-o1, or the text-focused [WebResearcher](../web-researcher/) architecture) mostly start from text questions. However, **visual information is irreplaceable**. Often, we cannot precisely describe an object in a video using text and must rely on the model's understanding and extraction of "multi-frame visual signals."
 
 3.  **A Reality Check for Agent Architectures**:
     The industry has been debating whether to use stable Workflows or flexible Agents. This paper provides a fair arena that lets us see the boundaries of both clearly.

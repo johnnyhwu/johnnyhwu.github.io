@@ -24,7 +24,7 @@ Welcome to the paper note for **"Prompt Repetition Improves Non-Reasoning LLMs"*
 
 *   **Paper Link**: [arXiv:2512.14982](https://arxiv.org/abs/2512.14982)
 
-In AI research, we often pursue complex model architecture modifications or expensive training processes to enhance performance. However, this paper goes the opposite way, telling us: **"Sometimes, just copy-pasting the input Prompt once can yield significant performance gains."**
+In AI research, we often pursue complex model architecture modifications or expensive training processes to enhance performance. However, this paper goes the opposite way, telling us: **"Sometimes, just copy-pasting the input Prompt once can yield significant performance gains."** In a similar spirit, [Verbalized Sampling](../verbalized-sampling/) shows that a simple, training-free prompting change can also undo a specific pathology (Mode Collapse) introduced by post-training.
 
 This note will guide us from the **Causal Attention** of Transformers, understanding why models "cannot understand" a single input, and why **Prompt Repetition** can be seen as a clever means to simulate **Bidirectional Attention** on Decoder-only architectures.
 

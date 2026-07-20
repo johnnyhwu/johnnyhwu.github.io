@@ -24,7 +24,7 @@ url: "paper-intro/:contentbasename"
 
 *   **論文連結**: [arXiv:2512.14982](https://arxiv.org/abs/2512.14982)
 
-在 AI 研究中，我們常追求複雜的模型架構修改或昂貴的訓練流程來提升效能。但這篇論文反其道而行，它告訴我們: **「有時候，只要把輸入的 Prompt 複製貼上一次，就能獲得顯著的性能提升。」**
+在 AI 研究中，我們常追求複雜的模型架構修改或昂貴的訓練流程來提升效能。但這篇論文反其道而行，它告訴我們: **「有時候，只要把輸入的 Prompt 複製貼上一次，就能獲得顯著的性能提升。」** 類似的精神也出現在 [Verbalized Sampling](../verbalized-sampling/) 中，它同樣證明了一個簡單、不需要訓練的 Prompting 改動，就能修復後訓練 (Post-Training) 所帶來的特定病徵 (Mode Collapse)。
 
 本篇筆記將帶領我們從 Transformer 的 **Causal Attention** 出發，理解為什麼模型會「看不懂」單次的輸入，以及為什麼 **Prompt Repetition** 可以被視為一種在 Decoder-only 架構上模擬 **Bidirectional Attention** 的巧妙手段。
 

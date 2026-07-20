@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 在當前的 AI 研究中，我們經常發現一個令人沮喪的現象: 經過精細對齊 (Alignment，如 RLHF 或 DPO) 的模型，雖然變得更安全、更聽話，但也變得「更無聊」了。它們的創造力似乎被閹割，輸出往往千篇一律。這篇論文 [Verbalized Sampling: How to Mitigate Mode Collapse and Unlock LLM Diversity](https://arxiv.org/abs/2510.01171) 提供了一個全新的視角。
 
-不同於過去將問題歸咎於算法缺陷，這篇論文指出問題的根源在於**數據**——具體來說，是人類偏好數據中的**典型性偏差 (Typicality Bias) **。為了克服這個問題，作者提出了一種無需訓練 (Training-free) 的推理策略: **Verbalized Sampling (VS)**。
+不同於過去將問題歸咎於算法缺陷，這篇論文指出問題的根源在於**數據**——具體來說，是人類偏好數據中的**典型性偏差 (Typicality Bias) **。為了克服這個問題，作者提出了一種無需訓練 (Training-free) 的推理策略: **Verbalized Sampling (VS)**。如果你喜歡這種「用巧妙的 Prompt 而不是更多訓練來修復模型病徵」的結果，[Prompt Repetition](../prompt-repetition/) 是另一個很棒的例子，只是它處理的是 Causal Attention 的瓶頸，而不是 Mode Collapse。
 
 在這篇文章中，我們將一步步重現論文的推導過程，理解為什麼模型會「坍縮」，以及如何透過簡單的 Prompting 技巧「喚醒」模型被壓抑的多樣性。
 
