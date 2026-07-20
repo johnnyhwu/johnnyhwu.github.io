@@ -27,7 +27,7 @@ The paper "[AgentOpt v0.1 Technical Report: Client-Side Optimization for LLM-Bas
 
 ### TL;DR
 
-When an AI Agent consists of multiple roles (such as planner, executor, critic), **"how to combine models"** has a far greater impact on final performance and budget than the strength of any single model.
+When an AI Agent consists of multiple roles (such as planner, executor, critic — the kind of Planner-Executor architecture we've seen in [Plan-and-Act](../plan-and-act/) and [HiRA](../hira/)), **"how to combine models"** has a far greater impact on final performance and budget than the strength of any single model.
 
 `AgentOpt` is the first open-source Python framework designed specifically for "client-side Agents." It does not require you to rewrite your existing code. Instead, through a clever combination of "Multi-Armed Bandit (MAB) algorithms" and "HTTP interception," it helps us find the gold combination with the "best price-to-performance ratio" within a vast model combination space (such as \( 9^N \) combinations) using a minimal testing budget (saving up to 67%).
 

@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This paper introduces a framework called **CLAM (CLarify-if-AMbiguous)**, designed to address a major pain point of Large Language Models (LLMs): their tendency to "blindly guess" or hallucinate when faced with ambiguous or under-specified questions.
+This paper introduces a framework called **CLAM (CLarify-if-AMbiguous)**, designed to address a major pain point of Large Language Models (LLMs): their tendency to "blindly guess" or hallucinate when faced with ambiguous or under-specified questions. If this problem sounds familiar, our article on [INTENT-SIM](../intent-sim/) tackles the exact same "when should an LLM ask a clarifying question" challenge from a different angle — simulating possible user intents rather than a three-stage funnel.
 
 CLAM equips models with a human-like **meta-cognition** capability. Instead of answering directly, it passes the input through a "three-stage funnel":
 1.  **Detection**: Determine if the question is ambiguous.

@@ -108,7 +108,7 @@ $$ \hat{v}_{q_{ReDE}} = \frac{1}{k^* + 1} \left( f(q) + \sum_{i=1}^{k^*} C_E[d_{
 
 {{< image src="figure3.png" alt="Covid、Robust04 與 DBPedia 上查詢延遲的水平長條圖，比較 HyDE-PRF、HyDE 與兩種 ReDE-RF 版本，ReDE-RF 明顯更快，約比使用 20 份文件的 HyDE-PRF 快 10 倍" caption="圖 3：各方法的查詢延遲比較。HyDE 極長，而 ReDE-RF 顯著縮短。" >}}
 
-數據顯示，ReDE-RF 比標準 HyDE 快了約 **4 倍**，比 HyDE-PRF 快了 **7 到 11 倍**。這證明了「Logits 判斷」在工程落地上的巨大優勢。
+數據顯示，ReDE-RF 比標準 HyDE 快了約 **4 倍**，比 HyDE-PRF 快了 **7 到 11 倍**。這證明了「Logits 判斷」在工程落地上的巨大優勢 — 這與 [Multi-Token Prediction](../multi-token/) 背後「Decoding Loop 才是瓶頸」的直覺其實是同一件事，只是套用在檢索問題而不是生成問題上。
 
 ### 3. 可以蒸餾 (Distillation) 嗎？
 如果我連 LLM 那一次 Forward Pass 都不想跑呢？

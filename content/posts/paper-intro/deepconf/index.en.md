@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 In the current field of Artificial Intelligence, Large Language Models (LLMs) can already write poetry, write code, and even solve complex mathematical problems. But have you ever wondered: when an AI answers a question, is it 100% certain, or is it just "**speaking nonsense with a straight face**"?
 
-Typically, to make AI solve problems more accurately, we ask it to "think of multiple solutions" (terminologically known as **Parallel Thinking** or **Self-Consistency**). This is like a teacher asking you to calculate a math problem 100 times during an exam to see which answer appears the most. While effective, this is extremely wasteful of time and computing power.
+Typically, to make AI solve problems more accurately, we ask it to "think of multiple solutions" (terminologically known as **Parallel Thinking** or **Self-Consistency**). This is like a teacher asking you to calculate a math problem 100 times during an exam to see which answer appears the most. While effective, this is extremely wasteful of time and computing power. (For a different way of spending that same inference-time compute budget — refining a single reasoning path instead of running many in parallel — see [Power Sampling](../power-sampling/).)
 
 The paper introduced today, **Deep Think with Confidence (DeepConf)**, proposed by a research team from Meta AI and UCSD, attempts to solve this problem. They have endowed AI with a capability: **Real-time Confidence Perception**. If the AI realizes it is becoming "diffident" halfway through a calculation, it stops immediately to avoid wasting time. This not only significantly reduces costs but can even increase the probability of getting the right answer!
 
@@ -43,7 +43,7 @@ Current state-of-the-art AI reasoning techniques use **Method B**. Although this
 
 1.  **High Cost**: Hiring 100 clones to solve problems means paying 100 salaries (computing resources). The paper points out that to improve accuracy by 14%, it might require consuming **hundreds of millions of extra tokens**, which is almost unacceptable for commercial applications.
 2.  **Diminishing Returns**: More clones aren't always better. Once the number of clones reaches a certain point, accuracy stops improving and may even drop because everyone starts guessing randomly.
-3.  **Blind Voting**: This is the most critical point. In traditional majority voting, **the answer of a math genius** and **the answer of someone who knows nothing about math and guesses randomly** count as just "one vote" in the ballot box. This is obviously unreasonable! If a large number of low-quality reasoning paths (nonsense) mix in, they can easily drown out the correct answer.
+3.  **Blind Voting**: This is the most critical point. In traditional majority voting, **the answer of a math genius** and **the answer of someone who knows nothing about math and guesses randomly** count as just "one vote" in the ballot box. This is obviously unreasonable! If a large number of low-quality reasoning paths (nonsense) mix in, they can easily drown out the correct answer. [CER](../cer/) tackles this same "blind voting" problem, though it draws its confidence signal from Logits over the reasoning process rather than DeepConf's sliding-window entropy.
 
 {{< admonition tip "Core Goal" >}}
 The goal of this paper is very clear: **Can we significantly reduce computational costs without sacrificing (or even improving) accuracy?**

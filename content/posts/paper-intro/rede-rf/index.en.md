@@ -108,7 +108,7 @@ This chart should excite anyone who designs system architectures:
 
 {{< image src="figure3.png" alt="Horizontal bar charts of query latency on Covid, Robust04 and DBPedia comparing HyDE-PRF, HyDE and the two ReDE-RF variants, where ReDE-RF is far faster, running about 10 times faster than HyDE-PRF with 20 documents" caption="Figure 3: Query latency comparison. HyDE is extremely long, while ReDE-RF is significantly shorter." >}}
 
-The data shows that ReDE-RF is about **4 times** faster than standard HyDE and **7 to 11 times** faster than HyDE-PRF. This proves the massive advantage of "Logits Judgment" in engineering implementation.
+The data shows that ReDE-RF is about **4 times** faster than standard HyDE and **7 to 11 times** faster than HyDE-PRF. This proves the massive advantage of "Logits Judgment" in engineering implementation — the same "the decoding loop is the bottleneck" instinct that motivates approaches like [Multi-Token Prediction](../multi-token/), just applied to a retrieval problem instead of generation.
 
 ### 3. Can it be Distilled?
 What if I don't want to run even that single Forward Pass of the LLM?

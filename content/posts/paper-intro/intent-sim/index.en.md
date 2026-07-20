@@ -26,7 +26,7 @@ This is one of the biggest pain points of current LLMs: **They love to "blindly 
 
 Most current models are trained to be "obedient students" that must answer every question. Even when faced with ambiguous instructions, they tend to choose the highest probability answer and output it directly. However, in real-world LLM applications, the cost of this "pretending to understand" is high. We want AI to act like a senior consultant—**"When I am unsure of your meaning, I should actively stop and ask you, rather than rambling on with a generated response."**
 
-The paper we are discussing today, **"Clarify When Necessary" (NAACL 2025)**, proposes a very elegant solution. The authors not only define *when* to ask but also propose an algorithm called **INTENT-SIM**. This allows the model to simulate various user intents in its "mind" to precisely determine whether it is necessary to initiate a dialogue.
+The paper we are discussing today, **"Clarify When Necessary" (NAACL 2025)**, proposes a very elegant solution. The authors not only define *when* to ask but also propose an algorithm called **INTENT-SIM**. This allows the model to simulate various user intents in its "mind" to precisely determine whether it is necessary to initiate a dialogue. If you want to see another take on the same problem, [CLAM](../clam/) approaches it with an explicit Detection-Questioning-Answering funnel instead of intent simulation.
 
 {{< admonition abstract "Key Points" >}}
 *   **Refusing Blind Guesses**: The core capability of interactive AI is not just answering questions, but judging "when to ask questions."

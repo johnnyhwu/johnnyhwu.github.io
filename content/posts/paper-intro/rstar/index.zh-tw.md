@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 本篇文章要和大家分享的是 Microsoft Research Asia 與 Harvard University 合作的精彩論文: **[Mutual Reasoning Makes Smaller LLM Stronger Problem-Solvers (rStar)](https://arxiv.org/abs/2408.06195)**。這篇論文於 2024 年 8 月發表，並已成功收錄為 **ICLR 2025 Poster**！
 
-在 LLM 的發展歷程中，我們常認為要提升小參數模型 (SLMs，e.g. LLaMA2-7B) 的推理能力，必須依賴強大模型 (如 GPT-4) 的數據蒸餾來進行微調 (SFT)。但這篇論文提出了一個顛覆性的觀點: **小模型其實已經具備足夠的潛力，只是缺乏正確的「思考引導」與「自我驗證」機制。**
+在 LLM 的發展歷程中，我們常認為要提升小參數模型 (SLMs，e.g. LLaMA2-7B) 的推理能力，必須依賴強大模型 (如 GPT-4) 的數據蒸餾來進行微調 (SFT)。但這篇論文提出了一個顛覆性的觀點: **小模型其實已經具備足夠的潛力，只是缺乏正確的「思考引導」與「自我驗證」機制。**（如果想了解為什麼 SLM 在 Agentic AI 中值得更多關注，可以參考 [Small Language Models are the Future of Agentic AI](../small-language-model/) 這篇文章。）
 
 作者提出了一種名為 **rStar** 的架構，結合了 **MCTS (蒙地卡羅樹搜索)** 與獨特的 **Mutual Reasoning** 機制。令人驚豔的是，**在完全不需要微調、也不依賴 GPT-4 的情況下**，僅透過推論階段的算法增強，就能讓 LLaMA2-7B 在 GSM8K 數學數據集上的準確率從 **12.51% 暴增至 63.91%**，甚至讓 Mistral-7B 超越了許多經過專門微調的模型。
 

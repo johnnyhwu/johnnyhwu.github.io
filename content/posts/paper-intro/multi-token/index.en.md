@@ -35,7 +35,7 @@ During the training phase, the loss function typically looks like Equation (1) b
 
 {{< image src="loss-function.png" alt="Equation for the next-token prediction loss: L1 equals the negative sum over t of log P-theta of token x at position t+1 given the tokens x from position 1 to t" caption="The Loss Function for the Next-Token Prediction Task" >}}
 
-The problem this paper addresses is quite intuitive: **Why must we predict only one token at a time? Why not predict multiple tokens at once?**
+The problem this paper addresses is quite intuitive: **Why must we predict only one token at a time? Why not predict multiple tokens at once?** This general instinct — that the token-by-token Autoregressive Decoding Loop is often the real bottleneck — also shows up in [ReDE-RF](../rede-rf/), which skips the loop entirely for its relevance judgments by reading a single Forward Pass's logits instead.
 
 ## The Design of the Multi-Token Prediction Model
 

@@ -34,7 +34,7 @@ Meta 一直都是 AI Open-Sourced Community 中重要的貢獻者，這個模型
 
 {{< image src="loss-function.png" alt="Next-token prediction 的損失函數公式：L1 等於對所有 t 加總後取負值的 log P-theta，代表在給定第 1 到 t 個 token x 的條件下，預測第 t+1 個 token x 的機率" caption="Next-Token Prediction Task 的 Loss Function" >}}
 
-而本篇論文想解決的問題非常直覺：**為什麼一定要一次預測一個 Token，而不一次多預測一些 Token 呢？**
+而本篇論文想解決的問題非常直覺：**為什麼一定要一次預測一個 Token，而不一次多預測一些 Token 呢？** 這種「一個 Token 一個 Token 的 Autoregressive Decoding Loop 才是真正瓶頸」的直覺，也出現在 [ReDE-RF](../rede-rf/) 中 — 它乾脆完全跳過生成迴圈，只讀取單次 Forward Pass 的 Logits 來做 Relevance 判斷。
 
 ## Multi-Token Prediction Model 的設計
 

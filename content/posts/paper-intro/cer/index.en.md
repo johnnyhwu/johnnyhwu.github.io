@@ -50,7 +50,7 @@ In reality, this is not reasonable.
 *   **Scenario A**: The model derives the answer through rigorous deduction with high confidence.
 *   **Scenario B**: The model is full of hesitation (low probability) during deduction but happens to stumble upon an answer.
 
-Under the SC mechanism, the vote weight for Scenario A and Scenario B is the same. Even worse, when the model exhibits "Consistent Hallucination"—where the model confidently and repeatedly generates the same wrong answer—SC will unhesitatingly choose this wrong answer because it only looks at "quantity," not "quality."
+Under the SC mechanism, the vote weight for Scenario A and Scenario B is the same. Even worse, when the model exhibits "Consistent Hallucination"—where the model confidently and repeatedly generates the same wrong answer—SC will unhesitatingly choose this wrong answer because it only looks at "quantity," not "quality." [DeepConf](../deepconf/) tackles this exact same weakness in majority voting, weighting votes by a confidence score derived from token entropy instead of counting every path equally.
 
 ### Noise in Whole-Sequence Uncertainty
 

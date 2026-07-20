@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 在當前的 AI Agent 開發浪潮中，我們似乎陷入了一種慣性思維: 要讓 Agent 變聰明，就必須使用最大、最強 (也最昂貴) 的通用大型語言模型 (LLM)，例如 GPT-4 或 Claude 3.5 Sonnet。
 
-然而，這篇由 NVIDIA Research 發表的論文 [Small Language Models are the Future of Agentic AI](https://arxiv.org/abs/2506.02153) 提出了一個大膽的反直覺觀點: **小型語言模型 (SLMs) 才是 Agentic AI 的未來。**
+然而，這篇由 NVIDIA Research 發表的論文 [Small Language Models are the Future of Agentic AI](https://arxiv.org/abs/2506.02153) 提出了一個大膽的反直覺觀點: **小型語言模型 (SLMs) 才是 Agentic AI 的未來。** 如果想看看單靠 Inference-Time 技巧能把 SLM 的推理能力推到多強，可以參考 [rStar](../rstar/)，它在完全不做 Fine-Tuning 的情況下，把 LLaMA2-7B 的數學正確率從 12% 拉升到 64%。
 
 這不是一篇單純刷榜單 (SOTA) 的技術報告，而是一篇挑戰現狀的**立場文件**。它試圖證明，透過正確的架構設計，我們可以打破「大即是好」的迷思，構建出更高效、更便宜且更隱私的 AI 代理系統。
 

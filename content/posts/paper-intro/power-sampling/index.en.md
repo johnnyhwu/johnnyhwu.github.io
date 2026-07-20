@@ -415,4 +415,6 @@ Of course, this doesn't mean RL will be eliminated (impossible, haha). The autho
 
 Perhaps the future trend will move towards a hybrid mode: using RL for lightweight alignment to ensure the general direction of the Base Model's probability distribution is correct; then, during the Inference stage, dynamically introducing strategies like the Markov Chain Monte Carlo proposed in this paper for deep searching on high-difficulty reasoning problems.
 
+It's also worth contrasting this single-chain MCMC approach with [DeepConf](../deepconf/), which spends its inference-time compute budget differently — generating many parallel reasoning paths and using token-level confidence to cut the weak ones short, rather than iteratively refining a single path.
+
 In conclusion, this is an interesting and fantastic paper. I hope this article brings you value!
