@@ -31,11 +31,11 @@ As the title suggests, this paper seeks to address/explore the question:
 
 For some Natural Language Processing (NLP) tasks, like generating summaries or engaging in dialogue, Textual Output reasoning is clearly more natural and effective. However, for tasks involving mathematics or logical inference, Code Execution reasoning can often lead to the correct answer more efficiently.
 
-{{< image src="code-exec-is-better.png" caption="Code Execution Reasoning is better." >}}
+{{< image src="code-exec-is-better.png" alt="Two side-by-side chat examples (a) and (b): answering directly in text is marked wrong with a red X, such as claiming 9.11 is bigger than 9.9 or miscounting the positions of the letter r in strawberry, while the same questions answered by writing and running code are marked correct with a green check, correctly finding 9.9 is bigger than 9.11 and that r appears at positions 2, 7, and 8" caption="Code Execution Reasoning is better." >}}
 
 For example, consider the two tasks shown above: "Which is larger, 9.11 or 9.9?" and "How many 'r's are in 'strawberry' and what are their positions?" These tasks are quite simple, yet GPT-4o provides incorrect answers when using Textual Output reasoning. In contrast, it easily gets them right using Code Execution.
 
-{{< image src="code-exec-is-better-2.png" caption="Code Execution Reasoning is better." >}}
+{{< image src="code-exec-is-better-2.png" alt="Line chart titled Number Multiplying, all text answer, plotting success rate (%) against digit-count combinations from 2_2 to 16_16 for O1-preview, GPT-4o, GPT-4o-mini, and GPT-3.5-turbo; all models except O1-preview collapse to near 0% success by the 4_4 combination, while O1-preview stays above 50% until 8_8 before also dropping toward 0% by 12_12" caption="Code Execution Reasoning is better." >}}
 
 As shown above, or when performing multiplication of two numbers where "2_3" means a 2-digit number multiplied by a 3-digit number, we find that as the number of digits increases, even OpenAI's O1-type models cannot answer correctly through more Textual Output reasoning.
 
@@ -55,13 +55,13 @@ This experiment revealed:
 Larger models (like GPT-4o) tend to use Textual Output reasoning for tasks of moderate difficulty (not too hard, not too easy), which can lead to incorrect answers. Conversely, smaller models (like GPT-3.5-turbo) tend to use Code Execution reasoning for tasks of all difficulty levels, resulting in higher accuracy.
 {{< /admonition >}}
 
-{{< image src="gpt-4o-fail.png" caption="Example of GPT-4o making a mistake." >}}
+{{< image src="gpt-4o-fail.png" alt="Three stacked chat panels: a simple question (12*56) is answered correctly in plain text, a hard question (124354536*5607425632) is answered correctly using code analysis, but a medium-difficulty question (1243*5607) is answered incorrectly in plain text as 6,969,801 (highlighted in red) when the correct answer is 6969501, illustrating GPT-4o's inconsistent arithmetic without code" caption="Example of GPT-4o making a mistake." >}}
 
 As shown above, GPT-4o **confidently** uses Textual Output reasoning to correctly answer simple 2-digit multiplication. For very difficult multi-digit multiplication (the second example), GPT-4o knows to use Code Execution. However, in the third example, faced with a moderately difficult 4-digit multiplication, GPT-4o **still confidently** uses Textual Output reasoning and gets the **wrong** answer.
 
-{{< image src="gpt-4o-exp-1.png" caption="[Figure 3] Performance of different models on Number Multiplying." >}}
+{{< image src="gpt-4o-exp-1.png" alt="Bar chart titled Number multiplying, Code Interpreter with three panels for GPT-4o, GPT-4o-mini, and GPT-3.5-turbo, showing the percentage of correct and incorrect answers with and without code across increasing digit-combination counts; accuracy with code stays near 100% while accuracy without code drops sharply as digit count grows" caption="[Figure 3] Performance of different models on Number Multiplying." >}}
 
-{{< image src="gpt-4o-exp-2.png" caption="[Figure 4] Performance of different models on Game 24." >}}
+{{< image src="gpt-4o-exp-2.png" alt="Bar chart titled Game 24, Code Interpreter with three panels for GPT-4o, GPT-4o-mini, and GPT-3.5-turbo, comparing correct and incorrect rates with and without code as the number of combined terms increases from 2 to 5; GPT-4o's with-code accuracy declines as terms increase while GPT-3.5-turbo's with-code accuracy stays consistently high, between about 80% and 98%" caption="[Figure 4] Performance of different models on Game 24." >}}
 
 The two images above correspond to Figures 3 and 4 in the paper. The quantitative analysis clearly shows that GPT-4o tends to use Textual Output reasoning for simple tasks and Code Execution for clearly difficult tasks. However, for moderately difficult tasks, it still opts for Textual Output reasoning, leading to a higher error rate. In contrast, GPT-3.5-turbo uses Code Execution reasoning for tasks ranging from simple to difficult.
 
@@ -73,7 +73,7 @@ What if we directly instruct the model in the prompt to use Code Execution reaso
 Requiring the model to use Code for reasoning in the prompt doesn't guarantee good results. The model might generate inefficient **code that resembles Textual Output**, leading to incorrect answers.
 {{< /admonition >}}
 
-{{< image src="text-like-code.png" caption="GPT-4o generating code that resembles Textual Output." >}}
+{{< image src="text-like-code.png" alt="Two side-by-side code panels: on the left, GPT-3.5 Code Interpreter writes a correct Python program that searches permutations of operators to solve a Game-24-style puzzle; on the right, GPT-4o-mini Code Interpreter writes arithmetic expressions as prose-like text and repeatedly self-corrects yet never finds a valid equation equal to 24" caption="GPT-4o generating code that resembles Textual Output." >}}
 
 As shown above, even when GPT-4o is asked to use Code Execution reasoning, it might be inherently confident that the task can be solved with Textual Output reasoning. This can result in code that still mimics textual thought processes, leading to an incorrect final result.
 
@@ -158,13 +158,13 @@ Apart from the GPT series LLMs, which offer a **Code Interpreter** function, the
 
 ### Evaluation Metric
 
-{{< image src="metric.png" caption="Evaluation Metric" >}}
+{{< image src="metric.png" alt="Mathematical formula for the AveNorm evaluation metric, defined as the average over N tasks of each method's score s_ij divided by the maximum score achieved on that task, max(s_i)" caption="Evaluation Metric" >}}
 
 The authors used the **Average Normalized Score** as the score for each method. AveNorm<sub>\(j\)</sub> represents the final score of the \(j\)-th method, \(s_{ij}\) is the score of the \(j\)-th method on the \(i\)-th task, and max(\(s_i\)) is the maximum possible score for the \(i\)-th task.
 
 ### Experimental Results
 
-{{< image src="exp.png" caption="[Table 1] Experimental Results" >}}
+{{< image src="exp.png" alt="Table listing task success rates (%) across baseline methods (Only Question, All Text, All Code, All Code+CoT, AutoGen Conca., AutoGen System, Code Interpreter) and proposed methods (Code Interpreter+, Code+Text+Sum., Self-estimate Score) over 14 tasks, broken out by GPT-4o, GPT-4o-mini, and O1-preview; Code+Text+Sum. achieves the highest average normalized scores for GPT-4o (88.2) and GPT-4o-mini (85.0)" caption="[Table 1] Experimental Results" >}}
 
 From the experimental results in the table above, the authors derived 2 insights:
 
@@ -231,7 +231,7 @@ The authors propose 3 methods to improve LLM performance when using Textual Outp
 
 ## Experimental Results
 
-{{< image src="exp2.png" caption="[Table 2] Experimental Results" >}}
+{{< image src="exp2.png" alt="Table summarizing average normalized scores (%) across six models (GPT-4o, GPT-4o-mini, GPT-3.5, O1-preview, Claude-sonnet, Mixtral-8x7b) for baseline and proposed methods, with overall average score and average rank columns; the proposed Code+Text+Sum. method achieves the highest average score (79.5) and best average rank (2.50) among all methods" caption="[Table 2] Experimental Results" >}}
 
 Both Table 1 and Table 2 show that **Code + Text + Sum.** performs the best among all methods. This suggests that instead of forcing an LLM to choose only Textual Output or Code Execution reasoning, allowing it to consider the results of both reasoning methods leads to the best performance.
 

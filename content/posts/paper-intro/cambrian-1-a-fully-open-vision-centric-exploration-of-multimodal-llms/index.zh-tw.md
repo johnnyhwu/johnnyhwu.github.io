@@ -64,7 +64,7 @@ Cambrian-1 這篇論文的第一個目的是想**全面性的探討 Multimodal L
 - Visual Disabled：特殊情況，讓 VLM 回答這個問題時不提供圖像
 - Random Guess：直接亂猜答案
 
-{{< image src="benchmark.png" caption="[Figure 3] Left: MLLM performance with and without visual input across benchmarks. Right: PCA clusters benchmarks by performance, labeled as General (green), Knowledge (yellow), Chart & OCR (red), and Vision-Centric (blue)." >}}
+{{< image src="benchmark.png" alt="左圖：以誤差長條呈現 MLLM 在 13 個基準測試（如 SQA-I、MMMU、TextVQA、ChartQA、GQA、MMVP、MME、MMB）上「視覺輸入開啟」與「視覺輸入關閉」的分數，並對照隨機猜測基準線；右圖：以二維 PCA 散點圖將這些基準測試分成四個顏色群組，分別標示為 General（綠色）、Knowledge（黃色）、Chart & OCR（紅色）與 Vision-Centric（藍色）" caption="[Figure 3] Left: MLLM performance with and without visual input across benchmarks. Right: PCA clusters benchmarks by performance, labeled as General (green), Knowledge (yellow), Chart & OCR (red), and Vision-Centric (blue)." >}}
 
 從上圖 Figure 3（左）可以看到：在 SQA-I、MMMU 和 MathVista Bemchmark 上，VLM 在 Visual Enabled 和 Disabled 的情況所得到的分數竟然幾乎一樣。更白話的說，當 VLM 在回答這些 Benchmark 的問題時，有沒有提供圖片給它，沒有太大的影響。
 
@@ -82,15 +82,15 @@ Cambrian-1 這篇論文的第一個目的是想**全面性的探討 Multimodal L
 
 由於既有的 Benchmark 大部分都沒有真正的在衡量 VLM 的視覺能力（這些 Benchmark 都不是 Vision-Centric 的），因此作者提出了一個新的 Vision-Centric Benchmark 稱為 [Cambrian Vision-Centric Benchmark（CV-Bench](https://huggingface.co/datasets/nyu-visionx/CV-Bench)，裏頭包含了 2638 個樣本。
 
-{{< image src="dataset.png" caption="[Figure 4] Cambrian Vision-Centric Benchmark (CV-Bench). We repurpose standard vision benchmarks to evaluate the fundamental 2D and 3D visual understanding of MLLMs." >}}
+{{< image src="dataset.png" alt="四個 CV-Bench 範例題目，各有顏色標示的類別標籤：Spatial Relationship（樹根洞穴照片，詢問洞穴相對於樹木的位置）、Object Count（街景照片，詢問畫面中有幾輛車）、Depth Order（室內場景，詢問水槽與枕頭何者離鏡頭較近）、Relative Distance（客廳場景，詢問椅子、冰箱、門何者離標記物件較近），題目分別取材自 ADE20K、COCO 與 Omni3D" caption="[Figure 4] Cambrian Vision-Centric Benchmark (CV-Bench). We repurpose standard vision benchmarks to evaluate the fundamental 2D and 3D visual understanding of MLLMs." >}}
 
-{{< image src="task-type.png" caption="[Table 1] Breakdown of the 2D and 3D tasks evaluated in the Cambrian Vision-Centric Benchmark (CV-Bench). The examples are sourced from ADE20K, COCO, and Omni3D." >}}
+{{< image src="task-type.png" alt="一張表格列出 CV-Bench 的四種任務類型，分為 2D 任務（Spatial Relationship，650 筆樣本；Object Count，788 筆樣本）與 3D 任務（Depth Order，600 筆樣本；Relative Distance，600 筆樣本），並附上任務說明與來源資料集（ADE20K、COCO、Omni3D）" caption="[Table 1] Breakdown of the 2D and 3D tasks evaluated in the Cambrian Vision-Centric Benchmark (CV-Bench). The examples are sourced from ADE20K, COCO, and Omni3D." >}}
 
 從上圖 Figure 4 和上表 Table 1 可以發現，CV-Bench 衡量了 VLM 在 2D 的視覺能力（Spatial Relationship 和 Object Count）和 3D 的視覺能力（Depth Order 和 Relative Distance）。此外，作者們也相當用心，CV-Bench 裡面的每一個 Question 都是有人工看過的（根據他們論文中的說法）！
 
 ## 分析 2：不同類型的 Visual Encoder 如何影響 VLM 的視覺能力
 
-{{< image src="visual-encoder.png" caption="[Figure 6] Evaluating Visual Representations with MLLMs While language-supervised models outperform self-supervised or other models, a well-trained self-supervised model like DINOv2 can also achieve competitive performance on vision-centric tasks." >}}
+{{< image src="visual-encoder.png" alt="一張四格折線圖，依顏色將多種視覺編碼器分為 Language-Supervised（藍色）、Self-Supervised（紅色）與 Other（綠色）三組，分別呈現在 General、Knowledge、OCR & Chart、Vision-Centric 四類基準測試上的平均分數，顯示 SigLIP SO400M 整體表現領先，而 DINOv2 在 vision-centric 任務上仍具競爭力" caption="[Figure 6] Evaluating Visual Representations with MLLMs While language-supervised models outperform self-supervised or other models, a well-trained self-supervised model like DINOv2 can also achieve competitive performance on vision-centric tasks." >}}
 
 有了可以真正衡量 VLM 的視覺能力的 Benchmark 後，作者採用**兩階段（Two Stage）的訓練**，來比較不同類型的 Visual Encoder 對於 VLM 在不同 Benchmark 上的表現。所謂兩階段（Two Stage）訓練的意思是：
 
@@ -105,7 +105,7 @@ Cambrian-1 這篇論文的第一個目的是想**全面性的探討 Multimodal L
 
 此外，不管是 Language-Supervised 或 Self-Supervised 的 Visual Encoder 亦或是 ViT-Based 或是 ConvNet-Based 的 Visual Encoder，提高圖像解析度對 VLM 在 Vision-Centric Benchmark 的表現會更好。我發現到這裡的分析結果，也符合 Apple 於 2024/04 所發表的 [MM1](https://arxiv.org/abs/2403.09611) 中所提出的觀點！
 
-{{< image src="clip-dino.png" caption="[Figure 7] Continued Fine-Tuning Narrows the Gap Between CLIP and DINOv2." >}}
+{{< image src="clip-dino.png" alt="一張四格折線圖，比較 OpenAI CLIP ViT-L/14@336（藍色）與 DINOv2 ViT-L/14@336（紅色）在 General、Knowledge、OCR & Chart、Vision-Centric 四類基準測試上的平均表現，橫軸為四種訓練設定（0.7M 與 5M adapter 資料，各自凍結或微調），顯示隨著微調資料增加，DINOv2 與 CLIP 的差距縮小，甚至在 Vision-Centric 且使用 5M 微調資料時反超 CLIP" caption="[Figure 7] Continued Fine-Tuning Narrows the Gap Between CLIP and DINOv2." >}}
 
 雖然說 Language-Supervised Model（ex. CLIP）在 VLM Benchmark 上的表現普遍勝過 Self-Supervised Model（ex. DINOv2），但是前面有提到這有可能是因為 CLIP 在訓練階段所用的訓練資料量比較多的原因。
 
@@ -125,9 +125,9 @@ Language-Supervised Model 更擅長理解圖像中的文字，在 OCR-Related �
 
 因此，在這個小節中所說的一階段（One Stage）訓練，就是沒有特別先透過 Pre-Training 階段訓練 Connector，而是直接進入 Fine-Tuning 階段訓練 Connector 和 LLM。 作者在這部分的實驗中，以 Vicuna-1.5-7B 作為 LLM Backbone，並且搭配下表 Table 9 中所列出的 23 種 Visual Encoder：
 
-{{< image src="visual-encoder-type.png" caption="[Table 9] Catalog of all vision backbones tested. 'I' denotes that the visual tokens have been interpolated down to the specified length." >}}
+{{< image src="visual-encoder-type.png" alt="一張視覺骨幹網路的分類表，依監督方式分為 Language-Supervised（OpenAI CLIP、DFN-CLIP、EVA-CLIP-02、SigLIP、OpenCLIP ConvNeXt 系列）、Self-Supervised（DINOv2、MoCo v3、MAE、I-JEPA）與 Other（SAM、MiDaS、Stable Diffusion 2.1、SupViT），並列出各模型的架構、patch 大小、解析度、token 數量與隱藏層維度" caption="[Table 9] Catalog of all vision backbones tested. 'I' denotes that the visual tokens have been interpolated down to the specified length." >}}
 
-{{< image src="visual-encoder-bench.png" caption="[Figure 5] Training Recipe Impact on Performance. Boxplots show benchmark scores across categories for different visual encoders (Language-Supervised, Self-Supervised, Other) and training recipes (freezing/unfreezing visual encoders with varying adapter data amounts)." >}}
+{{< image src="visual-encoder-bench.png" alt="一個 3x4 的箱形圖網格，欄位為 Language Supervised、Self-Supervised、Other 三種編碼器分組，列則為 General、Knowledge、OCR & Chart、Vision-Centric 四類基準測試，並比較四種訓練資料量（0M、0.5M、1.2M 凍結、1.2M 微調）下的分數分布，顯示使用更多 adapter 資料微調能提升分數並縮小變異範圍" caption="[Figure 5] Training Recipe Impact on Performance. Boxplots show benchmark scores across categories for different visual encoders (Language-Supervised, Self-Supervised, Other) and training recipes (freezing/unfreezing visual encoders with varying adapter data amounts)." >}}
 
 在上圖 Figure 5 中的實驗主要是呈現 3 種類型的 Visual Encoder（Table 9 中呈現）所形成的 VLM，透過 4 種不同的訓練方式（0M＿雪花、0.5M＿雪花、1.2M＿雪花、1.2M＿火焰）所得到的 VLM 在 Benchmark 上的表現。其中，以下為每一種訓練方式的意義：
 
@@ -153,7 +153,7 @@ Language-Supervised Model 更擅長理解圖像中的文字，在 OCR-Related �
 
 從 Figure 6 的實驗中可以看到不同類型的 Visual Encoder（Language-Supervised、Self-Supervised、Other）在不同的 Benchmark 上會有不太一樣的表現，代表它們可能擅長從圖像中汲取不同的特徵。作者們就思考那有沒有可能將多個 Visual Encoder 結合在一起，來得到圖像中不同的特徵，進而提升 VLM 在所有 Benchmark 上的整體表現呢？
 
-{{< image src="visual-backbone.png" caption="[Table 3] | All Benchmark Results for Model Ensemble with 1.2M Adapter Data + 737K Instruction Tuning Data." >}}
+{{< image src="visual-backbone.png" alt="一張結果表格，比較七種視覺骨幹組合（如 SigLIP+DINOv2、SigLIP+DINOv2+ConvNext+CLIP、CLIP+ConvNext）在 General（MME、MMB、SEED-I、GQA）、Knowledge（SQA-I、MMMU、MathVista、AI2D）、OCR & Chart（ChartQA、OCRBench、TextVQA、DocVQA）與 Vision-Centric（MMVP、RealWorldQA、CV-Bench 2D/3D）各基準測試的分數，每欄最佳分數以綠色標示" caption="[Table 3] | All Benchmark Results for Model Ensemble with 1.2M Adapter Data + 737K Instruction Tuning Data." >}}
 
 從上表 Table 3 就可以發現：
 
@@ -173,7 +173,7 @@ Language-Supervised Model 更擅長理解圖像中的文字，在 OCR-Related �
 
 這樣的好處很明顯，由於 Query Token 是 Learnable 的，模型可以自己學習從多個 Visual Encoder 中取出資訊，給予不同的 Visual Encoder 的輸出不同的重要性；此外，由於 Query Token 是 Fixed-Sized 的，也可以避免因為 Visual Encoder 數量變多，而使得最後 Concatenate 出來的 Tensor 的維度也變大。
 
-{{< image src="sva.png" caption="[Figure 8] Spatial Vision Aggregator (SVA). We propose SVA, a dynamic and spatially-aware connector that integrates multiple vision features with LLMs while reducing the number of tokens." >}}
+{{< image src="sva.png" alt="Spatial Vision Aggregator 的架構圖：左側顯示多個編碼器（Enc 1 到 Enc N）在不同空間解析度下產生的特徵圖，透過交叉注意力機制對應到潛在網格以產生視覺 token；右側顯示 SVA 模組被插入 LLM 的 transformer block 之間，將聚合後的潛在 token 與文字 token 一起送入堆疊的 transformer" caption="[Figure 8] Spatial Vision Aggregator (SVA). We propose SVA, a dynamic and spatially-aware connector that integrates multiple vision features with LLMs while reducing the number of tokens." >}}
 
 上圖 Figure 8（左圖）呈現的是本篇論文所設計的 Connector。Connector 中會有一個 `L x L` 的 Fixed-Size & Learnable Query Token Sequence（`X`）。這個 Sequence 中總共有 `L x L` 個 Query，每一個 Query 都是 C Dimension。
 
@@ -185,11 +185,11 @@ Language-Supervised Model 更擅長理解圖像中的文字，在 OCR-Related �
 
 舉例來說，假設 `Fk` 的尺寸是 `X` 的 mk 倍，那麼 `X` 中位於 `(i, j)` 的 Query Token，就會對應到 `Fk` 中以下範圍的 Visual Token（Key、Value Token）： 
 
-{{< image src="key-value.png" caption="Compute position of key/value tokens for current query token" >}}
+{{< image src="key-value.png" alt="一條數學公式，定義空間窗口 F_k[m_k·i:m_k·(i+1), m_k·j:m_k·(j+1)]，用來計算編碼器 k 在特定查詢 token 位置 (i,j) 所提供的 key/value token" caption="Compute position of key/value tokens for current query token" >}}
 
 Query 和 Key、Value 進行 Cross-Attention 時，運算過程如下方 Equation (1) 所示。`X` 會有一個 Query Weight Matrix，每一個 Visual Encoder 都會有自己的 Key Weight Matrix 和 Value Weight Matrix，分別將 Visual Token 轉為 Key 與 Value：
 
-{{< image src="ep1.png" caption="Cross Attention of query (from X) and key/value (from visual tokens)" >}}
+{{< image src="ep1.png" alt="公式 (1) 及其相關定義，說明交叉注意力輸出 q*_i,j 如何由各個視覺編碼器所提供的 key、value token（k_i,j,k 與 v_i,j,k）經 softmax 加權組合計算而得" caption="Cross Attention of query (from X) and key/value (from visual tokens)" >}}
 
 到目前為止，我們已經介紹完本篇論文所提出的 Spatial Vision Aggregator (SVA) 的概念！然而，可以發現 Query Sequence 中的一個 Query 其實需要去 Attend 到很多 Visual Tokens。
 
@@ -209,7 +209,7 @@ Query 和 Key、Value 進行 Cross-Attention 時，運算過程如下方 Equatio
 
 本篇論文收集了所有公開的 Instruction-Tuning Dataset，並透過一些 Data Engine & Prompting 的方法得到更多 Vision Question-Answer 樣本，然後整理出 Cambrian-10M 的資料集。最後再透過一些 Data Curation 方法，得到 High-Quality 的 Instruction-Tuning Data — [Cambrian-7M](https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment)。 
 
-{{< image src="ds.png" caption="[Table 7] Performance improves with better instruction tuning data curation." >}}
+{{< image src="ds.png" alt="一張表格比較使用 LLaVA-665K、Cambrian-10M、Cambrian-7M 三種指令微調資料訓練的模型在 General、Knowledge、OCR & Chart、Vision-Centric 各類別上的平均分數，其中 Cambrian-7M 以 55.9 分取得最高整體平均" caption="[Table 7] Performance improves with better instruction tuning data curation." >}}
 
 從上表 Table 7 可以看到 VLM 訓練在 Cambrian-7M 和 [LLaVA-665K](https://huggingface.co/datasets/liuhaotian/LLaVA-Instruct-150K/blob/main/llava_v1_5_mix665k.json) 在 Benchmark 上表現的差異。
 
@@ -217,7 +217,7 @@ Query 和 Key、Value 進行 Cross-Attention 時，運算過程如下方 Equatio
 
 作者發現當成功的透過兩階段（Two Stage）訓練把 LLM 訓練成 VLM 後，VLM 容易變成一個「Answer Machine」。如下圖 Figure 12（w/o system prompt）所示，輸入一個 Question 到 VLM 中，VLM 輸出一個簡短直接的答案：
 
-{{< image src="sp.png" caption="[Figure 12] System prompts in Cambrian-7M improve chat ability while retaining strong question-answering performance." >}}
+{{< image src="sp.png" alt="六組並列的對話範例，比較有無 system prompt 時模型回答的差異：計算人數的問題兩者答案相同，但單純的「請描述這張圖片」在沒有 system prompt 時只得到簡短標籤，有 system prompt 則得到詳細的多句描述，其餘範例還包括判讀珍珠奶茶銷售圖表、辨識紐約市地標、逐步解數學題，以及描述一座造型擬人化的教堂建築" caption="[Figure 12] System prompts in Cambrian-7M improve chat ability while retaining strong question-answering performance." >}}
 
 會有這樣的狀況，主要是因為在 VLM 的 Fine-Tuning 階段中，我們所準備的 Instruction-Following Dataset（[Cambrian-7M](https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment)）中包含很多 Visual Question-Answer 樣本。
 
@@ -227,7 +227,7 @@ Query 和 Key、Value 進行 Cross-Attention 時，運算過程如下方 Equatio
 
 在下表 Table 16 中，呈現的是每一個資料集所對應的 System Prompt：
 
-{{< image src="sp-2.png" caption="[Table 16] Response formatting prompts for Cambrian Data" >}}
+{{< image src="sp-2.png" alt="兩張表格：上表列出十種編號的回答格式指令範本，例如「用一個詞或片語回答」與「直接以選項字母回答」；下表則對應哪些編號的指令被加入到哪些 Cambrian 訓練資料集，包括 SketchyVQA、VizWiz、ChartQA、DocVQA、AI2D、CLEVR、TallyQA、MathInstruct 與 Design2Code" caption="[Table 16] Response formatting prompts for Cambrian Data" >}}
 
 如上圖 Figure 12（w/ system prompt）的範例所示，透過具有正確的 System Prompt 的 Instruction-Following Dataset 來訓練 VLM，可以幫助 VLM 在 Inference 時根據 System Prompt 修改自己的輸出。從這邊的分析所得到的 Finding：
 
@@ -242,7 +242,7 @@ Query 和 Key、Value 進行 Cross-Attention 時，運算過程如下方 Equatio
 Cambrian-1 透過其所設計的 Connector (SVA)，將四種不同 Visual Encoder 整合在一起。在訓練上，Cambrian-1 採取兩階段（Two Stage）訓練，在 Pre-Training 階段中使用了 2.5M 的 Adapter Data；在 Fine-Tuning 階段中使用了自己建立的 [Cambrian-7M](https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment)。
 
 在下表 Table 8 中可以看到 Cambrian-1 的表現相當厲害：
-{{< image src="final-bench.png" caption="Cambrian-1 excels in benchmarks, outperforming open-source models and competing with proprietary ones, using only 576 visual tokens." >}}
+{{< image src="final-bench.png" alt="一張總結比較表，顯示 Cambrian-1-8B/13B/34B（以綠色標示）與 GPT-4V、Gemini、Grok-1.5、MM-1、Mini-Gemini-HD、LLaVA-NeXT 在 General、Knowledge、OCR & Chart、Vision-Centric 各類基準測試上的表現，Cambrian-1 僅使用 576 個視覺 token（相較其他模型最多達 2880 個）即可達到相當或更佳的成績" caption="Cambrian-1 excels in benchmarks, outperforming open-source models and competing with proprietary ones, using only 576 visual tokens." >}}
 
 ## 結語
 

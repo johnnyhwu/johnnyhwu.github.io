@@ -30,11 +30,11 @@ url: "paper-intro/:contentbasename"
 
 針對一些 NLP 任務，像是生成摘要或是對話等等，以 Textual Output 進行 Reasoning 明顯會比較自然比較好，但是在一些數學或是邏輯推理任務上，Code Execution 的 Reasoning 方式往往可以更有效率的方式得到正確答案。
 
-{{< image src="code-exec-is-better.png" caption="Code Execution Reasoning is better." >}}
+{{< image src="code-exec-is-better.png" alt="兩組並列的聊天範例 (a) 與 (b)：直接以文字回答時標示紅色 X 判定錯誤，例如宣稱 9.11 比 9.9 大，或數錯 strawberry 中字母 r 出現的位置；相同問題改以撰寫並執行程式碼回答後則標示綠色勾選判定正確，正確得出 9.9 比 9.11 大，以及 r 分別出現在索引 2、7、8" caption="Code Execution Reasoning is better." >}}
 
 舉例來說，如上圖呈現的兩個任務："9.11 和 9.9 誰比較大" 與 "'strawberry' 中有多少 'r' 以及每一個的位置"，這兩個任務明顯相當簡單，但是對於 GPT-4o 而言如果以 Textual Output 進行 Reasoning 會得到錯誤的答案，而透過 Code Execution 很輕易的答對。
 
-{{< image src="code-exec-is-better-2.png" caption="Code Execution Reasoning is better." >}}
+{{< image src="code-exec-is-better-2.png" alt="折線圖「Number Multiplying, all text answer」，橫軸為數字位數組合（2_2 至 16_16），縱軸為成功率（%），比較 O1-preview、GPT-4o、GPT-4o-mini、GPT-3.5-turbo 四個模型純文字作答的表現；除 O1-preview 外，其餘模型在 4_4 位數組合時準確率已幾乎降至 0%，O1-preview 則在 8_8 之前維持在 50% 以上，之後於 12_12 也降至接近 0%" caption="Code Execution Reasoning is better." >}}
 
 如上圖所示，又或者是進行兩個數字的乘法運算時，"2_3" 代表 2 位數數字乘以 3 位數數字，可以發現隨著位數增加，即使是 OpenAI O1 類型的模型，透過更多的 Textual Output 來進行 Reasoning，也沒有辦法回答正確。
 
@@ -54,13 +54,13 @@ OpenAI GPT-4o 預設是以 Textual Output 進行 Reasoning，但是必要時 GPT
 較大的模型 (GPT-4o) 在一些難度中間 (不難也不簡單) 的任務上，傾向透過 Textual Output 進行 Reasoning，而導致在這些問題上得到錯誤的答案；相反的，較小的模型 (GPT-3.5-turbo) 則是在所有難度的任務上，都傾向透過 Code Execution 進行 Reasoning，使得正確率較高。
 {{< /admonition >}}
 
-{{< image src="gpt-4o-fail.png" caption="GPT-4o 犯錯的範例" >}}
+{{< image src="gpt-4o-fail.png" alt="三個堆疊的聊天畫面：簡單問題（12*56）以純文字正確作答，困難問題（124354536*5607425632）透過程式碼分析正確作答，但中等難度問題（1243*5607）以純文字作答時算錯，答案 6,969,801（標示紅色）與正確答案 6969501 不符，顯示 GPT-4o 在不使用程式碼時計算不穩定" caption="GPT-4o 犯錯的範例" >}}
 
 如上圖所示，GPT-4o 在簡單的 2 位數字的乘法**很有自信**的透過 Textual Output 進行 Reasoning 得到正確的答案；在第二個非常困難的多位數的數字乘法中，GPT-4o 知道要使用 Code Execution 進行 Reasoning。然而，在第三個例子中，面對難度中等的 4 位數字的乘法，GPT-4o **仍然很有自信**的透過 Textual Output 進行 Reasoning 而得到**錯誤**的答案。
 
-{{< image src="gpt-4o-exp-1.png" caption="[Figure 3] 不同模型在 Number Multiplying 的表現" >}}
+{{< image src="gpt-4o-exp-1.png" alt="長條圖「Number multiplying, Code Interpreter」，分為 GPT-4o、GPT-4o-mini、GPT-3.5-turbo 三個子圖，顯示在不同數字位數組合下使用與不使用程式碼時答對／答錯的百分比；使用程式碼時準確率幾乎維持在 100%，不使用程式碼的準確率則隨位數增加而大幅下降" caption="[Figure 3] 不同模型在 Number Multiplying 的表現" >}}
 
-{{< image src="gpt-4o-exp-2.png" caption="[Figure 4] 不同模型在 Game 24 的表現" >}}
+{{< image src="gpt-4o-exp-2.png" alt="長條圖「Game 24, Code Interpreter」，分為 GPT-4o、GPT-4o-mini、GPT-3.5-turbo 三個子圖，比較組合項數（2 至 5）增加時使用與不使用程式碼作答的正確／錯誤比例；GPT-4o 使用程式碼的準確率隨項數增加反而下降，GPT-3.5-turbo 使用程式碼的準確率則穩定維持在約 80% 至 98% 之間" caption="[Figure 4] 不同模型在 Game 24 的表現" >}}
 
 上方兩張圖片分別對應到論文中的 Figure 3 與 Figure 4，從量化分析的實驗結果，可以明顯觀察到 GPT-4o 在簡單的任務上傾向透過 Textual Output Reasoning，而在明顯困難的任務上則會透過 Code Execution Reasoning，但是在難度中等的任務上，仍然選擇 Textual Output Reasoning 而導致錯誤比例上升。在 GPT-3.5-turbo，則是不管任務的簡單到困難，一律都以 Code Execution Reasoning 進行。
 
@@ -72,7 +72,7 @@ OpenAI GPT-4o 預設是以 Textual Output 進行 Reasoning，但是必要時 GPT
 在 Prompt 中要求模型一定要透過 Code 來 Reasoning 不能保證結果一定是好的，模型可能會產生沒有效率**如同 Textual Output 的 Code**，使得最後得到的答案仍然是錯誤的。
 {{< /admonition >}}
 
-{{< image src="text-like-code.png" caption="GPT-4o 產生如同 Textual Output 的 Code" >}}
+{{< image src="text-like-code.png" alt="兩個並列的程式碼畫面：左側為 GPT-3.5 Code Interpreter 產生的正確 Python 程式，透過列舉運算子排列組合求解類似 Game 24 的題目；右側為 GPT-4o-mini Code Interpreter 產生的錯誤回應，以類似文字敘述的方式寫出算式並多次自我修正，卻始終無法找出等於 24 的有效算式" caption="GPT-4o 產生如同 Textual Output 的 Code" >}}
 
 如上圖所示，即使要求 GPT-4o 透過 Code Execution 進行 Reasoning，GPT-4o 可能打從心裡很有自信的覺得這個任務透過 Textual Output 進行 Reasoning 就可以解決，使得寫出來的 Code 仍然如同 Textual Output 一般，使得最後的結果仍然錯誤。
 
@@ -157,13 +157,13 @@ OpenAI GPT-4o 預設是以 Textual Output 進行 Reasoning，但是必要時 GPT
 
 ### 評估指標
 
-{{< image src="metric.png" caption="評估指標" >}}
+{{< image src="metric.png" alt="評估指標「AveNorm」的數學公式，定義為在 N 個任務中，每個方法的分數 s_ij 除以該任務所有方法中的最高分數 max(s_i) 後取平均" caption="評估指標" >}}
 
 作者以 **Average Normalized Score** 作為每一種方法的分數。AveNorm<sub>\(j\)</sub> 表示第 \(j\) 個方法的最終分數，\(s_{ij}\) 則是第 \(j\) 個方法在第 \(i\) 個任務上的分數，max(\(s_i\)) 則是第 \(i\) 個任務最多可以獲得的分數上限。
 
 ### 實驗結果
 
-{{< image src="exp.png" caption="[Table 1] 實驗結果" >}}
+{{< image src="exp.png" alt="表格列出多種基準方法（Only Question、All Text、All Code、All Code+CoT、AutoGen Conca.、AutoGen System、Code Interpreter）與提出的方法（Code Interpreter+、Code+Text+Sum.、Self-estimate Score）在 14 項任務上的成功率（%），依 GPT-4o、GPT-4o-mini、O1-preview 三個模型分別列出；Code+Text+Sum. 方法在 GPT-4o 與 GPT-4o-mini 上皆取得最高的平均標準化分數（分別為 88.2 與 85.0）" caption="[Table 1] 實驗結果" >}}
 
 作者從上表的實驗結果得到 2 個 Insight：
 
@@ -230,7 +230,7 @@ OpenAI GPT-4o 預設是以 Textual Output 進行 Reasoning，但是必要時 GPT
 
 ## 實驗結果
 
-{{< image src="exp2.png" caption="[Table 2] 實驗結果" >}}
+{{< image src="exp2.png" alt="表格彙整六個模型（GPT-4o、GPT-4o-mini、GPT-3.5、O1-preview、Claude-sonnet、Mixtral-8x7b）在各基準方法與提出方法下的平均標準化分數（%），並附上整體平均分數與平均排名欄位；提出的 Code+Text+Sum. 方法在所有方法中取得最高平均分數（79.5）與最佳平均排名（2.50）" caption="[Table 2] 實驗結果" >}}
 
 從 Table 1 以及 Table 2 都可以看到 **Code + Text + Sum.** 是所有方法中表現的最好的，說明了與其讓 LLM 只選擇 Textual Output 或 Code Execution 進行 Reasoning，倒不如讓 LLM 同時考慮兩種 Reasoning 方法的結果，能夠得到最好的表現。
 
