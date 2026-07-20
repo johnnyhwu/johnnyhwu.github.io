@@ -33,7 +33,7 @@ Nearly all Large Language Models (LLMs) we see today—about 99% of them—are [
 
 During the training phase, the loss function typically looks like Equation (1) below:
 
-{{< image src="loss-function.png" caption="The Loss Function for the Next-Token Prediction Task" >}}
+{{< image src="loss-function.png" alt="Equation for the next-token prediction loss: L1 equals the negative sum over t of log P-theta of token x at position t+1 given the tokens x from position 1 to t" caption="The Loss Function for the Next-Token Prediction Task" >}}
 
 The problem this paper addresses is quite intuitive: **Why must we predict only one token at a time? Why not predict multiple tokens at once?**
 
@@ -41,17 +41,17 @@ The problem this paper addresses is quite intuitive: **Why must we predict only 
 
 To predict multiple tokens at once, the loss function used during training must be modified, as shown in Equation (2):
 
-{{< image src="loss-function-2.png" caption="The Loss Function for the Multi-Token Prediction Model" >}}!
+{{< image src="loss-function-2.png" alt="Equation for the generalized n-token prediction loss: Ln equals the negative sum over t of log P-theta of the block of tokens x from position t+n down to t+1 given the tokens x from position 1 to t" caption="The Loss Function for the Multi-Token Prediction Model" >}}!
 
 The key difference is that instead of calculating a single Cross-Entropy Loss from the probability distribution of one predicted token, we now calculate 'n' Cross-Entropy Losses from the probability distributions of 'n' predicted tokens. These 'n' losses are then summed up to update the model.
 
-{{< image src="model.png" caption="Multi-Token Prediction Model Architecture" >}}
+{{< image src="model.png" alt="Architecture diagram of the multi-token prediction model: four input tokens feed into a shared trunk, which branches into four heads labeled Head 1 through 4, each predicting a block of 4 future tokens, with the lighter-shaded tokens in each block marked as discarded at inference or usable to speed the model up to 3 times" caption="Multi-Token Prediction Model Architecture" >}}
 
 Beyond the loss function, the model's architecture (shown above) primarily uses a Shared Transformer Trunk (which you can think of as a single, shared encoder) to generate a hidden representation that encodes the information of the preceding t tokens. This representation is then fed into 'n' separate heads, each predicting one of the next 'n' tokens.
 
 We can see the architecture is quite straightforward. However, a practical issue arises during training: in an LLM's forward pass, the dimensionality of the final logits is much larger than that of the intermediate hidden representations. Therefore, if we were to compute all 'n' tokens in parallel for multi-token prediction, the GPU memory required for the logits would increase 'n'-fold. To mitigate this high GPU memory usage, the paper proposes a sequential approach for predicting each token:
 
-{{< image src="compute.png" caption="By performing the forward/backward on the heads in sequential order, we avoid materializing all unembedding layer gradients in memory simultaneously and reduce peak GPU memory usage." >}}
+{{< image src="compute.png" alt="Diagram and matching pseudocode showing sequential forward and backward computation across prediction heads: the shared trunk's output is detached, then Head 1 and Head 2 each run their forward pass, loss, and backward pass one at a time (steps numbered 1 through 6) before the gradient is finally backpropagated into the shared trunk, avoiding holding all heads' unembedding gradients in memory at once" caption="By performing the forward/backward on the heads in sequential order, we avoid materializing all unembedding layer gradients in memory simultaneously and reduce peak GPU memory usage." >}}
 
 As shown on the left side of the diagram above, after obtaining the hidden representation from the Shared Transformer Trunk based on an input sequence:
 
@@ -89,17 +89,17 @@ If you are unfamiliar with how parameters are updated in a neural network (i.e.,
 
 Now that we understand the design of the Multi-Token Prediction Model, let's look at the experiments. To save you time, here is a summary of the results.
 
-{{< image src="experiment.png" caption="Results of n-token prediction models on MBPP by model size. We train models of six sizes in the range or 300M to 13B total parameters on code, and evaluate pass@1,10,100 on the MBPP and HumanEval benchmark with 1000 samples. Multi-token prediction models are worse than the baseline for small model sizes, but outperform the baseline at scale. Error bars are confidence intervals of 90% computed with bootstrapping over dataset samples.">}}
+{{< image src="experiment.png" alt="Grid of six bar charts showing the performance delta of n-token versus next-token prediction models on MBPP and HumanEval at Pass@1, Pass@10, and Pass@100 across six model sizes from 0.3B to 13B parameters, with error bars for 90% confidence intervals; small models score below the baseline (negative bars) while larger models increasingly outperform it (positive bars)" caption="Results of n-token prediction models on MBPP by model size. We train models of six sizes in the range or 300M to 13B total parameters on code, and evaluate pass@1,10,100 on the MBPP and HumanEval benchmark with 1000 samples. Multi-token prediction models are worse than the baseline for small model sizes, but outperform the baseline at scale. Error bars are confidence intervals of 90% computed with bootstrapping over dataset samples.">}}
 
 First, the graph above shows that when evaluating six different model sizes on two benchmarks (MBPP and HumanEval), multi-token prediction actually performs **worse** on smaller models. However, for larger models, it generally yields better results. The authors speculate this might be why multi-token prediction methods have not been popular in the past.
 
-{{< image src="experiment-2.png" caption="Multi-token prediction improves performance and unlocks efficient byte level training. We compare models with 7B parameters trained from scratch on 200B and on 314B bytes of code on the MBPP, HumanEval and APPS benchmarks. Multi-token prediction largely outperforms next token prediction on these settings.">}}
+{{< image src="experiment-2.png" alt="Table of MBPP, HumanEval, and APPS/Intro pass@1/10/100 scores across three training-data settings (313B bytes, 200B tokens, 1T tokens) and multiple values of n from 1 to 32, with the best score in each column bolded, showing n=4 or n=8 multi-token prediction models generally outperforming the n=1 next-token baseline" caption="Multi-token prediction improves performance and unlocks efficient byte level training. We compare models with 7B parameters trained from scratch on 200B and on 314B bytes of code on the MBPP, HumanEval and APPS benchmarks. Multi-token prediction largely outperforms next token prediction on these settings.">}}
 
 The authors found that when training a 7B byte-level Transformer (one that predicts the next byte instead of the next token), the multi-byte prediction pre-training task significantly outperforms the next-byte prediction pre-training task (as shown in the first row of the table above).
 
 Furthermore, the second row of the table shows that for token-level transformers, 4 prediction heads usually yield the best results. In contrast, for byte-level transformers (first row), 8 prediction heads are more effective. This suggests that the optimal number of prediction heads is related to the input data distribution. Nevertheless, multi-token (or multi-byte) prediction generally proves superior to its single-token (or single-byte) counterpart.
 
-{{< image src="experiment-3.png" caption="Comparison of finetuning performance on CodeContests. We finetune a 4-token prediction model on CodeContests (train split) using n′token prediction as training loss with n′ = 4 or n′ = 1, and compare to a finetuning of the next-token prediction baseline model (n = n′ = 1). We observe that both ways of finetuning the 4-token prediction model outperform the next-token prediction baseline. Intriguingly, using next-token prediction finetuning on top of the 4-token prediction model appears to be the best method overall.">}}
+{{< image src="experiment-3.png" alt="Log-log line chart of pass@k percentage versus k from 1 to 1000 for three finetuned CodeContests models: the n=1, n'=1 baseline (solid orange line) scores lowest throughout, while the n=4, n'=1 model (dashed navy line) and n=4, n'=4 model (dotted teal line) both outperform it across the full range of k" caption="Comparison of finetuning performance on CodeContests. We finetune a 4-token prediction model on CodeContests (train split) using n′token prediction as training loss with n′ = 4 or n′ = 1, and compare to a finetuning of the next-token prediction baseline model (n = n′ = 1). We observe that both ways of finetuning the 4-token prediction model outperform the next-token prediction baseline. Intriguingly, using next-token prediction finetuning on top of the 4-token prediction model appears to be the best method overall.">}}
 
 In the graph above, the authors pre-trained a 7B model in two ways: with Next-Token Prediction (solid orange line, n=1) and 4-Token Prediction (black and green dashed lines, n=4), and then fine-tuned the models. During fine-tuning, they used either next-token (n'=1) or 4-token (n'=4) prediction. As you can see, regardless of the value of k, the models pre-trained with 4-token prediction (black and green dashed lines) outperform the baseline pre-trained with next-token prediction (solid orange line). This demonstrates the effectiveness of using a multi-token task during the pre-training phase.
 

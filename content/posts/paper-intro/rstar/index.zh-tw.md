@@ -62,7 +62,7 @@ rStar 試圖通過改進 MCTS 的動作空間 (讓生成更像人) 以及引入�
 
 ## rStar 所提出的方法
 
-{{< image src="solution.png" caption="rStar 的 Sel-Play Mutual Reasoning 是由 Generation-Discrimination 所組成" >}}
+{{< image src="solution.png" alt="兩階段流程圖：SLM1（Self-Generator）針對一道數學應用題產生多個逐步推理的候選解答，接著 SLM2（Discriminator）檢查這些解答之間的一致性，藉此挑選出最終驗證過的答案" caption="rStar 的 Sel-Play Mutual Reasoning 是由 Generation-Discrimination 所組成" >}}
 
 這篇論文提出的 **rStar** 方法可以用這句話來總結:
 
@@ -177,7 +177,7 @@ $$ c \sqrt{\frac{\ln N_{parent}(s)}{N(s, a)}} $$
 
 ### rStar 中的 "Expansion" 流程
 
-{{< image src="expansion.png" caption="rStar 的 Expansion 流程所使用的 5 種 Action" >}}
+{{< image src="expansion.png" alt="樹狀圖展示 rStar 的 5 種 Expansion Action（A1 提出單步思考、A2 完成剩餘思考、A3 提出並回答子問題、A4 重新回答子問題、A5 改寫問題），從一個數學問題的根節點逐步展開成多個推理節點" caption="rStar 的 Expansion 流程所使用的 5 種 Action" >}}
 
 這正是這篇論文最精彩的創新點之一！傳統的 MCTS 往往只會用一種方式來「擴展」(比如: 永遠只問「下一步是什麼？」) ，但 **rStar** 觀察到人類在解難題時，思維方式是非常靈活多變的。
 
@@ -385,7 +385,7 @@ $$ \text{Trajectory} = \text{Root (題目)} \oplus s_1 (\text{第一步}) \oplus
 
 ### rStar 中的 Mutual Reasoning for Final Answer
 
-{{< image src="mutual-reasoning.png" caption="rStar 的 Mutual Reasoning 範例" >}}
+{{< image src="mutual-reasoning.png" alt="範例展示 SLM1 對一道代數問題的候選解答，接著 SLM2 針對該解答的遮罩版本進行兩次補全，一次得到與原答案一致的結果 -120（以綠色標示），另一次得到不一致的結果 -30（以紅色標示）" caption="rStar 的 Mutual Reasoning 範例" >}}
 
 做完了 32 次 Rollout (Selection -> Expansion -> Simulation -> Backpropagation)，我們目前得到了 32 個完整的軌跡 (Full Trajectory) 以及最終答案。接下來的問題是: **怎麼決定最終答案?**
 
@@ -459,7 +459,7 @@ $$ \text{Final Score} = \text{MCTS Reward} \times \text{Confidence Score} $$
 
 ## rStar 的實驗結果
 
-{{< image src="exp.png" caption="rStar 的實驗結果" >}}
+{{< image src="exp.png" alt="表格比較 rStar 與多個基準方法（Zero-shot CoT、Few-shot CoT、SC@maj8/64/128、ToT、RAP）在五個基礎模型（LLaMA2-7B、Mistral-7B、LLaMA3-8B、LLaMA3-8B-Instruct、Phi3-mini-4k）與四個測試集（GSM8K、GSM-Hard、SVAMP、StrategyQA）上的準確率，rStar 在幾乎所有欄位都取得最高分，例如在 Phi3-mini-4k 上的 GSM8K 準確率達到 90.44 至 90.67" caption="rStar 的實驗結果" >}}
 
 **rStar (generator @maj)** 表示單純根據 Generator 所進行的 32 次 Rollout，透過 Majority Voting 決定 Final Answer (完全沒有使使用到 Discriminator)。
 
@@ -515,7 +515,7 @@ rStar 方法與 Self-Concsistency 方法選擇的總結:
 
 ---
 
-{{< image src="exp-2.png" caption="Discriminator Model 的選擇" >}}
+{{< image src="exp-2.png" alt="表格顯示以 LLaMA3-8B-Instruct 作為 Generator 時，搭配不同 Discriminator SLM 在 GSM8K 上的準確率，從使用多數決（Maj）的 88.70 提升到使用 GPT-4 作為 Discriminator 時的 92.57" caption="Discriminator Model 的選擇" >}}
 
 這是目前 AI 領域非常熱門的話題:**Weak-to-Strong Generalization**。
 我們之前討論過 Discriminator(判別器)的角色。我們可能會直覺認為:「要檢查 LLaMA3-8B 的答案，判別器至少也要是同等級的吧？」
@@ -533,7 +533,7 @@ rStar 方法與 Self-Concsistency 方法選擇的總結:
 
 ---
 
-{{< image src="exp-3.png" caption="rStar 基於不同數量的 Rollout 在 GSM8K 的表現" >}}
+{{< image src="exp-3.png" alt="三張折線圖分別呈現 LLaMA2-7B、Mistral-7B、LLaMA3-8B-Instruct 三種模型下，GSM8K 準確率隨 Rollout 數量（2 到 32）變化的趨勢，比較 SC@maj、RAP、rStar（generator with @maj）與完整 rStar 四種方法，rStar 線條在各個 Rollout 數量下皆優於其他方法，例如在 LLaMA2-7B 上於 32 次 Rollout 達到 63.91%，在 LLaMA3-8B-Instruct 上達到 91.13%" caption="rStar 基於不同數量的 Rollout 在 GSM8K 的表現" >}}
 
 剛剛我們討論到 rStar 的成本很高 (32 rollouts)。但如果我們看上表，會發現一個很棒的趨勢。
 
@@ -545,7 +545,7 @@ rStar 方法與 Self-Concsistency 方法選擇的總結:
 
 ---
 
-{{< image src="exp-4.png" caption="rStar 基於不同 Action Space 在 GSM8K 的表現" width="80%">}}
+{{< image src="exp-4.png" alt="表格顯示隨著 rStar 的 Action Space 加入更多動作，GSM8K 準確率隨之提升，從僅使用 A3（即 RAP）的 70.5% 提升到同時使用 A1 至 A5 全部五種動作時的 75.0%" caption="rStar 基於不同 Action Space 在 GSM8K 的表現" width="80%">}}
 
 我們花了很多時間討論那 5 個 Action (\(A_1 \sim A_5\))。你可能會問:「真的需要搞這麼複雜嗎？只用一招不行嗎？」
 

@@ -39,13 +39,13 @@ The challenges addressed in this paper:
 
 ## HuggingGPT's Method Concept
 
-{{< image src="hugginggpt-concept.png" caption="Figure 1: An LLM (e.g., ChatGPT) acts as a controller, coordinating expert models (e.g., Hugging Face) to solve complex AI tasks by planning, assigning, executing, and responding." >}}
+{{< image src="hugginggpt-concept.png" alt="Diagram showing HuggingGPT combining an LLM as Controller (ChatGPT) with HuggingFace expert models: a user asks to describe and count objects in a giraffe-and-zebra photo, the request flows through Task Planning, Model Selection, and Task Execution using models like facebook/detr-resnet-101 and nlpconnect/vit-gpt2-image-captioning, and Response Generation returns a description with object counts and confidence scores" caption="Figure 1: An LLM (e.g., ChatGPT) acts as a controller, coordinating expert models (e.g., Hugging Face) to solve complex AI tasks by planning, assigning, executing, and responding." >}}
 
 The HuggingGPT method proposed in this paper aims to allow the LLM to act as a Coordinator (Controller), using other external Models/Tools/Domain Experts to complete more complex tasks. HuggingGPT's concept, as shown in Figure 1, primarily positions the LLM as the Controller responsible for Task Planning, Model Selection, Task Execution, and Response Generation.
 
 ## HuggingGPT #1 Step: Task Planning
 
-{{< image src="hugginggpt-prompt.png" caption="Table 1: Details of HuggingGPT's prompt design, featuring injectable slots like {{ Demonstrations }} and {{ Candidate Models }} replaced with corresponding text before input to the LLM." >}}
+{{< image src="hugginggpt-prompt.png" alt="Table detailing the prompt templates for HuggingGPT's four stages: Task Planning (format spec, dependency fields, and three demonstration examples), Model Selection (JSON output format with a candidate models list), and Response Generation (instructions to combine user input, task planning, model assignment, and predictions into a first-person answer)" caption="Table 1: Details of HuggingGPT's prompt design, featuring injectable slots like {{ Demonstrations }} and {{ Candidate Models }} replaced with corresponding text before input to the LLM." >}}
 
 The key in the Task Planning stage is to analyze the User's Query using the LLM, decompose it into multiple Structured Tasks, including their Execution Order or Dependency, and finally output a Task List. To enable the LLM to perform Task Planning effectively, the Prompt Design at this stage is also crucial.
 
@@ -57,8 +57,8 @@ In the entire Task Planning stage Prompt, the part that I found most interesting
 
 This way, I believe if the LLM's own capability (intelligence) is good enough, it can make more accurate Task Planning by considering more Context, avoiding errors due to the Ambiguity or Incompleteness in a single User Query.
 
-{{< image src="prompt-slot.png" caption="Table 9: Definitions for each slot for parsed tasks in the task planning." >}}
-{{< image src="tasks.png" caption="Table 13: Task list, arguments, examples, and model descriptions in HuggingGPT." >}}
+{{< image src="prompt-slot.png" alt="Table defining four slot names used in HuggingGPT's task planning prompt: 'task' (the parsed task type, referencing the task list), 'id' (unique task identifier), 'dep' (ids of prerequisite dependent tasks), and 'args' (arguments containing text, image, and audio resources)" caption="Table 9: Definitions for each slot for parsed tasks in the task planning." >}}
+{{< image src="tasks.png" alt="Table listing HuggingGPT's supported tasks grouped into NLP, CV, Audio, and Video categories, with each row showing the task name (e.g., Text-CLS, Image-to-Text, ASR, Text-to-Video), its argument type (text, image, audio, or video), example candidate Hugging Face models, and short model descriptions" caption="Table 13: Task list, arguments, examples, and model descriptions in HuggingGPT." >}}
 
 Table 9 also shows the meaning of each Slot; Table 13 presents all Tasks supported by HuggingGPT ("Available Task List").
 
@@ -92,7 +92,7 @@ After understanding HuggingGPT's method, it is conceivable that the Task Plannin
 
 Figure 1 shows that the User's Query includes 2 Sub-Tasks (Describe the Image & Object Counting), which the LLM converts into 3 Sub-Tasks (Image Classification, Image Captioning & Object Detection).
 
-{{< image src="hugginggpt-demo.png" caption="Figure 2: Overview of HuggingGPT's workflow with an LLM as the controller and expert models as executors." >}}
+{{< image src="hugginggpt-demo.png" alt="End-to-end example of HuggingGPT handling the request to generate an image of a girl reading a book with the same pose as a boy in a reference photo, then describe it by voice: Stage 1 Task Planning splits it into six dependent tasks (pose detection, pose-to-image, image classification, object detection, image-to-text, text-to-speech), Stage 2 Model Selection picks facebook/detr-resnet-101 over other candidates, Stage 3 Task Execution runs the pose detection and object detection models, Stage 4 Response Generation summarizes each task's model and output, and the final Response row shows the original boy photo, the extracted pose skeleton, the generated girl-reading image, the object-detection bounding box, and a text-to-speech audio icon" caption="Figure 2: Overview of HuggingGPT's workflow with an LLM as the controller and expert models as executors." >}}
 
 Figure 2 also shows that the User's Query includes 3 Sub-Tasks:
 
@@ -109,15 +109,15 @@ The LLM then converts these into 6 Sub-Tasks:
 
 After reviewing the practical examples, the authors also used a Quantitative Approach to analyze HuggingGPT's Task Planning capability.
 
-{{< image src="task-type.png" caption="Table 2: Evaluation for task planning in different task types." >}}
+{{< image src="task-type.png" alt="Table describing three HuggingGPT task types with example diagrams: Single Task (one task, e.g. 'show me a funny image of a cat', evaluated with Precision/Recall/F1/Accuracy), Sequential Task (three chained tasks, e.g. replacing a cat with a dog, evaluated with Precision/Recall/F1/Edit Distance), and Graph Task (three parallel tasks feeding two intermediate tasks into one final task, e.g. comparing image similarity, evaluated with Precision/Recall/F1/GPT-4 Score)" caption="Table 2: Evaluation for task planning in different task types." >}}
 
 As shown in Table 2, three common Planning Tasks are Single Task (Single-Hop), Sequential Task (Multi-Hop), and Graph Task (Mulit-Hop).
 
-{{< image src="exp-1.png" caption="Table 3: Evaluation for the single task. “Acc” and “Pre” represents Accuracy and Precision." >}}
+{{< image src="exp-1.png" alt="Table comparing single-task planning performance of Alpaca-7b, Vicuna-7b, and GPT-3.5 on Accuracy, Precision, Recall, and F1, showing GPT-3.5 substantially outperforming the two open-source models (52.62 Accuracy vs 23.86 for Vicuna-7b and 6.48 for Alpaca-7b)" caption="Table 3: Evaluation for the single task. “Acc” and “Pre” represents Accuracy and Precision." >}}
 
-{{< image src="exp-2.png" caption="Table 4: Evaluation for the sequential task. “ED” means Edit Distance." >}}
+{{< image src="exp-2.png" alt="Table comparing sequential-task planning performance of Alpaca-7b, Vicuna-7b, and GPT-3.5 using Edit Distance (lower is better), Precision, Recall, and F1, showing GPT-3.5 achieving the lowest edit distance (0.54) and highest F1 (51.92) compared to the two smaller LLMs" caption="Table 4: Evaluation for the sequential task. “ED” means Edit Distance." >}}
 
-{{< image src="exp-3.png" caption="Table 5: Evaluation for the graph task." >}}
+{{< image src="exp-3.png" alt="Table comparing graph-task planning performance of Alpaca-7b, Vicuna-7b, and GPT-3.5 using GPT-4 Score, Precision, Recall, and F1, showing GPT-3.5 far ahead with a GPT-4 Score of 50.48 versus 19.17 for Vicuna-7b and 13.14 for Alpaca-7b" caption="Table 5: Evaluation for the graph task." >}}
 
 Tables 3, 4, and 5 respectively show HuggingGPT's performance on these 3 types of Planning Tasks. It is very evident that, at that time, GPT-3.5 completely outperformed other Open-Sourced Models. From the experiments in Tables 3, 4, and 5, it can also be observed that in HuggingGPT's approach, the Task Planning largely relies solely on the LLM's own capability. Besides Specification-based Instruction and Demonstration-based Parsing techniques, HuggingGPT did not propose any special method to enhance Task Planning capability.
 
