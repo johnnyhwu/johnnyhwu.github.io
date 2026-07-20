@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-{{< image src="exp1.png" caption="Comparison between WebResearcher and other Deep Research Agent approaches" >}}
+{{< image src="exp1.png" alt="Two horizontal bar charts comparing WebResearcher variants against other Deep Research agents: on Humanity's Last Exam (Text-only), WebResearcher-30B-A3B-heavy scores highest at 36.7, followed by DeepSeek-V3.1+tools at 29.8 and WebResearcher-30B-A3B at 28.8; on BrowseComp, WebResearcher-30B-A3B-heavy leads at 51.7, closely followed by OpenAI DeepResearch at 51.5, while WebResearcher-30B-A3B scores 37.3, well above DeepSeek-V3.1+tools, Claude-4-Sonnet+tools, WebSailor-72b, and Qwen3-235B-A22B+tools" caption="Comparison between WebResearcher and other Deep Research Agent approaches" >}}
 
 ### From "Passive Retrieval" to "Active Knowledge Construction"
 
@@ -91,7 +91,7 @@ Beyond architectural issues, the paper highlights a key data gap: **Passive Reca
 
 ## IterResearch: Iterative Research Architecture
 
-{{< image src="iter-research.png" caption="Comparison between the Iterative Deep-Research Paradigm and common Mono-contextual Paradigm approaches" >}}
+{{< image src="iter-research.png" alt="Diagram contrasting the Mono-contextual Paradigm, where an agent repeatedly performs Think and Tool Call while accumulating Signal plus Noise in a single context until hitting a context limit, noise contamination, and performance degradation, with the Iterative Deep-Research Paradigm, where the IterResearch agent maintains a central memory workspace of Report, Action, and Tool Response each round, decides to output a Final Answer or call tools such as Search, Scholar, Browsing, and Python in the environment, then updates its workspace before the next round" caption="Comparison between the Iterative Deep-Research Paradigm and common Mono-contextual Paradigm approaches" >}}
 
 ### Core Philosophy: From "Stacking History" to "Reconstructing State"
 The most disruptive innovation of WebResearcher is its complete abandonment of the "Append-only" mindset of traditional agents, opting instead to remodel Deep Research tasks as a **Markov Decision Process (MDP)**.
@@ -142,7 +142,7 @@ Round 3: [Question, R2, A2, O2]   -> Output: [T3, R3, A3]  # T2 discarded, O2 ab
 
 ## WebFrontier Data Engine
 
-{{< image src="data-engine.png" caption="Data Synthesis Workflow" >}}
+{{< image src="data-engine.png" alt="Flowchart of the data synthesis workflow: a Summary Agent turns Raw Corpus into Text Chunks, which are grouped by relevance-based triplet grouping into Composite Units, then an ItemWriter Agent generates Seed QA pairs that are iteratively refined into QA of increasing complexity, shown as graphs with a growing number of connected purple nodes from (1) to (n); the refined QA pairs are asked to a base Question Solver and, if that fails, an advanced Question Solver, with passing pairs checked by a Similarity Scorer to filter out knowledge-based QA, QA flagged for review, and high-similarity QA, leaving the Final QA pairs" caption="Data Synthesis Workflow" >}}
 
 ### Core Concept: Solving the Scarcity of Expert Data
 
@@ -251,7 +251,7 @@ To execute GSPO stably across multi-GPU environments, the paper solves the batch
 
 ## Test-time Scaling (Inference Optimization)
 
-{{< image src="test-time-scaling.png" caption="Research-Synthesis Framework" >}}
+{{< image src="test-time-scaling.png" alt="Diagram of the Research-Synthesis Framework in two stages: a Parallel Search stage where multiple agent instances each independently work on the Question using Search, Scholar, Browsing, and Python tools to produce their own Report, Action, and Tool Response; and an Integrative Synthesis stage where a Synthesis Agent combines all the individual Final Reports and Answers into one overall Final Answer" caption="Research-Synthesis Framework" >}}
 
 ### Inference Philosophy: Trading "Reasoning Compute" for "Decision Boundaries"
 
@@ -294,7 +294,7 @@ This design allows the Synthesis Agent to process several times more "effective 
 
 ### HLE (Humanity’s Last Exam)
 
-{{< image src="main-exp.png" caption="General Web Navigation and Reasoning Benchmarks" >}}
+{{< image src="main-exp.png" alt="Results table comparing Humanity's Last Exam, BrowseComp, and BrowseComp-ZH scores across three groups: General LLMs with tools (e.g. Claude-4-Sonnet at 20.3/12.2/29.1), Commercial Deep Research Agents (e.g. OpenAI Deep Research at 26.6/51.5/-), and Open-source Deep Research Agents (e.g. DeepSeek-V3.1 at 29.8/30.0/49.2); WebResearcher-30B-A3B scores 28.8/37.3/45.2 and WebResearcher-30B-A3B-heavy achieves the best overall results at 36.7 on Humanity's Last Exam, 51.7 on BrowseComp, and 56.8 on BrowseComp-ZH" caption="General Web Navigation and Reasoning Benchmarks" >}}
 
 HLE is widely recognized as the most difficult "PhD-level" benchmark in the AI field. The questions cover a vast array of disciplines and are designed specifically so that models cannot easily find answers via simple retrieval.
 
@@ -322,7 +322,7 @@ This is the most persuasive experiment in the paper, answering a core question: 
 
 ### Diminishing Returns Curve of Test-time Scaling
 
-{{< image src="exp-effect-of-n.png" caption="Influence of \(n\) in the Reason-Synthesis Framework" >}}
+{{< image src="exp-effect-of-n.png" alt="Two line charts showing Pass@1 accuracy increasing as the parallel search width N grows from 1 to 16: on HLE, accuracy rises from 28.8 at N=1 to 36.7 at N=16, and on BrowseComp, accuracy rises from 37.3 at N=1 to 51.7 at N=16, with both curves showing diminishing returns as N increases" caption="Influence of \(n\) in the Reason-Synthesis Framework" >}}
 
 Can inference compute really be traded for IQ?
 

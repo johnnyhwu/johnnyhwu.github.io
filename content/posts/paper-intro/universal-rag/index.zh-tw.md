@@ -35,7 +35,7 @@ url: "paper-intro/:contentbasename"
 - **實作細節**: 訓練型 (Training-based) 與免訓練 (Training-free) Router 的具體作法。
 - **實務思維**: 針對企業私有數據 (如 Table vs. Text) 的落地挑戰與解決方案。
 
-{{< image src="figure1.png" caption="UniversalRAG 與傳統 RAG 策略的對比。我們可以看到 UniversalRAG 透過 Router 動態地將查詢引導至最適合的模態與粒度組合。" width=85% >}}
+{{< image src="figure1.png" alt="四格圖示比較 RAG 侷限性與 UniversalRAG：(A) 單一模態 RAG 檢索出一張花朵圖片，但查詢其實需要文字證據；(B) 單一粒度 RAG 檢索出一部完整 2 小時影片，但查詢只需要短片段；(C) 單一語料庫 RAG 因模態差距 (Modality Gap) 而回傳不相關的文字內容；(D) UniversalRAG 則透過 Router 將四種不同類型的查詢導向對應的文字、圖像、短影片或完整影片語料庫，以產生正確答案" caption="UniversalRAG 與傳統 RAG 策略的對比。我們可以看到 UniversalRAG 透過 Router 動態地將查詢引導至最適合的模態與粒度組合。" width=85% >}}
 
 {{< admonition tip "快速總結" >}}
 UniversalRAG 成功的關鍵在於 **「解耦 (Decoupling) 」**。它不追求一個萬能的向量空間，而是追求一個萬能的「指揮中心 (Router) 」，讓每種數據在自己最擅長的索引空間裡被檢索。
@@ -61,7 +61,7 @@ UniversalRAG 成功的關鍵在於 **「解耦 (Decoupling) 」**。它不追求
 *   **現象**：在向量空間中，資料點傾向於根據「模態」而非「語意」進行聚集。這意味著文字查詢與文字資料的距離，往往比它與語意更相關的影像資料還要近。
 *   **後果**：當我們輸入一個文字問題時，系統會因為模態相近而優先抓取文字內容，即便最正確的答案其實藏在圖片或影片裡。
 
-{{< image src="figure2.png" caption="統一嵌入空間的 t-SNE 可視化圖。我們可以看到不同模態 (文字、影像、影片) 形成了明顯的分離簇，這就是所謂的 Modality Gap，它會導致檢索時的偏向性。" >}}
+{{< image src="figure2.png" alt="統一嵌入空間的 t-SNE 散點圖，顯示 Query（黃）、Text（綠）、Image（藍）、Video（紅）四個明顯分離的群集，其中 Image 與 Video 群集與 Text/Query 群集明顯分開，說明了模態差距 (Modality Gap) 的現象" caption="統一嵌入空間的 t-SNE 可視化圖。我們可以看到不同模態 (文字、影像、影片) 形成了明顯的分離簇，這就是所謂的 Modality Gap，它會導致檢索時的偏向性。" >}}
 
 ### Granularity Mismatch
 
@@ -128,7 +128,7 @@ Router 並非做單選題，而是多選題。它會從以下這組 **Modality-G
 
 這對於我們討論過的企業私有數據 (OOD) 特別有效。我們直接透過 **Prompt Engineering** 讓強大的 LLM (如 GPT-4o) 進行決策。
 
-{{< image src="figure8.png" caption="論文中設計的 Prompt Template。它透過對比式的範例教導 LLM 區分『段落』與『文件』，以及如何使用『+』號組合多個模態。" >}}
+{{< image src="figure8.png" alt="文字方塊展示 Prompt Template，內容為根據是否需要 RAG 以及最適合的模態，將查詢分類為 No、Paragraph、Document、Table、Image、Clip、Video 等類別，並附上各類別的定義說明與多個範例，例如『What is the capital of France?』對應 No，『Describe the appearance of a blue whale.』對應 Image" caption="論文中設計的 Prompt Template。它透過對比式的範例教導 LLM 區分『段落』與『文件』，以及如何使用『+』號組合多個模態。" >}}
 
 這個 Prompt 的設計邏輯在於 **「意圖識別」**：
 *   如果問題涉及「比較、加總、數值」，引導至 `Table`。
@@ -162,7 +162,7 @@ UniversalRAG 的優雅之處在於它解決了「**模態偏見**」。
 
 在多樣化的 RAG 任務中，UniversalRAG 展現了強大的統治力。無論是單純的文字查詢、圖文結合，還是複雜的影片分析，UniversalRAG 的表現都顯著優於單一模態的 RAG 以及傳統的統一嵌入空間方法。
 
-{{< image src="table1.png" caption="Table 1 展示了 UniversalRAG 在 10 個不同數據集上的表現。無論是使用訓練型還是免訓練型路由器，UniversalRAG 幾乎在所有指標上都優於基基準模型 (Baselines) 。" >}}
+{{< image src="table1.png" alt="結果表格比較 UniversalRAG 與多個基準方法（如 Naive、ParagraphRAG、DocumentRAG、TableRAG、ImageRAG、ClipRAG、VideoRAG、MultiRAG）在 10 個數據集（包含 MMLU、NQ、HotpotQA、WebQA、LVBench 等）上的表現，顯示採用訓練型或免訓練型路由器的 UniversalRAG 在非 Oracle 方法中取得最高平均分數（最高達 42.40），十分接近 Oracle 上限的 42.45" caption="Table 1 展示了 UniversalRAG 在 10 個不同數據集上的表現。無論是使用訓練型還是免訓練型路由器，UniversalRAG 幾乎在所有指標上都優於基基準模型 (Baselines) 。" >}}
 
 ### 成功跨越 Modality Gap
 
@@ -171,7 +171,7 @@ UniversalRAG 的優雅之處在於它解決了「**模態偏見**」。
 *   **發現**：如 **Figure 4** 所示，像 GME 或 VLM2Vec 這類將所有模態擠在一起的模型，在檢索時表現出極強的「文字偏見」——即便問題需要影像或影片證據，它們仍傾向於抓取文字。
 *   **對比**：UniversalRAG 的路由器能精準地根據問題意圖分配檢索路徑。這證明了 **「先路由、再檢索」** 能有效繞過模態鴻溝，讓正確的證據被召回。
 
-{{< image src="figure4.png" caption="模態選擇分布圖。我們可以看到 Unified Embedding 方法嚴重偏向文字，而 UniversalRAG (最右側) 能根據需求平衡地選擇影像與影片模態。" width=70% >}}
+{{< image src="figure4.png" alt="標題為 Modality Selection Rate 的長條圖，比較 VLM2Vec-V2、GME 與 UniversalRAG 三種方法：VLM2Vec-V2 有 100% 選擇 Text 模態，GME 選擇 Text 85%、Image 僅 12%、Video 僅 3%，而 UniversalRAG 在 None (23%)、Text (30%)、Image (24%)、Video (23%) 之間分布均衡，與虛線標示的 Oracle 十分接近" caption="模態選擇分布圖。我們可以看到 Unified Embedding 方法嚴重偏向文字，而 UniversalRAG (最右側) 能根據需求平衡地選擇影像與影片模態。" width=70% >}}
 
 ### Scalability
 
@@ -180,7 +180,7 @@ UniversalRAG 的優雅之處在於它解決了「**模態偏見**」。
 *   **Sub-linear Latency**：在傳統 RAG 中，隨著資料庫 \(N\) 的增加，搜尋時間通常會線性或對數增長。但在 UniversalRAG 中，因為路由器先行過濾掉了無關的庫，實際搜尋的範圍縮小到了 \(1/k\)。
 *   **大數據優勢**：當資料規模達到千萬 (10M) 甚至億級時，UniversalRAG 的延遲遠低於統一檢索方法。這意味著**路由器的開銷在大規模場景下是完全值得的**。
 
-{{< image src="figure5.png" caption="檢索延遲隨語料庫規模變化的趨勢。可以看到 UniversalRAG 在大規模數據下展現了極佳的擴展性。" width=70% >}}
+{{< image src="figure5.png" alt="折線圖顯示檢索延遲（秒）隨語料庫規模（對數座標，從 100k 到 100M）變化的趨勢：VLM2Vec-V2 的延遲在語料庫規模達 100M 時陡增至約 2.6 秒，而使用 T5Gemma 2 270M 的 UniversalRAG 則維持在約 0.45 秒的低延遲，展現較佳的擴展性" caption="檢索延遲隨語料庫規模變化的趨勢。可以看到 UniversalRAG 在大規模數據下展現了極佳的擴展性。" width=70% >}}
 
 經過了前言的導讀、問題的剖析、方法的詳解以及實驗的驗證，我們終於來到了這篇筆記的終點。這篇論文不僅僅是提出了一個新的 SOTA 模型，更重要的是它為我們提供了一種處理「異質知識」的全新思維。
 

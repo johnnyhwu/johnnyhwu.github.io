@@ -35,7 +35,7 @@ In this note, we will cover:
 - **Implementation Details**: Specific approaches for Training-based and Training-free Routers.
 - **Practical Thinking**: Implementation challenges and solutions for enterprise private data (e.g., Table vs. Text).
 
-{{< image src="figure1.png" caption="Comparison between UniversalRAG and traditional RAG strategies. We can see that UniversalRAG dynamically guides queries to the most suitable combination of modality and granularity through a Router." width=85% >}}
+{{< image src="figure1.png" alt="Four-panel diagram comparing RAG limitations to UniversalRAG: (A) single-modality RAG retrieves an irrelevant flower image when text evidence is needed, (B) single-granularity RAG retrieves a full 2-hour video when only a short clip is needed, (C) single-corpus RAG suffers from a modality gap and returns unrelated text for a video query, while (D) UniversalRAG uses a Router to send four query types to their matching text, image, short-video, or full-video corpus and generate correct answers" caption="Comparison between UniversalRAG and traditional RAG strategies. We can see that UniversalRAG dynamically guides queries to the most suitable combination of modality and granularity through a Router." width=85% >}}
 
 {{< admonition tip "Quick Summary" >}}
 The key to UniversalRAG's success lies in **"Decoupling."** It does not strive for an all-in-one vector space, but rather an all-in-one "Command Center (Router)," allowing each type of data to be retrieved within its own most proficient index space.
@@ -61,7 +61,7 @@ To solve multimodal problems, the most intuitive method is to use a multimodal e
 *   **Phenomenon**: In a vector space, data points tend to cluster based on "modality" rather than "semantics." This means the distance between a text query and text data is often closer than its distance to more semantically relevant image data.
 *   **Consequence**: When we input a text question, the system prioritizes grabbing text content due to modality proximity, even if the most accurate answer is actually hidden in a picture or video.
 
-{{< image src="figure2.png" caption="t-SNE visualization of a unified embedding space. We can see that different modalities (text, image, video) form distinct clusters. This is the so-called Modality Gap, which leads to bias during retrieval." >}}
+{{< image src="figure2.png" alt="t-SNE scatter plot of a unified embedding space showing four separated clusters labeled Query, Text, Image, and Video, with the Image and Video clusters clearly isolated from the Text/Query cluster, illustrating the modality gap" caption="t-SNE visualization of a unified embedding space. We can see that different modalities (text, image, video) form distinct clusters. This is the so-called Modality Gap, which leads to bias during retrieval." >}}
 
 ### Granularity Mismatch
 
@@ -128,7 +128,7 @@ When fixed hardware resources are available and high speed is required, a lightw
 
 This is particularly effective for the enterprise private data (OOD) scenarios we discussed. We use **Prompt Engineering** to let a powerful LLM (like GPT-4o) make the decision directly.
 
-{{< image src="figure8.png" caption="The Prompt Template designed in the paper. It teaches the LLM to distinguish between 'Paragraph' and 'Document' through comparative examples, and how to use the '+' sign to combine multiple modalities." >}}
+{{< image src="figure8.png" alt="Text box showing the prompt template that classifies a query into categories such as No, Paragraph, Document, Table, Image, Clip, and Video based on whether RAG is needed and which modality fits, with category definitions and worked examples like 'What is the capital of France?' mapped to No and 'Describe the appearance of a blue whale.' mapped to Image" caption="The Prompt Template designed in the paper. It teaches the LLM to distinguish between 'Paragraph' and 'Document' through comparative examples, and how to use the '+' sign to combine multiple modalities." >}}
 
 The design logic of this Prompt lies in **"Intent Recognition"**:
 *   If the question involves "comparison, summation, numerical values," guide to `Table`.
@@ -162,7 +162,7 @@ The authors conducted extensive evaluations across 10 benchmarks covering differ
 
 Across a variety of RAG tasks, UniversalRAG demonstrated powerful dominance. Whether it was simple text queries, text-image combinations, or complex video analysis, UniversalRAG significantly outperformed single-modality RAG and traditional unified embedding space methods.
 
-{{< image src="table1.png" caption="Table 1 shows the performance of UniversalRAG across 10 different datasets. Whether using a training-based or training-free router, UniversalRAG outperformed the baseline models on almost all metrics." >}}
+{{< image src="table1.png" alt="Results table comparing UniversalRAG against baseline methods such as Naive, ParagraphRAG, DocumentRAG, TableRAG, ImageRAG, ClipRAG, VideoRAG, and MultiRAG across 10 datasets including MMLU, NQ, HotpotQA, WebQA, and LVBench, showing UniversalRAG with trained or training-free routers achieving the highest average scores (up to 42.40) among non-oracle methods, close to the Oracle upper bound of 42.45" caption="Table 1 shows the performance of UniversalRAG across 10 different datasets. Whether using a training-based or training-free router, UniversalRAG outperformed the baseline models on almost all metrics." >}}
 
 ### Successfully Bridging the Modality Gap
 
@@ -171,7 +171,7 @@ This is the core argument of our discussion: is traditional Unified Embedding tr
 *   **Finding**: As shown in **Figure 4**, models like GME or VLM2Vec that squeeze all modalities together exhibit a strong "text bias" during retrieval—even when the question requires image or video evidence, they still tend to grab text.
 *   **Comparison**: UniversalRAG's router can accurately allocate retrieval paths based on question intent. This proves that **"routing before retrieval"** can effectively bypass the modality gap, allowing the correct evidence to be recalled.
 
-{{< image src="figure4.png" caption="Modality selection distribution map. We can see that Unified Embedding methods are heavily biased toward text, while UniversalRAG (far right) can choose image and video modalities in a balanced manner based on demand." width=70% >}}
+{{< image src="figure4.png" alt="Bar chart titled Modality Selection Rate comparing VLM2Vec-V2, GME, and UniversalRAG: VLM2Vec-V2 selects Text 100% of the time, GME selects Text 85% and Image/Video only 12%/3%, while UniversalRAG is balanced across None (23%), Text (30%), Image (24%), and Video (23%), closely tracking the dashed Oracle line" caption="Modality selection distribution map. We can see that Unified Embedding methods are heavily biased toward text, while UniversalRAG (far right) can choose image and video modalities in a balanced manner based on demand." width=70% >}}
 
 ### Scalability
 
@@ -180,7 +180,7 @@ For the enterprise-level large-scale data applications we were concerned about, 
 *   **Sub-linear Latency**: In traditional RAG, search time typically grows linearly or logarithmically as the database \(N\) increases. However, in UniversalRAG, because the router filters out irrelevant libraries beforehand, the actual search range is narrowed down to \(1/k\).
 *   **Big Data Advantage**: When the data scale reaches tens of millions (10M) or even hundreds of millions, the latency of UniversalRAG is far lower than that of unified retrieval methods. This means **the overhead of the router is completely worth it in large-scale scenarios**.
 
-{{< image src="figure5.png" caption="Trend of retrieval latency with corpus scale. It can be seen that UniversalRAG exhibits excellent scalability under large-scale data." width=70% >}}
+{{< image src="figure5.png" alt="Line chart of retrieval latency in seconds versus corpus size (log scale from 100k to 100M) showing VLM2Vec-V2's latency spiking to about 2.6 seconds at 100M items while UniversalRAG with T5Gemma 2 270M stays low at roughly 0.45 seconds, demonstrating better scalability" caption="Trend of retrieval latency with corpus scale. It can be seen that UniversalRAG exhibits excellent scalability under large-scale data." width=70% >}}
 
 After the introduction, problem analysis, methodology details, and experimental verification, we have finally reached the end of this note. This paper does not just propose a new SOTA model; more importantly, it provides us with a brand-new way of thinking about processing "heterogeneous knowledge."
 

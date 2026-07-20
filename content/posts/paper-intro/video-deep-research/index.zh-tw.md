@@ -96,7 +96,7 @@ $$ f : (V, Q; S) \rightarrow A $$
 2.  **Multi-Hop Reasoning**: 模型不能只搜一次。它通常需要進行 `Video -> Web -> Video -> Web` 的迭代交互。例如: 先確認地點 (Web) ，再回看影片確認路線 (Video) ，最後搜索該路線上的特定商店 (Web) 。
 {{< /admonition >}}
 
-{{< image src="figure2.png" caption="VideoDR 任務範例: 從識別博物館 (Visual Anchor) ，到搜尋必看清單 (External Knowledge) ，再結合地圖定位具體展品 (Multi-Hop Reasoning) ，最終得出註冊編號。" >}}
+{{< image src="figure2.png" alt="VideoDR 任務範例「Video Deep Research」：給定一段博物館參觀影片與問題「在博物館『不容錯過』推薦展品中，離主要入口最近的文物之博物館註冊編號是什麼？」，圖示展示如何透過多幀與多跳推理，依序查閱三個證據來源 (官方博物館網站、參觀指南、一樓地圖)，逐步解出博物館名稱 (大英博物館)、不容錯過清單 (12 個候選)、離入口最近的展品 (Shiva Nataraja)，最終得到註冊編號 WB.67" caption="VideoDR 任務範例: 從識別博物館 (Visual Anchor) ，到搜尋必看清單 (External Knowledge) ，再結合地圖定位具體展品 (Multi-Hop Reasoning) ，最終得出註冊編號。" >}}
 
 ### 數據構建: 漏斗式過濾
 這篇論文最精彩的部分在於數據集的建立。作者不追求數量 (最終僅 100 題) ，而是追求極致的質量。
@@ -122,7 +122,7 @@ $$ f : (V, Q; S) \rightarrow A $$
 
 **只有同時通過這兩項測試的樣本，才具備「雙重依賴性」，這就是 VideoDR 數據集的獨特之處。**
 
-{{< image src="figure1.png" caption="VideoDR 的數據構建流水線: 從候選影片池出發，經過嚴格的負樣本過濾，再通過雙重消融測試 (Web-only & Video-only) ，最終得到高質量的評測樣本。" >}}
+{{< image src="figure1.png" alt="兩欄式流程圖，說明 VideoDR 的資料構建流水線：左側顯示從六大主題類別經分層抽樣建立候選影片池、人工篩選淘汰低品質影片，並透過結合多幀推理與多跳推理設計問題；右側顯示品質控管流程，透過 Web-only 與 Video-only 雙重相依性測試淘汰僅靠單一來源就能作答的題目，再經人工難度分級 (低/中/高) 與人工複核，最終得到 100 個任務" caption="VideoDR 的數據構建流水線: 從候選影片池出發，經過嚴格的負樣本過濾，再通過雙重消融測試 (Web-only & Video-only) ，最終得到高質量的評測樣本。" >}}
 
 ### 評測範式: Workflow vs. Agent
 
@@ -160,7 +160,7 @@ $$ f : (V, Q; S) \rightarrow A $$
 
 這大概是實驗中最讓我們意外的發現。直覺上，我們認為讓模型自主決定何時看、何時搜 (Agent) 應該比死板的步驟 (Workflow) 更強，但數據講了一個不同的故事。
 
-{{< image src="table1.png" caption="Table 1: 不同模型在 Workflow 與 Agent 兩種範式下的表現對比。注意 Gemini 在 Agentic 下提升顯著，但 MiniCPM-V 卻出現暴跌。" >}}
+{{< image src="table1.png" alt="表格比較六個模型 (Qwen3-Omni-30B-A3B、InternVL3.5-14B、MiniCPM-V 4.5、Gemini-3-pro-preview、GPT-4o、GPT-5.2) 與人類基準在 Workflow 與 Agentic 兩種範式下，依難度 (Low/Mid/High) 劃分的準確率 (%)；Gemini-3-pro-preview 的平均分數在 Agentic 下從 69 上升到 76，而 MiniCPM-V 4.5 則從 25 大幅下滑到 16" caption="Table 1: 不同模型在 Workflow 與 Agent 兩種範式下的表現對比。注意 Gemini 在 Agentic 下提升顯著，但 MiniCPM-V 卻出現暴跌。" >}}
 
 *   **強者更強**: 對於 **Gemini-1.5 Pro** 這樣具有超長 Context Window 和強大推理能力的模型，切換到 Agent 模式帶來了顯著提升 (準確率從 69% 升至 76%)。它能有效駕馭複雜的交互循環。
 *   **弱者崩潰**: 對於能力較弱或開源模型 (如 **MiniCPM-V 4.5**) ，切換到 Agent 模式後，表現反而**暴跌** (從 25% 跌至 16%) 。
@@ -170,7 +170,7 @@ $$ f : (V, Q; S) \rightarrow A $$
 
 為了深入探究「為什麼 Agent 會失敗」，作者按**影片時長**對結果進行了分層分析。
 
-{{< image src="table2.png" caption="Table 2: 不同影片時長下的表現。請注意在 Long Video 類別中，許多模型在 Agent 模式下的表現急劇下降。" >}}
+{{< image src="table2.png" alt="表格比較同六個模型與人類基準在 Workflow 與 Agentic 兩種範式下，依影片長度 (Short/Medium/Long) 劃分的準確率 (%)；在 Long Video 類別中，多個模型於 Agentic 模式下表現急劇下降，例如 Qwen3-Omni-30B-A3B 從 50 降至 20，GPT-5.2 從 70 降至 50" caption="Table 2: 不同影片時長下的表現。請注意在 Long Video 類別中，許多模型在 Agent 模式下的表現急劇下降。" >}}
 
 {{< admonition tip "驚人發現: 越長越容易忘" >}}
 實驗數據顯示，隨著影片變長 (Long Videos)，Agent 的優勢不僅消失，甚至變成劣勢。
@@ -181,7 +181,7 @@ $$ f : (V, Q; S) \rightarrow A $$
 ### 錯誤分析: 視覺錨點的丟失
 作者進一步分析了錯誤類型，數據再次佐證了上述觀點。
 
-{{< image src="table5.png" caption="Table 5: 錯誤類型分佈。Categorical Error (類別錯誤) 是主要殺手，暗示了搜尋目標的偏離。" >}}
+{{< image src="table5.png" alt="表格依錯誤類型 (Categorical、Incomplete、Not Found、Numerical、Context、Semantic、Reasoning、Others) 列出各模型在 Workflow 與 Agentic 設定下的錯誤數量；Categorical (類別錯誤) 在多數模型中都是最主要或接近最主要的錯誤類型，例如 MiniCPM-V 4.5 在 Workflow 下有 25 個、Agentic 下有 36 個類別錯誤，分別佔總錯誤數 75 與 84 的相當比例" caption="Table 5: 錯誤類型分佈。Categorical Error (類別錯誤) 是主要殺手，暗示了搜尋目標的偏離。" >}}
 
 *   **Categorical Error (類別錯誤)** 佔比最高。
     *   這意味著模型並不是「算錯了數值」或「推理邏輯錯誤」，而是**一開始就找錯對象了** (例如: 題目問 A 博物館，模型去搜 B 博物館) 。
@@ -189,7 +189,7 @@ $$ f : (V, Q; S) \rightarrow A $$
 
 ### 效率分析: 忙碌不代表有效
 
-{{< image src="table4.png" caption="Table 4: 工具使用次數統計。Gemini 雖然慢但準，Qwen 搜得多卻沒用。" >}}
+{{< image src="table4.png" alt="表格列出各模型在 Workflow 與 Agentic 設定下的工具使用統計，包含平均思考 (think) 次數、搜尋 (search) 次數與總耗時 (秒)；GPT-5.2 耗時遠高於其他模型 (Workflow 569 秒、Agentic 1375.8 秒) 且思考與搜尋次數最多，Gemini-3-pro-preview 雖然也偏慢 (422-449 秒) 但準確率最高" caption="Table 4: 工具使用次數統計。Gemini 雖然慢但準，Qwen 搜得多卻沒用。" >}}
 
 *   **無效檢索**: 部分開源模型在 Agent 模式下搜尋次數激增，但準確率不升反降。這說明它們在進行無效的「廣撒網」。
 *   **有效反思**: 表現最好的 Gemini，其 **Thinking Steps (思考步數)** 明顯更多。這告訴我們，在 Video Deep Research 中，**「停下來思考 (Reflection)」** (比如反思: 「我搜到的這個信息和影片裡的畫面吻合嗎？」) 比盲目搜尋更關鍵。
