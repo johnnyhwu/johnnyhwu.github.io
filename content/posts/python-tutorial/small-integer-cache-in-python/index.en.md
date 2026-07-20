@@ -47,7 +47,7 @@ In Python, we can use the `id()` function to get the memory address of an object
 
 Therefore, from the results above, you'll notice that `a` and `b`, although different variables, share the same memory address. However, `c` and `d` have different memory addresses. Why is this? This happens because Python's implementation includes an **Integer Cache** mechanism:
 
-{{< image src="integer-cache.png" caption="Integer Cache illustration from Python's Official Documentation" >}}
+{{< image src="integer-cache.png" alt="Screenshot of Python's official C API documentation for PyLong_FromLong, explaining that the implementation keeps a pre-allocated array of integer objects for values between -5 and 256" caption="Integer Cache illustration from Python's Official Documentation" >}}
 
 As shown in the image from [Python's official documentation](https://docs.python.org/3/c-api/long.html#c.PyLong_FromLong), Python pre-allocates objects for commonly used integers, specifically those in the range of **-5 to 256**. When you declare an integer within this range in your code, Python will point to this pre-existing object instead of creating a new one.
 
@@ -98,7 +98,7 @@ struct _longobject {
 
 `ob_refcnt` is the field that stores the Reference Count for the integer object. In Python, we can use the `sys.getrefcount()` function to get an object's Reference Count. We can then use plotting libraries (e.g., [matplotlib](https://matplotlib.org/)) to visualize the distribution of how many times these integer objects are referenced:
 
-{{< image src="reference-count.png" caption="Reference counts of integer values" >}}
+{{< image src="reference-count.png" alt="Line chart plotting reference counts against integer values, showing a sharp spike near 0 and a smaller spike near 256, with counts dropping close to zero outside that range" caption="Reference counts of integer values" >}}
 
 You'll notice that even before adding any custom code, the Python interpreter/compiler itself makes many references to these smaller integers. The Integer Cache mechanism genuinely helps reduce memory allocation for these commonly used integer objects.
 

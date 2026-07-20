@@ -26,7 +26,7 @@ url: "ai-concept/:contentbasename"
 
 ## LLM 訓練的 3 個階段
 
-{{< image src="llm-training-stages.png" caption="LLM 訓練的三個步驟：Self-Supervised Pre-Training、Supervised Fine-Tuning 與 Reinforcement Learning from Human Feedback" >}}
+{{< image src="llm-training-stages.png" alt="LLM 訓練三階段流程圖：以網路文字進行自監督預訓練、以示範資料進行監督式微調，以及使用由人類比較資料訓練出的獎勵模型進行 RLHF，每個階段下方標註資料規模與代表模型" caption="LLM 訓練的三個步驟：Self-Supervised Pre-Training、Supervised Fine-Tuning 與 Reinforcement Learning from Human Feedback" >}}
 
 如上圖所示，一個 Chat-Based LLM 的完整訓練流程通常會經過以上 3 個步驟：Self-Supervised Pre-Training、Supervised Fine-Tuning 與 Reinforcement Learning from Human Feedback。在每一個階段中都有一些需要特別留意的名詞：
 
@@ -62,11 +62,11 @@ MLM 任務其實就是「填空題」，我們會將一段句子中的某些 Tok
 
 第三階段的訓練是 **Reinforcement Learning from Human Feedback** 簡稱 RLHF。
 
-{{< image src="instructgpt-sft.png" caption="InstructGPT (SFT+RLHF) 的表現勝過 SFT Model" >}}
+{{< image src="instructgpt-sft.png" alt="人類品質評分 (Likert score) 對模型大小的折線圖，橫軸從 1.5B 到 175B 參數，顯示 InstructGPT 得分最高，依序高於監督式微調、加上提示的 GPT 與原始 GPT" caption="InstructGPT (SFT+RLHF) 的表現勝過 SFT Model" >}}
 
 由上圖可以發現，若單從實驗結果來說的話，有經過的 RLHF 訓練的模型 (InstructGPT) 會比只有經過 Supervised Fine-Tuning 或 Self-Supervised Pre-training 的模型有更好的表現。
 
-{{< image src="rlhf.png" caption="RLHF 概念" >}}
+{{< image src="rlhf.png" alt="RLHF 概念示意圖：將提示輸入基礎模型產生 Response A 與 Response B，再由偏好模型評分，偏好 A 佔 61%、B 佔 39%，並將回饋迴圈回傳給基礎模型" caption="RLHF 概念" >}}
 
 上圖呈現的是用 RLHF 來訓練 LLM 的示意圖：Base Model 就是經過第二階段訓練得到的 SFT LLM，而 Preference Model 就是 Reward Model。給予 SFT LLM 一個 Prompt，透過 Sampling 的方式得到多個不同的 Response。將這些 Response 輸入到 Reward Model，來為每一個 Response 評分（給予每一個 Response 一個 Reward）。
 
@@ -80,7 +80,7 @@ MLM 任務其實就是「填空題」，我們會將一段句子中的某些 Tok
 
 為了訓練出這樣的 Reward Model，我們需要建立一個 Preference Dataset:
 
-{{< image src="preference-dataset.png" caption="Preference Dataset 範例" >}}
+{{< image src="preference-dataset.png" alt="Preference Dataset 範例表格，包含 prompt、winning_response、losing_response 三個欄位，並以一筆樣本示範" caption="Preference Dataset 範例" >}}
 
 上圖呈現的 Preference Dataset 中的一個樣本：
 
@@ -92,7 +92,7 @@ MLM 任務其實就是「填空題」，我們會將一段句子中的某些 Tok
 
 具體來說，就是希望 Minimize 以下這個 Loss Function：
 
-{{< image src="reward-loss-function.png" caption="Reward Model 的 Loss Function" >}}
+{{< image src="reward-loss-function.png" alt="Reward Model 損失函數公式，等於獲勝回應與落敗回應之獎勵差值取 log-sigmoid 後的負期望值" caption="Reward Model 的 Loss Function" >}}
 
 因為最前面有一個負號的關係，當 Reward Model 在 Minimize 這個 Loss Function 時，其實就是在 Maximize Sigmoid Function 中 winning\_reward 與 losing\_reward 的差值，進而讓 winning\_reward 更大、讓 losing\_reward 更小。
 
@@ -100,7 +100,7 @@ MLM 任務其實就是「填空題」，我們會將一段句子中的某些 Tok
 
 到這裡，相信你已經大致上明白 Reward Model 所扮演的角色以及他是如何被訓練出來的！有了 Reward Model，我們才可以對 SFT LLM 進行 RLHF 的訓練。在 RLHF 的訓練中，我們希望解決以下最佳化的問題：
 
-{{< image src="rlhf-optimization.png" caption="RLHF 中的最佳化問題" >}}
+{{< image src="rlhf-optimization.png" alt="RLHF 最佳化目標的數學公式，在最大化模型回應之獎勵模型分數的同時，透過 KL 散度懲罰項讓策略模型與參考模型保持接近" caption="RLHF 中的最佳化問題" >}}
 
 從這個數學式子中，我們可以知道這個最佳化問題是希望找到一組 LLM 的參數 \(\pi_{\theta}\)，給定一個從 Dataset \(D\) 抽樣出來的 Prompt \(x\)，LLM \(\pi_{\theta}\) 會輸出一個 Response \(y\)：
 

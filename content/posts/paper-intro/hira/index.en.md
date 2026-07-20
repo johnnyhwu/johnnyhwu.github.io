@@ -42,7 +42,7 @@ If this is your first time hearing about the Planner-Executor agentic workflow d
 
 ## The Problem HiRA Aims to Solve
 
-{{< image src="problem.png" caption="[Figure 1] A comparison between HiRA and conventional methods" >}}
+{{< image src="problem.png" alt="Comparison of three reasoning styles: (a) direct reasoning is a single chain from question to answer, (b) search-augmented reasoning interleaves tool nodes into that chain, and (c) HiRA hierarchical reasoning routes a meta reasoning path through a coordinator that delegates to multiple specialized expert sub-chains" caption="[Figure 1] A comparison between HiRA and conventional methods" >}}
 
 As shown in Figure 1, in typical Deep Search methods, a Large Reasoning Model (LRM) is simply given a search tool and uses special tokens to indicate its actions after a reasoning process. For example, in [WebThinker](https://arxiv.org/abs/2504.21776), the search action is triggered using `<|begin search query|>` and `<|end search query|>`.
 
@@ -57,7 +57,7 @@ This line of thinking forms the prototype of the Planner-Coordinator-Executor mo
 
 ## The Method Proposed by HiRA
 
-{{< image src="solution.png" caption="[Figure 2] The HiRA Method" >}}
+{{< image src="solution.png" alt="Three-layer HiRA architecture: a meta reasoning planner breaks a task into reasoning steps and sub-tasks, an adaptive reasoning coordinator with dual-channel memory delegates sub-tasks to executors and distills their responses back, and domain-specialized executors combine memory and sub-task with specialized tools like search, code, image, audio and video" caption="[Figure 2] The HiRA Method" >}}
 
 As mentioned earlier, the HiRA framework includes a Planner Agent, a Coordinator Agent, and an Executor Agent. Their formal names in the paper are:
 
@@ -221,7 +221,7 @@ You are a professional Conclusion Summarization Assistant. Your primary responsi
 
 #### Memory Mechanism
 
-To enable more efficient information transfer between Executors, the Coordinator maintains a Memory Repository, which is divided into two types:
+To enable more efficient information transfer between Executors, the Coordinator maintains a Memory Repository, which is divided into two types. Unlike general-purpose long-term memory systems such as [MemGPT](../memgpt/) or [Mem0](../mem0/), this Memory Repository is scoped specifically to a single task's execution and is shared between the Coordinator and Executors:
 
 - **Fact Memory**: Stores facts discovered by the Executor during its reasoning process. Each entry consists of a Fact and its Source.
 - **Resource Memory**: Stores resources explored by the Executor. Each entry consists of a summary of the Resource and its Source.
@@ -321,7 +321,7 @@ For the Executor component, HiRA designs four types of Executors based on three 
 
 ## HiRA's Experimental Results
 
-{{< image src="exp-1.png" caption="[Table 1] Experimental results of HiRA compared to baseline methods" >}}
+{{< image src="exp-1.png" alt="Large results table grouping methods into direct reasoning, single-capability enhanced and multi-capability enhanced, evaluated on GAIA, WebWalkerQA, Humanity's Last Exam and SimpleQA, where HiRA is bolded as the best in most columns, for example 42.5 average on GAIA and 81.5 on SimpleQA" caption="[Table 1] Experimental results of HiRA compared to baseline methods" >}}
 
 In the experimental setup, HiRA uses Qwen2-32B as the Planner and Executor, Qwen2.5-Instruct-32B as the Coordinator, and Qwen2.5-Omni-7B as the multimodal model tool within the Cross-Modal Executor. The decoding parameters were set to `temperature=0.7`, `top_p=0.95`, and `top_k=20`.
 

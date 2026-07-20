@@ -46,7 +46,7 @@ VIME 論文的目的是將 Self-Supervised Learning 的技術應用到 Tabular D
 
 VIME 中的 Self-Supervised Learning 是如何運作的呢？讓我們深入了解！
 
-{{< image src="ssl.png" caption="VIME 中的 Self-Supervised Learning 流程" >}}
+{{< image src="ssl.png" alt="VIME 自監督學習示意圖：mask generator 透過 pretext generator 破壞一筆未標記特徵，encoder 將其編碼為表示，兩個估計器分別還原原始特徵與遮罩，並以重建損失與遮罩估計損失進行訓練" caption="VIME 中的 Self-Supervised Learning 流程" >}}
 
 首先，從 Unlabeled Dataset 中取出一個 Raw Sample，假設其維度為 256 維。接下來，Mask Generator 會隨機產生一個維度相同的 Mask Vector，這個 Mask Vector 決定哪些元素要保留，哪些要被替換掉。接著，Pretext Generator 計算那些被替換掉的元素應該換成什麼數值。
 
@@ -63,7 +63,7 @@ Feature Vector Estimator 進行 Feature Vector Estimation，根據 Feature Repre
 
 ## 深入了解 VIME 中的 Semi-Supervised Learning
 
-{{< image src="semi-supervised-learning.png" caption="VIME 中的 Semi-Supervised Learning 流程" >}}
+{{< image src="semi-supervised-learning.png" alt="VIME 半監督學習示意圖：mask generator 為一筆未標記樣本產生多個破壞後的視圖，經 encoder 與 predictor 產生預測並以一致性損失訓練；有標記樣本則經同一 encoder 與 predictor，以監督式損失訓練" caption="VIME 中的 Semi-Supervised Learning 流程" >}}
 
 最後一部份，讓我們理解 VIME 中 Semi-Supervised Learning 的運作方式！ 在 VIME 中，Semi-Supervised Learning 主要是用來訓練 Predictor。Predictor 不僅可以從 Supervised Loss 中學習，也可以從 Consistency (Unsupervised) Loss 中學習。透過 Raw Sample 的 Encoder 輸入，產生「良好」的 Feature Representation，然後 Predictor 進行預測，使得輸出越接近 Label 越好。
 

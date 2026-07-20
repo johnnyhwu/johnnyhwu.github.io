@@ -66,7 +66,7 @@ Dense Model 會把所有的參數都和輸入去做運算。換句話說，一�
 
 ## Sparse Upcycling 方法介紹
 
-{{< image src="solution.png" caption="Sparse Upcycling 的 Solution Overview" >}}
+{{< image src="solution.png" alt="Sparse Upcycling 示意圖：將原本 dense block 的 Layer Norm、Attention 與 MLP 權重複製到 upcycled MoE block，並把 MLP 複製成 E 份專家，再新增一個從頭訓練的 router 對各專家輸出做加權加總" caption="Sparse Upcycling 的 Solution Overview" >}}
 
 上圖清楚呈現 Sparse Upcycling 的做法：Upcycled MoE Block 主要是將 Original Dense Block 中的 MLP Layer 換成 MoE Layer，其餘的 Layer 的 Weight 都是來自原本的 Block。
 
@@ -83,13 +83,13 @@ Dense Model 會把所有的參數都和輸入去做運算。換句話說，一�
 
 在實驗中，作者都是拿一個 Dense Model 進行 Upcycle（換成 Sparse MoE 架構）後，然後繼續訓練！
 
-{{< image src="exp-1.png" caption="Sparse Upcycling 實驗結果：Upcycling vs Dense Continuation" >}}
+{{< image src="exp-1.png" alt="兩張散點圖，橫軸為額外預訓練時間 (TPU-core-days)，比較 Upcycling (橘色) 與 Dense (藍色) 在 JFT 驗證 precision@1 與 C4 驗證 token accuracy 上的表現，Upcycling 在相同運算下普遍達到更高精度" caption="Sparse Upcycling 實驗結果：Upcycling vs Dense Continuation" >}}
 
 上圖實驗結果呈現的是，在 Vision Model（左圖）與 Language Model（右圖）中，縱軸表示相對應任務的準確度，橫軸表示訓練時間，「Dense」表示基於原來的 Dense Model 繼續訓練。
 
 我們可以發現在少量的訓練預算下，不管是 Vision 還是 Language Model，不管在什麼 Size 之下，Dense 和 Upcycling 的表現都差不多，隨著訓練預算的提高，兩者的差距就會慢慢拉開。說明在使用相同的訓練成本下，繼續訓練 Dense Model 的效率並不好。
 
-{{< image src="exp-2.png" caption="Sparse Upcycling 實驗結果：Upcycling vs MoE from Scratch" >}}
+{{< image src="exp-2.png" alt="兩張散點圖比較 Upcycling (橘色) 與從頭訓練的 MoE (綠色) 在 JFT 驗證 precision@1 與 C4 驗證 token accuracy 上的表現，Upcycling 在較短的額外預訓練時間下即領先，隨運算增加兩者逐漸接近" caption="Sparse Upcycling 實驗結果：Upcycling vs MoE from Scratch" >}}
 
 與前一個實驗類似，只不過這邊呈現的是 Upcycling 和 MoE (Trained from Scratch) 的表現。可以很合理的發現，Upcycling 因為是基於一個 Dense Model 進行 Upcycle 後再繼續訓練，要達到相同的表現時，Trained from Scratch 到 MoE 一定需要更多的訓練。
 
@@ -100,3 +100,5 @@ Dense Model 會把所有的參數都和輸入去做運算。換句話說，一�
 本篇文章簡單介紹了一篇由 Google Reserach 發表、被 ICLR 2023 所接受的 MoE 相關論文 — [Sparse Upcycling](https://arxiv.org/abs/2212.05055)。
 
 本篇論文告訴我們：其實我們可以善用既有的 Dense Model Checkpoint 來訓練一個 Sparse MoE Model，一方面可以進一步精進 Dense Model 的表現又可以避免 From Scratch 的訓練 Sparse MoE。論文中還有更多細節與描述（尤其是實驗部分），有興趣的讀者再自行閱讀囉！希望本篇文章對你有幫助！
+
+如果你好奇這個想法如何延伸到合併多個獨立訓練的 Dense Expert（而不是 Upcycle 單一模型），可以參考 [Branch-Train-MiX](../branch-train-mix/)，它將 Sparse Upcycling 視為自己更通用框架下的一個特例。

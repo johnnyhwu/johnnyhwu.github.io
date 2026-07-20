@@ -49,7 +49,7 @@ sudo ufw allow 'Nginx Full'
 
 In Lightsail, add an HTTPS rule in your instance's "Networking" settings (you can add one for IPv6 as well):
 
-{{< image src="lightsail-https-rule.png" caption="Allowing HTTPS traffic in Lightsail" >}}
+{{< image src="lightsail-https-rule.png" alt="Lightsail Networking tab showing the IPv4 Firewall rules table, with a newly added HTTPS rule on TCP port 443 for any IPv4 address highlighted in a red box below the existing SSH and HTTP rules" caption="Allowing HTTPS traffic in Lightsail" >}}
 
 ## Configure the Domain in Nginx
 
@@ -118,7 +118,7 @@ The first method is to go directly into MySQL and change the `home` and `site_ur
 
 The second method is to temporarily comment out the HTTPS-related settings in the Nginx configuration file. This will allow you to access the WordPress dashboard via HTTP. Once inside, change the "WordPress Address (URL)" and "Site Address (URL)" from "**http**://your-domain.com" to "**https**://your-domain.com". Then, go back to the Nginx configuration file and uncomment the lines you previously commented out.
 
-{{< image src="wordpress-domain.png" caption="Method 2: Setting HTTPS in the WordPress Dashboard" >}}
+{{< image src="wordpress-domain.png" alt="WordPress General Settings page where the WordPress Address and Site Address fields both begin with https, so the site is served over HTTPS" caption="Method 2: Setting HTTPS in the WordPress Dashboard" >}}
 
 ## Conclusion
 

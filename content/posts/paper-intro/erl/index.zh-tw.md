@@ -66,7 +66,7 @@ ERL 打破了反覆試錯的限制，提出了一套**只需單次嘗試**即可
 
 ERL 框架是一個非常優雅的「外掛式設計」。它**完全不需要去改動 Agent 底層的基礎架構**（例如保持原本的 ReAct 迴圈），而是透過兩個獨立的階段來完成系統的「自我進化」。
 
-{{< image src="solution.png" caption="ERL 框架總覽：左側展示了經驗累積與啟發式規則生成（Heuristic Generation）的過程，右側展示了面對新任務時的檢索與增強執行（Retrieval-Augmented Execution）流程。" >}}
+{{< image src="solution.png" alt="ERL 框架示意圖：左側的啟發式規則生成會執行任務產生帶有獎勵的軌跡，分析後萃取出啟發式規則並存入 heuristics pool；右側測試階段時，新任務會查詢並檢索出前幾條啟發式規則，引導執行成一條軌跡，最後判定成功或失敗" caption="ERL 框架總覽：左側展示了經驗累積與啟發式規則生成（Heuristic Generation）的過程，右側展示了面對新任務時的檢索與增強執行（Retrieval-Augmented Execution）流程。" >}}
 
 整個資料流可以清晰地分為兩個階段：
 
@@ -134,7 +134,7 @@ Gaia2 的設計非常聰明，它將資料切分為不同的「宇宙 (Universes
 
 ERL 在 Gaia2 的「搜尋 (Search)」與「執行 (Execution)」任務中展現了強大的競爭力。
 
-{{< image src="exp-1.png" caption="證明 ERL 在整體成功率上達到 56.1%，比基準 ReAct (Baseline) 提升了 7.8%，並優於過往最強的經驗學習法 ExpeL (50.9%) 與 AutoGuide (50.8%)。" >}}
+{{< image src="exp-1.png" alt="一張長條圖與一張表格的成功率結果：ERL 以 56.1% 的整體成功率最高，勝過 baseline 48.3、few-shot 46.4、ExpeL 50.9 與 AutoGuide 50.8，表格另外拆解 execution 與 search 切分及消融結果" caption="證明 ERL 在整體成功率上達到 56.1%，比基準 ReAct (Baseline) 提升了 7.8%，並優於過往最強的經驗學習法 ExpeL (50.9%) 與 AutoGuide (50.8%)。" >}}
 
 **為什麼 ERL 會贏？**
 *   **穩定性 (Reliability)**：我們在討論中提到過，ERL 不僅提高了成功率，更大幅提升了 **\( pass^{3} \)**（即：連續三次執行任務都成功）。這代表 Agent 不再是「靠運氣」賽到答案，而是真正掌握了穩定的操作 SOP。
@@ -147,15 +147,15 @@ ERL 在 Gaia2 的「搜尋 (Search)」與「執行 (Execution)」任務中展現
 #### 啟發式規則 vs. 原始軌跡
 這可能是我們最在意的一個實驗。如果直接把過去的原始對話（Raw Trajectories）給 Agent 看呢？
 
-{{< image src="exp-2.png" caption="這張圖表證明了在相同的 Token 預算下，啟發式規則（Heuristics）的成功率始終高於原始軌跡。這說明了『知識的濃縮』比『數據的堆疊』更能有效導引 Agent。" >}}
+{{< image src="exp-2.png" alt="兩張成功率對回饋長度 (token 數) 的折線圖，分別為 execution 與 search 切分，無檢索的啟發式規則折線 (橘色) 在每個 token 預算下都持續高於 few-shot 原始軌跡折線 (灰色)" caption="這張圖表證明了在相同的 Token 預算下，啟發式規則（Heuristics）的成功率始終高於原始軌跡。這說明了『知識的濃縮』比『數據的堆疊』更能有效導引 Agent。" >}}
 
 #### 檢索品質的重要性
 如果我們不要用昂貴的 LLM 來檢索，隨機挑選規則會怎樣？
 
-{{< image src="exp-3.png" caption="這張圖表證明了規則的『質量』重於『數量』。隨機包含過多規則（超過 60 條）反而會導致效能下降（雜訊干擾）。而 ERL 使用 LLM 精準挑選 Top-20 條規則，達到了最佳平衡點。" >}}
+{{< image src="exp-3.png" alt="成功率對啟發式規則數量的折線圖，上升到約 60 條時達到高峰後往 100 條下降，並以星號標出 ERL 由 LLM 精選的 Top-20 規則達到約 56%，高於該處曲線" caption="這張圖表證明了規則的『質量』重於『數量』。隨機包含過多規則（超過 60 條）反而會導致效能下降（雜訊干擾）。而 ERL 使用 LLM 精準挑選 Top-20 條規則，達到了最佳平衡點。" >}}
 
 ## 結論
-本篇論文針對 LLM Agent 「缺乏持續學習能力」且「依賴反覆試錯」的痛點，提出了 **ERL (Experiential Reflective Learning)** 框架。
+本篇論文針對 LLM Agent 「缺乏持續學習能力」且「依賴反覆試錯」的痛點，提出了 **ERL (Experiential Reflective Learning)** 框架。它與 [Dynamic Cheatsheet](../dynamic-cheatsheet/)、[MemRL](../mem-rl/) 等同樣不需要 Fine-Tuning、以記憶驅動的方法站在同一陣線，但不同之處在於 ERL 是從單次執行中萃取結構化的 Trigger-Action 規則，而非累積式的 Cheatsheet 或透過學習得到的 Utility Score。
 
 透過**單次執行後的自我反思**，將經驗轉化為結構化的 **Trigger-Action 規則**。在執行期，利用 **LLM 智慧檢索** 將最相關的 20 條規則注入上下文。最終在 Gaia2 基準測試中，實現了超越 SOTA 方法的性能與穩定度。
 

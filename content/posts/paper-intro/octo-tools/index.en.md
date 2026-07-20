@@ -43,7 +43,7 @@ If you have more time, you can also read our introductions to [PLAN-AND-ACT](../
 
 ## Introducing the OctoTools Method
 
-{{< image src="approach-min.png" caption="[Figure 1] OctoTools Framework" >}}
+{{< image src="approach-min.png" alt="OctoTools framework diagram: standardized tool cards feed into a planner (query analyzer, action predictor, context verifier, solution summarizer) that loops with an executor (command generator and command executor) to iteratively act and verify context before producing the final answer" caption="[Figure 1] OctoTools Framework" >}}
 
 The OctoTools method, as shown in Figure 1 above, is primarily composed of **Tool Cards**, a **Planner**, and an **Executor**.
 
@@ -59,7 +59,7 @@ Tool Cards define many tools and the metadata for each tool. Based on a user's q
     - "STOP": Proceed to step 7.
 7. The **Solution Summarizer** generates the final answer based on the entire trajectory.
 
-{{< image src="example-min.png" caption="[Figure 3] OctoTools Example" >}}
+{{< image src="example-min.png" alt="Worked example counting baseballs in an image: tool cards for an Image Captioner and Object Detector are shown alongside a step-by-step trace where the query analyzer, action predictor, command generator, command executor and context verifier collaborate across two steps, ending with the verifier confirming completeness and stopping" caption="[Figure 3] OctoTools Example" >}}
 
 ### Tool Cards
 
@@ -72,7 +72,7 @@ Each tool implements two standard functions:
 
 Readers interested in the actual content of Tool Cards can refer to Appendix D in the paper:
 
-{{< image src="tools-min.png" caption="Tools defined in OctoTools" >}}
+{{< image src="tools-min.png" alt="Appendix table of contents listing the eleven tool cards defined in OctoTools, including ArXiv Paper Searcher, Google Search, Image Captioner, Python Code Generator, Text Detector and Wikipedia Knowledge Searcher, each with its page number" caption="Tools defined in OctoTools" >}}
 
 ### Planner
 
@@ -88,7 +88,7 @@ If the Context Verifier decides to stop, the complete trajectory is passed to th
 
 The specific prompts for these four LLMs can be found in Appendix C of the paper:
 
-{{< image src="prompt.png" caption="Prompt Template" >}}
+{{< image src="prompt.png" alt="Appendix table of contents listing OctoTools's five configurable prompt components: Query Analyzer, Action Predictor, Command Predictor, Context Verifier and Solution Summarizer, each with its page number" caption="Prompt Template" >}}
 
 ### Executor
 
@@ -113,13 +113,13 @@ Suppose there are already many tools in the current Tool Set. In each stage of t
 
 ## OctoTools Experimental Results
 
-{{< image src="exp-1-min.png" caption="Experiment 1" >}}
+{{< image src="exp-1-min.png" alt="Results table across 16 benchmarks spanning vision, text, general, math, science, medical and agentic domains, comparing 0-shot, CoT, OctoTools-base and full OctoTools, where OctoTools achieves the best average of 58.5 percent, a plus 9.3 point gain over 0-shot" caption="Experiment 1" >}}
 
 As shown in the table above, the authors used 18 benchmarks in their experiments, covering Text and Image modalities across 5 domains. The green checkmarks indicate the skills required by each benchmark, from left to right: Visual Understanding, Numerical Calculation, Knowledge Retrieval, and Multi-Step Reasoning. OctoTools<sub>base</sub> represents using only the Base Tool Set, while OctoTools uses the Optimized Tool Set.
 
 The table shows that the OctoTools method, whether using the Base or Optimized Tool Set, outperforms baseline methods. This suggests that agentic framework methods are better suited for handling complex tasks.
 
-{{< image src="exp-2-min.png" caption="Experiment 2" >}}
+{{< image src="exp-2-min.png" alt="Results table comparing OctoTools against other agentic frameworks AutoGen, GPT-Functions and LangChain across the same 16 benchmarks, where OctoTools is bolded as best in nearly every row, reaching an average of 58.5 percent versus 47.9 to 51.2 for the others" caption="Experiment 2" >}}
 
 The table above presents a comparison of OctoTools with other agentic framework methods. Although OctoTools also shows better performance than other methods, the authors did not clearly specify what kind of agentic workflows were created using the other agentic frameworks for comparison.
 

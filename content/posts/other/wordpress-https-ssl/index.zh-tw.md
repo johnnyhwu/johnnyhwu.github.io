@@ -49,7 +49,7 @@ sudo ufw allow 'Nginx Full'
 
 在 Lightsail 中，Instance 的 Networking 設定新增 HTTPS Rule：（下方的 IPv6 也可以新增）
 
-{{< image src="lightsail-https-rule.png" caption="在 Lightsail 中允許 HTTPS 流量" >}}
+{{< image src="lightsail-https-rule.png" alt="Lightsail 的 Networking 分頁顯示 IPv4 Firewall 規則表，在既有的 SSH 與 HTTP 規則下方以紅框標出新增的 HTTPS 規則，使用 TCP 443 埠並開放給任意 IPv4 位址" caption="在 Lightsail 中允許 HTTPS 流量" >}}
 
 ## 在 Nginx 中設定 Domain
 
@@ -118,7 +118,7 @@ sudo certbot renew --dry-run
 
 第二種方法是先將 Nginx Configuration 檔案中 HTTPS 相關的設定註解掉，如此一來我們就可以透過 HTTP 進入 WordPress 後台，然後將「WordPress 位置」與「網站位置」的值由「**http**://your-domain.com」改成「**https**://your-domain.com」。再回到 Nginx Configuration 檔案將剛剛著解掉的東西解除。
 
-{{< image src="wordpress-domain.png" caption="第二種方法：在 WordPress 後台設定 HTTPS" >}}
+{{< image src="wordpress-domain.png" alt="WordPress 一般設定頁面，WordPress 位址與網站位址兩個欄位皆以 https 開頭，代表網站以 HTTPS 提供服務" caption="第二種方法：在 WordPress 後台設定 HTTPS" >}}
 
 ## 結語
 

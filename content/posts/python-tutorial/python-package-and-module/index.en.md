@@ -26,7 +26,7 @@ In the article "[An In-depth Look at Python Modules](../python-module/)", we int
 
 In our computer's photo library, we don't just dump all our pictures into one giant folder. We might organize them into different folders based on date or location. Similarly, when we are working on a large-scale Python project that includes numerous Python files (Modules), we don't place all of them in a single directory. Instead, we organize them into different directories based on their functionality:
 
-{{< image src="project-structure.png" caption="The structure of Python files within a project (source: www.programiz.com)" >}}
+{{< image src="project-structure.png" alt="Tree diagram of a Game package containing an __init__.py file and three sub-packages (Sound, Image, Level), each with its own __init__.py and several module files" caption="The structure of Python files within a project (source: www.programiz.com)" >}}
 
 The image above shows an example. Under the `Game` Package, there are three sub-packages, each containing several Modules. From this example, we can also see that every Package contains a file named "**\_\_init\_\_.py**". This file can be empty; its presence tells Python to **treat this directory as a Python Package, not just a regular folder**!
 
@@ -36,11 +36,11 @@ Next, let's create a Python Package to see it in action.
 
 First, create a new folder in Colab named "project". To make this folder a Python Package, we need to add an `__init__.py` file inside it. Let's also add a `main.py` file. The file structure under "project" should look like this:
 
-{{< image src="demo-1.png" caption="The project directory contains __init__.py and main.py" >}}
+{{< image src="demo-1.png" alt="Colab file panel showing a project folder containing __init__.py and main.py" caption="The project directory contains __init__.py and main.py" >}}
 
 Next, let's add another Package called "tools" inside the `project` directory. Similarly, to make the `tools` folder a Python Package, we'll add an `__init__.py` file inside it. We'll also add a `tool.py` file. Now, the file structure under "project" looks like this:
 
-{{< image src="demo-2.png" caption="Adding a tool package under the project package" >}}
+{{< image src="demo-2.png" alt="Colab file panel showing the project folder with a nested tools sub-folder containing __init__.py and tool.py, alongside project's own __init__.py and main.py" caption="Adding a tool package under the project package" >}}
 
 In `tool.py`, we'll add a function that sums two numbers and then multiplies the result by a third number:
 

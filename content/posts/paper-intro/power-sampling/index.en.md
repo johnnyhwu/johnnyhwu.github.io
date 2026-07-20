@@ -382,7 +382,7 @@ $$ \frac{q(x_{old} | x_{new})}{q(x_{new} | x_{old})} $$
 
 ## Experimental Results of the Paper
 
-{{< image src="exp.png" caption="Comparison of the Power Sampling method proposed in this paper vs. GRPO on multiple benchmarks" width=100% >}}
+{{< image src="exp.png" alt="Results table on MATH500, HumanEval, GPQA and AlpacaEval2.0 for Qwen2.5-Math-7B, Qwen2.5-7B and Phi-3.5-mini-instruct, comparing base, low-temperature, Power Sampling and GRPO, where Power Sampling is close to and sometimes beats GRPO without any training" caption="Comparison of the Power Sampling method proposed in this paper vs. GRPO on multiple benchmarks" width=100% >}}
 
 Finally, here are the main experimental results. We can see that simply performing Sampling on the Base Model indeed achieves or surpasses the performance of RL (e.g., GRPO) Models on many Benchmarks.
 
@@ -414,5 +414,7 @@ Although Markov Chain Monte Carlo requires more Inference time and compute than 
 Of course, this doesn't mean RL will be eliminated (impossible, haha). The authors also mention that if a Base Model is completely ignorant about a field (probability is 0), then even the strongest Sharpening is futile.
 
 Perhaps the future trend will move towards a hybrid mode: using RL for lightweight alignment to ensure the general direction of the Base Model's probability distribution is correct; then, during the Inference stage, dynamically introducing strategies like the Markov Chain Monte Carlo proposed in this paper for deep searching on high-difficulty reasoning problems.
+
+It's also worth contrasting this single-chain MCMC approach with [DeepConf](../deepconf/), which spends its inference-time compute budget differently — generating many parallel reasoning paths and using token-level confidence to cut the weak ones short, rather than iteratively refining a single path.
 
 In conclusion, this is an interesting and fantastic paper. I hope this article brings you value!

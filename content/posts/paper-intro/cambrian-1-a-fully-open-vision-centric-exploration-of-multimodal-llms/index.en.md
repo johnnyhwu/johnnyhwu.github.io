@@ -65,7 +65,7 @@ Therefore, **to know what kind of Visual Encoder truly enhances a VLM's visual c
 -   **Visual Disabled:** A special scenario, where the VLM is not provided with an image to answer the question.
 -   **Random Guess:** Simply guessing the answer randomly.
 
-{{< image src="benchmark.png" caption="[Figure 3] Left: MLLM performance with and without visual input across benchmarks. Right: PCA clusters benchmarks by performance, labeled as General (green), Knowledge (yellow), Chart & OCR (red), and Vision-Centric (blue)." >}}
+{{< image src="benchmark.png" alt="Left: a line chart with error bars comparing vision-enabled versus vision-disabled MLLM scores against a random-guess baseline across 13 benchmarks such as SQA-I, MMMU, TextVQA, ChartQA, GQA, MMVP, MME, and MMB; right: a 2D PCA scatter plot clustering those same benchmarks into four color-coded groups labeled General (green), Knowledge (yellow), Chart & OCR (red), and Vision-Centric (blue)" caption="[Figure 3] Left: MLLM performance with and without visual input across benchmarks. Right: PCA clusters benchmarks by performance, labeled as General (green), Knowledge (yellow), Chart & OCR (red), and Vision-Centric (blue)." >}}
 
 From Figure 3 (left) above, we can see that on the SQA-I, MMMU, and MathVista benchmarks, the scores obtained by the VLM under Visual Enabled and Disabled conditions are almost identical. In simpler terms, whether or not an image is provided to the VLM when answering questions from these benchmarks makes little difference.
 
@@ -83,22 +83,22 @@ Most current VLM benchmarks do not truly measure the VLM's visual capabilities!
 
 Since most existing benchmarks don't genuinely measure a VLM's visual capabilities (they are not vision-centric), the authors proposed a new vision-centric benchmark called the [Cambrian Vision-Centric Benchmark (CV-Bench)](https://huggingface.co/datasets/nyu-visionx/CV-Bench), which includes 2638 samples.
 
-{{< image src="dataset.png" caption="[Figure 4] Cambrian Vision-Centric Benchmark (CV-Bench). We repurpose standard vision benchmarks to evaluate the fundamental 2D and 3D visual understanding of MLLMs." >}}
+{{< image src="dataset.png" alt="Four example CV-Bench questions with color-coded category headers: Spatial Relationship (a tree-root cave photo asking where the cave is relative to the trees), Object Count (a street scene asking how many cars appear), Depth Order (a room interior asking whether a sink or pillow is closer to the camera), and Relative Distance (a living room asking which of a chair, refrigerator, or door is closer to a marked object), sourced from ADE20K, COCO, and Omni3D" caption="[Figure 4] Cambrian Vision-Centric Benchmark (CV-Bench). We repurpose standard vision benchmarks to evaluate the fundamental 2D and 3D visual understanding of MLLMs." >}}
 
-{{< image src="task-type.png" caption="[Table 1] Breakdown of the 2D and 3D tasks evaluated in the Cambrian Vision-Centric Benchmark (CV-Bench). The examples are sourced from ADE20K, COCO, and Omni3D." >}}
+{{< image src="task-type.png" alt="A table listing four CV-Bench task types split into 2D (Spatial Relationship with 650 samples, Object Count with 788 samples) and 3D (Depth Order with 600 samples, Relative Distance with 600 samples), each with a task description and source dataset (ADE20K, COCO, or Omni3D)" caption="[Table 1] Breakdown of the 2D and 3D tasks evaluated in the Cambrian Vision-Centric Benchmark (CV-Bench). The examples are sourced from ADE20K, COCO, and Omni3D." >}}
 
 From Figure 4 and Table 1 above, we can see that CV-Bench measures a VLM's 2D visual capabilities (Spatial Relationship and Object Count) and 3D visual capabilities (Depth Order and Relative Distance). Moreover, the authors put in considerable effort: every question in CV-Bench has been manually reviewed (according to their paper)!
 
 ## Analysis 2: How Different Types of Visual Encoders Affect VLM's Visual Capabilities
 
-{{< image src="visual-encoder.png" caption="[Figure 6] Evaluating Visual Representations with MLLMs. While language-supervised models outperform self-supervised or other models, a well-trained self-supervised model like DINOv2 can also achieve competitive performance on vision-centric tasks." >}}
+{{< image src="visual-encoder.png" alt="A four-panel line chart plotting average score for many vision encoders, grouped by color into Language-Supervised (blue), Self-Supervised (red), and Other (green), across General, Knowledge, OCR & Chart, and Vision-Centric benchmark categories, showing SigLIP SO400M leading overall while DINOv2 remains competitive specifically on vision-centric tasks" caption="[Figure 6] Evaluating Visual Representations with MLLMs. While language-supervised models outperform self-supervised or other models, a well-trained self-supervised model like DINOv2 can also achieve competitive performance on vision-centric tasks." >}}
 
 With a benchmark that can truly measure a VLM's visual capabilities, the authors employed **two-stage training** to compare how different types of Visual Encoders affect VLM performance on various benchmarks. Two-stage training means:
 
 -   **First Stage (Pre-Training Stage):** The parameters of the VLM's Visual Encoder and Large Language Model are frozen. **The Connector is trained using Adapter Data.**
 -   **Second Stage (Fine-Tuning Stage):** The parameters of the VLM's Visual Encoder are frozen. **The Connector and Large Language Model are trained using Instruction-Tuning Data.**
 
-In other words, in this two-stage training approach, the VLM's Visual Encoder is always frozen!
+In other words, in this two-stage training approach, the VLM's Visual Encoder is always frozen! If fully fine-tuning the LLM in this second stage sounds expensive, [Tuning LayerNorm in Attention](../layernorm-tuning-multi-modal/) shows that fine-tuning just the LayerNorm layers can get you most of the way there at a fraction of the cost.
 
 From Figure 6 above, it's evident that Language-Supervised Models (e.g., [CLIP](https://arxiv.org/abs/2103.00020)) perform better than Self-Supervised Models (e.g., [DINO](https://arxiv.org/abs/2104.14294)), especially on chat and OCR-related questions.
 
@@ -106,7 +106,7 @@ This is mainly because **CLIP-like Language-Supervised Models learn many image-t
 
 Furthermore, for both Language-Supervised and Self-Supervised Visual Encoders, whether ViT-based or ConvNet-based, increasing image resolution improves VLM performance on vision-centric benchmarks. I noticed this finding aligns with the points made in Apple's [MM1](https://arxiv.org/abs/2403.09611) paper published in April 2024!
 
-{{< image src="clip-dino.png" caption="[Figure 7] Continued Fine-Tuning Narrows the Gap Between CLIP and DINOv2." >}}
+{{< image src="clip-dino.png" alt="A four-panel line chart comparing OpenAI CLIP ViT-L/14@336 (blue) against DINOv2 ViT-L/14@336 (red) average performance on General, Knowledge, OCR & Chart, and Vision-Centric benchmarks across four training settings (0.7M and 5M adapter data, each frozen or fine-tuned), showing DINOv2's gap to CLIP narrows with more fine-tuning data and DINOv2 even surpasses CLIP on Vision-Centric at 5M fine-tuned" caption="[Figure 7] Continued Fine-Tuning Narrows the Gap Between CLIP and DINOv2." >}}
 
 Although Language-Supervised Models (e.g., CLIP) generally outperform Self-Supervised Models (e.g., DINOv2) on VLM benchmarks, it was mentioned earlier that this could be due to the larger amount of training data used for CLIP.
 
@@ -126,9 +126,9 @@ We've already introduced two-stage training, which involves pre-training the Con
 
 Therefore, one-stage training in this section means skipping the pre-training stage for the Connector and directly proceeding to the fine-tuning stage for the Connector and LLM. For these experiments, the authors used Vicuna-1.5-7B as the LLM backbone and combined it with the 23 Visual Encoders listed in Table 9 below:
 
-{{< image src="visual-encoder-type.png" caption="[Table 9] Catalog of all vision backbones tested. 'I' denotes that the visual tokens have been interpolated down to the specified length." >}}
+{{< image src="visual-encoder-type.png" alt="A catalog table of vision backbones grouped by supervision type — Language-Supervised (OpenAI CLIP, DFN-CLIP, EVA-CLIP-02, SigLIP, OpenCLIP ConvNeXt variants), Self-Supervised (DINOv2, MoCo v3, MAE, I-JEPA), and Other (SAM, MiDaS, Stable Diffusion 2.1, SupViT) — listing each model's architecture, patch size, resolution, token count, and hidden size" caption="[Table 9] Catalog of all vision backbones tested. 'I' denotes that the visual tokens have been interpolated down to the specified length." >}}
 
-{{< image src="visual-encoder-bench.png" caption="[Figure 5] Training Recipe Impact on Performance. Boxplots show benchmark scores across categories for different visual encoders (Language-Supervised, Self-Supervised, Other) and training recipes (freezing/unfreezing visual encoders with varying adapter data amounts)." >}}
+{{< image src="visual-encoder-bench.png" alt="A 3-by-4 grid of box plots showing benchmark score distributions for Language Supervised, Self-Supervised, and Other encoder groups (columns) across General, Knowledge, OCR & Chart, and Vision-Centric categories (rows) at four training-data amounts (0M, 0.5M, 1.2M frozen, 1.2M fine-tuned), illustrating that fine-tuning with more adapter data raises scores and narrows variance across nearly all categories" caption="[Figure 5] Training Recipe Impact on Performance. Boxplots show benchmark scores across categories for different visual encoders (Language-Supervised, Self-Supervised, Other) and training recipes (freezing/unfreezing visual encoders with varying adapter data amounts)." >}}
 
 The experiments in Figure 5 above primarily show the performance of VLMs formed by 3 types of Visual Encoders (from Table 9) using 4 different training methods (0M_snowflake, 0.5M_snowflake, 1.2M_snowflake, 1.2M_flame) on benchmarks. The meaning of each training method is as follows:
 
@@ -153,7 +153,7 @@ Pre-training the Connector before fine-tuning the Connector and LLM in a VLM ind
 
 From the experiments in Figure 6, we see that different types of Visual Encoders (Language-Supervised, Self-Supervised, Other) exhibit varying performances on different benchmarks, suggesting they might excel at extracting different features from images. This led the authors to consider whether combining multiple Visual Encoders could capture a broader range of image features, thereby improving the VLM's overall performance across all benchmarks.
 
-{{< image src="visual-backbone.png" caption="[Table 3] | All Benchmark Results for Model Ensemble with 1.2M Adapter Data + 737K Instruction Tuning Data." >}}
+{{< image src="visual-backbone.png" alt="A results table comparing benchmark scores for seven vision-backbone ensemble combinations (e.g. SigLIP+DINOv2, SigLIP+DINOv2+ConvNext+CLIP, CLIP+ConvNext) across General (MME, MMB, SEED-I, GQA), Knowledge (SQA-I, MMMU, MathVista, AI2D), OCR & Chart (ChartQA, OCRBench, TextVQA, DocVQA), and Vision-Centric (MMVP, RealWorldQA, CV-Bench 2D/3D) benchmarks, with the best score in each column highlighted in green" caption="[Table 3] | All Benchmark Results for Model Ensemble with 1.2M Adapter Data + 737K Instruction Tuning Data." >}}
 
 From Table 3 above, it's evident that:
 
@@ -173,7 +173,7 @@ I believe the Connector design proposed in this paper has a similar flavor to th
 
 The benefits are clear: since the Query Tokens are learnable, the model can learn to extract information from multiple Visual Encoders, assigning different importance to their outputs. Additionally, because the Query Tokens are fixed-size, it avoids the problem of the concatenated tensor's dimensionality increasing with the number of Visual Encoders.
 
-{{< image src="sva.png" caption="[Figure 8] Spatial Vision Aggregator (SVA). We propose SVA, a dynamic and spatially-aware connector that integrates multiple vision features with LLMs while reducing the number of tokens." >}}
+{{< image src="sva.png" alt="An architecture diagram of the Spatial Vision Aggregator: on the left, feature maps from multiple encoders (Enc 1 through Enc N) at different spatial resolutions are cross-attended to produce visual tokens for a latent grid; on the right, SVA modules are inserted before transformer blocks in the LLM, feeding aggregated latent tokens alongside text tokens into the stacked transformer" caption="[Figure 8] Spatial Vision Aggregator (SVA). We propose SVA, a dynamic and spatially-aware connector that integrates multiple vision features with LLMs while reducing the number of tokens." >}}
 
 Figure 8 (left) shows the Connector designed in this paper. The Connector has an `L x L` fixed-size & learnable Query Token Sequence (`X`). This sequence contains a total of `L x L` queries, each with `C` dimensions.
 
@@ -185,11 +185,11 @@ For example, the blue box in `X` (one Query Token) will only perform Cross-Atten
 
 For instance, if the size of `Fk` is `mk` times that of `X`, then a Query Token at `(i, j)` in `X` will correspond to the following range of Visual Tokens (Key, Value Tokens) in `Fk`:
 
-{{< image src="key-value.png" caption="Compute position of key/value tokens for current query token" >}}
+{{< image src="key-value.png" alt="A mathematical formula defining the spatial window F_k[m_k·i:m_k·(i+1), m_k·j:m_k·(j+1)] used to compute the key/value tokens contributed by encoder k for a given query token position (i,j)" caption="Compute position of key/value tokens for current query token" >}}
 
 When Query and Key, Value perform Cross-Attention, the operation is as shown in Equation (1) below. `X` will have a Query Weight Matrix, and each Visual Encoder will have its own Key Weight Matrix and Value Weight Matrix to transform Visual Tokens into Keys and Values respectively:
 
-{{< image src="ep1.png" caption="Cross Attention of query (from X) and key/value (from visual tokens)" >}}
+{{< image src="ep1.png" alt="Equation (1) and its supporting definitions showing how the cross-attention output q*_i,j is computed as a softmax-weighted combination of key and value tokens k_i,j,k and v_i,j,k pooled from each of the multiple visual encoders" caption="Cross Attention of query (from X) and key/value (from visual tokens)" >}}
 
 So far, we have introduced the concept of the Spatial Vision Aggregator (SVA) proposed in this paper. However, it can be observed that one query in the Query Sequence actually needs to attend to many Visual Tokens.
 
@@ -209,7 +209,7 @@ When we train an LLM to become a VLM, we fine-tune the LLM on vision-language in
 
 This paper collected all publicly available instruction-tuning datasets, used some data engine & prompting methods to obtain more vision question-answer samples, and then compiled the Cambrian-10M dataset. Finally, through some data curation methods, they obtained high-quality instruction-tuning data — [Cambrian-7M](https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment).
 
-{{< image src="ds.png" caption="[Table 7] Performance improves with better instruction tuning data curation." >}}
+{{< image src="ds.png" alt="A table comparing average scores on General, Knowledge, OCR & Chart, and Vision-Centric categories for models trained with LLaVA-665K, Cambrian-10M, and Cambrian-7M instruction-tuning data, with Cambrian-7M achieving the highest overall average of 55.9" caption="[Table 7] Performance improves with better instruction tuning data curation." >}}
 
 Table 7 above shows the performance difference on benchmarks when a VLM is trained on Cambrian-7M versus [LLaVA-665K](https://huggingface.co/datasets/liuhaotian/LLaVA-Instruct-150K/blob/main/llava_v1_5_mix665k.json).
 
@@ -217,7 +217,7 @@ Table 7 above shows the performance difference on benchmarks when a VLM is train
 
 The authors found that after successfully training an LLM into a VLM through two-stage training, the VLM tends to become an "Answer Machine." As shown in Figure 12 (w/o system prompt) below, when a question is input into the VLM, it outputs a short, direct answer:
 
-{{< image src="sp.png" caption="[Figure 12] System prompts in Cambrian-7M improve chat ability while retaining strong question-answering performance." >}}
+{{< image src="sp.png" alt="Six paired chat examples contrasting responses without versus with a system prompt: a people-counting question answered the same both ways, but a plain 'describe this image' request yields a terse label without the system prompt versus a detailed multi-sentence description with it, alongside similar contrasts for reading a bubble-tea sales chart, naming a NYC landmark, solving a math problem step by step, and describing an unusual anthropomorphic church design" caption="[Figure 12] System prompts in Cambrian-7M improve chat ability while retaining strong question-answering performance." >}}
 
 This situation arises mainly because the instruction-following dataset ([Cambrian-7M](https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment)) used in the VLM's fine-tuning stage contains many visual question-answer samples.
 
@@ -227,7 +227,7 @@ For example, if a training sample's answer is very short, a System Prompt like "
 
 Table 16 below shows the System Prompt corresponding to each dataset:
 
-{{< image src="sp-2.png" caption="[Table 16] Response formatting prompts for Cambrian Data" >}}
+{{< image src="sp-2.png" alt="Two tables: the top lists ten numbered response-formatting instruction templates such as 'answer using a single word or phrase' and 'answer with the option's letter directly'; the bottom maps which of those numbered prompts were appended to which Cambrian training datasets, including SketchyVQA, VizWiz, ChartQA, DocVQA, AI2D, CLEVR, TallyQA, MathInstruct, and Design2Code" caption="[Table 16] Response formatting prompts for Cambrian Data" >}}
 
 As shown in the example in Figure 12 (w/ system prompt) above, training the VLM with an instruction-following dataset that includes appropriate System Prompts helps the VLM adjust its output during inference based on the System Prompt. The finding from this analysis is:
 
@@ -242,7 +242,7 @@ Finally, leveraging all the preceding analyses, the authors trained a brand new 
 Cambrian-1 integrates four different Visual Encoders using its designed Connector (SVA). For training, Cambrian-1 adopts a two-stage approach, using 2.5M Adapter Data in the Pre-Training stage and their self-created [Cambrian-7M](https://huggingface.co/datasets/nyu-visionx/Cambrian-Alignment) in the Fine-Tuning stage.
 
 Table 8 below shows Cambrian-1's impressive performance:
-{{< image src="final-bench.png" caption="Cambrian-1 excels in benchmarks, outperforming open-source models and competing with proprietary ones, using only 576 visual tokens." >}}
+{{< image src="final-bench.png" alt="A summary comparison table showing Cambrian-1-8B/13B/34B (highlighted green) against GPT-4V, Gemini, Grok-1.5, MM-1, Mini-Gemini-HD, and LLaVA-NeXT across General, Knowledge, OCR & Chart, and Vision-Centric benchmark categories, with Cambrian-1 matching or beating larger models while using only 576 visual tokens versus up to 2880 for competitors" caption="Cambrian-1 excels in benchmarks, outperforming open-source models and competing with proprietary ones, using only 576 visual tokens." >}}
 
 ## Conclusion
 

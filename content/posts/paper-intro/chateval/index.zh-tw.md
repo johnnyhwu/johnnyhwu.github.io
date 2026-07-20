@@ -42,13 +42,13 @@ url: "paper-intro/:contentbasename"
 
 ## LLM Agent 的架構
 
-{{< image src="agent-arch.png" caption="LLM Agent 的架構種類" >}}
+{{< image src="agent-arch.png" alt="圖表比較單一 Agent 架構(n=1,僅一個圖示)與多 Agent 架構(n>1):垂直架構為樹狀結構,頂端一個 Agent 由下方兩個 Agent 以向上箭頭連接;水平架構為三個 Agent 以雙向箭頭相互連接成三角形;下方文字方塊說明所有 Agent 都有被賦予角色與工具理解能力的 Persona,且多數 Agent 實作具備推理、規劃與工具呼叫能力" caption="LLM Agent 的架構種類" >}}
 
 如上圖所示，LLM Agent 的方法中，我們可以很簡單地將其區分為「Single Agent Architecture」或「Multi-Agent Architecture」。相信看名詞應該就知道，不需要多加解釋 ～ 而 Multi-Agent Architecture 中又可以是 Vertical 或 Horizontal 的合作關係。
 
 在 Single Agent Architecture 中，經典的論文有 [ReAct (ICLR 2023)](https://openreview.net/forum?id=WE_vluYUL-X) 和 [Reflexion (NeurIPS 2023)](https://proceedings.neurips.cc/paper_files/paper/2023/hash/1b44b878bb782e6954cd888628510e90-Abstract-Conference.html)，而在 Multi-Agent Architecture 中，經典的論文有 [ChatEval (ICLR 2024)](https://openreview.net/forum?id=FQepisCUWu) 與 [MetaGPT (ICLR 2024)](https://openreview.net/forum?id=VtmBAGCN7o)。
 
-{{< image src="agent-persona.png" caption="LLM Agent 加上 Persona" >}}
+{{< image src="agent-persona.png" alt="與前一張相同的單一 Agent 與多 Agent 架構圖,但改以角色人物圖示呈現:單一 Agent 架構以一個科學家圖示表示;多 Agent 垂直架構在頂端放置 CEO 圖示,下方由工程師與設計師圖示以向上箭頭連接;水平架構則由記者、醫生與科學家三個圖示以雙向箭頭連接成三角形" caption="LLM Agent 加上 Persona" >}}
 
 而在 Agent 相關的做法中，「Persona」是一個特別重要的關鍵：**Agent + Persona = Role**。如上圖所示，如果我們給予一個 Agent 透過 System Prompt 來定義其 Persona，那麼它接下來的輸出「內容」、「風格」或「推理方式」就會因此而改變。尤其是在 Multi-Agent 框架的方法中，替每一個 Agent 定義不同的 Persona 相當重要，這大大地影響了這群 Agent 有沒有能力做好當前的任務。
 
@@ -84,19 +84,19 @@ ChatEval 說穿了就是一個透過 LLM 來替其他 LLM 做 Evaluation 的方�
 
 ## ChatEval 介紹 ⭢ Agent & Role
 
-{{< image src="chateval-role.png" caption="ChatEval 中的角色設計" >}}
+{{< image src="chateval-role.png" alt="文字列表呈現 ChatEval 角色設計中的五種評審 Persona:General Public、Critic、News Author、Psychologist、Scientist,每個角色附有一句話說明其在判斷哪個回答較佳時所採取的觀點與職責" caption="ChatEval 中的角色設計" >}}
 
 如上圖所示，在 ChatEval 中定義了 5 種 Persona：General Public、Critic、News Author、Psychologist 與 Scientist。
 
 而每次輸入給一個 Agent 的 Prompt 就會如下圖所示：
 
-{{< image src="chateval-prompt.png" caption="ChatEval 中的 Prompt 設計" >}}
+{{< image src="chateval-prompt.png" alt="ChatEval 用來指示每個 Agent 的 Prompt 模板,內容包含原始問題、兩個待比較的候選回答、要求依照有幫助性、相關性、準確性與詳盡程度以 1 到 10 分評分的指示、討論歷史紀錄與角色描述的佔位符,以及最後以 Agent 名稱呼喚並要求簡短清楚回應的指示" caption="ChatEval 中的 Prompt 設計" >}}
 
 我們可以清楚看到這個 Prompt 主要就是分為兩個部分：Question Prompt 與 System Prompt。在 Question Prompt 中，提供一個問題以及兩個 Language Model 的回答，而在 System Prompt 中，則是告訴目前的 Agent 應該如何替這兩個 Language Model 的回答打分數。
 
 ## ChatEval 介紹 ⭢ Communication between Agent
 
-{{< image src="chateval-communication.png" caption="ChatEval 中的 Coomunication 方式設計" >}}
+{{< image src="chateval-communication.png" alt="三種 Agent(Alice、Bob、Carol)之間溝通策略的示意圖,每輪重複進行 N 次:(a) One-by-One,訊息依序從 Alice 傳給 Bob 再傳給 Carol;(b) Simultaneous-Talk,三個 Agent 在同一輪中互相交換訊息;(c) Simultaneous-Talk-with-Summarizer,三個 Agent 同時發言後,由另一個 Summarizer Agent 在每輪彙整討論內容" caption="ChatEval 中的 Coomunication 方式設計" >}}
 
 如上圖所示，在 ChatEval 中定義了 3 種 Agent 之間的 Communication 方式。假設目前有 3 個 Agent，Alice、Bob 與 Carol，給定一個問題，以及 2 個 Language Model 的回答，這 3 個 Agent 會透過以下 3 種 Communication/Debate 方式，來得到最後的結論（哪一個 Language Model 的回答比較好）：
 
@@ -115,31 +115,31 @@ ChatEval 論文當中使用了 2 種任務來衡量 ChatEval 方法的有效性�
 
 如下圖所示，Open-ended Question Answer 任務中會有很多 Question，每一個 Question 都有 2 個 LLM 的 Response，已經事先標記好哪一個 Response 比較好了，我們希望 ChatEval 方法也可以知道哪一個 Response 比較好：
 
-{{< image src="task-1.png" caption="任務 1: Open-ended Question Answer" >}}
+{{< image src="task-1.png" alt="Open-ended 問答評估流程示意圖:一個問題分別送給 LLM1 與 LLM2 產生兩個候選答案,接著同時以人工標註的 Groundtruth Label 與 ChatEval 來判斷哪個答案較佳" caption="任務 1: Open-ended Question Answer" >}}
 
 下圖為 ChatEval 在這個任務上的實驗結果，可以發現不管是 ChatGPT 還是 GPT-4 都分別使用了三種方法（MEC+BPC、Single-Agent 與 Multi-Agent），其中 Multi-Agent 就是指 ChatEval 方法。實驗結果當然一定會呈現自己所提出的方法（ChatEval）是很棒的。
 
-{{< image src="exp-1.png" caption="任務 1 的實驗結果" >}}
+{{< image src="exp-1.png" alt="任務 1 實驗結果表格,比較三位人工標註者(68.8%、76.3%、70%,標註說明此任務對人類而言也具挑戰性)、FairEval 基準方法(ChatGPT 與 GPT-4)、以及 ChatEval 的 ChatGPT/GPT-4 單一 Agent 與多 Agent 設定的準確率與 Cohen's Kappa;GPT-4 多 Agent 在自動化方法中表現最佳,達到 63.8% 準確率與 0.40 Kappa,並標註 ChatEval performs well" caption="任務 1 的實驗結果" >}}
 
 而在 Dialogue Response Generation 任務中，則是會有很多 Dialogue，每一個 Dialogue 又會有很多 Response。每一則 Response 都可以從不同的面相（例如：Naturalness、Coherence ...）來替每一則 Response 做排名。我們希望透過 ChatEval 方法，也可以看到 Agent 們在每一個面向替這些 Response 的排名結果與人類（Groundtruth）一致。
 
-{{< image src="task-2.png" caption="任務 2: Dialogue Response Generation" >}}
+{{< image src="task-2.png" alt="對話回覆生成評估流程示意圖:六個候選對話回覆分別在 Naturalness、Coherence 等多項指標上由人工給出數值排名,而 ChatEval 在相同指標上對應的分數則以問號表示為待預測的未知值" caption="任務 2: Dialogue Response Generation" >}}
 
 下圖為 ChatEval 在這個任務上的實驗結果，可以發現多數情況下 Multi-Agent (ChatEval) 都可以比 Single-Agent 帶來更好的表現。
 
-{{< image src="exp-2.png" caption="任務 2 的實驗結果" >}}
+{{< image src="exp-2.png" alt="表格比較不同方法與人類判斷的相關性(Spearman's rho 與 Kendall's tau),涵蓋 Naturalness、Coherence、Engagingness、Groundedness 四項指標及其平均值,比較對象包含 ROUGE-L、BLEU-4、BERTScore、G-EVAL-3.5、G-EVAL-4,以及 ChatGPT 與 GPT-4 的單一 Agent 與多 Agent 設定;GPT-4 多 Agent 在所有方法中平均相關性最高(rho 0.684、tau 0.632)" caption="任務 2 的實驗結果" >}}
 
 此外，作者也在 Ablation Study 中呈現在 3 種 Communication/Debate 方法中，One-by-One 有最好的表現： 
 
-{{< image src="exp-communication.png" caption="不同 Commincation 方法的表現" >}}
+{{< image src="exp-communication.png" alt="表格比較 ChatGPT 在三種溝通策略下的準確率與 Kappa:One-by-One(60% 準確率、0.33 Kappa)、Simultaneous-Talk(55%、0.28)、Simultaneous-Talk-with-Summarizer(55%、0.27),顯示 One-by-One 溝通方式表現最佳" caption="不同 Commincation 方法的表現" >}}
 
 而在 Multi-Agent 的框架中，Diverse Role 是作者特別強調的技巧，也就是必須透過 Persona 的設定，讓每一個 LLM 分別是不同的 Role，這樣他們在 Debate 過程中才比較有可能提出不同的觀點，提升最後的表現：
 
-{{< image src="exp-diverse-agent.png" caption="Diverse Agent 的效果" >}}
+{{< image src="exp-diverse-agent.png" alt="表格比較 ChatGPT 在 Single-Agent(53.8%、0.27 Kappa)、Multi-Agent 使用相同角色 Prompt(53.8%、0.25)、以及 Multi-Agent 使用多元角色 Prompt(60%、0.33)三種設定下的準確率與 Kappa,顯示賦予 Agent 多元角色 Persona 比使用相同角色更能提升準確率" caption="Diverse Agent 的效果" >}}
 
 最後，作者也呈現了多少 Agent 以及多少輪討論會有最好的結果。出乎我的意料，我以為會很多 Agent 一起討論很多次，結果其實  3 個 Agent 討論個 2 輪就會有共識了：
 
-{{< image src="exp-agent-iteration.png" caption="Agent 與 Iteration 數量的影響" >}}
+{{< image src="exp-agent-iteration.png" alt="兩張折線圖分別呈現準確率與 Kappa 隨(a)Agent 角色數量的變化,從 1 個角色到 3-4 個角色急遽上升後於 5 個角色時下降;以及(b)討論輪數的變化,在第 2 輪達到高峰(60% 準確率)後下降並在第 3 到 5 輪間波動,顯示 Agent 數量與討論輪數過少或過多都會降低表現" caption="Agent 與 Iteration 數量的影響" >}}
 
 ## 結語
 

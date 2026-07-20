@@ -50,7 +50,7 @@ CER 的最大亮點在於它的**輕量化與通用性**。它不需要訓練額
 *   **情境 A**: 模型經過嚴謹推導，非常有信心地得出答案。
 *   **情境 B**: 模型在推導過程中充滿猶豫 (低機率) ，最後剛好湊出一個答案。
 
-在 SC 的機制下，情境 A 和情境 B 的這一票權重是一樣的。更糟糕的是，當模型出現「一致性幻覺 (Consistent Hallucination) 」時——即模型很有信心地、反覆地生成同一個錯誤答案——SC 會毫不猶豫地選出這個錯誤答案，因為它只看「數量」，不看「品質」。
+在 SC 的機制下，情境 A 和情境 B 的這一票權重是一樣的。更糟糕的是，當模型出現「一致性幻覺 (Consistent Hallucination) 」時——即模型很有信心地、反覆地生成同一個錯誤答案——SC 會毫不猶豫地選出這個錯誤答案，因為它只看「數量」，不看「品質」。[DeepConf](../deepconf/) 也處理了 Majority Voting 的這個弱點，它透過從 Token Entropy 算出的信心分數來為每一票加權，而不是每條路徑都算一票。
 
 ### Noise in Whole-Sequence Uncertainty
 
@@ -93,7 +93,7 @@ CER (Confidence Enhanced Reasoning) 的核心理念在於:
 
 為了後續能讓程式自動抓取重點，我們必須跟模型「約法三章」。透過精心設計的 Prompt (如下圖所示) ，我們要求模型在每一個推理步驟結束時，必須依照特定的格式輸出中間答案。
 
-{{< image src="figure4.png" caption="CER 用於數學推理的 Prompt 範例。注意它要求模型使用 'Answer: [answer]' 格式輸出。" width="70%">}}
+{{< image src="figure4.png" alt="CER 的 Prompt 範本方框，要求模型逐步解題、每一步的中間結果以 Answer: [answer] 格式表達，並以 The final answer is [answer] 作結" caption="CER 用於數學推理的 Prompt 範例。注意它要求模型使用 'Answer: [answer]' 格式輸出。" width="70%">}}
 
 *   **數學任務**: 要求輸出 `Answer: [數值]`。
 *   **問答任務**: 要求輸出 `Response: [實體/短語]`。
@@ -167,7 +167,7 @@ $$ Score(Answer) = \sum_{y \in \text{Paths leading to Answer}} C_{path}(y) $$
 
 作者在三個數學資料集 (GSM8K, MATH, MathQA) 和兩個問答資料集 (TriviaQA, HotPotQA) 上進行了測試。比較的基準 (Baseline) 包含貪婪解碼 (Greedy) 、Self-Consistency (SC) 以及其他基於機率的統計方法。
 
-{{< image src="table1.png" caption="Table 1: 在數學任務上的準確率比較。綠色數字代表相較於最佳 Baseline 的提升幅度。" >}}
+{{< image src="table1.png" alt="在 GSM8K、MATH 與 MathQA 上四個模型的準確率比較表格，CER 欄位在每一列皆最高，並以綠色標示提升幅度，例如 OLMo-2-7B 的 MATH 相較最佳 baseline 提升 5.4 個百分點" caption="Table 1: 在數學任務上的準確率比較。綠色數字代表相較於最佳 Baseline 的提升幅度。" >}}
 
 從表格中我們可以觀察到: 
 *   **一致性提升**: CER 在所有資料集和模型上都取得了比 Baseline 更好的成績。
@@ -188,7 +188,7 @@ $$ Score(Answer) = \sum_{y \in \text{Paths leading to Answer}} C_{path}(y) $$
 
 這是整篇論文在科學上最重要的一個實驗 (Ablation Study) 。為了證明「檢查中間步驟」是必要的，作者設計了一個對照組 **CER-LAST**，即忽略中間過程，只計算「最後一個答案」的自信度。
 
-{{< image src="figure3.png" caption="Figure 3: CER (藍色，考慮所有步驟) 與 CER-LAST (紅色，只看最後一步) 的效能比較。" >}}
+{{< image src="figure3.png" alt="分組長條圖，比較考慮所有步驟的 CER (藍色) 與只看最後一步的 CER-LAST (紅色)，涵蓋 LLaMA-3.1-8B 與 Mistral-7B 在 GSM8K、MATH、MathQA、TriviaQA 與 HotpotQA 上的表現，考慮所有步驟的版本在每個基準都較高" caption="Figure 3: CER (藍色，考慮所有步驟) 與 CER-LAST (紅色，只看最後一步) 的效能比較。" >}}
 
 結果如上圖所示，**CER (Blue Bar) 在所有情況下都顯著優於 CER-LAST (Red Bar)**。
 
@@ -196,7 +196,7 @@ $$ Score(Answer) = \sum_{y \in \text{Paths leading to Answer}} C_{path}(y) $$
 
 ### 數學 vs. 知識問答: 推理與記憶的差異
 
-{{< image src="table2.png" caption="Table 2: 在開放域問答任務（TriviaQA, HotPotQA）上的準確率比較。可以看到部分模型（如 Llama-3.2-3B）在知識密集型任務上的提升幅度不如數學任務顯著。" >}}
+{{< image src="table2.png" alt="在開放域問答任務 TriviaQA 與 HotPotQA 上四個模型的準確率比較表格，CER 在每一列仍領先，但綠色提升幅度小於數學任務" caption="Table 2: 在開放域問答任務（TriviaQA, HotPotQA）上的準確率比較。可以看到部分模型（如 Llama-3.2-3B）在知識密集型任務上的提升幅度不如數學任務顯著。" >}}
 
 比較數學任務與開放域問答 (QA) 的結果，我們發現 CER 在數學上的表現通常比 QA 更穩定。
 
@@ -208,7 +208,7 @@ $$ Score(Answer) = \sum_{y \in \text{Paths leading to Answer}} C_{path}(y) $$
 
 ### 適用於最新的推理模型 (DeepSeek-R1)
 
-{{< image src="table3.png" caption="Table 3: CER 應用於 DeepSeek-R1-Distill-Qwen-7B 模型上的表現。即使在經過強化學習優化（RL）的強推理模型上，CER 依然能將 GSM8K 的準確率進一步推升。" >}}
+{{< image src="table3.png" alt="小型表格顯示 CER 應用於 DeepSeek-R1-Distill-Qwen-7B 在 GSM8K 與 TriviaQA 上的結果，CER 以 GSM8K 90.2、TriviaQA 24.4 的準確率勝過其他 baseline" caption="Table 3: CER 應用於 DeepSeek-R1-Distill-Qwen-7B 模型上的表現。即使在經過強化學習優化（RL）的強推理模型上，CER 依然能將 GSM8K 的準確率進一步推升。" >}}
 
 為了驗證方法的通用性，作者還測試了近期非常熱門的 **DeepSeek-R1** 變體 (經過強化學習優化的推理模型) 。結果顯示，即使是這種已經專門針對 CoT 微調過的模型，CER 依然能將 GSM8K 的準確率從 87.2% 提升到 **90.2%**。
 

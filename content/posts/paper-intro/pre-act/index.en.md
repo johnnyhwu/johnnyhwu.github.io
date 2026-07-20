@@ -35,7 +35,7 @@ For example, given an input task, Pre-Act's first "thinking" phase generates a p
 
 Subsequently, during its second "thinking" phase, Pre-Act regenerates the plan based on the content in the context (the previous plan, action, and observation). The new plan outlines what previous thinking and actions have accomplished and modifies the subsequent steps accordingly.
 
-{{< image src="example.png" caption="ReAct vs. Pre-Act." >}}
+{{< image src="example.png" alt="Side-by-side example on a news-headlines tool request comparing ReAct, which reasons and acts one step at a time, with Pre-Act, which first lays out a multi-step plan of the next steps and then revises that plan after each observation before acting" caption="ReAct vs. Pre-Act." >}}
 
 As seen in the example image above, ReAct's thinking at each step focuses solely on the immediate next action. In contrast, Pre-Act's thinking at each step includes a description of a global plan.
 
@@ -123,7 +123,7 @@ The Pre-Act paper also discusses finetuning Llama-3.1-8B and Llama-3.1-70B model
 
 ## Pre-Act Experimental Results
 
-{{< image src="exp.png" caption="Pre-Act Experimental Results." >}}
+{{< image src="exp.png" alt="Detailed results table comparing ReAct and Pre-Act across several models on in-domain Glaive and Proprietary and out-of-domain Almita datasets, measuring action recall, tool F1, parameter match and final-answer F1 and similarity, where Pre-Act consistently outperforms ReAct, especially the fine-tuned llama3.1-70B row" caption="Pre-Act Experimental Results." >}}
 
 The experimental results above are from Table 2 in the paper, representing Pre-Act's main experiments. The first 5 rows in the table represent models without finetuning ('van' for 'vanilla'), comparing ReAct and Pre-Act performance using different system prompts. The last 2 rows show the performance of finetuned models ('f.t.' for 'finetune').
 

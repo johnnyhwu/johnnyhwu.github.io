@@ -38,7 +38,7 @@ url: "paper-intro/:contentbasename"
 
 ## RLHF 有什麼問題？
 
-{{< image src="rlhf-equation.png" caption="RLHF 中的最佳化問題" >}}
+{{< image src="rlhf-equation.png" alt="RLHF 目標函數公式，最大化策略模型回應的期望獎勵，並減去以 beta 加權的策略模型與參考模型之間的 KL 散度" caption="RLHF 中的最佳化問題" >}}
 
 接著，我們來聊聊 RLHF 訓練階段中的問題。上圖呈現的是 RLHF 階段，需要處理的最佳化問題。在這個階段其實就是要訓練 LLM「最大化 Reward」且同時受到「KL Divergence 的限制」。可以發現兩個問題：
 
@@ -54,7 +54,7 @@ url: "paper-intro/:contentbasename"
 
 而提出了一個新的 Loss Function：
 
-{{< image src="dpo-equation.png" caption="DPO Loss Function" >}}
+{{< image src="dpo-equation.png" alt="DPO 損失函數公式：對「beta 乘以策略模型與參考模型在獲勝回應上的對數比值」減去「同樣在落敗回應上的對數比值」取 log-sigmoid 後的負期望值" caption="DPO Loss Function" >}}
 
 從 DPO Loss Function 可以發現，給定一個 Preference Dataset 並抽樣出一個 Sample 包含 Prompt (\(x\))、Winning Response (\(y_{w}\)) 與 Losing Response (\(y_{l}\))；基於 Prompt (\(x\))，模型 (\(\pi_{\theta}\)) 必須學習讓 Winning Response (\(y_{w}\)) 出現的機率愈高，並讓 Losing Response (\(y_{l}\)) 出現的機率愈小。
 
@@ -72,4 +72,4 @@ url: "paper-intro/:contentbasename"
 
 我們都知道 RLHF 中用來訓練 Reward Model 的 Preference Dataset 是需要投入很多人力與時間來建立的高成本資料集，我們有沒有可能進一步改善 DPO，避免 Preference Dataset 的建立呢？
 
-是的！在 2024 年 1 月份，就有許多論文（[Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models](https://arxiv.org/abs/2401.01335)、[Self-Rewarding Language Models](https://arxiv.org/abs/2401.10020)）被上傳到 Arxiv 上，正是希望透過一些技巧避免 Preference Dataset 的建立。
+是的！在 2024 年 1 月份，就有許多論文（[Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models](https://arxiv.org/abs/2401.01335)、[Self-Rewarding Language Models](https://arxiv.org/abs/2401.10020)）被上傳到 Arxiv 上，正是希望透過一些技巧避免 Preference Dataset 的建立。[SENSE](../sense/) 就是這個想法很好的應用案例，它利用強弱 LLM 合成 Text-to-SQL 的 Preference Dataset，而不是依賴人工標注。

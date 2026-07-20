@@ -30,7 +30,7 @@ Branch-Train-MiX 簡稱 BTX，之所以想分享這篇論文的原因，除了�
 
 分散式訓練主要又分為兩種方法：Data Parallelism 與 Model Parallelism。下圖呈現的是 Data Parallelism 的方法，可以發現主要是把同一個模型複製到多個 Node（配有 GPU 的裝置）上，然後將所有的訓練資料集切分為多個 Subset 分別放到每一個 Node 上。
 
-{{< image src="distributed-training.png" caption="分散式訓練示意圖" >}}
+{{< image src="distributed-training.png" alt="分散式訓練示意圖，資料與腳本被送往兩個 worker node，每個節點各自持有一份資料子集與模型副本，並透過虛擬網路連接" caption="分散式訓練示意圖" >}}
 
 通常在進行分散式訓練時，每一個模型透過不同的 Batch 的訓練資料得到不同的 Gradient。這些 Gradient 就需要以某種方式 Aggregate 在一起（EX. 取平均），然後用這一個 Gradient 更新模型參數，再將更新後的模型參數分配到所有的 Node 上。
 
@@ -58,11 +58,11 @@ BTX 的第三步（MiX）就是會把所有 Domain Expert 的 FFN 合併成一�
 
 作者的想法是他認為 FFN 是比較 Domain-Specialized 的 Layer，為了保留每一個 Expert 的 Domain Knowledge，透過 MoE Layer 保留每一個 FFN。至於其他 Layer，作者則認為比較沒有那麼 Domain-Specialized，因此就直接將他們的參數取平均。
 
-{{< image src="btx.png" caption="多個 Domain Expert 的合併方式" >}}
+{{< image src="btx.png" alt="Branch-Train-Mix 示意圖，兩個各含 self-attention 與 MLP 層的 expert transformer，透過平均 self-attention 權重進行合併，並將各自的 MLP 層組成由 router 控制的 mixture-of-experts" caption="多個 Domain Expert 的合併方式" >}}
 
 MoE Layer 中的 Router 是使用 Token Choice Routing。Token Choice Routing 就必須處理 Expert Load Balancing 問題，避免 Token 都傾向選擇某些特定的 Expert。針對 Expert Load Balancing 問題最常見的作法就是替每一個 Router 都加上一個 Auxiliary Loss：
 
-{{< image src="loss.png" caption="Auxiliary Loss for Load balancing Problem" >}}
+{{< image src="loss.png" alt="負載平衡輔助損失的公式，定義為 alpha 乘以 N，再乘上對所有 expert 的加總，每一項為分配到該 expert 的 token 比例與該 expert 平均 router 機率的乘積" caption="Auxiliary Loss for Load balancing Problem" >}}
 
 從上圖可以發現，Auxiliary Loss 其實就是這一個 MoE Layer 中每一個 Expert 的 u 與 p 乘積的總和。其中 u 就是一個 Batch 中，這個 Expert 被Router 選到的「平均次數」；而 p 就是一個 Batch 中，這個 Expert 被 Router 選到的「平均機率」。 Load Balancing Loss 會和 Language Modeling Loss 加總在一起變成 Total Loss 來更新整個模型。
 
@@ -72,11 +72,11 @@ MoE Layer 中的 Router 是使用 Token Choice Routing。Token Choice Routing �
 
 有趣的是，我們之前介紹過的 Google 發表的 [Sparse Upcycling](../sparse-upcycling/) 方法，其實就是 BTX 的特殊情況，就是沒有經過 BT (Branch-Train) 只有經過 X (Mix) 的版本。
 
-{{< image src="exp-1.png" caption="Branch-Train-MiX 實驗結果 (Table 1)" >}}
+{{< image src="exp-1.png" alt="比較 Llama-2 7B 與數學、程式、維基百科領域專家的結果表格，涵蓋數學 (GSM8K、MATH)、程式 (HumanEval、MBPP) 與一般知識基準，各專家在自身領域上領先" caption="Branch-Train-MiX 實驗結果 (Table 1)" >}}
 
 從上表（Table 1）中可以發現 BTX 中的每一個 Expert 基本上在自己的 Domain 都會有不錯的表現！但是也可以發現到一個有趣的現象：將一個具有 General Knowledge 的 LLM (Llama-2 7B) 訓練在 Domain Knowledge 上會出現「災難性遺忘」（ Catastrophic Forgetting）的問題，也就是說 Math 和 Code Expert 在 General Knowledge 的表現都比原來的 Llama 更差。
 
-{{< image src="exp-2.png" caption="Branch-Train-MiX 實驗結果 (Table 2)" >}}
+{{< image src="exp-2.png" alt="比較 specialized 與 generalist LLM (含 dense、sparse upcycling、BTM 與 BTX) 在數學、程式、知識、推理與 MMLU 上的結果表格，其中 BTX Top-2 取得最佳平均分 47.9" caption="Branch-Train-MiX 實驗結果 (Table 2)" >}}
 
 由最後的實驗數據中（Table 2）可以看到 BTX （最下面兩排）相較於原來的 Seed Model (Llama-2 7B) 不僅在 Domain Knowledge（Math 與 Code）上做得更好，原本的能力 (Knowledge, Reasoning, MMLU) 也沒有忘記！
  

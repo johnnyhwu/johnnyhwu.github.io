@@ -96,7 +96,7 @@ After creating the preference dataset, the model is further trained using [DPO](
 
 ## SENSE Experimental Results
 
-{{< image src="exp.png" caption="Experimental Results of SENSE" >}}
+{{< image src="exp.png" alt="Large text-to-SQL leaderboard table on the Spider and Bird benchmarks grouping prompting methods with closed-source LLMs, fine-tuning models and open-source LLMs, where the authors' SENSE-7B and SENSE-13B rows at the bottom reach the top scores such as 84.1 Spider Dev-EX and 86.6 Spider Test" caption="Experimental Results of SENSE" >}}
 
 The experimental results in the table above show that closed-source models are remarkably powerful, achieving near state-of-the-art (SOTA) performance through simple prompting. In contrast, the performance of open-source models is quite poor.
 

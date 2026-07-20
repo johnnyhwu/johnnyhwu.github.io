@@ -43,7 +43,7 @@ Planner-Executor 的框架在 Agentic Worflow 的方法中非常常見。通常�
 
 ## HiRA 想解決的問題
 
-{{< image src="problem.png" caption="[Figure 1] HiRA 與一般方法的區別" >}}
+{{< image src="problem.png" alt="三種推理方式的比較：(a) 直接推理是從問題到答案的單一鏈，(b) 搜尋增強推理在該鏈中穿插工具節點，(c) HiRA 階層式推理則沿著 meta 推理路徑，透過協調器 (coordinator) 將任務委派給多個專家子鏈" caption="[Figure 1] HiRA 與一般方法的區別" >}}
 
 如 Figure 1 所示，一般的 Deep Search 方法中，單純提供 Search Tool 給 Large Reasoning Model (LRM)，讓 LRM 經過 Reasoning 後透過一些特殊 Token 來表示其 Action。例如，在 [WebThinker](https://arxiv.org/abs/2504.21776) 中，會透過 <|begin search query|> 和 <|end search query|> 來觸發 Search Action。
 
@@ -58,7 +58,7 @@ Planner-Executor 的框架在 Agentic Worflow 的方法中非常常見。通常�
 
 ## HiRA 所提出的方法
 
-{{< image src="solution.png" caption="[Figure 2] HiRA 方法" >}}
+{{< image src="solution.png" alt="HiRA 三層架構：meta 推理規劃器將任務拆解為推理步驟與子任務，具雙通道記憶的自適應推理協調器將子任務委派給執行器並將回應蒸餾回傳，領域專用執行器則結合記憶與子任務，運用搜尋、程式、影像、音訊與影片等專用工具" caption="[Figure 2] HiRA 方法" >}}
 
 如同前文所述，HiRA 框架中包含 Planner Agent, Coordinator Agent 以及 Executor Agent。而他們在論文中的正式名稱為：
 
@@ -222,7 +222,7 @@ You are a professional Conclusion Summarization Assistant. Your primary responsi
 
 #### Memory Mechanism
 
-為了讓 Executor 之間的資訊可以更有效率的傳遞，Coordinator 還會維護一個 Memory Repository，這個 Repository 又可以分為兩種類型：
+為了讓 Executor 之間的資訊可以更有效率的傳遞，Coordinator 還會維護一個 Memory Repository，這個 Repository 又可以分為兩種類型。與 [MemGPT](../memgpt/) 或 [Mem0](../mem0/) 這類通用型的長期記憶系統不同，這裡的 Memory Repository 是專屬於單一任務執行過程、由 Coordinator 與 Executor 共享的記憶：
 
 - Fact Memory: 存放 Executor 在思考過程中所發現的事實。每個 Entry 由 Fact 以及 Source 組成。
 - Resource Memory: 存放 Executor 在思考過程中探索過得資源。每個 Entry 由 Resource 的 Summary 以及 Source 組成。
@@ -325,7 +325,7 @@ You are a professional Conclusion Summarization Assistant. Your primary responsi
 
 ## HiRA 實驗結果
 
-{{< image src="exp-1.png" caption="[Table 1] HiRA 與 Baseline 方法的實驗結果" >}}
+{{< image src="exp-1.png" alt="大型結果表格，將方法分為直接推理、單一能力增強與多重能力增強三組，在 GAIA、WebWalkerQA、Humanity's Last Exam 與 SimpleQA 上評估，HiRA 在多數欄位以粗體標示為最佳，例如 GAIA 平均 42.5、SimpleQA 81.5" caption="[Table 1] HiRA 與 Baseline 方法的實驗結果" >}}
 
 在實驗設定中，HiRA 基於 QwQ-32B 作為 Planner 與 Executor，使用 Qwen-2.5-Insturct-32B 作為 Coordinator，使用 Qwen2.5-Omni-7B 作為 Cross-Modal Executor 中的 Multimodal Model Tools。此外，Decoding 參數分別為 `temperature=0.7`, `top_p=0.95`, `top_k=20`。
 

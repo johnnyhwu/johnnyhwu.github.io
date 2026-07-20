@@ -31,12 +31,12 @@ url: "paper-intro/:contentbasename"
 > 如何設計一個 Agentic Workflow 來提升 LLM 在 Text-to-SQL 的表現
 
 {{< admonition tip 補充說明>}}
-讓 LLM 自己來操作 Database 的方法除了 Text-to-SQL 外，Text-to-Python 也是常見的方法之一。舉例來說，在 [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) 方法中，正是將一些 Database 操作包裝為 Python Function，然後讓 LLM 透過產生 Python Code 來呼叫這些 Function，進而對 Database 進行操作。
+讓 LLM 自己來操作 Database 的方法除了 Text-to-SQL 外，Text-to-Python 也是常見的方法之一。舉例來說，在 [EHRAgent](../ehragent-code-empowers-large-language-models-for-few-shot-complex-tabular-reasoning-on-electronic-health-records/) 方法中，正是將一些 Database 操作包裝為 Python Function，然後讓 LLM 透過產生 Python Code 來呼叫這些 Function，進而對 Database 進行操作。如果對於 SQL 生成如何融入更完整的 RAG 流程感興趣，也可以參考 [TableRAG](../table-rag/)。
 {{< /admonition >}}
 
 ## SQL-of-Thought 方法介紹
 
-{{< image src="sql-of-thought.png" caption="SQL-of-Thought 的 Agentic Workflow" >}}
+{{< image src="sql-of-thought.png" alt="SQL-of-Thought 的 agentic 工作流程：自然語言問題與資料庫 schema 依序經過 schema linking agent、subproblem agent、由思維鏈引導的 query plan agent 與 SQL agent，接著 DB 執行引擎會把任何錯誤送入由 correction plan 與 correction SQL agent 組成的引導式修正迴圈，直到查詢成功" caption="SQL-of-Thought 的 Agentic Workflow" >}}
 
 上圖呈現的是完整的 SQL-of-Thought 的 Workflow，接著我們來簡單描述 Workflow 中每一個 Agent 所負責的任務:
 
@@ -137,7 +137,7 @@ url: "paper-intro/:contentbasename"
     ```
 - **Correction Plan Agent**: 如果 SQL Code 的執行過程中有 Error 產生，則透過此 Agent 來產生如何修正 SQL 的計畫。值得注意的是，本篇論文特別強調，在這個 Agent 的 Prompt 中不只要要求 LLM 透過 Chain of Thought 的方式來產生修正計畫，還**提供 SQL Error Taxonomy**，進一步提升此 Agent 的表現。SQL Error Taxonomy 其實就是 SQL Code 中可能出現的 Error 種類，如下圖所示:
 
-    {{< image src="sql-error-taxonomy.png" caption="SQL Error Taxonomy" >}}
+    {{< image src="sql-error-taxonomy.png" alt="SQL 錯誤分類的心智圖，從中心節點分支出 syntax、filter、join、schema link、aggregation、other issues、value、subquery 與 set operations 等類別，各自列出如 where_missing、join_wrong_type、agg_no_groupby 等具體錯誤類型" caption="SQL Error Taxonomy" >}}
 
     ```text {open=false, lineNos=true, wrap=false, header=true, title="Prompt for Correction Plan Agent"}
     You are a Senior SQL Debugger in an NL2SQL multiagent framework. Your sole task is to analyze a failed SQL query to create a clear, step-by-step correction plan using Chain of Thought. Do NOT write the corrected SQL yourself.
@@ -201,7 +201,7 @@ url: "paper-intro/:contentbasename"
 
 SQL-of-Thought 實驗結果如下表所示:
 
-{{< image src="exp.png" caption="SQL-of-Thought 實驗結果" >}}
+{{< image src="exp.png" alt="Spider 與 Spider-Realistic 基準上的排行榜表格，列出 ChatGPT、GPT-4、DIN-SQL、DAIL-SQL 與 Chase SQL 等方法，其中搭配 Claude Opus 3 的 SQL-of-Thought 在兩欄皆居冠，Spider 達 91.59、Spider-Realistic 達 90.16" caption="SQL-of-Thought 實驗結果" >}}
 
 ## 結語
 

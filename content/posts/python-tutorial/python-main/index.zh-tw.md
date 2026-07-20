@@ -55,7 +55,7 @@ tool.func2()
 
 結果如下圖所示：
 
-{{< image src="demo-1.png" caption="在 Colab 中新增 `tool.py`" >}}
+{{< image src="demo-1.png" alt="Colab 編輯器開啟 main.py，內容為 import tool 並呼叫 tool.func1() 與 tool.func2()，旁邊可看到 tool.py 分頁" caption="在 Colab 中新增 `tool.py`" >}}
 
 接著，我們在 Colab 的程式碼區塊執行以下指令：
 

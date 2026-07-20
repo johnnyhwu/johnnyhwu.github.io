@@ -42,7 +42,7 @@ OctoTools 的 [Github](https://github.com/octotools/octotools) 截至 2025 年 5
 
 ## OctoTools 方法介紹
 
-{{< image src="approach-min.png" caption="[Figure 1] OctoTools 框架" >}}
+{{< image src="approach-min.png" alt="OctoTools 框架圖：標準化的工具卡輸入 planner (query analyzer、action predictor、context verifier、solution summarizer)，並與 executor (command generator 與 command executor) 形成迴圈，反覆執行動作並驗證 context，最後產生最終答案" caption="[Figure 1] OctoTools 框架" >}}
 
 OctoTools 方法如上圖 Figure 1 所示，主要由 **Tool Cards**, **Planner** 與 **Executor** 組成。
 
@@ -58,7 +58,7 @@ OctoTools 方法如上圖 Figure 1 所示，主要由 **Tool Cards**, **Planner*
     - "STOP": 進入到第 7 步驟
 7. 由 Solution Summarizer 基於整個 Trajectory 產生最終的答案
 
-{{< image src="example-min.png" caption="[Figure 3] OctoTools 範例" >}}
+{{< image src="example-min.png" alt="計算圖片中棒球數量的實例：展示 Image Captioner 與 Object Detector 兩張工具卡，並附上 query analyzer、action predictor、command generator、command executor 與 context verifier 在兩個步驟中協作的逐步軌跡，最後由 verifier 確認完整並停止" caption="[Figure 3] OctoTools 範例" >}}
 
 ### Tool Cards
 
@@ -71,7 +71,7 @@ OctoTools 方法如上圖 Figure 1 所示，主要由 **Tool Cards**, **Planner*
 
 想進一步閱讀實際 Tool Cards 內容的讀者，可以參考論文中的 Appendix D:
 
-{{< image src="tools-min.png" caption="OctoTools 中所定義的 Tools" >}}
+{{< image src="tools-min.png" alt="附錄目錄列出 OctoTools 定義的十一張工具卡，包含 ArXiv Paper Searcher、Google Search、Image Captioner、Python Code Generator、Text Detector 與 Wikipedia Knowledge Searcher 等，各附頁碼" caption="OctoTools 中所定義的 Tools" >}}
 
 ### Planner
 
@@ -87,7 +87,7 @@ Planner 實際上是由 4 個 LLM 所組成：**Query Analyzer**, **Action Predi
 
 上述 4 個 LLM 的具體 Prompt，可以再參考論文中的 Appendix C:
 
-{{< image src="prompt.png" caption="Prompt Template" >}}
+{{< image src="prompt.png" alt="附錄目錄列出 OctoTools 五個可設定的提示元件：Query Analyzer、Action Predictor、Command Predictor、Context Verifier 與 Solution Summarizer，各附頁碼" caption="Prompt Template" >}}
 
 ### Executor
 
@@ -112,13 +112,13 @@ Command Generator (Predictor) 的 Prompt 也可以在論文中的 Appendix C 查
 
 ## OctoTools 實驗結果
 
-{{< image src="exp-1-min.png" caption="Experiment 1" >}}
+{{< image src="exp-1-min.png" alt="橫跨視覺、文字、通用、數學、科學、醫療與 agentic 領域共 16 個基準的結果表格，比較 0-shot、CoT、OctoTools-base 與完整 OctoTools，OctoTools 取得最佳平均 58.5%，較 0-shot 提升 9.3 個百分點" caption="Experiment 1" >}}
 
 如上表所示，在實驗中作者使用 18 種 Benchmark，包含 Text 以及 Image Modality，橫跨 5 個 Domain。綠色勾勾的部份代表這個 Benchmark 所需要的技能，由左至右分是：Visual Understadning, Numerical Calculation, Knowledge Retrieval 以及 Multi-Step Reasoning。OctoTools<sub>base</sub> 代表只有使用 Base Tool Set，OctoTools 則是使用 Optimized Tool Set。
 
 由上表可以發現到 OctoTools 方法在使用 Base 或 Optimized Tool Set 的情況下，都表現的比 Baseline 方法更好。說明 Agentic Framework 方法更適合處理負責的任務。
 
-{{< image src="exp-2-min.png" caption="Experiment 2" >}}
+{{< image src="exp-2-min.png" alt="在同樣 16 個基準上比較 OctoTools 與其他 agentic 框架 AutoGen、GPT-Functions、LangChain 的結果表格，OctoTools 幾乎在每一列都以粗體居冠，平均達 58.5%，其餘方法為 47.9% 到 51.2%" caption="Experiment 2" >}}
 
 上表呈現的是將 OctoTools 與其他 Agentic Framework 方法比較。雖然可以發現 OctoTools 確實也比其他方法有更好的表現，但是作者並沒有交待清楚透過其他的 Agentic Framwork 是建立出什麼樣的 Agentic Workflow 來互相比較的。
 

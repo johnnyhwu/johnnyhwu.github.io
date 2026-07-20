@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 In current enterprise-grade RAG applications, the biggest pain point we face is often not "unable to find documents," but "unable to understand the **structured data** within documents." When a financial report or specification sheet contains both lengthy textual descriptions and precise data tables, traditional RAG often loses sight of one while attending to the other.
 
-This paper, published in **EMNLP 2025** and titled **TableRAG**, was born to solve this real-world puzzle. It proposes an elegant solution: **Do not try to read tables as text; instead, let them return to the essence of data.**
+This paper, published in **EMNLP 2025** and titled **TableRAG**, was born to solve this real-world puzzle. It proposes an elegant solution: **Do not try to read tables as text; instead, let them return to the essence of data.** (If you'd rather keep tables in natural language instead of executing SQL against them, [MixRAG](../mixture-of-rag/) tackles the same heterogeneous text-table problem from a different angle.)
 
 {{< admonition tip "TL;DR" >}}
 TableRAG is a RAG framework designed specifically for "Heterogeneous Documents" (i.e., a mix of text and tables). It abandons the traditional approach of "flattening" tables into text for vector retrieval and instead adopts a **Dual-Track** strategy:
@@ -68,7 +68,7 @@ Therefore, TableRAG proposes a **Hybrid** reasoning path: retain vector retrieva
 
 TableRAG is not a single model, but a carefully designed **system framework**. We can divide its operation process into two phases: "Offline Construction" and "Online Reasoning."
 
-{{< image src="figure2.png" caption="Figure 2: The overall architecture of TableRAG. The left side shows how heterogeneous documents are decomposed and stored during the offline phase; the right side shows the four-step iterative reasoning loop during the online phase." >}}
+{{< image src="figure2.png" alt="TableRAG architecture with an offline and online phase: offline, heterogeneous documents are ingested, split into table and text components, parsed into table content, schema and text chunks stored in a document database and a relational database; online, the user query is decomposed into sub-queries that drive document retrieval and NL2SQL execution, whose combined results feed final answer generation" caption="Figure 2: The overall architecture of TableRAG. The left side shows how heterogeneous documents are decomposed and stored during the offline phase; the right side shows the four-step iterative reasoning loop during the online phase." >}}
 
 ### Offline Database Construction
 
@@ -126,7 +126,7 @@ This is TableRAG's killer feature.
     *   If yes: Activate the SQL engine.
 *   **Execution Flow**:
     1.  Use the Mapping Function \(f\) to obtain the complete Schema.
-    2.  The LLM generates a SQL statement based on the sub-question \(q_t\) and Schema (e.g., `SELECT AVG(score) FROM students`).
+    2.  The LLM generates a SQL statement based on the sub-question \(q_t\) and Schema (e.g., `SELECT AVG(score) FROM students`). If you want to dig deeper into how a dedicated multi-agent pipeline handles this SQL generation step (including guided error correction), [SQL-of-Thought](../sql-of-thought/) is a good follow-up read.
     3.  Send the SQL to MySQL for execution to get the precise result \(e_t\).
 
 #### Compositional Intermediate Answer Generation
@@ -157,7 +157,7 @@ The experiment used three Datasets, representing different difficulty dimensions
 
 ### Key Achievements: Why does TableRAG dominate?
 
-{{< image src="table1.png" caption="Table 1: Accuracy of various models on HybridQA, WikiTQ, and HeteQA. This table demonstrates that TableRAG significantly outperforms existing SOTA methods (such as ReAct and TableGPT2) in both mixed and pure table scenarios." >}}
+{{< image src="table1.png" alt="Accuracy table on HybridQA, WikiTQ and HeteQA (single-source, multi-source and overall) comparing Direct, NaiveRAG, ReAct and TableGPT2 against TableRAG across backbones like Claude-3.5, DeepSeek-V3 and Qwen-2.5-72b, where TableRAG achieves the best scores such as 44.85 overall on HeteQA and 84.62 on WikiTQ" caption="Table 1: Accuracy of various models on HybridQA, WikiTQ, and HeteQA. This table demonstrates that TableRAG significantly outperforms existing SOTA methods (such as ReAct and TableGPT2) in both mixed and pure table scenarios." >}}
 
 From the data in Table 1, we can read several key stories:
 
@@ -168,7 +168,7 @@ From the data in Table 1, we can read several key stories:
 
 ### Ablation Studies: Deconstructing "Dual-Track" Contribution
 
-{{< image src="figure4.png" caption="Figure 4: Ablation study results. This chart proves that 'SQL Execution' and 'Text Retrieval' are the two pillars of TableRAG; neither can be dispensed with." >}}
+{{< image src="figure4.png" alt="Two bar charts of LLM eval score ablations on HybridQA and HeteQA comparing full TableRAG against removing context-aware decomposition, SQL execution, or document retrieval, where removing SQL execution or document retrieval causes the largest drops, confirming both are essential" caption="Figure 4: Ablation study results. This chart proves that 'SQL Execution' and 'Text Retrieval' are the two pillars of TableRAG; neither can be dispensed with." >}}
 
 We made an important discovery when analyzing Figure 4:
 *   **Removing SQL (w/o SQL Execution)**: Performance on HeteQA drops sharply. This illustrates that when a problem involves multiple table steps, retrieval based on Markdown table fragments alone is completely inadequate.
@@ -177,7 +177,7 @@ We made an important discovery when analyzing Figure 4:
 
 ### Efficiency Analysis: Faster, More Accurate, More Economical
 
-{{< image src="figure5.png" caption="Figure 5: Comparison of iterative step distribution. This chart proves that TableRAG can solve harder problems in fewer steps (usually within 3) compared to other methods." >}}
+{{< image src="figure5.png" alt="Stacked horizontal bar chart of execution-iteration distribution on HeteQA for TableGPT2, ReAct and TableRAG, where TableRAG concentrates most runs in three steps or fewer and rarely needs more than five, unlike TableGPT2 which often exceeds five steps" caption="Figure 5: Comparison of iterative step distribution. This chart proves that TableRAG can solve harder problems in fewer steps (usually within 3) compared to other methods." >}}
 
 {{< admonition tip "The Efficiency Dividend of Precision" >}}
 We usually instinctively think that "adding an SQL execution step" will increase system latency. However, the paper's experimental results (Table 2) show that **TableRAG's Total Latency is far lower than ReAct**.

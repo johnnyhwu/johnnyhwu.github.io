@@ -42,7 +42,7 @@ url: "python-tutorial/:contentbasename"
 
 對於 Python 中的 Module 有一點認識之後，我們就來動手建立一個 Module。首先開啟 Colab 環境，並將這個 Colab 檔案命名為 `main.ipynb`，然後在左側檔案列表的區域，點擊右鍵後「新增檔案」：
 
-{{< image src="colab.png" caption="在 Colab 中新增檔案" >}}
+{{< image src="colab.png" alt="Colab 檔案面板中開啟右鍵選單，顯示上傳、重新整理、新增檔案與新增資料夾等選項" caption="在 Colab 中新增檔案" >}}
 
 我們將檔案命名為 `tool.py`，表示這一個 Module 的名稱為「tool」。 接著，打開 `tool.py` 並在裡頭打上以下這段程式碼：
 
@@ -133,7 +133,7 @@ Python 程式語言中有許多內建、事先建立好的好的 Module，我們
 
 我們要使用這些 Module 時，只需要使用我們上面所提到的各種不同的引入方法，將 Module 引入到我們的程式中。舉例來說，Python 的 Standard Module 中有一個 `os` Module：
 
-{{< image src="module.png" caption="Python 中的 Standard Module" >}}
+{{< image src="module.png" alt="Python Module Index 中以 o 開頭的模組列表節錄，包含 operator、optparse、os、ossaudiodev 等模組與簡短說明" caption="Python 中的 Standard Module" >}}
 
 `os` Module 中定義了各種與作業系統相關的操作。例如，如果我們想要列出一個資料夾中的所有檔案，就可以使用 `os` Module 中的功能。
 

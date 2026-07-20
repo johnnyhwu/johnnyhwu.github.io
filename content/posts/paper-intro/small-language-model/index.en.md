@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 In the current wave of AI Agent development, we seem to be stuck in a mindset of inertia: to make an Agent smarter, we must use the largest, strongest (and most expensive) general-purpose Large Language Models (LLMs), such as GPT-4 or Claude 3.5 Sonnet.
 
-However, this paper published by NVIDIA Research, [Small Language Models are the Future of Agentic AI](https://arxiv.org/abs/2506.02153), presents a bold and counter-intuitive perspective: **Small Language Models (SLMs) are the future of Agentic AI.**
+However, this paper published by NVIDIA Research, [Small Language Models are the Future of Agentic AI](https://arxiv.org/abs/2506.02153), presents a bold and counter-intuitive perspective: **Small Language Models (SLMs) are the future of Agentic AI.** For a concrete demonstration of how far inference-time techniques alone can push an SLM's reasoning ability, see [rStar](../rstar/), which boosts LLaMA2-7B's math accuracy from 12% to 64% without any fine-tuning.
 
 This is not merely a technical report aimed at topping the leaderboards (SOTA), but a **position paper** that challenges the status quo. It attempts to prove that through correct architectural design, we can break the "bigger is better" myth and build AI agent systems that are more efficient, cheaper, and more private.
 

@@ -63,7 +63,7 @@ MRAG (Modular Retrieval Augmented Generation) 的核心洞見非常漂亮：既�
 
 這是一個 End-to-end 流程被拆解後的樣子：
 
-{{< image src="figure3.png" caption="MRAG 的完整架構流程圖：從 Question Processing 到 Hybrid Ranking 的流水線。" >}}
+{{< image src="figure3.png" alt="MRAG 的三階段流程：(1) 問題處理將問題切分為主要內容與時間限制兩部分，(2) 檢索與摘要擷取並濃縮相關的維基百科段落，(3) 語意—時間混合排序結合語意與時間分數來排序段落並回傳答案" caption="MRAG 的完整架構流程圖：從 Question Processing 到 Hybrid Ranking 的流水線。" >}}
 
 讓我們一步步拆解這個 Pipeline。
 
@@ -105,7 +105,7 @@ MRAG 的做法是：
 | **Last (找最新)** | `before` | 在截止時間前，越接近越好 (Recency Bias)。 |
 | **First (找最早)**| `after` | 在起始時間後，越接近起始點越好。 |
 
-{{< image src="figure8.png" caption="六種時間評分函數示意圖。注意它是硬約束 (歸零) 與軟偏好 (斜率) 的結合。" >}}
+{{< image src="figure8.png" alt="六張折線圖組成的網格，呈現針對 last 與 first 事件日期的 before、after、between 時間限制評分函數，每張圖都結合把分數降到基準的硬性截斷，以及在目標年份附近達到高峰的斜坡式軟性偏好" caption="六種時間評分函數示意圖。注意它是硬約束 (歸零) 與軟偏好 (斜率) 的結合。" >}}
 
 最後的總分公式是：
 $$ S_{final} = S_{sem} \times S_{tem} $$
@@ -122,7 +122,7 @@ $$ S_{final} = S_{sem} \times S_{tem} $$
 
 結果非常殘酷：
 
-{{< image src="table2.png" caption="Table 2: 在 TempRAGEVAL 上，MRAG 與其他檢索方法的性能比較。" >}}
+{{< image src="table2.png" alt="TempRAGEval 的 TimeQA 與 SituatedQA 上的結果表格，比較 BM25、contriever 與各種 reranker 等檢索方法與 MRAG 在 answer recall 與 evidence recall @1、@5 的表現，MRAG 取得最佳分數，如 TimeQA 的 answer recall@5 達 90.0" caption="Table 2: 在 TempRAGEVAL 上，MRAG 與其他檢索方法的性能比較。" >}}
 
 1.  **傳統方法崩潰**：強如 GEMMA (基於 LLM 的 Reranker) ，在面對擾動後，Performance 下降許多，這證實了它們只是在做高級的關鍵字匹配。
 2.  **MRAG 逆勢上揚**：MRAG 不僅抗住了擾動，在證據召回率 (ER@5) 上甚至達到了 **59.2%**，遠超 GEMMA 的 **45.3%**。
@@ -131,7 +131,7 @@ $$ S_{final} = S_{sem} \times S_{tem} $$
 
 ## 結論
 
-1.  **不要迷信 End-to-End**：在 LLM 時代，我們很容易變懶，想把所有東西都丟進 Context Window 讓模型自己學。但 MRAG 證明了，對於 **精確邏輯 (數學、時間、程式碼執行)**，將其從神經網絡中剝離出來，交給確定性的符號系統 (Symbolic System) ，效果往往更好。
+1.  **不要迷信 End-to-End**：在 LLM 時代，我們很容易變懶，想把所有東西都丟進 Context Window 讓模型自己學。但 MRAG 證明了，對於 **精確邏輯 (數學、時間、程式碼執行)**，將其從神經網絡中剝離出來，交給確定性的符號系統 (Symbolic System) ，效果往往更好。[UniversalRAG](../universal-rag/) 則是把類似的「解耦」思路套用在檢索問題的另一個維度 — Modality 與 Granularity，而不是時間。
 2.  **架構設計 > 模型大小**：這篇論文沒有訓練什麼幾千億參數的大模型，而是透過優雅的 Pipeline 設計解決了問題。這才是工程師該發揮價值的地方。
 3.  **Neuro-Symbolic AI 是未來**：這種「神經網絡負責語義，符號邏輯負責推理」的混合架構，我認為會是未來構建複雜 Agent 的主流方向。
 

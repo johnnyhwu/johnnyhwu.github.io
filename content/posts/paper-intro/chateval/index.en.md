@@ -43,13 +43,13 @@ If, from the beginning, I provide it with tools like a Web Browser or a Code Int
 
 ## The Architecture of LLM Agents
 
-{{< image src="agent-arch.png" caption="Types of LLM Agent Architectures" >}}
+{{< image src="agent-arch.png" alt="Diagram contrasting Single Agent Architecture (n=1, one lone agent icon) with Multi Agent Architecture (n>1): a Vertical Architecture where one top agent is linked by upward arrows from two subordinate agents, and a Horizontal Architecture where three agents form a triangle connected by bidirectional arrows; text callouts note that all agents have personas defining their role and tool understanding, and most agent implementations have reasoning, planning, and tool-calling abilities" caption="Types of LLM Agent Architectures" >}}
 
 As shown in the figure above, LLM Agent methods can be simply classified into "Single-Agent Architecture" or "Multi-Agent Architecture." The names themselves are quite self-explanatory, so there's no need for a detailed explanation. Multi-Agent Architectures can further involve vertical or horizontal collaborative relationships.
 
 In Single-Agent Architecture, classic papers include [ReAct (ICLR 2023)](https://openreview.net/forum?id=WE_vluYUL-X) and [Reflexion (NeurIPS 2023)](https://proceedings.neurips.cc/paper_files/paper/2023/hash/1b44b878bb782e6954cd888628510e90-Abstract-Conference.html). In Multi-Agent Architecture, classic papers include [ChatEval (ICLR 2024)](https://openreview.net/forum?id=FQepisCUWu) and [MetaGPT (ICLR 2024)](https://openreview.net/forum?id=VtmBAGCN7o).
 
-{{< image src="agent-persona.png" caption="LLM Agent with Persona" >}}
+{{< image src="agent-persona.png" alt="The same single-agent versus multi-agent architecture diagram illustrated with persona icons: a lone scientist icon for the single-agent case, a vertical hierarchy with a CEO icon at top connected by upward arrows from a programmer and a designer icon, and a horizontal triangle of a journalist, a doctor, and a scientist icon connected by bidirectional arrows" caption="LLM Agent with Persona" >}}
 
 In agent-related approaches, "Persona" is a particularly crucial concept: **Agent + Persona = Role**. As shown above, if we give an Agent a persona through a System Prompt, its subsequent output "content," "style," or "reasoning method" will change accordingly. This is especially important in Multi-Agent frameworks, where defining different personas for each agent is critical. It significantly impacts whether the group of agents can successfully complete the given task.
 
@@ -85,19 +85,19 @@ In essence, ChatEval is a method that uses LLMs to evaluate other LLMs. What mak
 
 ## Introduction to ChatEval ⭢ Agent & Role
 
-{{< image src="chateval-role.png" caption="Role Design in ChatEval" >}}
+{{< image src="chateval-role.png" alt="Text listing five referee personas used in ChatEval's role design—General Public, Critic, News Author, Psychologist, and Scientist—each with a one-sentence description of the perspective that persona brings when judging which of two responses is better" caption="Role Design in ChatEval" >}}
 
 As shown in the figure above, ChatEval defines 5 types of personas: General Public, Critic, News Author, Psychologist, and Scientist.
 
 The prompt given to an agent each time would look like the figure below:
 
-{{< image src="chateval-prompt.png" caption="Prompt Design in ChatEval" >}}
+{{< image src="chateval-prompt.png" alt="The prompt template given to each ChatEval agent, containing the source question, the two candidate assistant answers to compare, instructions to score helpfulness, relevance, accuracy, and detail on a 1-to-10 scale, placeholders for the discussion chat history and role description, and a closing instruction addressing the agent by name to give a short, clear response" caption="Prompt Design in ChatEval" >}}
 
 We can clearly see that this prompt is mainly divided into two parts: the Question Prompt and the System Prompt. The Question Prompt provides a question and the answers from two language models, while the System Prompt tells the current agent how to score the answers of these two language models.
 
 ## Introduction to ChatEval ⭢ Communication between Agents
 
-{{< image src="chateval-communication.png" caption="Communication Method Design in ChatEval" >}}
+{{< image src="chateval-communication.png" alt="Three communication strategies among agents Alice, Bob, and Carol repeated over N rounds: (a) One-by-One, where messages flow sequentially from Alice to Bob to Carol; (b) Simultaneous-Talk, where all three agents exchange messages with each other each round; (c) Simultaneous-Talk-with-Summarizer, where the three agents talk simultaneously and a separate Summarizer agent condenses their discussion each round" caption="Communication Method Design in ChatEval" >}}
 
 As shown in the figure above, ChatEval defines 3 types of communication methods among agents. Suppose there are 3 agents: Alice, Bob, and Carol. Given a question and the responses from 2 language models, these 3 agents will use the following 3 communication/debate methods to reach a final conclusion (which language model's response is better):
 
@@ -116,31 +116,31 @@ The ChatEval paper uses 2 tasks to measure the effectiveness of the ChatEval met
 
 As shown below, in the Open-ended Question Answering task, there are many questions. Each question has responses from 2 LLMs, and it's pre-labeled which response is better. We hope the ChatEval method can also determine which response is better:
 
-{{< image src="task-1.png" caption="Task 1: Open-ended Question Answering" >}}
+{{< image src="task-1.png" alt="Diagram of the open-ended question answering evaluation setup: a question is sent to two LLMs (LLM1 and LLM2) to produce two candidate answers, which are then judged as better or worse by both a human-annotated Groundtruth Label and by ChatEval" caption="Task 1: Open-ended Question Answering" >}}
 
 The figure below shows ChatEval's experimental results on this task. It can be seen that for both ChatGPT and GPT-4, three methods were used (MEC+BPC, Single-Agent, and Multi-Agent), where Multi-Agent refers to the ChatEval method. Naturally, the experimental results show that their proposed method (ChatEval) performs very well.
 
-{{< image src="exp-1.png" caption="Experimental Results for Task 1" >}}
+{{< image src="exp-1.png" alt="Table of Task 1 results comparing accuracy and Cohen's Kappa for three human annotators (68.8%, 76.3%, 70%, noted as challenging even for humans), the FairEval baseline with ChatGPT and GPT-4, and ChatEval's single-agent and multi-agent setups with ChatGPT and GPT-4; GPT-4 multi-agent scores highest among automatic methods at 63.8% accuracy and 0.40 kappa, annotated as ChatEval performing well" caption="Experimental Results for Task 1" >}}
 
 In the Dialogue Response Generation task, there are many dialogues, and each dialogue has many responses. Each response can be ranked from different aspects (e.g., Naturalness, Coherence...). We hope that through the ChatEval method, the agents' rankings of these responses on each aspect will be consistent with human (Groundtruth) rankings.
 
-{{< image src="task-2.png" caption="Task 2: Dialogue Response Generation" >}}
+{{< image src="task-2.png" alt="Diagram of the dialogue response generation evaluation setup: six candidate responses are each ranked by humans on metrics such as Naturalness and Coherence, while ChatEval's corresponding scores on the same metrics are shown as unknown question marks to be predicted" caption="Task 2: Dialogue Response Generation" >}}
 
 The figure below shows ChatEval's experimental results on this task. It can be observed that in most cases, Multi-Agent (ChatEval) can achieve better performance than Single-Agent.
 
-{{< image src="exp-2.png" caption="Experimental Results for Task 2" >}}
+{{< image src="exp-2.png" alt="Table comparing correlation with human judgment (Spearman's rho and Kendall's tau) across Naturalness, Coherence, Engagingness, and Groundedness metrics and their average, for ROUGE-L, BLEU-4, BERTScore, G-EVAL-3.5, G-EVAL-4, and ChatGPT/GPT-4 single-agent and multi-agent; GPT-4 multi-agent achieves the highest average correlation (rho 0.684, tau 0.632) among all methods" caption="Experimental Results for Task 2" >}}
 
 Furthermore, the authors show in the Ablation Study that among the 3 communication/debate methods, One-by-One has the best performance:
 
-{{< image src="exp-communication.png" caption="Performance of Different Communication Methods" >}}
+{{< image src="exp-communication.png" alt="Table comparing ChatGPT's evaluation accuracy and Kappa across three communication strategies: One-by-One (60% accuracy, 0.33 kappa), Simultaneous-Talk (55%, 0.28), and Simultaneous-Talk-with-Summarizer (55%, 0.27), showing One-by-One communication performs best" caption="Performance of Different Communication Methods" >}}
 
 In the Multi-Agent framework, Diverse Roles is a technique particularly emphasized by the authors. This means that by setting personas, each LLM is assigned a different role, making it more likely for them to propose different viewpoints during the debate, thus improving the final performance:
 
-{{< image src="exp-diverse-agent.png" caption="Effect of Diverse Agents" >}}
+{{< image src="exp-diverse-agent.png" alt="Table comparing ChatGPT's accuracy and Kappa across Single-Agent (53.8%, 0.27), Multi-Agent with the same role prompt for every agent (53.8%, 0.25), and Multi-Agent with diverse role prompts (60%, 0.33), showing that assigning agents diverse personas improves accuracy over identical roles" caption="Effect of Diverse Agents" >}}
 
 Finally, the authors also show how many agents and how many rounds of discussion yield the best results. To my surprise, I thought it would be many agents discussing for many rounds, but it turns out that just 3 agents discussing for 2 rounds is enough to reach a consensus:
 
-{{< image src="exp-agent-iteration.png" caption="Impact of the Number of Agents and Iterations" >}}
+{{< image src="exp-agent-iteration.png" alt="Two line charts of accuracy and Kappa versus (a) number of agent roles, rising sharply from 1 to a peak at 3-4 roles then dropping at 5 roles, and (b) number of discussion turns, peaking at turn 2 with 60% accuracy before declining and fluctuating through turns 3-5, showing both too few and too many agents or discussion turns hurt performance" caption="Impact of the Number of Agents and Iterations" >}}
 
 ## Conclusion
 

@@ -68,7 +68,7 @@ The MemRL memory bank is a **Michelin Guide**:
 
 The operation of MemRL can be broken down into two key steps: **How to find (Retrieval)** and **How to learn (Update)**.
 
-{{< image src="figure1.png" caption="MemRL Conceptual Architecture: Showing the interaction between the Frozen LLM and Evolving Memory." >}}
+{{< image src="figure1.png" alt="Two-part diagram drawing an analogy from human cognition, where stable cortical reasoning is decoupled from plastic episodic memory, to MemRL, where a frozen locked LLM interacts with an evolving memory jar of intent, solution attempts and utility scores updated by environment feedback without any weight updates" caption="MemRL Conceptual Architecture: Showing the interaction between the Frozen LLM and Evolving Memory." >}}
 
 ### Two-Phase Retrieval: Not Just Similar, but Useful
 
@@ -101,9 +101,9 @@ The authors introduced the **GEM (Generalized Expectation-Maximization)** theory
 
 ## Experimental Results: Not Just Theory, Strong in Practice
 
-The authors tested the system on ALFWorld, BigCodeBench, and the highly difficult HLE.
+The authors tested the system on ALFWorld, BigCodeBench, and the highly difficult HLE, comparing it against static memory frameworks such as [Mem0](../mem0/) as baselines.
 
-{{< image src="table1.png" caption="Performance of MemRL on various benchmarks, significantly outperforming traditional RAG and static memory mechanisms. 'Last' indicates Last Epoch Success Rate; 'CSR' indicates Cumulative Success Rate." >}}
+{{< image src="table1.png" alt="Results table reporting Last and CSR scores on BigCodeBench, Lifelong Agent Bench, ALFWorld and HLE for memory methods including No Memory, RAG, Self-RAG, Mem0 and MemP, where MemRL is bolded as best in every column with the top average of 0.772 Last and 0.798 CSR" caption="Performance of MemRL on various benchmarks, significantly outperforming traditional RAG and static memory mechanisms. 'Last' indicates Last Epoch Success Rate; 'CSR' indicates Cumulative Success Rate." >}}
 
 **A few interesting observations:**
 1.  **Excellent Long-term Task Performance**: In ALFWorld and OS Tasks that require multi-step planning, MemRL showed the most significant improvements. This proves that "remembering successful paths" is extremely helpful for complex decision-making.

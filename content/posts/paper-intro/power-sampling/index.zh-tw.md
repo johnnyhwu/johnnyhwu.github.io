@@ -388,7 +388,7 @@ $$ \frac{q(x_{old} | x_{new})}{q(x_{new} | x_{old})} $$
 
 ## 本篇論文的實驗結果
 
-{{< image src="exp.png" caption="本篇論文提出的 Power Sampling 方法與 GRPO 在多個 Benchmark 上的比較" width=100% >}}
+{{< image src="exp.png" alt="在 MATH500、HumanEval、GPQA 與 AlpacaEval2.0 上針對 Qwen2.5-Math-7B、Qwen2.5-7B 與 Phi-3.5-mini-instruct 的結果表格，比較 base、低溫度、Power Sampling 與 GRPO，Power Sampling 在不需訓練的情況下接近甚至有時超越 GRPO" caption="本篇論文提出的 Power Sampling 方法與 GRPO 在多個 Benchmark 上的比較" width=100% >}}
 
 最後則是附上本篇論文的主要實驗結果，可以發現單純針對 Base Model 進行 Sampling 的作法確實在許多 Benchmark 上達到甚至超越 RL (e.g. GRPO) Model 的表現。
 
@@ -420,5 +420,7 @@ Base Model 就像是一個讀過萬卷書但缺乏自信的學生，正確答案
 當然，這並不代表 RL 將被淘汰 (怎麼可能 XD)。作者也提到，如果 Base Model 對某個領域完全一無所知 (機率為 0)，那麼再強的 Sharpening 也無濟於事。
 
 說不定未來的趨勢可能會走向一種混合模式: 利用 RL 進行輕量級的對齊，確保 Base Model 的機率分布大方向正確；然後在 Inference 階段，針對高難度的推理問題，動態地引入像本篇論文提出的 Markov Chain Monte Carlo 策略來進行深度搜索。
+
+這種單一鏈的 MCMC 做法也值得和 [DeepConf](../deepconf/) 對照 — DeepConf 把 Inference-Time 的運算預算花在不同的地方：同時生成大量平行的推理路徑，再透過 Token 層級的信心分數提早砍掉表現不佳的路徑，而不是反覆優化單一路徑。
 
 總而言之，是一有趣且很棒的論文，希望本篇文章對你也有帶來幫助!

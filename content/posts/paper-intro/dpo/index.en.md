@@ -39,7 +39,7 @@ Currently, the mainstream approach to LLM Preference Learning involves the secon
 
 ## What are the Problems with RLHF?
 
-{{< image src="rlhf-equation.png" caption="The Optimization Problem in RLHF" >}}
+{{< image src="rlhf-equation.png" alt="RLHF objective equation that maximizes the expected reward of the policy's responses minus a beta-weighted KL divergence between the policy and the reference model" caption="The Optimization Problem in RLHF" >}}
 
 Next, let's talk about the problems within the RLHF training stage. The image above shows the optimization problem that needs to be addressed during the RLHF stage. At this stage, the goal is to train the LLM to "maximize the reward" while being constrained by "KL Divergence." We can identify two problems here:
 
@@ -55,7 +55,7 @@ The DPO method attempts to solve the two problems mentioned above:
 
 And it proposes a new Loss Function:
 
-{{< image src="dpo-equation.png" caption="DPO Loss Function" >}}
+{{< image src="dpo-equation.png" alt="DPO loss equation: the negative expected log-sigmoid of the difference between beta times the log-ratio of the policy to the reference model on the winning response and the same log-ratio on the losing response" caption="DPO Loss Function" >}}
 
 From the DPO Loss Function, we can see that given a Preference Dataset, we sample a data point containing a prompt (\(x\)), a winning response (\(y_{w}\)), and a losing response (\(y_{l}\)). Based on the prompt (\(x\)), the model (\(\pi_{\theta}\)) must learn to increase the probability of generating the winning response (\(y_{w}\)) and decrease the probability of generating the losing response (\(y_{l}\)).
 
@@ -73,4 +73,4 @@ In this article, we briefly introduced the concept of [DPO: Direct Preference Op
 
 We all know that the Preference Dataset used to train the Reward Model in RLHF is a high-cost dataset that requires significant human effort and time to create. Is it possible to further improve DPO to avoid the need for creating a Preference Dataset?
 
-Yes! In January 2024, several papers (such as [Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models](https://arxiv.org/abs/2401.01335) and [Self-Rewarding Language Models](https://arxiv.org/abs/2401.10020)) were uploaded to Arxiv, aiming to eliminate the need for creating a Preference Dataset through various techniques.
+Yes! In January 2024, several papers (such as [Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models](https://arxiv.org/abs/2401.01335) and [Self-Rewarding Language Models](https://arxiv.org/abs/2401.10020)) were uploaded to Arxiv, aiming to eliminate the need for creating a Preference Dataset through various techniques. [SENSE](../sense/) is a great applied example of this idea, synthesizing a Text-to-SQL preference dataset from weak and strong LLMs instead of relying on human annotation.

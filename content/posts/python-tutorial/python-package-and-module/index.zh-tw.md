@@ -26,7 +26,7 @@ url: "python-tutorial/:contentbasename"
 
 在我們自己電腦的相片集中，我們不會將所有的相片通通塞在一個資料夾裡面，我們可能會根據相片的日期或地點，將同性質的相片放在同一個資料夾中。同樣的，當我們今天寫的 Python 程式是一個大型專案，整個專案中包含了非常多的 Python 檔案 (Module)，我們不會將所有的 Python 檔案都放置在同一個資料夾中，而是會依照功能目的將 Python 檔案放置在不同的資料夾中：
 
-{{< image src="project-structure.png" caption="一個專案底下 Python 檔案的結構 (source: www.programiz.com)" >}}
+{{< image src="project-structure.png" alt="樹狀圖顯示 Game Package 底下包含一個 __init__.py 檔案與三個 Sub-package（Sound、Image、Level），每個 Sub-package 中都有自己的 __init__.py 與數個模組檔案" caption="一個專案底下 Python 檔案的結構 (source: www.programiz.com)" >}}
 
 上圖呈現的是一個範例，在 Game Package 底下有三個 Package，每一個 Package 中都包含許多 Module。由上圖的範例中，我們也可以發現每一個 Package 底下都有一個「**\_\_init\_\_.py**」檔案，這個檔案中不需要撰寫任何程式碼。這個檔案是為了讓電腦**把這一個資料夾視為一個 Python Package，而不是普通的資料夾**！
 
@@ -36,11 +36,11 @@ url: "python-tutorial/:contentbasename"
 
 首先在 Colab 中新增一個資料夾「project」，為了要讓這一個資料夾成為一個 Python Package，我們要在底下新增一個「\_\_init\_\_.py」。此外，我們也再新增一個「main.py」。如此一來，「project」底下的檔案如下圖所示：
 
-{{< image src="demo-1.png" caption="project 底下包含 \_\_init\_\_.py 與 main.py" >}}
+{{< image src="demo-1.png" alt="Colab 檔案面板顯示 project 資料夾底下包含 __init__.py 與 main.py 兩個檔案" caption="project 底下包含 \_\_init\_\_.py 與 main.py" >}}
 
 此外，我們在 project 底下新增另外一個 Package「tools」。同樣的，為了要讓 tools 資料夾也成為一個 Python Package，我們在 tools 底下新增一個「\_\_init\_\_.py」。此外，我們再新增一個「tool.py」。如此一來，「project」底下的檔案如下圖所示：
 
-{{< image src="demo-2.png" caption="在 project package 底下新增一個 tool package" >}}
+{{< image src="demo-2.png" alt="Colab 檔案面板顯示 project 資料夾底下多了一個 tools 子資料夾，裡面包含 __init__.py 與 tool.py，project 本身也保留 __init__.py 與 main.py" caption="在 project package 底下新增一個 tool package" >}}
 
 我們在「too.py」中新增一個 Function，能夠將兩個數字加總並乘以第三個數字：
 

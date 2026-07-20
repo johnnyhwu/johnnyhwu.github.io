@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 In this article, I’d like to share an exciting paper born from the collaboration between Microsoft Research Asia and Harvard University: **[Mutual Reasoning Makes Smaller LLM Stronger Problem-Solvers (rStar)](https://arxiv.org/abs/2408.06195)**. Published in August 2024, this paper has been successfully accepted as an **ICLR 2025 Poster**!
 
-In the evolution of LLMs, it is commonly believed that to enhance the reasoning capabilities of Small Language Models (SLMs, e.g., LLaMA2-7B), we must rely on data distillation from powerful models (like GPT-4) for Supervised Fine-Tuning (SFT). However, this paper presents a disruptive perspective: **Small models actually possess sufficient potential; they simply lack the correct "guided thinking" and "self-verification" mechanisms.**
+In the evolution of LLMs, it is commonly believed that to enhance the reasoning capabilities of Small Language Models (SLMs, e.g., LLaMA2-7B), we must rely on data distillation from powerful models (like GPT-4) for Supervised Fine-Tuning (SFT). However, this paper presents a disruptive perspective: **Small models actually possess sufficient potential; they simply lack the correct "guided thinking" and "self-verification" mechanisms.** (For a broader argument on why SLMs deserve more attention in Agentic AI, see [Small Language Models are the Future of Agentic AI](../small-language-model/).)
 
 The authors propose an architecture named **rStar**, which combines **MCTS (Monte Carlo Tree Search)** with a unique **Mutual Reasoning** mechanism. Impressively, **without any fine-tuning or reliance on GPT-4**, simply through algorithmic enhancement at inference time, rStar boosted LLaMA2-7B's accuracy on the GSM8K math dataset from **12.51% to 63.91%**, even allowing Mistral-7B to surpass many models that underwent specialized fine-tuning.
 
@@ -62,7 +62,7 @@ rStar attempts to solve these two problems by improving the MCTS Action Space (m
 
 ## The Method Proposed by rStar
 
-{{< image src="solution.png" caption="rStar's Self-Play Mutual Reasoning consists of Generation-Discrimination" >}}
+{{< image src="solution.png" alt="Two-stage diagram of rStar's Self-Play Mutual Reasoning: an SLM1 Self-Generator produces multiple candidate step-by-step solutions to a math word problem, then an SLM2 Discriminator checks consistency between the generations to select the final verified answer" caption="rStar's Self-Play Mutual Reasoning consists of Generation-Discrimination" >}}
 
 The **rStar** method proposed in this paper can be summarized as:
 
@@ -177,7 +177,7 @@ $$ c \sqrt{\frac{\ln N_{parent}(s)}{N(s, a)}} $$
 
 ### The "Expansion" Process in rStar
 
-{{< image src="expansion.png" caption="The 5 Actions used in rStar's Expansion process" >}}
+{{< image src="expansion.png" alt="Tree diagram showing rStar's 5 expansion actions (A1 propose one-step thought, A2 complete remaining thought, A3 propose sub-question and answer, A4 re-answer the sub-question, A5 rephrase the question) branching from a root math question into successive reasoning nodes" caption="The 5 Actions used in rStar's Expansion process" >}}
 
 This is one of the most brilliant innovations of this paper! Traditional MCTS often only uses one way to "expand" (e.g., always asking "What is the next step?"). But **rStar** observed that human thinking is very flexible when solving hard problems.
 
@@ -384,7 +384,7 @@ This forms a closed loop:
 
 ### rStar's Mutual Reasoning for Final Answer
 
-{{< image src="mutual-reasoning.png" caption="Example of rStar's Mutual Reasoning" >}}
+{{< image src="mutual-reasoning.png" alt="Worked example showing SLM1's candidate solution to an algebra problem, then SLM2 completing a masked version of that solution twice, once reaching a consistent matching answer of -120 shown in green and once reaching an inconsistent answer of -30 shown in red" caption="Example of rStar's Mutual Reasoning" >}}
 
 After finishing 32 Rollouts (Selection -> Expansion -> Simulation -> Backpropagation), we currently have 32 Full Trajectories and Final Answers. The next question is: **How to decide the Final Answer?**
 
@@ -458,7 +458,7 @@ By multiplying, the system tends to choose the Trajectory that **"leads to a hig
 
 ## Experimental Results of rStar
 
-{{< image src="exp.png" caption="Experimental Results of rStar" >}}
+{{< image src="exp.png" alt="Table comparing rStar against baselines (Zero-shot CoT, Few-shot CoT, SC@maj8/64/128, ToT, RAP) across five backbone models (LLaMA2-7B, Mistral-7B, LLaMA3-8B, LLaMA3-8B-Instruct, Phi3-mini-4k) on four benchmarks (GSM8K, GSM-Hard, SVAMP, StrategyQA), with rStar achieving the highest accuracy in nearly every column, e.g. 90.44 to 90.67 on GSM8K with Phi3-mini-4k" caption="Experimental Results of rStar" >}}
 
 **rStar (generator @maj)** represents performing 32 Rollouts purely with the Generator and deciding the Final Answer via Majority Voting (without using the Discriminator at all).
 
@@ -514,7 +514,7 @@ Summary of choice between rStar and Self-Consistency:
 
 ---
 
-{{< image src="exp-2.png" caption="Choice of Discriminator Model" >}}
+{{< image src="exp-2.png" alt="Table showing GSM8K accuracy for LLaMA3-8B-Instruct as generator when paired with different discriminator SLMs, ranging from 88.70 with majority voting up to 92.57 when using GPT-4 as the discriminator" caption="Choice of Discriminator Model" >}}
 
 This is a hot topic in AI: **Weak-to-Strong Generalization**.
 We discussed the Discriminator's role. Intuitively, we might think: "To check LLaMA3-8B's answers, shouldn't the discriminator be at least the same level?"
@@ -532,7 +532,7 @@ This shows rStar's Mutual Consistency mechanism is robust. Even a discriminator 
 
 ---
 
-{{< image src="exp-3.png" caption="rStar performance on GSM8K with different numbers of Rollouts" >}}
+{{< image src="exp-3.png" alt="Three line charts plotting GSM8K accuracy versus number of rollouts (2 to 32) for SC@maj, RAP, rStar generator with majority voting, and full rStar across LLaMA2-7B, Mistral-7B, and LLaMA3-8B-Instruct backbones; the rStar line consistently outperforms the other methods at every rollout count, reaching 63.91% on LLaMA2-7B and 91.13% on LLaMA3-8B-Instruct at 32 rollouts" caption="rStar performance on GSM8K with different numbers of Rollouts" >}}
 
 We just discussed rStar's high cost (32 rollouts). But looking at the table above reveals a great trend.
 
@@ -544,7 +544,7 @@ This addresses our cost concern. Although the paper sets it to 32, in practice, 
 
 ---
 
-{{< image src="exp-4.png" caption="rStar performance on GSM8K with different Action Spaces" width="80%">}}
+{{< image src="exp-4.png" alt="Table showing GSM8K accuracy increasing as more actions are added to rStar's action space, from 70.5% with only A3 (equivalent to RAP) up to 75.0% when all five actions A1 through A5 are used together" caption="rStar performance on GSM8K with different Action Spaces" width="80%">}}
 
 We spent a lot of time discussing those 5 Actions (\(A_1 \sim A_5\)). You might ask: "Do we really need such complexity? Can't we just use one move?"
 

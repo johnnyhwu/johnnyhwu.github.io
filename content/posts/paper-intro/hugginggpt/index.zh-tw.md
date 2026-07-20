@@ -38,13 +38,13 @@ HuggingGPT 是由 Zhejiang University 以及 Microsoft Research Asia 共同發�
 
 ## HuggingGPT 的方法概念
 
-{{< image src="hugginggpt-concept.png" caption="Figure 1: An LLM (e.g., ChatGPT) acts as a controller, coordinating expert models (e.g., Hugging Face) to solve complex AI tasks by planning, assigning, executing, and responding." >}}
+{{< image src="hugginggpt-concept.png" alt="圖示展示 HuggingGPT 如何結合作為控制器的 LLM(如 ChatGPT)與 HuggingFace 上的專家模型:使用者詢問圖片中有多少物件,系統經過任務規劃、模型選擇,並使用 facebook/detr-resnet-101 與 nlpconnect/vit-gpt2-image-captioning 等模型執行任務,最後產生包含物件數量與信心分數的回覆文字" caption="Figure 1: An LLM (e.g., ChatGPT) acts as a controller, coordinating expert models (e.g., Hugging Face) to solve complex AI tasks by planning, assigning, executing, and responding." >}}
 
 本篇論文所提出的 HuggingGPT 方法，就是希望可以讓 LLM 作為 Coordinator (Controller)，使用其他外部的 Model/Tool/Domain Expert 來完成更複雜的任務。HuggingGPT 的概念如 Figure 1 所示，主要是把 LLM 作為 Controller，進行 Task Planning, Model Selection, Task Execution 和 Response Generation。
 
 ## HuggingGPT #1 Step: Task Planning
 
-{{< image src="hugginggpt-prompt.png" caption="Table 1: Details of HuggingGPT's prompt design, featuring injectable slots like {{ Demonstrations }} and {{ Candidate Models }} replaced with corresponding text before input to the LLM." >}}
+{{< image src="hugginggpt-prompt.png" alt="表格詳細列出 HuggingGPT 四個階段的提示詞模板:任務規劃階段(含格式規範、依賴欄位與三個示範範例)、模型選擇階段(要求以 JSON 格式輸出並附上候選模型清單),以及回應生成階段(指示如何結合使用者輸入、任務規劃、模型指派與執行結果,以第一人稱產生最終回答)" caption="Table 1: Details of HuggingGPT's prompt design, featuring injectable slots like {{ Demonstrations }} and {{ Candidate Models }} replaced with corresponding text before input to the LLM." >}}
 
 在 Task Planning 階段的重點就是要透過 LLM 分析 User 的 Query，將其拆解為多個 Structured Task，且包含這些 Task 的 Execution Order 或是 Dependency，最終輸出一個 Task List。為了使 LLM 能夠做好 Task Planning，在這個階段的 Prompt Design 也相當重要。
 
@@ -56,8 +56,8 @@ HuggingGPT 是由 Zhejiang University 以及 Microsoft Research Asia 共同發�
 
 如此一來，我相信如果 LLM 本身的能力 (智商) 夠好的話，是有辦法透過考慮更多 Context，避免由於 User 單一個 Query 中所存在的的 Ambiguity 或是 Incompleteness，而做出不正確的 Task Planning。
 
-{{< image src="prompt-slot.png" caption="Table 9: Definitions for each slot for parsed tasks in the task planning." >}}
-{{< image src="tasks.png" caption="Table 13: Task list, arguments, examples, and model descriptions in HuggingGPT." >}}
+{{< image src="prompt-slot.png" alt="表格定義任務規劃提示詞中四個欄位的意義:「task」代表解析出的任務類型(對應任務清單)、「id」為任務的唯一識別碼、「dep」代表所依賴的前置任務 id,「args」則包含文字、圖片、音訊等執行任務所需的參數" caption="Table 9: Definitions for each slot for parsed tasks in the task planning." >}}
+{{< image src="tasks.png" alt="表格依 NLP、CV、音訊、影片四大類列出 HuggingGPT 支援的所有任務,每列顯示任務名稱(如 Text-CLS、Image-to-Text、ASR、Text-to-Video)、參數類型(文字/圖片/音訊/影片)、候選 Hugging Face 模型範例與模型簡介" caption="Table 13: Task list, arguments, examples, and model descriptions in HuggingGPT." >}}
 
 在 Table 9 中也可以看到每一個 Slot 的意義；在 Table 13 中也有呈現所有 HuggingGPT  支援的 Task ("Available Task List")。
 
@@ -91,7 +91,7 @@ logit\_bias 是什麼？其實它的原理也超簡單！
 
 從 Figure 1 可以看到 User 的 Query 中包含了 2 個 Sub-Task (Describe the Image & Object Counting)，而 LLM 將其轉為 3 個 (Image Classification, Image Captioning & Object Detection) Sub-Task。
 
-{{< image src="hugginggpt-demo.png" caption="Figure 2: Overview of HuggingGPT's workflow with an LLM as the controller and expert models as executors." >}}
+{{< image src="hugginggpt-demo.png" alt="完整範例展示 HuggingGPT 處理「產生一張女孩讀書、姿勢與參考照片中男孩相同的圖片,並用語音描述」這項請求的流程:Stage 1 任務規劃將其拆解為六個相依任務(姿勢偵測、姿勢轉圖片、影像分類、物件偵測、影像轉文字、文字轉語音),Stage 2 模型選擇挑選 facebook/detr-resnet-101 而非其他候選模型,Stage 3 任務執行實際執行姿勢偵測與物件偵測模型,Stage 4 回應生成彙整每個任務使用的模型與輸出,最下方 Response 區塊則呈現原始男孩照片、擷取出的姿勢骨架圖、產生的女孩讀書圖片、帶邊框的物件偵測結果,以及文字轉語音的音訊圖示" caption="Figure 2: Overview of HuggingGPT's workflow with an LLM as the controller and expert models as executors." >}}
 
 而從 Figure 2 也可以看到 User 的 Query 包含了 3 個 Sub-Task：
 
@@ -108,15 +108,15 @@ logit\_bias 是什麼？其實它的原理也超簡單！
 
 看完了實際的範例後，作者也透過 Quantitative Approach 來分析 HuggingGPT 在 Task Planning 的能力。
 
-{{< image src="task-type.png" caption="Table 2: Evaluation for task planning in different task types." >}}
+{{< image src="task-type.png" alt="表格說明 HuggingGPT 三種任務類型並附上範例圖示:單一任務(Single Task,如「給我一張有趣的貓咪圖片」,以 Precision/Recall/F1/Accuracy 評估)、序列任務(Sequential Task,三個任務依序串接,如將圖片中的貓替換成狗,以 Precision/Recall/F1/Edit Distance 評估),以及圖狀任務(Graph Task,三個平行任務匯入兩個中間任務再合併為最終任務,如比較圖片間的語意相似度,以 Precision/Recall/F1/GPT-4 Score 評估)" caption="Table 2: Evaluation for task planning in different task types." >}}
 
 如 Table 2 所示，三種常見的 Planning Task 有 Single Task (Single-Hop), Sequential Task (Multi-Hop) 以及 Graph Task (Mulit-Hop)。
 
-{{< image src="exp-1.png" caption="Table 3: Evaluation for the single task. “Acc” and “Pre” represents Accuracy and Precision." >}}
+{{< image src="exp-1.png" alt="表格比較 Alpaca-7b、Vicuna-7b 與 GPT-3.5 在單一任務規劃上的 Accuracy、Precision、Recall、F1 表現,GPT-3.5 明顯優於另外兩個開源模型(Accuracy 為 52.62,相較 Vicuna-7b 的 23.86 與 Alpaca-7b 的 6.48)" caption="Table 3: Evaluation for the single task. “Acc” and “Pre” represents Accuracy and Precision." >}}
 
-{{< image src="exp-2.png" caption="Table 4: Evaluation for the sequential task. “ED” means Edit Distance." >}}
+{{< image src="exp-2.png" alt="表格比較 Alpaca-7b、Vicuna-7b 與 GPT-3.5 在序列任務規劃上的 Edit Distance(數值越低越好)、Precision、Recall、F1 表現,GPT-3.5 的編輯距離最低(0.54)且 F1 最高(51.92),優於另外兩個較小的 LLM" caption="Table 4: Evaluation for the sequential task. “ED” means Edit Distance." >}}
 
-{{< image src="exp-3.png" caption="Table 5: Evaluation for the graph task." >}}
+{{< image src="exp-3.png" alt="表格比較 Alpaca-7b、Vicuna-7b 與 GPT-3.5 在圖狀任務規劃上的 GPT-4 Score、Precision、Recall、F1 表現,GPT-3.5 大幅領先,GPT-4 Score 達 50.48,相較 Vicuna-7b 的 19.17 與 Alpaca-7b 的 13.14" caption="Table 5: Evaluation for the graph task." >}}
 
 Table 3, 4, 5 分別呈現 HuggingGPT 在這 3 種 Planning Task 上的表現。可以非常明顯地觀察到，在當時的時代 GPT-3.5 可以說是完勝其他 Open-Sourced Model。從 Table 3, 4, 5 的實驗中其實也可以發現到，在 HuggingGPT 的做法中，基本上是完全仰賴 LLM 本身的能力來進行 Task Planning，除了 Specification-based Instruction 和 Demonstration-based Parsing 技巧外，HuggingGPT 並沒有提出什麼特別的方法來提升 Task Planning 能力。
 
@@ -127,3 +127,5 @@ Table 3, 4, 5 分別呈現 HuggingGPT 在這 3 種 Planning Task 上的表現。
 HuggingGPT 的核心概念是透過 LLM 本身強大的推理能力作為 Controller/Coordinator 來進行 Task Planning，每個 Task 中都會使用到相對應的 Model/Tool。再透過後續的 Model Selection, Task Execution 以及 Response Generation 來得到最終的答案。
 
 我個人覺得 HuggingGPT 的方法雖然不難，但它的貢獻在於提出了一個 Single Agent Framework (ex. 應該包含哪寫 Step, 每個 Step 的 Output 要長怎樣, 每個 Step 的 Prompt/Instruction 該怎麼寫)。且還是在 ChatGPT 剛問世不久（ChatGPT 推出的時間為 2022/11/30，而 HuggingGPT 發布的時間在 2023/03），就成功地將 LLM 作為 Controller/Coordinator，來進行 Task Planning 與 Tool Usage 進而處理更複雜的任務!
+
+如果好奇這種單一 Controller 的想法在接下來兩年是如何演進的，可以接著閱讀 [OctoTools](../octo-tools/) 以及 [Plan-and-Act](../plan-and-act/)，它們延續了相同的 Task Planning + Tool Execution 精神，但是將 Controller 拆解為專門的 Planner-Executor 架構。

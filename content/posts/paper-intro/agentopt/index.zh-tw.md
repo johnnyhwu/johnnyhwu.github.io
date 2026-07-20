@@ -27,7 +27,7 @@ url: "paper-intro/:contentbasename"
 
 ### TL;DR
 
-當一個 AI Agent 由多個角色（如規劃者、執行者、評論者）組成時，**「如何組合模型」** 對最終效能與預算的影響，遠大於單一模型的強弱。
+當一個 AI Agent 由多個角色（如規劃者、執行者、評論者 — 就像我們之前介紹過的 [Plan-and-Act](../plan-and-act/) 與 [HiRA](../hira/) 中的 Planner-Executor 架構）組成時，**「如何組合模型」** 對最終效能與預算的影響，遠大於單一模型的強弱。
 
 `AgentOpt` 是第一個專為「客戶端 Agent」設計的開源 Python 框架。它不要求你改寫既有的程式碼，卻能透過聰明的「多臂強盜演算法（MAB）」與「HTTP 攔截技術」，在茫茫的模型組合空間（如 \( 9^N \) 種組合）中，用最少的測試預算（節省高達 67%）幫我們找出「性價比最高」的黃金組合。
 
@@ -35,7 +35,7 @@ url: "paper-intro/:contentbasename"
 
 它展示了 `AgentOpt` 是如何將 Agent 工作流視為一個黑盒子，並透過迭代循環來尋找柏拉圖前沿。
 
-{{< image src="arch.png" caption="呈現了 AgentOpt 的整體設計。圖 (a) 顯示了 N 個角色與候選模型的組合關係，強調每一步的選擇都會影響下游狀態（非 Per-call routing）；圖 (b) 則描繪了迭代搜索迴圈：選擇 Combo、執行攔截、測量指標、更新策略。" >}}
+{{< image src="arch.png" alt="AgentOpt 的兩部分示意圖：(a) 將模型組合視為替流水線中的 N 個角色 (Planner、Solver、Critic) 各指派一個候選模型以組成一個 combo，(b) 則呈現選擇、執行、測量、更新的迭代搜尋迴圈，最後輸出 Pareto 前緣與最佳組合" caption="呈現了 AgentOpt 的整體設計。圖 (a) 顯示了 N 個角色與候選模型的組合關係，強調每一步的選擇都會影響下游狀態（非 Per-call routing）；圖 (b) 則描繪了迭代搜索迴圈：選擇 Combo、執行攔截、測量指標、更新策略。" >}}
 
 ## 問題定義
 
@@ -156,7 +156,7 @@ httpx.AsyncClient.send = patched_async_send
 
 ### 核心發現一：Opus 悖論與能力的誤區
 
-{{< image src="table3.png" caption="這張表展示了 HotpotQA 的墊底 11 名組合" >}}
+{{< image src="table3.png" alt="HotpotQA 上排名墊底的 Planner 與 Solver 模型組合表格 (第 71 到 81 名)，附上各自的準確率、平均延遲與成本，多數準確率停在約 32%" caption="這張表展示了 HotpotQA 的墊底 11 名組合" >}}
 
 你可以發現排名第 71 到 79 名的『規劃者』通通都是最強模型 Claude Opus 4.6。這證明了：在 Multi-Hop 流程中，模型的能力太強（太自負）反而會導致它跳過必要的工具呼叫，造成系統性失敗。
 
@@ -164,7 +164,7 @@ httpx.AsyncClient.send = patched_async_send
 
 ### 核心發現二：32 倍的成本鴻溝
 
-{{< image src="table9.png" caption="BFCL v3 brute force results (200 samples, 9 models)" >}}
+{{< image src="table9.png" alt="BFCL v3 上 9 個模型依準確率排名的表格，附平均延遲、平均呼叫次數與成本，由 Claude Opus 4.6、Kimi K2.5 與 Qwen3 Next 80B 以 70% 準確率並列領先" caption="BFCL v3 brute force results (200 samples, 9 models)" >}}
 
 這個結果證明了：Qwen3 Next 80B 與 Claude Opus 4.6 在函式呼叫的準確率上完全持平（均為 70%）。但 Qwen3 的成本僅需 $1.90，而 Opus 卻要 $60.13。這兩者之間存在著 32 倍的恐怖價差。
 
@@ -172,7 +172,7 @@ httpx.AsyncClient.send = patched_async_send
 
 對比了 8 種演算法，結果顯示 **Arm Elimination (AE)** 是真正的全能型選手。
 
-{{< image src="table6.png" caption="HotpotQA selector comparison (199 samples, 81 combinations)." >}}
+{{< image src="table6.png" alt="HotpotQA 上各種 selector 演算法的比較表格，欄位為平均準確率、平均評估次數、平均成本與相對暴力搜尋的成本節省，顯示 Matrix UCB-E 在節省逾 55% 成本下仍能達到暴力搜尋的準確率" caption="HotpotQA selector comparison (199 samples, 81 combinations)." >}}
 
 這張 HotpotQA 演算法對比表證明了：AE (Arm Elimination) 僅用了 4,283 次評估就找到了準確率 73.19% 的組合，相較於暴力搜索的 16,168 次，它在幾乎無損準確率的情況下節省了 76.3% 的測試成本。
 

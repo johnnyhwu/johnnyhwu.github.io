@@ -24,7 +24,7 @@ url: "paper-intro/:contentbasename"
 
 AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理 Data Science Challenge (e.g. Kaggle Competition)。
 
-{{< image src="automind.png" caption="[Figure 1] AutoMind 方法" >}}
+{{< image src="automind.png" alt="AutoMind 方法示意圖：左側為 agentic 知識樹搜尋，節點以顏色區分空節點、有效、有錯、最佳與死節點，並透過 drafting、improving、debugging 展開；搭配來自 arXiv、Kaggle 與論文的專家知識庫，以及依複雜度評分器將任務導向逐步分解或一次生成的自適應編碼策略" caption="[Figure 1] AutoMind 方法" >}}
 
 如上圖所示，AutoMind 框架中包含 3 個核心方法：
 
@@ -81,7 +81,7 @@ AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理
 
 在 AutoMind 中，Search Policy 是透過一連串的 Rule-Based 的機率判斷來決定輸出，過程中沒有 LLM 的介入。如下方 Algorithm 所示：
 
-{{< image src="search-policy.png" caption="[Algorithm 1] Search Policy" >}}
+{{< image src="search-policy.png" alt="AutoMind 搜尋策略的虛擬碼：根據解答樹與超參數決定要草擬新解、對有錯節點除錯，或改良最佳節點或隨機有效節點，以在探索與利用間取得平衡並避免陷入區域最佳" caption="[Algorithm 1] Search Policy" >}}
 
 ### Action Type
 
@@ -101,11 +101,11 @@ AutoMind 論文的目標在於提出一個 LLM-Based Agentic Framework 來處理
 
 ## AutoMind 實驗結果
 
-{{< image src="experiment.png" caption="[Table 1] AutoMind 實驗結果" >}}
+{{< image src="experiment.png" alt="MLE-Bench 與 Top AI Competitions 的結果表格，比較先前 SOTA 與有無知識庫的 AutoMind 在 easy、medium、hard 與全部切分上的表現，AutoMind 在多數列以綠色向上箭頭取得更高的 Beats 百分比" caption="[Table 1] AutoMind 實驗結果" >}}
 
 從上表 Table 1 可以發現到 AutoMind 在 MLE-Bench 以及 TOP AI Competitions 上，都透過相對更少的 Submission 次數，達到接近或是比 Baseline 方法更好的表現。
 
-{{< image src="ablation.png" caption="[Figure 2] AutoMind 中 Expert Knowledge Base 以及 Self-Adpative Coding Strategy 的影響" >}}
+{{< image src="ablation.png" alt="在 MLE-Bench medium 切分上的消融實驗長條圖，比較 AutoMind、去除知識庫、以及去除自適應編碼三種設定的 Beats 與 Valids 百分比，顯示移除自適應編碼時 Beats 大幅下降 24.6 個百分點" caption="[Figure 2] AutoMind 中 Expert Knowledge Base 以及 Self-Adpative Coding Strategy 的影響" >}}
 
 有趣的是，我原本以為 AutoMind 之所以可以有這麼好的表現，很大一部份應該來自於作者特別建立了一個 Data Science Expert Knowledge Base。然而，從上圖的 Abalaton 實驗可以發現到，如果將 Expert Knowledge Base 移除的話，表現雖然會下降但是不多；如果把 Self-Adpative Coding Strategy 移除 (所有 Plan 都透過 One-Pass Generation 產生 Code)，對於 AutoMind 的影響非常大。
 

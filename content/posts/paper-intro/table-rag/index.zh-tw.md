@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 在當前的企業級 RAG 應用中，我們面臨最大的痛點往往不是「找不到文件」，而是「讀不懂文件中的結構化數據」。當一份財報或規格書同時包含落落長的文字描述與精密的數據表格時，傳統 RAG 往往會顧此失彼。
 
-這篇發表於 **EMNLP 2025** 的論文 **TableRAG**，正是為了這個真實世界的難題而生。它提出了一個優雅的解決方案: **不要試圖把表格當作文字來讀，而是讓它們回歸數據的本質。**
+這篇發表於 **EMNLP 2025** 的論文 **TableRAG**，正是為了這個真實世界的難題而生。它提出了一個優雅的解決方案: **不要試圖把表格當作文字來讀，而是讓它們回歸數據的本質。**（如果你比較希望讓表格維持自然語言的形式，而不是執行 SQL，[MixRAG](../mixture-of-rag/) 則是從另一個角度處理相同的文字表格混合問題。）
 
 {{< admonition tip "TL;DR" >}}
 TableRAG 是一個專為「異質文檔 (Heterogeneous Documents，即文字與表格混合) 」設計的 RAG 框架。它摒棄了傳統將表格「壓扁」成文字進行向量檢索的做法，轉而採用 **雙軌並行 (Dual-Track)** 策略:
@@ -68,7 +68,7 @@ TableRAG 的作者意識到，要解決這些問題，不能再把表格當作�
 
 TableRAG 並不是一個單一的模型，而是一個精心設計的**系統框架**。我們可以將其運作流程分為兩個階段: 「離線建置」與「線上推理」。
 
-{{< image src="figure2.png" caption="Figure 2: TableRAG 的整體架構圖。左側展示了離線階段如何將異質文檔拆解入庫；右側展示了線上階段的四步迭代推理迴圈。" >}}
+{{< image src="figure2.png" alt="TableRAG 架構含離線與線上兩階段：離線階段擷取異質文檔，拆成表格與文字元件，解析出表格內容、schema 與文字 chunk，分別存入文檔資料庫與關聯式資料庫；線上階段將使用者查詢拆解為子查詢，驅動文檔檢索與 NL2SQL 執行，並將兩者的結果合併供最終答案生成" caption="Figure 2: TableRAG 的整體架構圖。左側展示了離線階段如何將異質文檔拆解入庫；右側展示了線上階段的四步迭代推理迴圈。" >}}
 
 ### 離線階段: 資料庫建置 (Offline Database Construction)
 
@@ -126,7 +126,7 @@ TableRAG 並不是一個單一的模型，而是一個精心設計的**系統框
     *   若有: 啟動 SQL 引擎。
 *   **執行流程**: 
     1.  利用 Mapping Function \(f\) 獲取完整 Schema。
-    2.  LLM 根據子問題 \(q_t\) 與 Schema 生成 SQL 語句 (例如: `SELECT AVG(score) FROM students`) 。
+    2.  LLM 根據子問題 \(q_t\) 與 Schema 生成 SQL 語句 (例如: `SELECT AVG(score) FROM students`) 。如果想更深入了解專門處理 SQL 生成 (包含 Guided Error Correction) 的 Multi-Agent 架構，可以接著閱讀 [SQL-of-Thought](../sql-of-thought/)。
     3.  將 SQL 丟給 MySQL 執行，得到精確結果 \(e_t\)。
 
 #### Compositional Intermediate Answer Generation
@@ -157,7 +157,7 @@ TableRAG 並不是一個單一的模型，而是一個精心設計的**系統框
 
 ### 關鍵成效: 為什麼 TableRAG 能全面制霸？
 
-{{< image src="table1.png" caption="Table 1: 各大模型在 HybridQA、WikiTQ 與 HeteQA 上的準確率。這張表證明了 TableRAG 在處理混合與純表格場景時，均顯著超越了現有的 SOTA 方法 (如 ReAct 與 TableGPT2) 。" >}}
+{{< image src="table1.png" alt="HybridQA、WikiTQ 與 HeteQA (單一來源、多來源與整體) 的準確率表格，比較 Direct、NaiveRAG、ReAct 與 TableGPT2 及 TableRAG，涵蓋 Claude-3.5、DeepSeek-V3 與 Qwen-2.5-72b 等骨幹，TableRAG 取得最佳成績，如 HeteQA 整體 44.85、WikiTQ 84.62" caption="Table 1: 各大模型在 HybridQA、WikiTQ 與 HeteQA 上的準確率。這張表證明了 TableRAG 在處理混合與純表格場景時，均顯著超越了現有的 SOTA 方法 (如 ReAct 與 TableGPT2) 。" >}}
 
 從 Table 1 的數據中，我們讀出了這幾個關鍵故事: 
 
@@ -168,7 +168,7 @@ TableRAG 並不是一個單一的模型，而是一個精心設計的**系統框
 
 ### 消融實驗: 拆解「雙軌並行」的貢獻
 
-{{< image src="figure4.png" caption="Figure 4: 消融研究結果。這張圖證明了「SQL 執行」與「文本檢索」是 TableRAG 的兩大支柱，缺一不可。" >}}
+{{< image src="figure4.png" alt="HybridQA 與 HeteQA 上 LLM 評分的兩張消融長條圖，比較完整 TableRAG 與移除情境感知拆解、SQL 執行或文檔檢索的版本，移除 SQL 執行或文檔檢索造成的下降最大，證實兩者都不可或缺" caption="Figure 4: 消融研究結果。這張圖證明了「SQL 執行」與「文本檢索」是 TableRAG 的兩大支柱，缺一不可。" >}}
 
 我們在分析 Figure 4 時有了一個重要的發現: 
 *   **拿掉 SQL (w/o SQL Execution)**: 在 HeteQA 上的性能急劇下降。這說明了當問題涉及多個表格步驟時，單靠 Markdown 表格片段檢索完全無法應對。
@@ -177,7 +177,7 @@ TableRAG 並不是一個單一的模型，而是一個精心設計的**系統框
 
 ### 效率分析: 更快、更準、更省
 
-{{< image src="figure5.png" caption="Figure 5: 執行迭代次數的分佈比較。這張圖證明了 TableRAG 比起其他方法，能用更少的步驟 (通常 3 步以內) 解決更難的問題。" >}}
+{{< image src="figure5.png" alt="HeteQA 上執行迭代次數分佈的堆疊水平長條圖，比較 TableGPT2、ReAct 與 TableRAG，TableRAG 多數在 3 步以內完成、極少超過 5 步，而 TableGPT2 常需超過 5 步" caption="Figure 5: 執行迭代次數的分佈比較。這張圖證明了 TableRAG 比起其他方法，能用更少的步驟 (通常 3 步以內) 解決更難的問題。" >}}
 
 {{< admonition tip "精確度帶來的效率紅利" >}}
 通常我們直覺認為「多加一個 SQL 執行步驟」會增加系統延遲。但論文的實驗結果 (Table 2) 卻顯示 **TableRAG 的總延遲 (Total Latency) 遠低於 ReAct**。

@@ -28,7 +28,7 @@ The methodology in this paper is primarily an enhancement of "[Dynamic Cheatshee
 
 In today's AI systems built upon Large Language Models (LLMs), the vast majority are based on the concept of [Context Engineering (or Context Adaption)](https://www.philschmid.de/context-engineering). The entire AI system essentially acts as a "Context Scheduler," striving to provide the most suitable context into the LLM's limited input context window for any given state, enabling the LLM to generate the correct output.
 
-{{< image src="context-engineering.png" caption="Information that can be included in the Context (Source: https://www.philschmid.de/context-engineering)" width=80% >}}
+{{< image src="context-engineering.png" alt="Venn diagram of context engineering showing overlapping circles for instructions/system prompt, state/history (short-term memory), long-term memory, retrieved information (RAG), available tools, structured output and user prompt, all contained within the outer Context circle" caption="Information that can be included in the Context (Source: https://www.philschmid.de/context-engineering)" width=80% >}}
 
 As shown in the image above, an LLM's input context can contain various types of information, such as a System Prompt, User Prompt, Long-Term Memory, Short-Term Memory, and more. Within Context Engineering, we can optimize this context through several different methods.
 
@@ -39,7 +39,7 @@ However, the authors of this paper argue that existing methods for automated Con
 - **Brevity Bias**: During the context optimization process, LLMs tend to make the context overly concise, causing much of the domain-specific information to be lost, which in turn degrades the system's performance (e.g., [GEPA](https://arxiv.org/abs/2507.19457)).
 - **Context Collapse**: In the process of context optimization, once the context accumulates to a certain size, LLMs tend to drastically reduce it into a much shorter summary. Because a significant amount of information is removed from the context, the system's performance deteriorates (e.g., [Dynamic Cheatsheet](../dynamic-cheatsheet/)).
 As shown in the figure below, at the 60th adaptation step, the LLM abruptly shrinks the context from 18,282 tokens to just 122 tokens, causing a sudden drop in the system's performance:
-    {{< image src="context-collapse.png" caption="An example of Context Collapse" >}}
+    {{< image src="context-collapse.png" alt="Screenshot showing context collapse where a long, detailed intermediate summary is aggressively rewritten into a single short, vague sentence that loses most of the accumulated task-specific details" caption="An example of Context Collapse" >}}
 
 Based on these two shortcomings, the Agentic Context Engineering method advocates for the following principle:
 
@@ -49,7 +49,7 @@ Based on these two shortcomings, the Agentic Context Engineering method advocate
 
 The method proposed in this paper is called Agentic Context Engineering (ACE), and it is applicable to both offline optimization (e.g., System Prompt Optimization) and online adaptation (e.g., Test-Time Memory Adaptation).
 
-{{< image src="solution.png" caption="Conceptual Diagram of Agentic Context Engineering (ACE)" >}}
+{{< image src="solution.png" alt="ACE pipeline diagram where a Generator LLM produces a trajectory from a query and context playbook, a Reflector LLM iteratively refines that trajectory into insights, and a Curator LLM turns the insights into delta context items that update the context playbook in a loop" caption="Conceptual Diagram of Agentic Context Engineering (ACE)" >}}
 
 As illustrated in the diagram, the ACE method can be broken down into three main roles:
 
@@ -91,15 +91,15 @@ For the experimental phase, ACE used two types of benchmarks:
 
 All benchmarks followed the original train/validation/test split methodology. For the Offline Context Engineering scenario, all methods were first optimized on the training split and then evaluated on the test split using the Pass@1 metric. For the Online Context Engineering scenario, all methods were tested directly on the test split, with the context being updated after each inference. Therefore, in theory, later test samples should yield more accurate outputs.
 
-{{< image src="exp-1.png" caption="Table 1: Experimental results on the AppWorld Agent Benchmark" >}}
+{{< image src="exp-1.png" alt="Results table on AppWorld with DeepSeek-V3.1 as base LLM, comparing ReAct, offline adaptation methods like ICL, GEPA and ACE, and online adaptation methods like DC and ACE, where ACE achieves the largest gains, reaching 59.4 and 59.5 average versus 42.4 for plain ReAct" caption="Table 1: Experimental results on the AppWorld Agent Benchmark" >}}
 
 Table 1 above shows the performance of ACE and baseline methods on the AppWorld Agent Benchmark. "GT labels" indicates whether the Reflector had access to ground-truth labels when extracting insights from inference traces. From Table 1, we can see that ACE outperforms other baseline methods in both Offline and Online scenarios.
 
-{{< image src="exp-2.png" caption="Table 2: Experimental results on the Financial Analysis Benchmark" >}}
+{{< image src="exp-2.png" alt="Results table on the FINER and Formula financial analysis tasks comparing the base LLM against ICL, MIPROv2, GEPA, ACE and DC, where ACE with ground-truth labels achieves the best average of 81.9, far above the base LLM's 69.1" caption="Table 2: Experimental results on the Financial Analysis Benchmark" >}}
 
 From Table 2 above, we can also see that the ACE method performs better than the baseline methods in both scenario settings.
 
-{{< image src="exp-3.png" caption="Table 3: Ablation Study on the AppWorld Agent Benchmark" >}}
+{{< image src="exp-3.png" alt="Ablation table on AppWorld comparing ReAct plus ACE without the reflector or multi-epoch training, without multi-epoch only, and full ACE, in both offline and online adaptation, where the full ACE configuration with offline warmup achieves the best online average of 59.5" caption="Table 3: Ablation Study on the AppWorld Agent Benchmark" >}}
 
 From Table 3, we observe that in the Offline scenario, removing the multi-epoch mechanism from ACE leads to a slight decrease in performance. This indicates that in the Offline setting, allowing the model to see a training sample multiple times during context optimization is beneficial.
 

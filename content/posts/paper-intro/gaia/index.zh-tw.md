@@ -26,13 +26,13 @@ url: "paper-intro/:contentbasename"
 
 今天要和大家分享一篇 ICLR 20204 Poster 的論文叫做 [GAIA: A Benchmark for General AI Assistants](https://arxiv.org/abs/2311.12983)，這篇論文正是提出了一個 Benchmark 來衡量一個 General AI Assistant 的能力！ 之所以想和大家分享這篇論文，除了這篇論文有趣之外，另一個原因是這篇論文的作者竟然有 Yann LeCun！身在 AI 領域應該都聽過 Yann LeCun 這號人物，前陣子還[和 Elon Musk 在 X 上大戰](https://x.com/ylecun/status/1797270661192155427?lang=en)呢 ...
 
-{{< image src="author.png" caption="GAIA 的作者" >}}
+{{< image src="author.png" alt="GAIA 論文的標題頁，顯示標題「GAIA: A Benchmark for General AI Assistants」以及作者 Gregoire Mialon、Clementine Fourrier、Craig Swift、Thomas Wolf、Yann LeCun 和 Thomas Scialom，分別隸屬於 Meta FAIR、HuggingFace、AutoGPT 和 Meta GenAI" caption="GAIA 的作者" >}}
 
 ## GAIA Benchmark 想要解決的問題
 
 現今世界已經有那麼多 Benchmark 可以來衡量 LLM Agent 的能力，為什麼還需要提出一個 GAIA Benchmark 呢？它跟過去大家所使用的 Benchmark 有什麼不同呢？ 舉例來說，在 Meta 發表 Llama 3 時就使用了 MMLU、HumanEval、GSM-8K 等常見的 Benchmark 來衡量其 LLM 的能力：
 
-{{< image src="llama3.png" caption="Llama-3 使用的 Benchmark" >}}
+{{< image src="llama3.png" alt="表格「Meta Llama 3 Instruct model performance」，比較 Llama 3 8B 與 Gemma 7B-It、Mistral 7B Instruct，以及 Llama 3 70B 與 Gemini Pro 1.5、Claude 3 Sonnet 在 MMLU、GPQA、HumanEval、GSM-8K、MATH 上的表現；Llama 3 8B 分別得分 68.4、34.2、62.2、79.6、30.0，優於兩個較小的競爭模型，而 Llama 3 70B 分別得分 82.0、39.5、81.7、93.0、50.4，在多數項目上超越或持平 Gemini Pro 1.5 與 Claude 3 Sonnet" caption="Llama-3 使用的 Benchmark" >}}
 
 GAIA 所想要解決的問題正是認為過去這些 Benchmark 雖然可以衡量 LLM 的知識量（或是說聰明程度），但是和 General AI Assistant 的能力卻不完全一致！ 舉例來說，以下是來自 MMLU Benchmark 的兩個 Sample 以及 GSM8K Benchmark 的一個 Sample：
 
@@ -72,7 +72,7 @@ If Washington has 140 goats, Washington has 140+40 = <<140+40=180>>180 goats. In
 
 如下圖為 GAIA Benchmark 中各種檔案類型的統計：
 
-{{< image src="file-type.png" caption="GAIA Benchmark 中所包含的檔案類型" >}}
+{{< image src="file-type.png" alt="橫向長條圖「Distribution of File Types」，列出 GAIA Benchmark 中各檔案類型的數量：xlsx 29 個、png 18 個、pdf 15 個、txt 13 個、mp3 7 個、jpg 7 個、csv 6 個、docx 2 個、pptx 2 個、zip 2 個、xml 2 個，以及 py、json、m4a、pdb、MOV、jsonld 各 1 個" caption="GAIA Benchmark 中所包含的檔案類型" >}}
 
 GAIA 中的 Question 可能是日常工作常見的文書任務、科學問題或是通用的知識性問題。而 GAIA 中最重要的特色就是每一個 **Answer 都是簡短、簡單、容易驗證的（避免模稜兩可的狀況出現）**，但都需要很多不同面向的基本能力，才有辦法得到這一個 Answer。 具體來說，GAIA 中的 Answer 要馬是一個 Number 或是一個 String 或是 A List of String，且正確答案只會有一個。
 
@@ -85,17 +85,17 @@ GAIA 中的 Question 可能是日常工作常見的文書任務、科學問題�
 
 如下圖（左）呈現的是每一種技能所包含的問題數量，可以發現大部分的問題都沒有辦法直接透過 AI 模型既有的知識來回答，AI 模型必須學習透過 Web Browsing 的方式來得到正確答案。下圖（右）呈現的是每一種難度的問題需要使用多少種不同的工具，以及多少個步驟才能得到答案。
 
-{{< image src="difficulty.png" caption="GAIA Benchmark 的問題難度" >}}
+{{< image src="difficulty.png" alt="兩張圖表：左側為橫向長條圖「Capabilities required to solve GAIA」，顯示需要網頁瀏覽能力的題目有 355 題、程式撰寫 154 題、多模態 138 題、多種檔案類型讀取 129 題、不需要特殊能力的有 32 題；右側為散佈圖「An overview of GAIA questions」，以問題難度 Level 1 至 3 上色，橫軸為所需步驟數（0 到 45）、縱軸為使用的工具種類數（0 到 6），大多數題目集中在步驟數少於 15、工具種類數 1 到 3 之間" caption="GAIA Benchmark 的問題難度" >}}
 
 GAIA Benchmark 的使用方式也相當直觀，直接使用官方所提供的 System Prompt 對 AI 模型進行 Zero-Shot 的 Inference 即可。如下圖是官方所提供的 System Prompt 以及一個範例的問題：
 
-{{< image src="system-prompt.png" caption="System Prompt of GAIA Benchmark" >}}
+{{< image src="system-prompt.png" alt="邊框中顯示用於評估模型在 GAIA 上表現的 System Prompt：要求助理以一般 AI 助理的身份回答，並以「FINAL ANSWER: [YOUR FINAL ANSWER]」結尾，格式規則包括數字不可加逗號或單位、字串不可使用冠詞或縮寫，以逗號分隔的清單則依各元素類型分別套用上述規則" caption="System Prompt of GAIA Benchmark" >}}
 
-{{< image src="question.png" caption="Sample Question in GAIA" >}}
+{{< image src="question.png" alt="以邊框呈現的 GAIA 範例問題：「The attached Excel file contains the sales of menu items for a local fast-food chain. What were the total sales that the chain made from food (not including drinks)? Express your answer in USD with two decimal places.」，旁邊附有一個標示為 uploaded.xlsx 的附加檔案圖示" caption="Sample Question in GAIA" >}}
 
 最後，作者透過 GAIA Benchmark 來衡量多個 SOTA LLM 以及 Human 的表現：
 
-{{< image src="exp.png" caption="多個 SOTA LLM 在 GAIA Benchmark 上的表現" >}}
+{{< image src="exp.png" alt="兩部分長條圖「LLMs, Human and Search engine scores and time to answer for GAIA」：上方顯示 Search engine、GPT-4、GPT-4 Turbo、AutoGPT-4、GPT-4 Plugins 與人類在 Level 1、2、3 的答對率（%），人類在各難度都超過 85%，而表現最好的模型 GPT-4 Plugins 在 Level 1 僅約 30%、Level 2 僅約 10%；下方以對數座標顯示回答所需時間，AutoGPT-4 與人類所花時間最長" caption="多個 SOTA LLM 在 GAIA Benchmark 上的表現" >}}
 
 可以發現連前陣子最強的 GPT-4 Turbo 模型在 Level 1 問題的表現也只有 10 ~ 20 分，透過 Human 的幫助頂多可以到 30 分。在 Level 2 和 3 的問題上，這些既有的 SOTA LLM 表現的又更差。但你發現到了嗎！不管在 Level 1、2 還是 3，Human 所得到的分數幾乎都在 90 分上下！
 

@@ -34,23 +34,23 @@ url: "other/:contentbasename"
 
 在 Namecheap 上購買好自己的 Domain 之後，我們要在 [AWS Lightsail](https://aws.amazon.com/tw/lightsail/) 中進行一些設定，讓使用者在瀏覽器輸入這個 Domain 時，可以被導引至我們的網站上。 首先，點擊 Lightsail 側邊欄的「Domains & DNS」選單：
 
-{{< image src="lightsail-dns-setting.png" caption="在 Lightsail 的側邊欄點擊 Domain & DNS" >}}
+{{< image src="lightsail-dns-setting.png" alt="Lightsail 儀表板，左側邊欄選取 Domains & DNS 項目，右側顯示 Create a DNS Zone 面板與 Create DNS zone 按鈕" caption="在 Lightsail 的側邊欄點擊 Domain & DNS" >}}
 
 接著點擊「Create DNS Zone」，將自己的 Domain Name 填寫上去。在 Domain Source 的地方，如果你的 Domain 是在 AWS Route 53 服務上取得的，那你應該選擇第一項：
 
-{{< image src="lightsail-domain.png" caption="建立 DNS Zone，並輸入自己的 Domain" >}}
+{{< image src="lightsail-domain.png" alt="Lightsail 的 Domain configuration 畫面，網域來源選擇使用其他註冊商註冊的網域，並有一個輸入已註冊網域名稱的文字欄位" caption="建立 DNS Zone，並輸入自己的 Domain" >}}
 
 建立好 DNS Zone 後，點擊 Assignment Tab，並點擊「Add Assignments」：
 
-{{< image src="lightsail-domain-assign.png" caption="選擇 Assignment Tab" >}}
+{{< image src="lightsail-domain-assign.png" alt="Lightsail DNS zone 頁面選取 Assignments 分頁，顯示 Domain assignments 區塊與 Add assignment 連結" caption="選擇 Assignment Tab" >}}
 
 將你的 Domain Assign 到自己的 Static IP 上（如果你不知道如何在 Lightsail 中為 Server 設定 Static IP，可以參考[本文](../aws-lightsail-wordpress/)最後的補充處）：
 
-{{< image src="lightsail-static-ip.png" caption="將目前的 Domain Assign 到 Server 的 Static IP" >}}
+{{< image src="lightsail-static-ip.png" alt="Lightsail 的 Add assignment 表單，選擇網域名稱、Ubuntu-Wordpress-IP 資源與 Static IP address 選項，Result 一行確認該網域將解析到此執行個體" caption="將目前的 Domain Assign 到 Server 的 Static IP" >}}
 
 完成 Domain 的 Assignment 後，來到 DNS records 的 Tab，你可以看到有一筆新的 A Record 被新增上去了。這個 A Record 紀錄的是你的 Domain 應該被導引到哪一個 Public IP：
 
-{{< image src="lightsail-dns-setting-2.png" caption="在 DNS records Tab 中可以看到一個 A Record 被新增上去" >}}
+{{< image src="lightsail-dns-setting-2.png" alt="Lightsail 的 DNS records 分頁，A records 區段顯示一筆新增的 A 記錄，將記錄名稱對應到目標 IP" caption="在 DNS records Tab 中可以看到一個 A Record 被新增上去" >}}
 
 ## 在 Namecheap 中設定 Name Servers
 
@@ -58,15 +58,15 @@ url: "other/:contentbasename"
 
 首先，回到 Lightsail 的 Domains Tab 頁面，注意到頁面下方記載了 AWS 的 Domain Name Server 的位置：
 
-{{< image src="lightsail-nameerver.png" caption="回到 Domain Tab 注意 Name Serves 的部分" >}}
+{{< image src="lightsail-nameerver.png" alt="Lightsail DNS zone 的 Domains 分頁，以紅框標出 Name servers 區段，列出四個 AWS name server：ns-1371.awsdns-43.org、ns-1551.awsdns-01.co.uk、ns-781.awsdns-33.net 與 ns-462.awsdns-57.com" caption="回到 Domain Tab 注意 Name Serves 的部分" >}}
 
 接著，在 Namecheap 的左側欄選單中選擇 Domain List，並點擊你的 Domain 旁邊的 MANAGE：
 
-{{< image src="namecheap-domain-list.png" caption="進到 Namecheap 並點擊側邊欄的 Domain List 並點擊 Domain 旁邊的 Manage" >}}
+{{< image src="namecheap-domain-list.png" alt="Namecheap 的 Domain List 頁面，左側邊欄選取 Domain List，右側顯示一列狀態為 Active 的網域與 Manage 按鈕" caption="進到 Namecheap 並點擊側邊欄的 Domain List 並點擊 Domain 旁邊的 Manage" >}}
 
 在設定 Name Servers 的地方選擇 Custom DNS，並且把剛剛出現在 Lightsail 中 AWS 的四個 Name Servers 位置貼過來：
 
-{{< image src="namecheap-settings.png" caption="將 Lightsail 中的四條 Name Servers 位置一一貼到 Custom DNS 中" >}}
+{{< image src="namecheap-settings.png" alt="Namecheap 網域管理頁面，Nameservers 選項設為 Custom DNS，並將來自 Lightsail 的四個 AWS name server 逐行填入" caption="將 Lightsail 中的四條 Name Servers 位置一一貼到 Custom DNS 中" >}}
 
 填寫完 Custom DNS 的資訊後，記得要按下右上角的綠勾勾，才真的有把你填寫的資訊儲存下來！
 
@@ -74,7 +74,7 @@ url: "other/:contentbasename"
 
 完成上述三個步驟之後，所有的設定基本上已經完成。接著就是等待 DNS Record 被傳播到全球的 DNS Server 中！可以在 [DNS Checker](https://dnschecker.org/) 中輸入你的 Domain，就可以查看這個 Domain 相關的 DNS Records 已經被傳播到全球的哪些 DNS Servers 上了！等待一段時間之後，就可以看到分布在全球的部分 DNS Servers 都有我們的 DNS Records：
 
-{{< image src="dns-checker.png" caption="透過 DNS Checker 查看 DNS Record 的傳播狀況" >}}
+{{< image src="dns-checker.png" alt="DNSChecker.org 的 DNS Propagation Map 世界地圖，多個伺服器位置皆顯示綠色勾號，代表 DNS 記錄已在幾乎所有地區完成解析" caption="透過 DNS Checker 查看 DNS Record 的傳播狀況" >}}
 
 這邊再簡單介紹一下 DNS Records 的概念：DNS Records 有很多不同的種類，其實就是在用各種不同的方式來描述一個 Domain 對應到什麼東西。
 
@@ -86,7 +86,7 @@ url: "other/:contentbasename"
 
 當我們的 Domain 的 DNS Records 完成傳播之後，我們就可以在瀏覽器中輸入 Domain，理論上就可以成功存取到自己的 WordPress 網站。 但這時候你可能會發現，當網站完整呈現在瀏覽器後，上頭的 URL 會從原來網站的 Domain 變成 Server 的 Public IP。主要是因為我們的 WordPress 後臺沒有進行相對應的調整：
 
-{{< image src="wordpress-domain-setting.png" caption="在 WordPress 後台將「WordPress 位址」與「網站位址」改為正確的 Domain" >}}
+{{< image src="wordpress-domain-setting.png" alt="WordPress 一般設定頁面，WordPress 位址與網站位址欄位皆設為新的 http 網域，網站介面語言設為繁體中文" caption="在 WordPress 後台將「WordPress 位址」與「網站位址」改為正確的 Domain" >}}
 
 如上圖所示，我們需要在 WordPress 後台將「WordPress 位址」與「網站位址」改為正確的 Domain：「http://your_domain」。
 

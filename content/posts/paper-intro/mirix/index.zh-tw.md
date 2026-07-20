@@ -35,7 +35,7 @@ MIRIX 的方法設計大致上可以分為以下 3 個面向：
 
 ### Memory Component Design
 
-{{< image src="memory-component.png" caption="[Figure 1] MIRIX 中所定義的 6 種 Memory Component" >}}
+{{< image src="memory-component.png" alt="MIRIX 六種記憶元件的圖示橫列：Core Memory 儲存永遠在上下文中的使用者資訊與偏好、Episodic Memory 儲存與使用者相關的事件、Semantic Memory 儲存新概念與新名稱、Procedural Memory 儲存逐步指南、Resource Memory 儲存檔案與文件、Knowledge Vault 儲存地址、電話與憑證" caption="[Figure 1] MIRIX 中所定義的 6 種 Memory Component" >}}
 
 如上圖所示，在 MIRIX 中共定義了 6 種 Memory Component，這些 Memory Component 似乎是總和了 [LangMem](../../other/langmem-intro/) 與 [MemGPT](../memgpt/) 中所設計的 Memory Component。舉例來說，在 [LangMem](../../other/langmem-intro/) 中一樣有 Episodic, Semantic 以及 Procedural Memory；而 Core Memory 與 Resource Memory 則可以對應到 [MemGPT](../memgpt/) 中的 Core Memory 與 Archival Memory。
 
@@ -70,13 +70,13 @@ MIRIX 的方法設計大致上可以分為以下 3 個面向：
 
 ### Memory Update Workflow
 
-{{< image src="memory-update.png" caption="[Figure 2] MIRIX 中的 Memory Update Workflow" >}}
+{{< image src="memory-update.png" alt="MIRIX 記憶更新流程的循序圖：使用者輸入送往 Meta Memory Manager，分析內容類型後路由到相關的 Memory Managers，由其處理資訊並更新 Memory Base，接著回傳確認，最後向使用者回覆確認訊息" caption="[Figure 2] MIRIX 中的 Memory Update Workflow" >}}
 
 上圖呈現的是 MIRIX 方法下的 Memory 是如何被更新的：基於使用者輸入的內容，先從 6 種 Memory Component 中取出相關資訊。由 Meta Memory Manager 判斷目前使用者所輸入的內容應該屬於哪一種 Memory Component，再指派給該 Memory Component 的 Memory Manager 進行 Memory Update。
 
 ### Conversation Workflow
 
-{{< image src="conversation.png" caption="[Figure 3] MIRIX 中的 Conversation Workflow" >}}
+{{< image src="conversation.png" alt="MIRIX 對話流程的循序圖：使用者查詢送往 Chat Agent，分析問題後呼叫 search_in_memory 於 Memory Base 檢索相關結果，必要時透過 Memory Managers 觸發緊急記憶更新，最後彙整並生成回應" caption="[Figure 3] MIRIX 中的 Conversation Workflow" >}}
 
 當 MIRIX Agent 收集足夠多的 Memory 後，就可以開始基於 Memory 回答使用者的問題。MIRIX Agent 實際在與使用者對話的過程如上圖所示：基於使用者所輸入的內容，先到 Memory Base 中取出 6 種 Memory Component 的相關資訊 (簡潔的資訊而非所有細節)。Chat Agent 判斷目前使用者輸入的內容，應該是由哪一種 Memory Component 處理，觸發 "Conduct Specific Search"，從該特定的 Memory Component 中取出更詳細更完整的相關資訊。最後則根據這些取出的相關資訊來生成最後的回覆。如果 Chat Agent 認定使用者提供的內容需要進行 Memory Update，則可以直接觸發特定的 Memory Manager 來對特定的 Memory Component 進行更新。
 
@@ -88,9 +88,9 @@ ScreenshotVQA 是本篇論文自行建立的 Multimodal LLM Memory Dataset，這
 
 在 Evaluation Metric 上，作者基於 `GPT-4.1` 設計 LLM-as-a-Judge 的方法。此外，MIRIX Agent 在 ScreenshotVQA 與 LOCOMO Dataset 分別以 `gemini-2.5-flash-preview-04-17` 與 `gpt-4.1-mini` 作 Backbone Model。
 
-{{< image src="exp-1.png" caption="[Table 1] MIRIX 在 ScreenshotVQA 實驗結果" >}}
+{{< image src="exp-1.png" alt="ScreenshotVQA 上的表格，列出三位 student 與整體的準確率與儲存量，比較 Gemini、SigLIP@50 與 MIRIX，MIRIX 以 0.5950 的整體準確率最高，且僅使用 15.89 MB 儲存，遠低於 SigLIP 的 15.07 GB" caption="[Table 1] MIRIX 在 ScreenshotVQA 實驗結果" >}}
 
-{{< image src="exp-2.png" caption="[Table 2] MIRIX 在 LOCOMO 實驗結果" >}}
+{{< image src="exp-2.png" alt="LOCOMO 基準上的表格，列出 single-hop、multi-hop、open-domain、temporal 與整體分數，比較 A-Mem、LangMem、Mem0、Zep 與 MIRIX 等記憶系統在 gpt-4o-mini 與 gpt-4.1-mini 下的表現，MIRIX 以整體 85.38 領先，逼近 full-context 上限 87.52" caption="[Table 2] MIRIX 在 LOCOMO 實驗結果" >}}
 
 由上方的實驗結果可以看到 MIRIX Agent 在兩個 Dataset 上都取得了相當厲害的表現！
 

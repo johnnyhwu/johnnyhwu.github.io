@@ -31,7 +31,7 @@ To quickly grasp a paper's core idea, we must first understand the "problem" it 
 
 Distributed training primarily falls into two categories: Data Parallelism and Model Parallelism. The diagram below illustrates the Data Parallelism approach. You can see that the same model is replicated across multiple nodes (devices equipped with GPUs), and the entire training dataset is split into multiple subsets, each sent to a different node.
 
-{{< image src="distributed-training.png" caption="Illustration of Distributed Training" >}}
+{{< image src="distributed-training.png" alt="Diagram of distributed training where data and a script are sent to two worker nodes, each holding a data subset and a model copy, connected over a virtual network" caption="Illustration of Distributed Training" >}}
 
 Typically in distributed training, each model copy computes different gradients from its unique batch of training data. These gradients must then be aggregated in some way (e.g., by averaging). This aggregated gradient is used to update the model's parameters, and the updated parameters are then distributed back to all nodes.
 
@@ -59,11 +59,11 @@ The third step of BTX (MiX) combines the Feed-Forward Networks (FFNs) of all dom
 
 The authors' rationale is that FFNs are more domain-specialized layers. To preserve the unique domain knowledge of each expert, they are kept intact within an MoE layer. In contrast, other layers are considered less domain-specific, so their parameters can be safely averaged.
 
-{{< image src="btx.png" caption="How Multiple Domain Experts are Merged" >}}
+{{< image src="btx.png" alt="Branch-Train-Mix diagram showing two expert transformers, each with self-attention and MLP layers, merged by averaging their self-attention weights while combining their MLP layers into a mixture-of-experts controlled by a router" caption="How Multiple Domain Experts are Merged" >}}
 
 The MoE layer's router uses Token Choice Routing. This type of routing must address the expert load balancing problem to prevent tokens from favoring only a few specific experts. The most common solution for this is to add an auxiliary loss to each router:
 
-{{< image src="loss.png" caption="Auxiliary Loss for the Load Balancing Problem" >}}
+{{< image src="loss.png" alt="Equation for the load-balancing auxiliary loss, defined as alpha times N times the sum over experts of the fraction of tokens routed to each expert multiplied by the average router probability for that expert" caption="Auxiliary Loss for the Load Balancing Problem" >}}
 
 As you can see from the formula, the auxiliary loss is the sum of the product of `u` and `p` for each expert in the MoE layer. Here, `u` is the "average number of times" an expert is selected by the router within a batch, and `p` is the "average probability" of that expert being selected. This load balancing loss is added to the language modeling loss to form the total loss, which is then used to update the entire model.
 
@@ -73,11 +73,11 @@ In their experiments, the authors used Llama-2 7B as the seed model and created 
 
 Interestingly, the [Sparse Upcycling](../sparse-upcycling/) method from Google, which we've discussed before, can be seen as a special case of BTX—it's essentially the X (Mix) step without the BT (Branch-Train) stages.
 
-{{< image src="exp-1.png" caption="Branch-Train-MiX Experimental Results (Table 1)" >}}
+{{< image src="exp-1.png" alt="Results table comparing Llama-2 7B against math, code and Wikipedia domain experts across math (GSM8K, MATH), code (HumanEval, MBPP) and general knowledge benchmarks, where each expert leads on its own domain" caption="Branch-Train-MiX Experimental Results (Table 1)" >}}
 
 From the table above (Table 1), we can see that each expert in BTX performs well in its respective domain. However, an interesting phenomenon emerges: training a general-knowledge LLM (Llama-2 7B) on domain-specific knowledge leads to "catastrophic forgetting." In other words, the Math and Code experts performed worse on general knowledge tasks than the original Llama model.
 
-{{< image src="exp-2.png" caption="Branch-Train-MiX Experimental Results (Table 2)" >}}
+{{< image src="exp-2.png" alt="Results table comparing specialized and generalist LLMs including dense, sparse upcycling, BTM and BTX on math, code, knowledge, reasoning and MMLU, where BTX Top-2 achieves the best average score of 47.9" caption="Branch-Train-MiX Experimental Results (Table 2)" >}}
 
 The final experimental data (Table 2) shows that the BTX model (bottom two rows), compared to the original seed model (Llama-2 7B), not only performs better on domain-specific knowledge (Math and Code) but also retains its original capabilities (Knowledge, Reasoning, MMLU)!
 

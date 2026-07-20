@@ -24,7 +24,7 @@ url: "paper-intro/:contentbasename"
 
 本篇論文提出：**一個 Agent 如果具備 Coding, Multimodal Web Browsing 以及 Information Access 三種能力，那麼它將會是一個 General Agent (能夠處理多種領域的任務，而非侷限於單一領域)**。
 
-{{< image src="openhands-versa.png" caption="OpenHands-Versa vs OpenHands" >}}
+{{< image src="openhands-versa.png" alt="比較圖：左側 OpenHands（Software Development Agent）具備 Textual Browser、Text File Editor、Code Executor 三種工具；右側 OpenHands-Versa（Versatile Agent）在 Text File Editor、Code Executor 之外，新增 Multimodal Reader、Multimodal Browser 與 Search 等工具，展現其更全面的通用能力" caption="OpenHands-Versa vs OpenHands" >}}
 
 如上圖所示，本篇論文所提出的方法稱為 **OpenHands-Versa** 是一個 General (Versatile) Agent。在核心方法上主要是基於 OpenHands 這個專注於 Software Development 的 Specialist Agent 提供不同的 Tool。 OpenHands-Versa 本身也是一個開源專案，有興趣的讀者可以再研究其 [Codebase](https://github.com/adityasoni9998/OpenHands-Versa)。
 

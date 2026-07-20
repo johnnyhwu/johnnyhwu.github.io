@@ -28,11 +28,11 @@ OpenAI 內部擁有超過 3,500 名來自工程、產品、研究及財務部門
 
 為了解決這個「人力頻寬瓶頸」，OpenAI 沒有選擇導入更多的儀表板，而是利用自家的 **GPT-5 旗艦模型、Codex、Embeddings API 與 Evals API**，從零打造了一個專屬內部的 Data Agent。這個系統成功將原本需要數天的分析流程，縮短至短短幾分鐘內完成，徹底展示了真正的企業級 AI Agent 該具備的深度與穩定性。
 
-{{< image src="ui.png" caption="OpenAI 展示了內部員工如何在 Web 介面中，直接透過自然語言與 Data Agent 進行對話並取得數據圖表" >}}
+{{< image src="ui.png" alt="聊天介面截圖，使用者以自然語言詢問兩個日期的 ChatGPT 週活躍使用者數並四捨五入至最接近的一億，Data Agent 回覆約 8 億對比 1 億、增加約 7 億、成長約 8 倍" caption="OpenAI 展示了內部員工如何在 Web 介面中，直接透過自然語言與 Data Agent 進行對話並取得數據圖表" >}}
 
 ## 核心系統架構：決定 Agent 智商的「六層脈絡 (Six Layers of Context)」
 
-{{< image src="context.png" caption="OpenAI 的 Six layers of context 架構圖，以視覺化呈現了從資料表使用狀況、程式碼到組織知識等六種不同來源，如何被轉化為上下文餵給 GPT-5 模型" >}}
+{{< image src="context.png" alt="標題為 Data agent's layers of context 的堆疊金字塔圖，由下而上依序為：1 資料表使用、2 人類標註、3 Codex 增益、4 組織知識、5 記憶、6 執行時上下文" caption="OpenAI 的 Six layers of context 架構圖，以視覺化呈現了從資料表使用狀況、程式碼到組織知識等六種不同來源，如何被轉化為上下文餵給 GPT-5 模型" >}}
 
 許多初階的 Text-to-SQL 工具之所以在企業環境中失敗，是因為它們迷信「只要把資料庫 Schema 餵給 LLM，模型就能寫出完美的 SQL」。然而，欄位名稱往往會騙人，真實的商業邏輯根本不存在於 Schema 之中。
 
@@ -71,7 +71,7 @@ OpenAI 內部擁有超過 3,500 名來自工程、產品、研究及財務部門
 
 ## 系統防護網：使用 Evals API 進行自動化評估
 
-{{< image src="eval.png" caption="OpenAI 的 Evaluation Workflow 架構圖，描繪了 Agent 產生的 SQL 與人類寫的 Golden SQL 被同時送進資料庫，並將兩份回傳報表交由 Evals API 進行比對評分的流程" >}}
+{{< image src="eval.png" alt="標題為 Data agent's evaluation pipeline 的流程圖，包含四個階段：問答評估配對 (問題與預期答案)、生成階段 (產生的 SQL 與結果對比預期的 SQL 與結果)、OpenAI Evals 以 dataframe 與 SQL 比對評分，以及輸出分數與推理理由的評分結果" caption="OpenAI 的 Evaluation Workflow 架構圖，描繪了 Agent 產生的 SQL 與人類寫的 Golden SQL 被同時送進資料庫，並將兩份回傳報表交由 Evals API 進行比對評分的流程" >}}
 
 OpenAI 把數據分析當作「軟體單元測試 (Unit Tests)」來對待：
 1.  **Golden SQL 資料集**：由資深專家手寫高價值的完美 SQL 作為「黃金標準」。

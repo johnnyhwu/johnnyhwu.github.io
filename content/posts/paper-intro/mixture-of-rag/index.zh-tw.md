@@ -55,7 +55,7 @@ url: "paper-intro/:contentbasename"
 
 MixRAG 的系統架構過程：**文檔表示、跨模態檢索、多步推理**。
 
-{{< image src="overview.png" caption="MixRAG 框架總覽：資料從左側的異質文檔，經過 H-RCL 拆解，進入中間的雙階段檢索，最後交由右側的 RECAP 模組進行推理與計算。" >}}
+{{< image src="overview.png" alt="MixRAG 三模組總覽：(a) 異質文檔表示模組將文字切成 chunk，並以 table-level 與 H-RCL 摘要處理階層式表格；(b) 跨模態檢索模組先做 BM25 與嵌入的集成檢索，再以 LLM 重排選出目標混合文檔；(c) 多步推理的 RECAP 模組依序分析問題、擷取資料、進行推理，並將 LLM 答案與計算答案合併" caption="MixRAG 框架總覽：資料從左側的異質文檔，經過 H-RCL 拆解，進入中間的雙階段檢索，最後交由右側的 RECAP 模組進行推理與計算。" >}}
 
 ### Heterogeneous Document Representation
 
@@ -117,14 +117,14 @@ MixRAG 的 LLM 是一口氣把這五步生成完的 (單輪對話) 。真正發�
 
 為了驗證，作者自己建了一個包含 2,178 篇真實異質文檔的高品質資料集 **DocRAGLib**。讓我們看看 MixRAG 在這個殘酷競技場上的表現。
 
-{{< image src="table1.png" caption="這張表證明了 MixRAG 在檢索精準度上對現有方法的全面碾壓。特別注意 Standard RAG 慘不忍睹的 1.59%，以及 MixRAG 高達 54.10% 的 SOTA 表現。" width=85% >}}
+{{< image src="table1.png" alt="檢索結果表格，列出 Standard RAG、Table Retrieval、Langchain、Self-RAG、RAG-Critic 與 MixRAG 在 GPT-4o-mini、GPT-4o 與 Mistral-Nemo 上的 HiT@1、3、5、10 與 exact-match，其中搭配 GPT-4o 的 MixRAG 以 HiT@1 54.10 領先，而 Standard RAG 僅 1.59" caption="這張表證明了 MixRAG 在檢索精準度上對現有方法的全面碾壓。特別注意 Standard RAG 慘不忍睹的 1.59%，以及 MixRAG 高達 54.10% 的 SOTA 表現。" width=85% >}}
 
 **檢索性能的碾壓：**
 
 你有看到 Table 1 中 **Standard RAG 的 HiT@1 居然只有 1.59%** 嗎？這無情地揭露了：當你把複雜表格 PDF 丟進預設的 Text Splitter 時，結構被徹底粉碎，檢索系統基本上就在瞎猜。
 而 MixRAG (搭載 GPT-4o) 達到了 **54.10%**。因為它沒有切碎表格，而是透過 H-RCL 給了 Embedding 模型清晰的座標。
 
-{{< image src="table2.png" caption="這張表證明了 RECAP 策略在解決複雜數值推理時，比廣為人知的 CoT 與 PoT 更加穩健可靠，在多個模型上都取得了最高分。" >}}
+{{< image src="table2.png" alt="比較 Direct、CoT、EEDP、PoT 與 RECAP 五種推理策略的表格，涵蓋從 GPT-4o 到 Llama3.1-7B 的八個模型，RECAP 在每一欄皆以粗體取得最高分，例如 GPT-4o 的 64.66 與 GPT-4o mini 的 58.15" caption="這張表證明了 RECAP 策略在解決複雜數值推理時，比廣為人知的 CoT 與 PoT 更加穩健可靠，在多個模型上都取得了最高分。" >}}
 
 **推理的穩健性：**
 
@@ -132,7 +132,7 @@ MixRAG 的 LLM 是一口氣把這五步生成完的 (單輪對話) 。真正發�
 *   贏過 CoT 是因為我們不讓 LLM 心算。
 *   贏過 PoT (要求 LLM 寫出完整 Python Code 解題) 是因為在充滿雜訊的真實文檔中，LLM 寫出的 Code 極易因為變數命名錯誤而直接 Crash。RECAP 的「半自然語言 + 半數學公式」容錯率 (Robustness) 高出太多了。
 
-{{< image src="table4.png" caption="這張表證明了「保留層級路徑 (Hierarchical Paths) 」是檢索異質表格的唯一正解。H-RCL 的表現遠超扁平化的表格摘要。" >}}
+{{< image src="table4.png" alt="消融表格比較 table-level summary、general RCL summary 與 H-RCL summary 在 HiT@1、3、5、10 與 exact-match 的表現，H-RCL summary 全面以粗體取得最佳，例如 HiT@1 達 54.10，而 table-level summary 僅 36.27" caption="這張表證明了「保留層級路徑 (Hierarchical Paths) 」是檢索異質表格的唯一正解。H-RCL 的表現遠超扁平化的表格摘要。" >}}
 
 **消融實驗：**
 
@@ -142,6 +142,6 @@ MixRAG 的 LLM 是一口氣把這五步生成完的 (單輪對話) 。真正發�
 
 誠然，MixRAG 並非完美的銀彈。當用戶提出極度模糊的問題 (沒有明確 Entity) ，或者需要跨五六張表格做超長多步推理時，系統仍可能迷失。未來的解法可能必須走向「問題解構 (Query Decomposition) 」，在檢索前先將複雜問題拆分為子問題，這也是邁向真正 Agentic 系統的必經之路。
 
-**MixRAG 最優雅的地方，在於它對邊界感 (Boundaries) 的精準把控。** 讓傳統的歸傳統 (BM25) ，讓統計的歸統計 (Embedding) ，讓邏輯的歸模型 (LLM) ，讓計算的歸程式 (Calculator) 。當每一個工具都被放在它最擅長的位置上時，我們才能在最複雜的真實世界場景中，煉成最強大的 RAG 系統。
+**MixRAG 最優雅的地方，在於它對邊界感 (Boundaries) 的精準把控。** 讓傳統的歸傳統 (BM25) ，讓統計的歸統計 (Embedding) ，讓邏輯的歸模型 (LLM) ，讓計算的歸程式 (Calculator) 。當每一個工具都被放在它最擅長的位置上時，我們才能在最複雜的真實世界場景中，煉成最強大的 RAG 系統。如果你比較希望用 SQL 來查詢表格，而不是把表格保留為自然語言，[TableRAG](../table-rag/) 從另一個角度處理了相同的文字表格混合問題，值得對照閱讀。
 
 如果你最近也正在為公司內部的財報、法務文件問答系統苦惱，強烈建議你去翻翻這篇 KDD 2026 的神作，相信一定會給你帶來不少靈感！

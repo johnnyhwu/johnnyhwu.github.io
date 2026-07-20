@@ -34,7 +34,7 @@ url: "paper-intro/:contentbasename"
 
 接著，Pre-Act 在進行第二次 Thinking 時，會根據 Context 中的內容 (前一次的 Plan, Action 與 Observation)，重新產生一個 Plan。新的 Plan 中會描述過去幾次的 Thinking 與 Action 已經完成了什麼，並根據此修改接下來要完成的步驟。
 
-{{< image src="example.png" caption="ReAct vs Pre-Act." >}}
+{{< image src="example.png" alt="以查詢新聞標題工具為例的並列比較：ReAct 每次只推理並行動一步，Pre-Act 則先擬出多步驟計畫列出接下來的步驟，並在每次觀察後修訂計畫再行動" caption="ReAct vs Pre-Act." >}}
 
 如上圖的範例，可以清楚看到 ReAct 的每一次 Thinking 就是僅僅針對接下來馬上要採取的 Action，而 Pre-Act 的每一次 Thinking 都會有一個 Global Plan 的描述。
 
@@ -122,7 +122,7 @@ Conversation:
 
 ## Pre-Act 實驗結果
 
-{{< image src="exp.png" caption="Pre-Act 實驗結果" >}}
+{{< image src="exp.png" alt="詳細結果表格，比較 ReAct 與 Pre-Act 在多個模型上、於領域內的 Glaive 與 Proprietary 及領域外的 Almita 資料集的表現，衡量 action recall、工具 F1、參數比對與最終答案 F1 及相似度，Pre-Act 持續優於 ReAct，尤以微調後的 llama3.1-70B 最為突出" caption="Pre-Act 實驗結果" >}}
 
 上述實驗結果來自論文中的 Table 2，是 Pre-Act 的主要實驗。上表中的前 5 列代表未經過 Finetune 模型 ("van" 表示 "vanilla")，只有透過不同 System Prompt 來比較 ReAct 與 PreAct 的表現。而最後 2 列則是有經過 Finetune 模型的表現 ("f.t." 表示 "finetune")。
 

@@ -42,7 +42,7 @@ For example, we often package frequently used functionalities into several funct
 
 Now that we have a basic understanding of modules in Python, let's create one. First, open your Colab environment and name the Colab file `main.ipynb`. Then, in the file list on the left, right-click and select "New file":
 
-{{< image src="colab.png" caption="Creating a new file in Colab" >}}
+{{< image src="colab.png" alt="Colab file panel with a right-click context menu open showing options to upload, refresh, create a new file, or create a new folder" caption="Creating a new file in Colab" >}}
 
 We'll name the file `tool.py`, which means the name of this module is "tool." Next, open `tool.py` and type the following code into it:
 
@@ -147,7 +147,7 @@ The Python programming language comes with many built-in, pre-made modules, whic
 
 To use these modules, we just need to import them into our program using the various methods mentioned above. For example, Python's standard library includes an `os` module:
 
-{{< image src="module.png" caption="Standard Modules in Python" >}}
+{{< image src="module.png" alt="Excerpt from the Python Module Index listing modules starting with 'o', including operator, optparse, os, and ossaudiodev with short descriptions" caption="Standard Modules in Python" >}}
 
 The `os` module defines various operations related to the operating system. For example, if we want to list all the files in a directory, we can use a function from the `os` module.
 

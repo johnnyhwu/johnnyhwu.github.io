@@ -25,7 +25,7 @@ This article introduces the paper "[AutoMind: Adaptive Knowledgeable Agent for A
 
 The goal of the AutoMind paper is to propose an LLM-based agentic framework for tackling data science challenges, such as Kaggle competitions.
 
-{{< image src="automind.png" caption="[Figure 1] The AutoMind Framework" >}}
+{{< image src="automind.png" alt="AutoMind framework diagram: an agentic knowledgeable tree search on the left with color-coded empty, valid, buggy, best and dead nodes explored by drafting, improving and debugging, plus an expert knowledge base from arXiv, Kaggle and papers, and a self-adaptive coding strategy that routes tasks to stepwise decomposition or one-pass generation based on a complexity scorer" caption="[Figure 1] The AutoMind Framework" >}}
 
 As shown in the figure above, the AutoMind framework includes three core methods:
 
@@ -79,7 +79,7 @@ The search process on the tree is governed by a Search Policy. The policy takes 
 
 In AutoMind, the Search Policy is determined by a series of rule-based probabilistic judgments, with no LLM involvement. The process is outlined in the algorithm below:
 
-{{< image src="search-policy.png" caption="[Algorithm 1] Search Policy" >}}
+{{< image src="search-policy.png" alt="Pseudocode of the AutoMind search policy that, given the solution tree and hyper-parameters, decides whether to draft a new solution, debug a buggy node, or improve the best or a random valid node, so as to balance exploration and avoid local optima" caption="[Algorithm 1] Search Policy" >}}
 
 ### Action Types
 
@@ -99,11 +99,11 @@ When implementing code for each sub-step, the code is first checked using an Abs
 
 ## AutoMind's Experimental Results
 
-{{< image src="experiment.png" caption="[Table 1] Experimental Results of AutoMind" >}}
+{{< image src="experiment.png" alt="Results table on MLE-Bench and Top AI Competitions comparing prior SOTA against AutoMind with and without knowledge across easy, medium, hard and all splits, where AutoMind achieves higher Beats percentages with green upward gains in most rows" caption="[Table 1] Experimental Results of AutoMind" >}}
 
 Table 1 shows that AutoMind achieves performance close to or better than baseline methods on both MLE-Bench and Top AI Competitions, and does so with significantly fewer submissions.
 
-{{< image src="ablation.png" caption="[Figure 2] The Impact of the Expert Knowledge Base and Self-Adaptive Coding Strategy in AutoMind" >}}
+{{< image src="ablation.png" alt="Bar chart of an ablation study on the medium MLE-Bench split comparing Beats and Valids percentages for AutoMind, AutoMind without knowledge, and without self-adaptive coding, showing a large 24.6 point drop in Beats when self-adaptive coding is removed" caption="[Figure 2] The Impact of the Expert Knowledge Base and Self-Adaptive Coding Strategy in AutoMind" >}}
 
 Interestingly, I initially assumed that AutoMind's strong performance was largely due to its custom-built Data Science Expert Knowledge Base. However, the ablation study in the figure above reveals that removing the Expert Knowledge Base leads to only a slight decrease in performance. In contrast, removing the Self-Adaptive Coding Strategy (by generating code for all plans in a single pass) has a major negative impact on AutoMind's performance.
 

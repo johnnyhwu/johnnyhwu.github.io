@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-This article will share insights from the paper "[Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952)," which was uploaded to arXiv in April 2025. I wanted to discuss this paper because its methods form the basis for a recent and popular Self-Improving Agent paper, "[Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)." The authors of Dynamic Cheatsheet have also open-sourced their code on [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet), which interested readers can explore and test for themselves!
+This article will share insights from the paper "[Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952)," which was uploaded to arXiv in April 2025. I wanted to discuss this paper because its methods form the basis for a recent and popular Self-Improving Agent paper, "[Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618)" (see [our article on ACE](../agentic-context-engineering/) for more details). The authors of Dynamic Cheatsheet have also open-sourced their code on [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet), which interested readers can explore and test for themselves!
 
 ## The Problem Dynamic Cheatsheet Aims to Solve
 
@@ -41,7 +41,7 @@ The core concept behind both methods is to allow the LLM to autonomously manage 
 
 ### DC-Cumulative (DC-Cu)
 
-{{< image src="solution.png" caption="The DC-Cumulative (DC-Cu) Method" >}}
+{{< image src="solution.png" alt="Diagram of the Dynamic Cheatsheet DC-Cumulative method with two stages: in solution generation a generator language model combines the input query with the current cheatsheet to produce an output, and in memory curation a curator language model evaluates that output and refines it into an updated cheatsheet" caption="The DC-Cumulative (DC-Cu) Method" >}}
 
 Let's start with the DC-Cumulative (DC-Cu) method. The image above illustrates its complete workflow, which is primarily divided into two stages: Solution Generation and Memory Curation.
 
@@ -85,13 +85,13 @@ Therefore, the DC-RS method consists of the following steps:
 
 ### Results
 
-{{< image src="exp.png" caption="Table 1: Experimental results of Dynamic Cheatsheet (DC) and various baseline methods across multiple benchmarks" >}}
+{{< image src="exp.png" alt="Results table for Claude 3.5 Sonnet and GPT-4o across benchmarks like AIME, Game of 24, GPQA Diamond and MMLU Pro, comparing the baseline, empty cheatsheet, dynamic retrieval and the DC-Cumulative and DC-RetrieveSynthesize variants, where the DC variants are best in most rows" caption="Table 1: Experimental results of Dynamic Cheatsheet (DC) and various baseline methods across multiple benchmarks" >}}
 
 Taking the Game of 24 from Table 1 as an example, we can see that the DC-RS method achieves the best performance with GPT-4o. In contrast, the performance of DC-\( \emptyset \) is quite poor, which indicates that empowering the LLM with memory retrieval and curation capabilities can indeed enhance its performance.
 
 However, when using Claude 3.5 Sonnet, the improvement of DC-RS over the baseline method is less significant. The paper explains that while Dynamic Cheatsheet provides the LLM with the potential for test-time adaptation, the effectiveness of this adaptation still depends on the inherent capabilities of the LLM itself.
 
-{{< image src="exp-2.png" caption="Table 2: A comparison between the Full-History Appending (FH) baseline and the Dynamic Cheatsheet (DC) method" >}}
+{{< image src="exp-2.png" alt="Small table on AIME 2024 and 2025 comparing the baseline, full-history appending and Dynamic Cheatsheet for Claude 3.5 Sonnet and GPT-4o, where DC reaches 50.0 and 36.7 for Claude and clearly beats full-history appending" caption="Table 2: A comparison between the Full-History Appending (FH) baseline and the Dynamic Cheatsheet (DC) method" >}}
 
 From Table 2, we can observe that simply retaining all past experiences (input-output examples) in the LLM's input context (the FH method) not only fails to significantly improve performance but can sometimes perform worse than the baseline method of simply prompting the LLM (BL).
 

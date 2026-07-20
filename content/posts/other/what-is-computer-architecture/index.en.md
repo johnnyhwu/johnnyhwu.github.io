@@ -28,13 +28,13 @@ Computer Architecture is a required course for computer science students, but af
 
 The diagram below excellently explains the task of Computer Architecture:
 
-{{< image src="def.png" caption="The Role of Computer Architecture" >}}
+{{< image src="def.png" alt="Diagram with a large vertical arrow between an Application box at the top and a Physics box at the bottom labeled gap too large to bridge in one step, next to a definition stating computer architecture designs the abstraction and implementation layers that let applications run efficiently on manufacturing technologies" caption="The Role of Computer Architecture" >}}
 
 To connect what we want to achieve in "applications" with the fundamental concepts of "physics" at the lowest level, many layers of technological transformation and abstraction are necessary. Computer Architecture serves as the bridge that connects Application and Technology!
 
 To be more precise:
 
-{{< image src="component.png" caption="Tasks Handled by Computer Architecture" >}}
+{{< image src="component.png" alt="Stack of abstraction layers from Application down to Physics, with a bracket highlighting the middle layers, Instruction Set Architecture, Microarchitecture and Register-Transfer Level, as the scope of computer architecture" caption="Tasks Handled by Computer Architecture" >}}
 
 Computer Architecture is responsible for the "Instruction Set Architecture," "Microarchitecture," and "Register-Transfer Level." Technologies above Computer Architecture tend to be software-oriented, while those below it are more hardware-oriented.
 
@@ -71,7 +71,7 @@ In other words, one Instruction Set Architecture can have multiple Microarchitec
 
 For instance, x86 is an Instruction Set Architecture proposed by Intel. The different generations of processors that Intel releases each year use the same Instruction Set Architecture but have different Microarchitectures, allowing these processors to become faster and faster! A program (referring to its state after being compiled into machine code) that can run on a processor with the x86 Instruction Set Architecture can also run on all other processors with the same ISA!
 
-{{< image src="isa.png" caption="Same ISA but different microarchitecture" >}}
+{{< image src="isa.png" alt="Comparison of the AMD Phenom X4 and Intel Atom die photos, both using the x86 instruction set but with very different specs, the Phenom being quad-core, out-of-order, 125W and 2.6GHz versus the Atom being single-core, in-order, 2W and 1.6GHz" caption="Same ISA but different microarchitecture" >}}
 
 ## Basic Information in an Instruction Set Architecture
 
@@ -84,21 +84,21 @@ As mentioned above, the Instruction Set Architecture describes a processor from 
 
 First, an Instruction Set Architecture categorizes all instructions. As shown below, some instructions are for transferring data (e.g., Load, Store), some are for mathematical operations (e.g., ADD, SUB), and others are for flow control (e.g., Branch If Equal to Zero).
 
-{{< image src="isa-kind.png" caption="Instructions can be divided into multiple types" >}}
+{{< image src="isa-kind.png" alt="Bulleted list of instruction categories with examples: data transfer, ALU, control flow, floating point, multimedia SIMD, and string instructions" caption="Instructions can be divided into multiple types" >}}
 
 Furthermore, it clearly defines the supported Addressing Modes, which are the methods for reading data from memory. Notably, it's not always necessary to read data from memory; for example, the Register Addressing Mode only requires reading data from a register:
 
-{{< image src="isa-type.png" caption="The ISA also clearly defines the Addressing Modes supported by the processor" >}}
+{{< image src="isa-type.png" alt="Table of addressing modes with an example Add instruction and its meaning for each, covering register, immediate, displacement, register indirect, absolute, memory indirect, PC relative and scaled modes" caption="The ISA also clearly defines the Addressing Modes supported by the processor" >}}
 
 Speaking of reading data, the Instruction Set Architecture also clearly defines the Data Types and Sizes supported by the processor:
 
-{{< image src="isa-width.png" caption="The ISA also defines Data Types and Sizes" >}}
+{{< image src="isa-width.png" alt="List of data types such as binary integer, BCD, floating point (IEEE 754, Cray, Intel 80-bit extended), packed vector and addresses, along with their supported bit widths" caption="The ISA also defines Data Types and Sizes" >}}
 
 Just as data has a size, instructions themselves also have a size! From the diagram below, we can see that ISAs in the Reduced Instruction Set Computer family are typically Fixed Width, meaning every instruction has the same width.
 
 For example, in the MIPS ISA, all instructions are 32 bits. In contrast, ISAs in the Complex Instruction Set Computer family are usually Variable Length, meaning the length of instructions can vary. For example, in the x86 ISA, instruction lengths can range from 1 byte to 17 bytes.
 
-{{< image src="isa-size.png" caption="Instruction sizes differ across various ISAs" >}}
+{{< image src="isa-size.png" alt="Summary of instruction-width schemes: fixed width in RISC ISAs like MIPS, variable length in CISC ISAs like x86 (1 to 17 bytes), mostly fixed or compressed like Thumb, and very long instruction word bundles" caption="Instruction sizes differ across various ISAs" >}}
 
 ## Conclusion
 

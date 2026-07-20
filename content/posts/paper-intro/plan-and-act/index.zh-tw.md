@@ -20,13 +20,13 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-本篇文章介紹 [PLAN-AND-ACT: Improving Planning of Agents for Long-Horizon Tasks](https://arxiv.org/abs/2503.09572) 論文，PLAN-AND-ACT 主要由 UC Berkeley 的研究人員提出，並於 2025 年 3 月發表於 Arxiv。
+本篇文章介紹 [PLAN-AND-ACT: Improving Planning of Agents for Long-Horizon Tasks](https://arxiv.org/abs/2503.09572) 論文，PLAN-AND-ACT 主要由 UC Berkeley 的研究人員提出，並於 2025 年 3 月發表於 Arxiv。如果你是第一次接觸 LLM Agent，可以先閱讀我們之前介紹的經典論文 [HuggingGPT](../hugginggpt/) 來暖身，再來理解本篇文章中 Planner-Executor 的拆分方式。
 
 PLAN-AND-ACT 提出一個 **Planner-Executor 框架**以及**資料合成方法**來訓練 LLM，提昇 LLM 的規劃 (Planning) 以及執行 (Execution) 能力。
 
 如下圖所示，PLAN-AND-ACT 主要由 Planner 與 Executor 組成。由 Planner 根據使用者給的任務先產生「計畫」，所謂的「計畫」其實就是一連串較為高層次的目標，再由 Executor 根據這個計畫轉為環境中特定的行為。
 
-{{< image src="plan-and-act.png" caption="[Figure 1] An illustration of PLAN-AND-ACT System Diagram." >}}
+{{< image src="plan-and-act.png" alt="PLAN-AND-ACT 高階示意圖：使用者查詢送往 Planner LLM 產生一份計畫，再由 Executor LLM 將其轉為對環境的動作，並透過觀察不斷循環直到結束" caption="[Figure 1] An illustration of PLAN-AND-ACT System Diagram." >}}
 
 {{< admonition warning >}}
 我覺得本篇論文所提出的方法並沒有令人太驚艷的地方。從整體的實驗數據 (下方 Table 1) 也可以發現到，單純的 Planner-Executor 框架並沒有對整體表現提升多少，主要還是仰賴合成資料分別對 Planner 以及 Executor 進行訓練來提升整體的表現。
@@ -51,7 +51,7 @@ PLAN-AND-ACT 想處理的問題正是 LLM 的規劃 (Planning) 能力。現有�
 
 ## PLAN-AND-ACT 框架
 
-{{< image src="plan-and-act-workflow.png" caption="[Figure 2] PLAN-AND-ACT System Diagram." >}}
+{{< image src="plan-and-act-workflow.png" alt="以「追蹤某 GitHub 專案最大貢獻者」為例的 PLAN-AND-ACT 實例：Planner 先寫出 Plan 1，Executor 點擊 Contributors 連結，觀察結果顯示 John Doe，經重新規劃後 Planner 寫出 Plan 2 去追蹤 John Doe，Executor 再據此點擊" caption="[Figure 2] PLAN-AND-ACT System Diagram." >}}
 
 PLAN-AND-ACT 框架的核心在於避免透過單一模型同時處理 Planning 以及 Execution 任務，因此才有了 Planner 與 Executor 分工合作的架構。作者在論文中也明確提到：
 
@@ -250,7 +250,7 @@ To motivate the need for creating synthetic data, we first evaluated the perform
 
 如上方論文的論述，作者非常清楚直接地提及：單純靠 Prompting 來提升 LLM (Planner & Executor) 在 Web 環境的 Planning 以及 Executing 能力是遠遠不夠的。需要對 Planner 以及 Executor 進行 Finetune！
 
-{{< image src="data-gen.png" caption="[Figure 3] Synthetic Data Generation Pipeline" >}}
+{{< image src="data-gen.png" alt="三階段合成資料生成流程：4.1 節透過 query generator 與 teacher LLM 將種子查詢轉為動作軌跡，4.2 節由 teacher LLM 產生對應動作的逐步 grounded 計畫，4.3 節則將種子計畫資料擴充為新的合成「查詢＋計畫」配對" caption="[Figure 3] Synthetic Data Generation Pipeline" >}}
 
 如上圖 Figure 3 所示，為了針對 Planner 進行 Finetune，作者提出了一個 Synthetic Data Generation 方法來生成 Planner 以及 Executor 的訓練資料。
 
@@ -307,7 +307,7 @@ Grounded Plan Generation 並不是一個有效率的方法：首先，需要先�
 
 ### 實驗結果
 
-{{< image src="exp.png" caption="[Table 1] Task success rate (SR) of PLAN-AND-ACT on WebArena-Lite, a human-verified subset of WebArena." >}}
+{{< image src="exp.png" alt="WebArena-Lite 上任務成功率的結果表格，涵蓋不同的 planner 與 executor 設計，累加合成軌跡、計畫擴充、目標式增強、動態重新規劃，最後加上思維鏈後，PLAN-AND-ACT 達到最佳成績 57.58" caption="[Table 1] Task success rate (SR) of PLAN-AND-ACT on WebArena-Lite, a human-verified subset of WebArena." >}}
 
 針對 Executor Design 部分：
 - **Base**: 沒有經過 Fine-Tune 的 LLaMA-3.3-70B-Instruct

@@ -32,25 +32,25 @@ Meta 一直都是 AI Open-Sourced Community 中重要的貢獻者，這個模型
 
 在訓練階段的 Loss Function 通常如下圖 Equation(1) 所示：
 
-{{< image src="loss-function.png" caption="Next-Token Prediction Task 的 Loss Function" >}}
+{{< image src="loss-function.png" alt="Next-token prediction 的損失函數公式：L1 等於對所有 t 加總後取負值的 log P-theta，代表在給定第 1 到 t 個 token x 的條件下，預測第 t+1 個 token x 的機率" caption="Next-Token Prediction Task 的 Loss Function" >}}
 
-而本篇論文想解決的問題非常直覺：**為什麼一定要一次預測一個 Token，而不一次多預測一些 Token 呢？**
+而本篇論文想解決的問題非常直覺：**為什麼一定要一次預測一個 Token，而不一次多預測一些 Token 呢？** 這種「一個 Token 一個 Token 的 Autoregressive Decoding Loop 才是真正瓶頸」的直覺，也出現在 [ReDE-RF](../rede-rf/) 中 — 它乾脆完全跳過生成迴圈，只讀取單次 Forward Pass 的 Logits 來做 Relevance 判斷。
 
 ## Multi-Token Prediction Model 的設計
 
 既然想要一次預測多個 Token，那在訓練階段的 Loss Function 勢必要先進行修改，如下 Equation (2) 所示：
 
-{{< image src="loss-function-2.png" caption="Multi-Token Prediction Model 的 Loss Function" >}}
+{{< image src="loss-function-2.png" alt="廣義的 n-token prediction 損失函數公式：Ln 等於對所有 t 加總後取負值的 log P-theta，代表在給定第 1 到 t 個 token x 的條件下，預測第 t+1 到 t+n 個 token x 區塊的機率" caption="Multi-Token Prediction Model 的 Loss Function" >}}
 
 可以發現跟原來唯一的差別就在於，原本是拿 1 個 Predicted Token 的機率分佈計算 1 次 Cross-Entropy Loss，現在是拿 n 個 Predicted Token 機率分佈計算 n 次 Cross-Entropy Loss，然後把這 n 個 Loss 加總在一起來對模型進行更新。
 
-{{< image src="model.png" caption="Multi-Token Prediction Model Architecture" >}}
+{{< image src="model.png" alt="Multi-token prediction 模型架構圖：四個輸入 token 進入共享主幹（Shared），再分支成四個預測頭（Head 1 到 4），每個頭各自預測後續 4 個 token 的區塊，圖中顏色較淺的 token 標示為推論時可捨棄、或可用來將模型最多加速 3 倍" caption="Multi-Token Prediction Model Architecture" >}}
 
 除了 Loss Function 的修改，在模型的架構上（如上圖所示）主要是會透過一個 Shared Transformer Trunk（可以想成一個大家共用、唯一的 Encoder）得到一個 Hidden Representation 來象徵前面 t 個 Token 的資訊，再透過 n 個 Head 分別預測未來的 n 個 Token。
 
 我們可以發現 Multi-Token Prediction Model 的架構相當好理解，但是實際在訓練時就會發現到：在 LLM 的 Forward Pass 過程中，最後得到的 Logit 的維度是遠大於中間運算過程的 Hidden Representation 的維度。因此，當今天要進行 Multi-Token Prediction 時，如果 n 個 Token 是同時被平行運算出來的，就會導致 GPU Memory 的使用量從 1 個 Logit 變成 n 個 Logit。這篇論文為了避免 GPU 使用量過多，將每一個 Token 的預測變成是 Sequential 的：
 
-{{< image src="compute.png" caption="By performing the forward/backward on the heads in sequential order, we avoid materializing all unembedding layer gradients in memory simultaneously and reduce peak GPU memory usage." >}}
+{{< image src="compute.png" alt="示意圖與對應虛擬碼，說明各預測頭依序進行前向與反向傳播的流程：共享主幹的輸出先被 detach，接著 Head 1、Head 2 依序各自完成前向傳播、計算 loss 與反向傳播（圖中以 1 到 6 標示先後順序），最後才將梯度反向傳遞回共享主幹，避免同時將所有預測頭的 unembedding 層梯度保存在記憶體中" caption="By performing the forward/backward on the heads in sequential order, we avoid materializing all unembedding layer gradients in memory simultaneously and reduce peak GPU memory usage." >}}
 
 如上圖左方所示，基於一個 Input Sequence，從 Shared Transformer Trunk 得到 Hidden Representation 後：
 
@@ -88,17 +88,17 @@ Tensor d 的數值和 Tensor z 是一樣的，但是**透過 detach() 方法使�
 
 理解了 Multi-Token Prediction Model 的方法設計後，最後是實驗的介紹。為了節省讀者的時間，這裡僅對實驗結果做概述！
 
-{{< image src="experiment.png" caption="Results of n-token prediction models on MBPP by model size. We train models of six sizes in the range or 300M to 13B total parameters on code, and evaluate pass@1,10,100 on the MBPP and HumanEval benchmark with 1000 samples. Multi-token prediction models are worse than the baseline for small model sizes, but outperform the baseline at scale. Error bars are confidence intervals of 90% computed with bootstrapping over dataset samples.">}}
+{{< image src="experiment.png" alt="六張長條圖組成的網格，顯示 n-token 與 next-token prediction 模型在 MBPP 與 HumanEval 上，於 Pass@1、Pass@10、Pass@100 三種指標下，橫跨 0.3B 到 13B 六種模型大小的表現差異（附 90% 信賴區間誤差線）；小模型的差異為負值（表現較差），模型規模越大則差異越趨向正值（優於基準）" caption="Results of n-token prediction models on MBPP by model size. We train models of six sizes in the range or 300M to 13B total parameters on code, and evaluate pass@1,10,100 on the MBPP and HumanEval benchmark with 1000 samples. Multi-token prediction models are worse than the baseline for small model sizes, but outperform the baseline at scale. Error bars are confidence intervals of 90% computed with bootstrapping over dataset samples.">}}
 
 首先，從上圖可以看到將 6 種不同 Size 的 Model 衡量在兩個 Benchmark（MBPP 和 HumanEval）時，小模型搭配 Multi-Token Prediction 的表現反而**比較差**。大模型則是普遍帶來更好的效果。作者也推測，這個原因可能是導致 Multi-Token Prediction 方法過去一直沒有熱門起來的原因。
 
-{{< image src="experiment-2.png" caption="Multi-token prediction improves performance and unlocks efficient byte level training. We compare models with 7B parameters trained from scratch on 200B and on 314B bytes of code on the MBPP, HumanEval and APPS benchmarks. Multi-token prediction largely outperforms next token prediction on these settings.">}}
+{{< image src="experiment-2.png" alt="表格列出在三種訓練資料設定（313B bytes、200B tokens、1T tokens）與多種 n 值（1 到 32）下，MBPP、HumanEval、APPS/Intro 的 pass@1/10/100 分數，每欄最佳分數以粗體標示，顯示 n=4 或 n=8 的 multi-token prediction 模型大多優於 n=1 的 next-token 基準" caption="Multi-token prediction improves performance and unlocks efficient byte level training. We compare models with 7B parameters trained from scratch on 200B and on 314B bytes of code on the MBPP, HumanEval and APPS benchmarks. Multi-token prediction largely outperforms next token prediction on these settings.">}}
 
 作者透過實驗發現，在訓練一個 7B 的 Byte-Level Transformer 時（也就是這個 Transformer 預測的是下一個 Byte 而非下一個 Token），透過 Multi-Byte Prediction Pre-Training Task 會比 Next-Byte Pre-Training Prediction Task 帶來更好的表現。（如上表中的第一列所示）
 
 此外，從上表中的第二列還可以發現在 Token-Level Transformer 上，4 個 Prediction Head 通常能帶來最好的結果；而在 Byte-Level Transformer上（上表中的第一列），8 個 Prediction Head 則比較好。可以發現 Prediction Head 的數量會和 Input Data Distribution 有關。然而大體上而言，Multi-Toke (Byte) Prediction 還是比 Next-Token (Byte) Prediction 來得好！
 
-{{< image src="experiment-3.png" caption="Comparison of finetuning performance on CodeContests. We finetune a 4-token prediction model on CodeContests (train split) using n′token prediction as training loss with n′ = 4 or n′ = 1, and compare to a finetuning of the next-token prediction baseline model (n = n′ = 1). We observe that both ways of finetuning the 4-token prediction model outperform the next-token prediction baseline. Intriguingly, using next-token prediction finetuning on top of the 4-token prediction model appears to be the best method overall.">}}
+{{< image src="experiment-3.png" alt="雙對數座標的折線圖，橫軸為 k（1 到 1000），縱軸為 pass@k 百分比，比較三個在 CodeContests 上微調的模型：n=1、n'=1 基準模型（橘色實線）表現持續最低，而 n=4、n'=1 模型（深藍虛線）與 n=4、n'=4 模型（青綠色點線）在所有 k 值下皆優於基準" caption="Comparison of finetuning performance on CodeContests. We finetune a 4-token prediction model on CodeContests (train split) using n′token prediction as training loss with n′ = 4 or n′ = 1, and compare to a finetuning of the next-token prediction baseline model (n = n′ = 1). We observe that both ways of finetuning the 4-token prediction model outperform the next-token prediction baseline. Intriguingly, using next-token prediction finetuning on top of the 4-token prediction model appears to be the best method overall.">}}
 
 在上圖中，作者將一個 7B Model 用兩種方式 Pre-train：Next-Token Prediction (橘色實線, n=1) 與 4-Token Prediction (黑色和綠色虛線, n=4)，並將模型進行 Fine-tune。在 Fine-tune 時有 Next-Token (n'=1) 以及 4-Token (n'=4)。可以發現不管 k 是多少，黑色虛線和綠色虛線的表現都超越橘色實線，說明在 Pre-training 階段使用 Multi-token Task 的有效性。
 

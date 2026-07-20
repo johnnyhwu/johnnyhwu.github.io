@@ -37,7 +37,7 @@ url: "paper-intro/:contentbasename"
 
 ## MemGPT 想解決的問題
 
-{{< image src="llm.jpeg" caption="LLM 的輸入與輸出" >}}
+{{< image src="llm.jpeg" alt="簡單的方塊圖，顯示大型語言模型是一個黑盒子，接收文字 prompt 作為輸入，並產生 completion 作為輸出，兩者以標示 prompt 與 completion 的箭頭相連" caption="LLM 的輸入與輸出" >}}
 
 如上圖所示，基於我們的 Prompt，LLM 會以 Auto-Regressive 的方式進行「文字接龍」產生 Completion。如果這一個 LLM 是一個你所開發的 Chatbot，專門解決你的客戶的疑難雜症，那麼你可能會在 Prompt 中提供：客戶的資訊, Chatbot 與客戶的對話紀錄, 外部資料, Chatbot 能夠使用的工具, Chatbot 已經經過的 Reasoning Steps 以及 Observation ...
 
@@ -47,11 +47,11 @@ url: "paper-intro/:contentbasename"
 
 ## MemGPT 的核心概念
 
-{{< image src="memgpt-core.jpeg" caption="MemGPT 的核心概念" >}}
+{{< image src="memgpt-core.jpeg" alt="「LLM OS」概念示意圖：外層的控制迴圈將外部 data 送入 prompt，並從 completion 讀取 update 回饋，包覆著內部 prompt 到 LLM 再到 completion 的處理流程" caption="MemGPT 的核心概念" >}}
 
 同理，MemGPT 也是為了處理這樣的問題而誕生！如上圖所述，MemGPT 的核心概念，正是希望透過 LLM 打造一個作業系統（Operating System）來管理自己的狀態，**決定要把什麼資訊放到 Prompt 中**。
 
-{{< image src="prompt-compilation.jpeg" caption="Prompt Compilation" >}}
+{{< image src="prompt-compilation.jpeg" alt="示意圖顯示 MemGPT Agent 由三個元件組成（Memories、Tools、Messages），這些元件被編譯成單一 prompt，再送入 LLM 產生 completion" caption="Prompt Compilation" >}}
 
 舉例來說，如上圖所示，對於一個 Agent 而言，它目前的狀態 (State) 可以由它的記憶 (Memories), 能夠使用的工具 (Tools) 以及對話紀錄 (Messages) 來表示。可以想像 Agent State 裡頭存放著與 Agent 本身的所有資訊。
 
@@ -70,13 +70,13 @@ url: "paper-intro/:contentbasename"
 
 ## MemGPT 的記憶管理方式
 
-{{< image src="general-context.jpeg" caption="一般 Agent 的 Prompt 內容" >}}
+{{< image src="general-context.jpeg" alt="示意圖顯示一般 Agent 的 prompt 結構分為 system prompt 區塊（「You are a helpful assistant that answers questions.」）與 chat history 區塊，並以使用者詢問 strawberry 這個字有幾個 r、以及對 assistant 回答的反應作為範例對話" caption="一般 Agent 的 Prompt 內容" >}}
 
 如上圖所示，在一般的 Agent 中，Prompt 的組成通常都是 **"System Prompt"** 加上 **"Chat Hostory"**。而在 MemGPT 中，為了做好 Prompt Compilation，將 Prompt 的組成分成很多特別保留區塊 (Special Reserved Section)，作為不同資訊存放的目的。
 
 ### MemGPT 的 Core Memory
 
-{{< image src="core-memory.jpeg" caption="MemGPT 會在 Prompt 中保留一個 Core Memory 區塊" >}}
+{{< image src="core-memory.jpeg" alt="示意圖顯示 MemGPT 的 prompt 中有一個以橘色標示的 core memory 區塊，儲存「User information - Name: Charles. Occupation: AI researcher」，位置介於 system prompt 與 chat history 之間；範例對話顯示 agent 能從 core memory 中正確回憶出 Charles 的名字與職業，回答「Who am I?」" caption="MemGPT 會在 Prompt 中保留一個 Core Memory 區塊" >}}
 
 MemGPT 在 Prompt 中規劃了一個 Core Memory 區塊用來保存最重要的少量資訊，Core Memory 中可以分成很多 Block，每個 Block 可以保存不同的資訊 (例如：使用者資訊, Agent 自己的 Persona 等等)。
 
@@ -96,7 +96,7 @@ MemGPT 在 Prompt 中規劃了一個 Core Memory 區塊用來保存最重要的�
 
 ### MemGPT 的 Recall Memory
 
-{{< image src="recall-memory.jpeg" caption="MemGPT 透過 Recall Memory 儲存所有 Chat History" >}}
+{{< image src="recall-memory.jpeg" alt="示意圖顯示當 MemGPT 的 prompt 中 chat history 超出容量（以警告圖示標示）時，完整對話會被移入獨立的 recall memory 儲存區，同時 LLM 會將被移出的訊息濃縮成一句摘要保留在 prompt 中" caption="MemGPT 透過 Recall Memory 儲存所有 Chat History" >}}
 
 承接 [MemGPT 的 Chat History](#memgpt-的-chat-history)，被 Summarize 的 Chunk 並不會被丟棄，而是會存入一個外部的 Database，我們稱其為 **Recall Memory**。換句話說，MemGPT 與使用者所有的對話紀錄都不會遺失，全部都會存在 Recall Memory 中。
 
@@ -104,7 +104,7 @@ MemGPT 在 Prompt 中規劃了一個 Core Memory 區塊用來保存最重要的�
 
 ### MemGPT 的 Archival Memory
 
-{{< image src="archival-memory.jpeg" caption="Core Memory 存不下的資訊就放到 Archival Memory" >}}
+{{< image src="archival-memory.jpeg" alt="示意圖顯示 core memory 容量逼近上限（1999/2000），內容包含 Charles 搬到 SF 的使用者資訊，超出的部分透過箭頭存入 archival memory，說明當 core memory 空間不足時，新的事實（例如「went to the Ferry Building my fav」）會被移到 archival memory" caption="Core Memory 存不下的資訊就放到 Archival Memory" >}}
 
 既然 Chat History 有自己的外部 Database, **Recall Memory**, 來儲存 Chat History 放不下的資訊，那麼 Core Memory 當然也有自己的外部 Database 來儲存 Core Memory 放不下的資訊。我們稱其為 **Archival Memory**。
 
@@ -127,7 +127,7 @@ Archival Memory 的用途除了可以當 Core Memory 的額外的外部儲存空
 
 舉例來說，當 Archival 與 Recall Memory 中有存放一些資訊時，透過 A/R Stats，MemGPT 就知道可以去兩個 Memory 中查找資訊：
 
-{{< image src="ar-stats.png" caption="MemGPT 根據 A/R Stats 得知 Archival 與 Recall Memory 的狀態" >}}
+{{< image src="ar-stats.png" alt="示意圖顯示 prompt 中注入的 A/R stats 區塊，顯示「archival memory has 1256 passages」與「recall memory has 948 messages」；範例中 agent 呼叫 archival_memory_search 搜尋 favorite dog，取得「I love boston terriers」的結果後回答「Boston Terriers!」" caption="MemGPT 根據 A/R Stats 得知 Archival 與 Recall Memory 的狀態" >}}
 
 ## 結語
 

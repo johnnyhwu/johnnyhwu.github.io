@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-本篇文章和大家分享 [Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952) 論文，該論文於 2025 年 4 月上傳至 arXiv。之所以想分享這篇論文，是因為最近很熱門的一篇 Self-Improving Agent 類型的論文 － [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618) 其方法就是基於此篇論文進行優化。本篇論文作者也有開源程式碼於 [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet)，有興趣的讀者可以再自行測試看看!
+本篇文章和大家分享 [Dynamic Cheatsheet: Test-Time Learning with Adaptive Memory](https://arxiv.org/abs/2504.07952) 論文，該論文於 2025 年 4 月上傳至 arXiv。之所以想分享這篇論文，是因為最近很熱門的一篇 Self-Improving Agent 類型的論文 － [Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](https://arxiv.org/abs/2510.04618) 其方法就是基於此篇論文進行優化（詳見[我們對 ACE 的介紹文章](../agentic-context-engineering/)）。本篇論文作者也有開源程式碼於 [GitHub](https://github.com/suzgunmirac/dynamic-cheatsheet)，有興趣的讀者可以再自行測試看看!
 
 ## Dynamic Cheatsheet 想解決的問題
 
@@ -41,7 +41,7 @@ Dynamic Cheatsheet 方法定位在 Black-Box LLM 上，因此其方法並不是�
 
 ### DC-Cumulative (DC-Cu)
 
-{{< image src="solution.png" caption="DC-Cumulative (DC-Cu) 方法" >}}
+{{< image src="solution.png" alt="Dynamic Cheatsheet 的 DC-Cumulative 方法示意圖，分為兩階段：解答生成階段由 generator 語言模型將輸入查詢與當前 cheatsheet 結合產生輸出，記憶整理階段則由 curator 語言模型評估該輸出並精煉為更新後的 cheatsheet" caption="DC-Cumulative (DC-Cu) 方法" >}}
 
 我們首先從 DC-Cumulative (DC-Cu) 方法開始介紹，上圖呈現的是其完整的 Workflow，主要分為 Solution Generation 與 Memory Curation 兩個階段:
 
@@ -85,13 +85,13 @@ DC with Retrieval & Synthesis (DC-RS) 顧名思義就是比 DC 多了 Retrieval 
 
 ### Result
 
-{{< image src="exp.png" caption="Table 1: Dynamic Cheatsheet (DC) 以及各種 Baseline 方法在多個 Benchmark 的實驗結果" >}}
+{{< image src="exp.png" alt="Claude 3.5 Sonnet 與 GPT-4o 在 AIME、Game of 24、GPQA Diamond 與 MMLU Pro 等基準上的結果表格，比較 baseline、空 cheatsheet、動態檢索與 DC-Cumulative 及 DC-RetrieveSynthesize 版本，DC 版本在多數列表現最佳" caption="Table 1: Dynamic Cheatsheet (DC) 以及各種 Baseline 方法在多個 Benchmark 的實驗結果" >}}
 
 從上表 Table 1 中以 Game of 24 舉例，可以看到 DC-RS 方法基於 GPT-4o 表現是最好的，而 DC-\( \emptyset \) 的表現相當差，說明了賦予 LLM 進行 Memory 的 Retrieval 與 Curation，確實能夠提升 LLM 的表現。
 
 然而，若以 Claude 3.5 Sonnet 來看，DC-RS 相對於 Baseline 方法的改善卻不多。論文中解釋雖然 Dynamic Cheatsheet 賦予 LLM 進行 Test-Time Adaption 的可能，但是效果如何還是取決於 LLM 本身的能力。
 
-{{< image src="exp-2.png" caption="Table 2: 針對 Baseline 中的 Full-History Appending (FH) 方法與 Dynamic Cheatsheet (DC) 比較" >}}
+{{< image src="exp-2.png" alt="在 AIME 2024 與 2025 上比較 baseline、full-history appending 與 Dynamic Cheatsheet 的小型表格，涵蓋 Claude 3.5 Sonnet 與 GPT-4o，DC 在 Claude 上達到 50.0 與 36.7，明顯優於 full-history appending" caption="Table 2: 針對 Baseline 中的 Full-History Appending (FH) 方法與 Dynamic Cheatsheet (DC) 比較" >}}
 
 從上表 Table 2 可以發現到單純地將過去的經驗 (Input-Output Example) 保留於 LLM 的 Input Context 中的方法 (FH)，不僅沒有辦法顯著提升表現，反而有時還可能比完全不放這些經驗、單純 Prompt LLM 的方法 (BL) 來得差。
 

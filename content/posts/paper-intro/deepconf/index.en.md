@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 In the current field of Artificial Intelligence, Large Language Models (LLMs) can already write poetry, write code, and even solve complex mathematical problems. But have you ever wondered: when an AI answers a question, is it 100% certain, or is it just "**speaking nonsense with a straight face**"?
 
-Typically, to make AI solve problems more accurately, we ask it to "think of multiple solutions" (terminologically known as **Parallel Thinking** or **Self-Consistency**). This is like a teacher asking you to calculate a math problem 100 times during an exam to see which answer appears the most. While effective, this is extremely wasteful of time and computing power.
+Typically, to make AI solve problems more accurately, we ask it to "think of multiple solutions" (terminologically known as **Parallel Thinking** or **Self-Consistency**). This is like a teacher asking you to calculate a math problem 100 times during an exam to see which answer appears the most. While effective, this is extremely wasteful of time and computing power. (For a different way of spending that same inference-time compute budget — refining a single reasoning path instead of running many in parallel — see [Power Sampling](../power-sampling/).)
 
 The paper introduced today, **Deep Think with Confidence (DeepConf)**, proposed by a research team from Meta AI and UCSD, attempts to solve this problem. They have endowed AI with a capability: **Real-time Confidence Perception**. If the AI realizes it is becoming "diffident" halfway through a calculation, it stops immediately to avoid wasting time. This not only significantly reduces costs but can even increase the probability of getting the right answer!
 
@@ -43,7 +43,7 @@ Current state-of-the-art AI reasoning techniques use **Method B**. Although this
 
 1.  **High Cost**: Hiring 100 clones to solve problems means paying 100 salaries (computing resources). The paper points out that to improve accuracy by 14%, it might require consuming **hundreds of millions of extra tokens**, which is almost unacceptable for commercial applications.
 2.  **Diminishing Returns**: More clones aren't always better. Once the number of clones reaches a certain point, accuracy stops improving and may even drop because everyone starts guessing randomly.
-3.  **Blind Voting**: This is the most critical point. In traditional majority voting, **the answer of a math genius** and **the answer of someone who knows nothing about math and guesses randomly** count as just "one vote" in the ballot box. This is obviously unreasonable! If a large number of low-quality reasoning paths (nonsense) mix in, they can easily drown out the correct answer.
+3.  **Blind Voting**: This is the most critical point. In traditional majority voting, **the answer of a math genius** and **the answer of someone who knows nothing about math and guesses randomly** count as just "one vote" in the ballot box. This is obviously unreasonable! If a large number of low-quality reasoning paths (nonsense) mix in, they can easily drown out the correct answer. [CER](../cer/) tackles this same "blind voting" problem, though it draws its confidence signal from Logits over the reasoning process rather than DeepConf's sliding-window entropy.
 
 {{< admonition tip "Core Goal" >}}
 The goal of this paper is very clear: **Can we significantly reduce computational costs without sacrificing (or even improving) accuracy?**
@@ -125,7 +125,7 @@ This has two benefits:
 1.  **Smoothing**: Filters out noise from single words.
 2.  **Capturing Local Collapse**: This is the most important part! Once a section of "incoherent speech" or "logic stall" appears in the reasoning process, the Group Confidence for that interval will plummet.
 
-{{< image src="figure3.png" caption="Illustration of different confidence measurement methods. You can see that Lowest Group precisely catches the moment of confidence collapse." >}}
+{{< image src="figure3.png" alt="Diagram defining token, group and tail confidence over a reasoning trace with tokens color-coded by confidence, then showing trace-level measures such as tail, bottom-10 percent group, lowest group and average confidence being used for confidence filtering and confidence-weighted majority voting" caption="Illustration of different confidence measurement methods. You can see that Lowest Group precisely catches the moment of confidence collapse." >}}
 
 ### Three Scoring Strategies
 
@@ -186,7 +186,7 @@ We also need to know "when to stop generating new paths."
 *   If we find the vote share for a certain answer has exceeded 95% (high consensus), it means everyone agrees, and the outcome is decided.
 *   At this point, we stop the entire task and output the answer. There is no need to waste money to reach 100 paths.
 
-{{< image src="figure4.png" caption="Online Thinking Flowchart: Red crosses represent paths terminated early. Through this mechanism, DeepConf filters out invalid computations and maximizes efficiency." >}}
+{{< image src="figure4.png" alt="DeepConf online generation diagram: a math question spawns several reasoning traces where each new group is kept if its confidence stays above a stopping threshold and terminated with a red cross when it drops, with the threshold set during an offline warmup by confidence filtering" caption="Online Thinking Flowchart: Red crosses represent paths terminated early. Through this mechanism, DeepConf filters out invalid computations and maximizes efficiency." >}}
 
 ## Experimental Results: Data Speaks
 
@@ -196,14 +196,14 @@ How effective is DeepConf? The paper tested it on high-difficulty datasets like 
 In offline tests, research found that if we **discard 90% of low-confidence paths** and only let the remaining 10% elite vote, the accuracy is often higher than letting everyone vote.
 *   For example, **DeepSeek-8B on AIME24**: Traditional voting accuracy was 86.7%, but after DeepConf filtering, it rose to **93.3%**. This proves that low-confidence paths are mostly noise.
 
-{{< image src="table1.png" caption="Offline Evaluation Results: It can be seen that after confidence filtering (especially Bottom-10%), accuracy is generally higher than traditional majority voting (Cons@512)." >}}
+{{< image src="table1.png" alt="Offline results table for DeepSeek-8B, Qwen3-32B and GPT-OSS-120B across AIME, BRUMO, HMMT and GPQA, comparing Pass@1, Cons@512 and confidence-filtered Bottom-10 and Tail confidence at 90 and 10 percent retention, where the filtered variants are generally the highest" caption="Offline Evaluation Results: It can be seen that after confidence filtering (especially Bottom-10%), accuracy is generally higher than traditional majority voting (Cons@512)." >}}
 
 ### Cost-Saving Miracle: Costs Drop, Performance Stays
 In online tests, DeepConf demonstrated extreme efficiency.
 *   **DeepConf-low (Aggressive Saver)**: In some tasks, it can **save up to 84.7% of Tokens** while keeping accuracy flat or even improving it! This means a task that originally took 10 hours to run might now finish in 2 hours.
 *   **DeepConf-high (Conservative Stable)**: Saves 20%~50% of costs stably with almost no sacrifice in accuracy.
 
-{{< image src="table2.png" caption="Online Evaluation Results: Look at the Token (Δ%) column; negative values represent the percentage saved. The numbers are astounding." >}}
+{{< image src="table2.png" alt="Online results table comparing Cons@512 against DeepConf-high and DeepConf-low for three models across AIME, BRUMO and HMMT, where the Token change columns show large token savings up to about minus 85 percent while accuracy stays comparable or higher" caption="Online Evaluation Results: Look at the Token (Δ%) column; negative values represent the percentage saved. The numbers are astounding." >}}
 
 ### Local Beats Global
 Experimental data also confirmed that using metrics like **Bottom-10%** or **Tail**, which focus on "local" and "weakest link" aspects, discriminate quality better than simply looking at the overall average. This verifies the hypothesis that "a wrong reasoning chain often stems from the collapse of a specific segment."

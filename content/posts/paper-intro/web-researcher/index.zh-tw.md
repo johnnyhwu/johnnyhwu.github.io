@@ -20,13 +20,13 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-{{< image src="exp1.png" caption="WebResearcher 和其他 Deep Research Agent 方法的比較" >}}
+{{< image src="exp1.png" alt="兩張並列的橫向長條圖，比較 WebResearcher 系列模型與其他 Deep Research Agent：在 Humanity's Last Exam（純文字）測試中，WebResearcher-30B-A3B-heavy 以 36.7 分最高，其次是 DeepSeek-V3.1+tools 的 29.8 分與 WebResearcher-30B-A3B 的 28.8 分；在 BrowseComp 測試中，WebResearcher-30B-A3B-heavy 以 51.7 分領先，OpenAI DeepResearch 緊追在後為 51.5 分，而 WebResearcher-30B-A3B 為 37.3 分，明顯高於 DeepSeek-V3.1+tools、Claude-4-Sonnet+tools、WebSailor-72b 與 Qwen3-235B-A22B+tools" caption="WebResearcher 和其他 Deep Research Agent 方法的比較" >}}
 
 ### 從「被動檢索」到「主動知識構建」的範式轉移
 
 在追求通用人工智慧 (AGI) 的路徑上，學術界與工業界正經歷一場 Paradigm Shift。過去的 LLM 發展核心在於 **Scaling Law**，透過擴大參數與數據量來累積被動知識 (Passive Knowledge)，讓模型具備驚人的記憶與檢索能力。
 
-然而，真正的人類智慧體現在 **「主動知識構建 (Active Knowledge Construction)」**。這意味著 AI 不應只是背誦訓練集裡的內容，而必須像一名資深研究員一樣: **自主拆解複雜問題、調度多元工具 (搜尋、計算、程式碼) 、驗證衝突資訊，並最終合成一份邏輯嚴密的深度報告。** 這種具備長週期 (Long-horizon) 特性的系統，正是目前最頂尖的 **Deep Research** 領域。
+然而，真正的人類智慧體現在 **「主動知識構建 (Active Knowledge Construction)」**。這意味著 AI 不應只是背誦訓練集裡的內容，而必須像一名資深研究員一樣: **自主拆解複雜問題、調度多元工具 (搜尋、計算、程式碼) 、驗證衝突資訊，並最終合成一份邏輯嚴密的深度報告。** 這種具備長週期 (Long-horizon) 特性的系統，正是目前最頂尖的 **Deep Research** 領域 — 不過就如同 [VideoDR](../video-deep-research/) 所指出的，這個前沿目前大多還侷限在純文字，若要延伸到影片，會面臨全新的挑戰。
 
 ### 業界現狀: 閉源巨頭的壟斷與開源界的死胡同
 
@@ -93,7 +93,7 @@ url: "paper-intro/:contentbasename"
 
 ## IterResearch 迭代研究架構
 
-{{< image src="iter-research.png" caption="Iterative Deep-Research Paradigm 和常見的 Mono Contextual Paradigm 方法比較" >}}
+{{< image src="iter-research.png" alt="示意圖對比兩種研究範式：上方的 Mono-contextual Paradigm 中，Agent 在單一上下文中反覆執行 Think 與 Tool Call，並不斷累積 Signal 與 Noise，最終導致 Context Limit、Noise Contamination 與 Performance Degradation；下方的 Iterative Deep-Research Paradigm 中，IterResearch Agent 每一輪維護一個包含 Report、Action、Tool Response 的中央記憶工作區，並決定輸出 Final Answer 或呼叫 Search、Scholar、Browsing、Python 等工具與環境互動，再更新工作區進入下一輪" caption="Iterative Deep-Research Paradigm 和常見的 Mono Contextual Paradigm 方法比較" >}}
 
 ### 核心哲學: 從「堆疊歷史」到「重構狀態」
 WebResearcher 最具破壞性的創新在於它完全拋棄了傳統 Agent 的「Append-only」思維，轉而採用 **馬可夫決策過程 (Markov Decision Process, MDP)** 來重新建模 Deep Research 任務。
@@ -126,6 +126,7 @@ WebResearcher 最具破壞性的創新在於它完全拋棄了傳統 Agent 的�
     *   **角色:** 研究專案的「活文件 (Live Document)」。
     *   **功能:** 模型必須將 `Obs` 中的新知識與舊 `Report` 進行**融合 (Synthesis)**。它需要執行「去重、修正衝突、補充數據、提煉結論」。
     *   **價值:** 它是唯一被帶入下一輪的「精華」，確保了資訊的 **高信噪比 (High SNR)**。
+    *   **注意:** 這種「濃縮記憶」的做法，其實與 [Agentic Context Engineering](../agentic-context-engineering/) 以及 [Dynamic Cheatsheet](../dynamic-cheatsheet/) 所討論的 Context Collapse 問題面臨相同的風險 — 如果摘要步驟過於激進，重要的細節可能會隨著雜訊一起被移除。
 3.  **`Action` (具體行動 / 環境交互):**
     *   **角色:** 執行手。
     *   **功能:** 決定下一階段的工具 (Search, Scholar, Visit, Python) 或在證據充足時給出 Final Answer。
@@ -146,7 +147,7 @@ Round 3: [Question, R2, A2, O2]   -> Output: [T3, R3, A3]  # T2 被丟棄，O2 �
 
 ## WebFrontier 資料引擎
 
-{{< image src="data-engine.png" caption="Data Synethsis Workflow" >}}
+{{< image src="data-engine.png" alt="資料合成流程圖：Summary Agent 將 Raw Corpus 轉換為 Text Chunks，再透過 relevance-based triplet grouping 將其分組為 Composite Units，接著 ItemWriter Agent 產生 Seed QA pairs，並反覆精煉出複雜度由 (1) 到 (n) 遞增的 QA，以節點與連線數量遞增的圖形表示；精煉後的 QA pairs 先詢問 base Question Solver，若失敗則交由 advanced Question Solver，通過後再以 Similarity Scorer 過濾掉 Knowledge-based QA、QA Flagged for Review 與 High-similarity QA，最終得到 Final QA pairs" caption="Data Synethsis Workflow" >}}
 
 ### 核心理念：解決專家數據匱乏的問題
 
@@ -255,7 +256,7 @@ RFT 的核心在於 **「嚴格的結果導向過濾」**。
 
 ## Test-time Scaling (Inference Optimization)
 
-{{< image src="test-time-scaling.png" caption="Research-Synthesis Framework" >}}
+{{< image src="test-time-scaling.png" alt="Research-Synthesis Framework 的兩階段示意圖：左側 Parallel Search 階段中，多個 Agent 各自針對 Question 使用 Search、Scholar、Browsing、Python 等工具產生各自的 Report、Action 與 Tool Response；右側 Integrative Synthesis 階段中，Synthesis Agent 將所有個別的 Final Report 與 Answer 整合，產生最終的 Final Answer" caption="Research-Synthesis Framework" >}}
 
 ### 推論哲學：用「推理算力」換取「決策邊界」
 
@@ -300,7 +301,7 @@ WebResearcher 提出了一個優雅的 **Research-Synthesis Framework**，其核
 
 ### HLE (Humanity’s Last Exam)
 
-{{< image src="main-exp.png" caption="General Web Navigation 和 Reasoning Benchmarks" >}}
+{{< image src="main-exp.png" alt="結果比較表格，列出 Humanity's Last Exam、BrowseComp、BrowseComp-ZH 三項分數，分為三組：General LLMs with tools（如 Claude-4-Sonnet 為 20.3/12.2/29.1）、Commercial Deep Research Agents（如 OpenAI Deep Research 為 26.6/51.5/-）與 Open-source Deep Research Agents（如 DeepSeek-V3.1 為 29.8/30.0/49.2）；WebResearcher-30B-A3B 得分為 28.8/37.3/45.2，而 WebResearcher-30B-A3B-heavy 在三項指標上皆取得最佳成績，分別為 36.7、51.7 與 56.8" caption="General Web Navigation 和 Reasoning Benchmarks" >}}
 
 HLE 被公認為目前 AI 領域最難的「博士級」基準測試，題目涵蓋極廣泛的學科，且設計初衷就是為了讓模型無法輕易透過檢索得到答案。
 
@@ -328,7 +329,7 @@ HLE 被公認為目前 AI 領域最難的「博士級」基準測試，題目涵
 
 ### Test-time Scaling 的收益遞減曲線
 
-{{< image src="exp-effect-of-n.png" caption="Reason-Synthesis Framework 中 \(n\) 的影響" >}}
+{{< image src="exp-effect-of-n.png" alt="兩張折線圖顯示 Pass@1 準確率隨平行搜尋數量 N 從 1 增加到 16 而上升：在 HLE 上，準確率從 N=1 時的 28.8 上升到 N=16 時的 36.7；在 BrowseComp 上，準確率從 N=1 時的 37.3 上升到 N=16 時的 51.7，兩條曲線都顯示隨 N 增加而報酬遞減的趨勢" caption="Reason-Synthesis Framework 中 \(n\) 的影響" >}}
 
 推論算力 (Inference Compute) 真的能換取智商嗎？
 

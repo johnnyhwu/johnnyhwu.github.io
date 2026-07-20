@@ -33,7 +33,7 @@ Before we dive deep, we must clarify what "pain points" this paper solves.
     Traditional Video LLM evaluations (like Video-MME) assume all answers are inside the video. But in real life, videos are often just an "intro." For example, seeing a nameless statue in a travel Vlog and wanting to know its historical background. This requires the model to **step out of the video and into the web**.
 
 2.  **Bridging the "Text-Only Search" Gap**:
-    Existing Search Agents (like Search-o1) mostly start from text questions. However, **visual information is irreplaceable**. Often, we cannot precisely describe an object in a video using text and must rely on the model's understanding and extraction of "multi-frame visual signals."
+    Existing Search Agents (like Search-o1, or the text-focused [WebResearcher](../web-researcher/) architecture) mostly start from text questions. However, **visual information is irreplaceable**. Often, we cannot precisely describe an object in a video using text and must rely on the model's understanding and extraction of "multi-frame visual signals."
 
 3.  **A Reality Check for Agent Architectures**:
     The industry has been debating whether to use stable Workflows or flexible Agents. This paper provides a fair arena that lets us see the boundaries of both clearly.
@@ -96,7 +96,7 @@ Two key operational steps are hidden behind this formula, which are also points 
 2.  **Multi-Hop Reasoning**: The model cannot just search once. It usually requires iterative interaction of `Video -> Web -> Video -> Web`. For example: First confirm the location (Web), then look back at the video to confirm the route (Video), and finally search for specific shops on that route (Web).
 {{< /admonition >}}
 
-{{< image src="figure2.png" caption="VideoDR Task Example: From identifying the museum (Visual Anchor), to searching for the must-see list (External Knowledge), then combining with the map to locate the specific exhibit (Multi-Hop Reasoning), and finally obtaining the registration number." >}}
+{{< image src="figure2.png" alt="Example VideoDR task titled 'Video Deep Research': given a video of a museum visit and the question 'Among the museum's Don't miss recommended exhibits, what is the museum registration number of the artifact closest to the Main Entrance?', the diagram traces multi-frame and multi-hop reasoning through three evidence sources (official museum site, visitor guide, ground-floor map) to progressively resolve the museum name (The British Museum), the Don't miss list (12 candidates), the closest exhibit (Shiva Nataraja), and finally the registration number (WB.67)" caption="VideoDR Task Example: From identifying the museum (Visual Anchor), to searching for the must-see list (External Knowledge), then combining with the map to locate the specific exhibit (Multi-Hop Reasoning), and finally obtaining the registration number." >}}
 
 ### Data Construction: Funnel Filtering
 The most brilliant part of this paper lies in the creation of the dataset. The authors do not pursue quantity (only 100 questions in the end), but rather extreme quality.
@@ -122,7 +122,7 @@ This is the gold standard of VideoDR. Every annotated sample \((V, Q, A)\) must 
 
 **Only samples that pass both tests simultaneously possess "Dual Dependency," which is the unique feature of the VideoDR dataset.**
 
-{{< image src="figure1.png" caption="VideoDR Data Construction Pipeline: Starting from the candidate video pool, passing through strict negative sample filtering, then undergoing double ablation testing (Web-only & Video-only), finally resulting in high-quality evaluation samples." >}}
+{{< image src="figure1.png" alt="Two-panel flowchart of the VideoDR data construction pipeline: the left panel shows building a candidate video pool from six topic categories via stratified sampling, manual screening to discard low-quality videos, and question design combining multi-frame and multi-hop reasoning; the right panel shows quality control via web-only and video-only dependency tests that discard questions answerable from a single source, followed by human difficulty stratification (low/mid/high) and manual re-check to yield the final 100 tasks" caption="VideoDR Data Construction Pipeline: Starting from the candidate video pool, passing through strict negative sample filtering, then undergoing double ablation testing (Web-only & Video-only), finally resulting in high-quality evaluation samples." >}}
 
 ### Evaluation Paradigms: Workflow vs. Agent
 
@@ -160,7 +160,7 @@ The authors selected current mainstream closed-source models (GPT-4o, Gemini-1.5
 
 This is probably the most surprising discovery in the experiment. Intuitively, we think letting the model decide when to watch and when to search (Agent) should be stronger than rigid steps (Workflow), but the data tells a different story.
 
-{{< image src="table1.png" caption="Table 1: Performance comparison of different models under Workflow and Agent paradigms. Note that Gemini improves significantly under Agentic, but MiniCPM-V plummets." >}}
+{{< image src="table1.png" alt="Table comparing accuracy (%) of six models (Qwen3-Omni-30B-A3B, InternVL3.5-14B, MiniCPM-V 4.5, Gemini-3-pro-preview, GPT-4o, GPT-5.2) plus Human baseline, broken down by task difficulty (Low/Mid/High) under Workflow versus Agentic paradigms; Gemini-3-pro-preview's average rises from 69 to 76 under Agentic while MiniCPM-V 4.5 drops sharply from 25 to 16" caption="Table 1: Performance comparison of different models under Workflow and Agent paradigms. Note that Gemini improves significantly under Agentic, but MiniCPM-V plummets." >}}
 
 *   **The Strong Get Stronger**: For models with ultra-long Context Windows and powerful reasoning capabilities like **Gemini-1.5 Pro**, switching to Agent mode brought significant improvement (accuracy rose from 69% to 76%). It can effectively navigate complex interaction loops.
 *   **The Weak Collapse**: For capable but weaker or open-source models (like **MiniCPM-V 4.5**), after switching to Agent mode, performance actually **plummeted** (from 25% to 16%).
@@ -170,7 +170,7 @@ This is probably the most surprising discovery in the experiment. Intuitively, w
 
 To delve deeper into "why Agents fail," the authors analyzed the results stratified by **video duration**.
 
-{{< image src="table2.png" caption="Table 2: Performance under different video durations. Note that in the Long Video category, many models' performance drops sharply in Agent mode." >}}
+{{< image src="table2.png" alt="Table comparing accuracy (%) of the same six models plus Human baseline by video duration (Short/Medium/Long) under Workflow versus Agentic paradigms; in the Long video category several models drop sharply under Agentic mode, e.g. Qwen3-Omni-30B-A3B falls from 50 to 20 and GPT-5.2 falls from 70 to 50" caption="Table 2: Performance under different video durations. Note that in the Long Video category, many models' performance drops sharply in Agent mode." >}}
 
 {{< admonition tip "Shocking Discovery: The Longer, The More Forgetful" >}}
 Experimental data shows that as videos get longer (Long Videos), the Agent's advantage not only disappears but becomes a disadvantage.
@@ -181,7 +181,7 @@ In the long conversation history of Agent mode, the model gradually "dilutes" it
 ### Error Analysis: The Loss of Visual Anchors
 The authors further analyzed error types, and the data again corroborated the above view.
 
-{{< image src="table5.png" caption="Table 5: Error type distribution. Categorical Error is the main killer, implying deviation from the search goal." >}}
+{{< image src="table5.png" alt="Table breaking down error counts by type (Categorical, Incomplete, Not Found, Numerical, Context, Semantic, Reasoning, Others) for each model under Workflow and Agentic settings; Categorical errors are consistently the largest or near-largest category across most models, e.g. MiniCPM-V 4.5 has 25 Categorical errors under Workflow and 36 under Agentic out of totals of 75 and 84" caption="Table 5: Error type distribution. Categorical Error is the main killer, implying deviation from the search goal." >}}
 
 *   **Categorical Error** has the highest proportion.
     *   This means the model didn't "miscalculate a value" or have a "logic error," but **looked for the wrong object from the start** (e.g., question asked about Museum A, model went to search for Museum B).
@@ -189,7 +189,7 @@ The authors further analyzed error types, and the data again corroborated the ab
 
 ### Efficiency Analysis: Busy Does Not Mean Effective
 
-{{< image src="table4.png" caption="Table 4: Tool usage statistics. Gemini is slow but accurate; Qwen searches a lot but uselessly." >}}
+{{< image src="table4.png" alt="Table of tool-usage statistics per model under Workflow versus Agentic settings, listing average think steps, search steps, and total time in seconds; GPT-5.2 is by far the slowest (569s Workflow, 1375.8s Agentic) with the highest think/search counts, while Gemini-3-pro-preview is also slow (422-449s) but achieves the best accuracy" caption="Table 4: Tool usage statistics. Gemini is slow but accurate; Qwen searches a lot but uselessly." >}}
 
 *   **Ineffective Retrieval**: Some open-source models saw a surge in search counts in Agent mode, but accuracy did not rise; it fell. This indicates they are conducting ineffective "spray and pray" tactics.
 *   **Effective Reflection**: Gemini, which performed best, had significantly more **Thinking Steps**. This tells us that in Video Deep Research, **"Stopping to Reflect"** (e.g., reflecting: "Does the information I found match the image in the video?") is more critical than blind searching.

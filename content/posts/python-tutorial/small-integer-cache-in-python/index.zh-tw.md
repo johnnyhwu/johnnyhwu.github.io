@@ -44,7 +44,7 @@ False
 
 因此，從上面的執行結果可以發現 a 和 b 明明是不同的兩個變數，但是他們的 Memory Address 卻一樣，而 c 和 d 的 Memory Address 又相同？！ 會發生上面的狀況主要是 Python 語言的實做中包含了 **Integer Cache** 的機制：
 
-{{< image src="integer-cache.png" caption="Integer Cache from Python Document" >}}
+{{< image src="integer-cache.png" alt="Python 官方 C API 文件中 PyLong_FromLong 的說明截圖，內容提到目前實作會預先配置 -5 到 256 之間所有整數的物件陣列" caption="Integer Cache from Python Document" >}}
 
 如上圖所示，從 [Python 的官方文件](https://docs.python.org/3/c-api/long.html#c.PyLong_FromLong)中我們可以發現：對於一些**比較常見的 Integer [-5, 256]**，Python 會**事先建立 (Pre-Allocated) 這些 Integer 的 Object**，當我們在程式碼中宣告的 Integer 在這個範圍時，其實都會 Reference 到同一個 Object 而不會建立新的 Object。
 
@@ -95,7 +95,7 @@ struct _longobject {
 
 `ob_refcnt` 就是表示這個 Integer Object 的 Reference Count！在 Python 中我們可以透過 `sys.getrefcount()` 函式來取得一個 Object 的 Reference Count，並透過一些繪圖套件 (ex. [matplotlib](https://matplotlib.org/)) 呈現這些 Integer Object 被 Reference 到的次數分佈：
 
-{{< image src="reference-count.png" caption="Reference counts of interger values" >}}
+{{< image src="reference-count.png" alt="折線圖呈現不同整數值的 Reference Count，在 0 附近出現明顯高峰，在 256 附近也有一個較小的高峰，其餘範圍的次數則接近 0" caption="Reference counts of interger values" >}}
 
 可以發現到在還沒有加入自己的其他 Code  之前，光是 Python Interpreter/Compiler 內部的運作就已經對這些 Smaller Integer 做了很多次 Reference。透過 Integer Cache 的機制確實可以減少對這些經常用到的 Integer Object 做 Memory Allocation。
 

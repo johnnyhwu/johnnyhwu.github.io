@@ -42,7 +42,7 @@ Since then, Deep (Convolutional) Neural Networks have soared in popularity, beco
 
 Next, let's understand the working principle of Dropout from a high-level perspective.
 
-{{< image src="concept.png" caption="Dropout randomly selects some neurons and sets their activation to 0" >}}
+{{< image src="concept.png" alt="Side-by-side comparison of a standard fully-connected neural network and the same network after applying dropout, where randomly dropped neurons are crossed out" caption="Dropout randomly selects some neurons and sets their activation to 0" >}}
 
 As shown in Figure (a) above, we have a standard neural network. Typically, we feed an input `x` into the network and calculate the cost for that batch based on the output `y`. With the cost, we can then use the concept of Gradient Descent to update all the parameters in the network.
 
@@ -71,13 +71,13 @@ When the next input batch is fed into the neural network, the Dropout layer rest
 
 Now that you understand the basic concept of Dropout, let's explore its principles from a mathematical perspective.
 
-{{< image src="concept-2.png" caption="Dropout causes each neuron's output to be set to 0 with a certain probability" >}}
+{{< image src="concept-2.png" alt="Diagram comparing a standard network unit with a dropout unit, where each input is multiplied by a Bernoulli mask r to produce a thinned output before being weighted" caption="Dropout causes each neuron's output to be set to 0 with a certain probability" >}}
 
 As shown in the figure above, in a standard neural network, the output `y` from the previous layer is directly multiplied by the weights of the current layer and added to the bias. With Dropout, each output `y` from the previous layer is first multiplied by a value `r` before being multiplied by the weights and added to the bias.
 
 Here, `r` is a random variable drawn from a Bernoulli distribution with a probability `p`. The value of `r` can be either 0 or 1. When `r` is 0, it means the neuron is dropped out, as its output is set to 0.
 
-{{< image src="concept-3.png" caption="Dropout Network Formula" >}}
+{{< image src="concept-3.png" alt="Equations comparing the forward-pass formulas of a standard network and a dropout network, where dropout adds a Bernoulli mask r and a thinned activation before the weighted sum" caption="Dropout Network Formula" >}}
 
 The image above presents the mathematical formulas for a standard neural network versus one with Dropout. You can see that the only difference is the part highlighted in red, where each neuron's output is multiplied by a value sampled from a Bernoulli distribution (0 with probability `p`, and 1 with probability `1-p`).
 
@@ -85,7 +85,7 @@ For example, suppose the layer before the Dropout layer is a Dense/Linear layer 
 
 A crucial point to note is that we must ensure the **expected value of each neuron's output remains the same** during both the training and testing phases.
 
-{{< image src="concept-4.png" caption="The expected output of a neuron under Dropout is (1-p) * y" >}}
+{{< image src="concept-4.png" alt="Equation showing the expected output of a neuron during dropout training equals p times 0 plus (1 minus p) times y, which simplifies to (1 minus p) times y" caption="The expected output of a neuron under Dropout is (1-p) * y" >}}
 
 As shown in the formula above, during the training phase, a neuron affected by Dropout has a probability `p` of having its output become 0 (dropped out) and a probability `(1-p)` of its output remaining unchanged. Therefore, the expected output of that neuron is `(1-p) * y`.
 

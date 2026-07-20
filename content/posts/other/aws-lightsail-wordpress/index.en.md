@@ -32,7 +32,7 @@ This article will guide you through creating your own website in just a few simp
 
 Before you begin, you'll need an AWS account. The registration process is straightforward, so we won't cover it here. Once registered, find and click on the Lightsail service. You will be taken to the following page:
 
-{{< image src="aws-lightsail.png" caption="Accessing the AWS Lightsail service" >}}
+{{< image src="aws-lightsail.png" alt="Amazon Lightsail home page in a browser showing a Good evening greeting, a message that there are no instances yet, and an orange Create instance button" caption="Accessing the AWS Lightsail service" >}}
 
 ## Create an Instance with Lightsail
 
@@ -40,7 +40,7 @@ Next, we'll use Lightsail to rent an "Instance" from AWS. You can think of this 
 
 First, choose the physical location for your instance:
 
-{{< image src="lightsail-zone.png" caption="Choosing the Instance's Availability Zone and Region" >}}
+{{< image src="lightsail-zone.png" alt="Lightsail Select your instance location screen with a grid of region options where Tokyo ap-northeast-1 is highlighted, and Availability Zone A selected below" caption="Choosing the Instance's Availability Zone and Region" >}}
 
 In AWS, "Region" and "Availability Zone" are two important concepts. A Region contains multiple Availability Zones. You can refer to this [document](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/RegionsAndAZs.html) for a deeper understanding, but we won't go into detail here.
 
@@ -48,21 +48,21 @@ The closer your instance is to your target audience, the lower their website loa
 
 Next, select the instance image. This determines the operating system and any pre-installed software for your instance:
 
-{{< image src="lightsail-image.png" caption="Choosing a Lightsail Instance Image" >}}
+{{< image src="lightsail-image.png" alt="Lightsail Pick your instance image screen with the Linux/Unix platform selected and Ubuntu 22.04 LTS chosen as the blueprint" caption="Choosing a Lightsail Instance Image" >}}
 
 Here, I just want a clean installation of the Ubuntu 22.04 OS. The "Optional" fields below can be left empty.
 
 Then, you need to choose the hardware specifications for your instance. This depends on your individual needs. Since I'm only creating a personal blog and don't expect massive traffic spikes, a $5 or $10 per month plan is more than sufficient:
 
-{{< image src="lightsail-spec.png" caption="Choosing the Lightsail Instance hardware plan" >}}
+{{< image src="lightsail-spec.png" alt="Lightsail Choose your instance plan screen showing monthly price tiers from 3.5 to 40 USD, with the 10 USD plan (2 GB RAM, 2 vCPUs, 60 GB SSD) selected" caption="Choosing the Lightsail Instance hardware plan" >}}
 
 Finally, give your instance a name. Since this instance is for a WordPress site, I've named it accordingly:
 
-{{< image src="instance-name.png" caption="Give your instance a name" >}}
+{{< image src="instance-name.png" alt="Lightsail Identify your instance screen with the instance named Ubuntu-Wordpress and a quantity of 1" caption="Give your instance a name" >}}
 
 Once all the settings are configured, click the final "Create Instance" button. If you see the screen below, you have successfully created an instance on Lightsail!
 
-{{< image src="lightsail-instance.png" caption="Successfully created an instance on Lightsail" >}}
+{{< image src="lightsail-instance.png" alt="Lightsail dashboard card showing the Ubuntu-Wordpress instance with 2 GB RAM, 2 vCPUs and 60 GB SSD in a Running state in Tokyo Zone A" caption="Successfully created an instance on Lightsail" >}}
 
 ## Install a Web Server (Nginx)
 
@@ -70,11 +70,11 @@ Congratulations on completing the first two steps! You're getting close. In this
 
 First, click on the instance you just created and connect to it via SSH:
 
-{{< image src="connect-to-instance.png" caption="Connecting to the instance" >}}
+{{< image src="connect-to-instance.png" alt="Ubuntu-Wordpress instance detail page on the Connect tab, offering a Connect using SSH button for the browser-based SSH client" caption="Connecting to the instance" >}}
 
 If you see the following screen, you have successfully connected to the instance via SSH. From now on, you can do anything you want with this instance! :D
 
-{{< image src="ssh-connection.png" caption="Successfully connected to the instance via SSH" >}}
+{{< image src="ssh-connection.png" alt="Terminal showing a successful SSH login to Ubuntu 22.04.1 LTS with system information such as load, memory and disk usage, ending at the ubuntu shell prompt" caption="Successfully connected to the instance via SSH" >}}
 
 Next, execute the following commands to enable the Ubuntu firewall (UFW) and allow SSH connections:
 
@@ -104,7 +104,7 @@ sudo ufw allow 'Nginx HTTPS'
 
 At this point, if you enter your instance's Public IP into your browser's address bar and see the following page, your web server is set up successfully:
 
-{{< image src="nginx-welcome.png" caption="Accessing the Nginx welcome page by entering the Public IP in the browser" >}}
+{{< image src="nginx-welcome.png" alt="Browser showing the default Welcome to nginx! page confirming the web server is installed and working" caption="Accessing the Nginx welcome page by entering the Public IP in the browser" >}}
 
 ## Install a Database Management System (MySQL)
 
@@ -349,7 +349,7 @@ sudo systemctl restart nginx
 
 Enter your instance's Public IP in your browser. If you see the following page, it means Nginx is successfully running the WordPress application:
 
-{{< image src="install-wordpress.png" caption="Installing WordPress" >}}
+{{< image src="install-wordpress.png" alt="WordPress installation wizard first screen with the WordPress logo and a language selection list, English (United States) highlighted, and a Continue button" caption="Installing WordPress" >}}
 
 From here, just follow the on-screen instructions of the WordPress installer, and your WordPress site will be live!
 
@@ -359,17 +359,17 @@ So far, we've been using the browser-based SSH client. However, I prefer to SSH 
 
 First, go to the "Networking" tab and click "Attach static IP" under the "Public IP" section:
 
-{{< image src="set-static-ip.png" caption="Set a Static IP for your Instance" >}}
+{{< image src="set-static-ip.png" alt="Lightsail Networking tab showing IPv4 networking with public and private IP boxes and an Attach static IP link" caption="Set a Static IP for your Instance" >}}
 
 Give your static IP a name and attach it to your current instance:
 
-{{< image src="static-ip-name.png" caption="Name your Static IP" >}}
+{{< image src="static-ip-name.png" alt="Lightsail Create and attach a static IP dialog with the static IP named Ubuntu-Wordpress-IP and a Create and attach button" caption="Name your Static IP" >}}
 
 This prevents the Public IP from changing if the instance reboots.
 
 After that, go back to the "Connect" tab and click "Download default key" at the bottom:
 
-{{< image src="ssh-key.png" caption="Download the Instance's Default Key" >}}
+{{< image src="ssh-key.png" alt="Lightsail Connect tab showing the Use your own SSH client section with user name ubuntu and a Download default key link" caption="Download the Instance's Default Key" >}}
 
 On your local machine, you will use the provided username, Public IP, and this SSH key to connect to the instance. On your local terminal, change the permissions of the downloaded `.pem` file to 400:
 

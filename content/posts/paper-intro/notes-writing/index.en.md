@@ -29,7 +29,7 @@ This paper does not present a particularly novel method. Instead, it highlights 
 
 ## The Problem NotesWriting Addresses
 
-In Multi-Hop Retrieval-Augmented Generation (RAG), an LLM must interleave multiple steps of retrieval and reasoning to arrive at a final answer. For example, to answer the question, "How many people attended the last international baseball game held in Taiwan?", the LLM first needs to retrieve information for "What was the last international baseball game held in Taiwan?". Only after finding that answer can it proceed to retrieve information for "How many people attended that specific game?".
+In Multi-Hop Retrieval-Augmented Generation (RAG), an LLM must interleave multiple steps of retrieval and reasoning to arrive at a final answer (see [AutoMind](../automind/) for another example of Multi-Hop RAG in action). For example, to answer the question, "How many people attended the last international baseball game held in Taiwan?", the LLM first needs to retrieve information for "What was the last international baseball game held in Taiwan?". Only after finding that answer can it proceed to retrieve information for "How many people attended that specific game?".
 
 However, when answering each sub-question, the LLM might retrieve a large volume of related documents. Placing all this information into the LLM's context can lead to two problems: exceeding its context window limit or degrading its performance in subsequent reasoning steps due to noise from irrelevant information.
 
@@ -37,7 +37,7 @@ Therefore, the problem this paper aims to solve is a primary challenge in the fi
 
 ## The NotesWriting Solution
 
-{{< image src="notes-writing.png" caption="[Figure 1] The NotesWriting Method" >}}
+{{< image src="notes-writing.png" alt="Step-by-step trace of the NotesWriting method answering an elevation-range question: at each step the agent generates a chain-of-thought and a search query, a separate Notes LLM reads the top wiki pages and returns concise notes that are added to context, and after two such retrieval rounds the agent finishes with the answer 1,800 to 7,000 ft" caption="[Figure 1] The NotesWriting Method" >}}
 
 As shown in the figure above, the NotesWriting method is very straightforward. In each reasoning step of the LLM-based agent, if a search/retrieval tool is used to fetch the top-K documents, an LLM performs "Note Extraction" on each document to pull out the most relevant information for the current question. Finally, "Note Aggregation" is used to consolidate all the extracted information.
 
@@ -63,16 +63,16 @@ Query: {Query}
 
 In the experimental phase, the authors applied the NotesWriting method to three common Multi-Hop RAG baselines: [ReAct](https://arxiv.org/abs/2210.03629), [IRCoT](https://arxiv.org/abs/2212.10509), and [FLARE](https://arxiv.org/abs/2305.06983). The results are shown in Tables 1, 2, and 3 below.
 
-{{< image src="exp-1.png" caption="[Table 1] NotesWriting + ReAct" >}}
+{{< image src="exp-1.png" alt="Table comparing ReAct against ReAct plus NotesWriting (ReNAct) for GPT-4o-mini and LLaMA-3.1-70B on Fanout-QA, Frames, Hotpot-QA and MultiHop-RAG, where adding NotesWriting raises F1 and GPT-4 score while cutting main-context input tokens by offloading long content into notes" caption="[Table 1] NotesWriting + ReAct" >}}
 
-{{< image src="exp-2.png" caption="[Table 2] NotesWriting + IRCoT" >}}
+{{< image src="exp-2.png" alt="Table comparing IRCoT against IRCoT plus NotesWriting for GPT-4o-mini and LLaMA-3.1-70B on FanoutQA, Frames, HotpotQA and M-RAG, where the NotesWriting variant achieves higher F1 and GPT-4 scores in every row" caption="[Table 2] NotesWriting + IRCoT" >}}
 
-{{< image src="exp-3.png" caption="[Table 3] NotesWriting + FLARE" >}}
+{{< image src="exp-3.png" alt="Table comparing FLARE against FLARE plus NotesWriting for GPT-4o-mini and LLaMA-3.1-70B on Fanout-QA, Frames, HotpotQA and M-RAG, where adding NotesWriting improves F1 and GPT-4 scores across the benchmarks" caption="[Table 3] NotesWriting + FLARE" >}}
 
 Although NotesWriting is an intuitive and simple method, these experimental results once again demonstrate that **Retrieved Document Refinement** is a crucial and highly effective technique in RAG systems.
 
 {{< admonition info "Further Reading" >}}
-If you're looking for a more comprehensive approach after reading about NotesWriting, we recommend exploring the classic paper on **Retrieved Document Refinement** in RAG: [Corrective Retrieval Augmented Generation](https://arxiv.org/abs/2401.15884). It's sure to provide many valuable insights!
+If you're looking for a more comprehensive approach after reading about NotesWriting, we recommend exploring the classic paper on **Retrieved Document Refinement** in RAG: [Corrective Retrieval Augmented Generation](https://arxiv.org/abs/2401.15884). It's sure to provide many valuable insights! If you're more interested in controlling *how many* documents get retrieved in the first place rather than refining them afterward, [Adaptive-k](../adaptive-k/) tackles that complementary problem.
 {{< /admonition >}}
 
 ## Conclusion
