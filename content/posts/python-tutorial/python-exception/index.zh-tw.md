@@ -44,7 +44,7 @@ while True:
 
 「這段程式碼看起來運作的非常正常」你滿懷得意的這麼想！ 然而，有一天一個使用者手滑不小心輸入「數字 0」(我們知道 0 不能放在分母，當然不能計算它的倒數) ... 當你的程式再計算 `1/0` 等於多少時，跳出了 Error：
 
-{{< image src="exception.png" caption="Python 中的 Error 範例" >}}
+{{< image src="exception.png" alt="Colab 程式碼儲存格執行一個將 1 除以使用者輸入的迴圈，輸入 0 時觸發 ZeroDivisionError，並顯示指向該除法程式碼行的錯誤追蹤訊息" caption="Python 中的 Error 範例" >}}
 
 然後，它就沒有繼續接受使用者的輸入了 (你的老闆鐵定氣炸了) ！ 這就是為什麼我們要學習如何處理 Python 程式中的 Error，它讓我們可以在程式「執行時」遇到 Error 時，整個程式不會停止掉。
 

@@ -54,7 +54,7 @@ tool.func2()
 
 The result should look like this:
 
-{{< image src="demo-1.png" caption="Creating `tool.py` in Colab" >}}
+{{< image src="demo-1.png" alt="Colab editor with main.py open showing import tool followed by calls to tool.func1() and tool.func2(), and a tool.py tab visible next to it" caption="Creating `tool.py` in Colab" >}}
 
 Then, we'll execute the following command in a Colab code cell:
 

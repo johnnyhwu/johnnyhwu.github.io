@@ -44,7 +44,7 @@ while True:
 
 "This code seems to work perfectly," you think with pride. However, one day, a user accidentally enters the "number 0" (we all know that 0 cannot be a denominator, so its reciprocal cannot be calculated). When your program tries to calculate `1/0`, it throws an error:
 
-{{< image src="exception.png" caption="Example of an Error in Python" >}}
+{{< image src="exception.png" alt="Colab code cell running a loop that divides 1 by user input; entering 0 raises a ZeroDivisionError with a traceback pointing to the division line" caption="Example of an Error in Python" >}}
 
 And then, it stops accepting user input (your boss would definitely be furious)! This is precisely why we need to learn how to handle errors in Python. It allows us to manage errors that occur at "runtime" without causing the entire program to crash.
 
