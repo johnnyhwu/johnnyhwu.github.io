@@ -96,24 +96,36 @@ prefer what an actual recent post does if the two ever disagree.
    `figure-map` block and any `NO-MANIFEST`/`UNRESOLVED` pipeline comments
    from both rendered bodies (they may still appear in the PR description).
 
-5. **Verify before opening a PR.** Run:
+5. **Add contextual internal links to related posts**, per
+   `references/hugo-conventions.md`'s "Internal linking to related posts"
+   section — find existing paper-intro posts sharing a tag or topic and
+   turn natural mentions into relative links, in both language files. This
+   is an established site convention (previously done as a retroactive
+   cleanup pass); doing it at publish time avoids that cleanup debt. Zero
+   links is fine for a genuinely novel topic — don't force it.
+
+6. **Verify before opening a PR.** Run:
    ```bash
    python3 .claude/skills/hugo-paper-post/scripts/verify_post.py content/posts/paper-intro/<slug>
    ```
    This checks both language files exist, front matter parses, every image
    shortcode's `src` resolves to a file actually present in the bundle, no
-   pipeline artifacts leaked into the body, and no unsupported `$...$`
-   inline math slipped in. It is a fast sanity net, **not** a substitute for
-   an actual Hugo build — see `references/hugo-build.md` for how to get a
-   real `hugo build` running in a sandbox that has neither `hugo` nor the
-   theme submodule preinstalled, and do that too when the change is
-   non-trivial (new post, not a one-line fix).
+   pipeline artifacts leaked into the body, no unsupported `$...$` inline
+   math slipped in, plus SEO sanity warnings (title/description length
+   outside the usual range, a body `# ` heading duplicating the title's
+   H1, skipped heading levels, zero internal links to other paper-intro
+   posts). Warnings aren't failures — use judgement — but investigate each
+   one. It is a fast sanity net, **not** a substitute for an actual Hugo
+   build — see `references/hugo-build.md` for how to get a real
+   `hugo build` running in a sandbox that has neither `hugo` nor the theme
+   submodule preinstalled, and do that too when the change is non-trivial
+   (new post, not a one-line fix).
 
-6. **Open a PR** whose description covers: which `<Paper>/` topic directory
+7. **Open a PR** whose description covers: which `<Paper>/` topic directory
    it came from, the id → filename image mapping, which images (if any)
    were spot-checked and why, any unresolved images or missing/fabricated
-   front-matter fields, and confirmation that both language files were
-   verified to build.
+   front-matter fields, any internal links added (or why none applied), and
+   confirmation that both language files were verified to build.
 
 ## Definition of done
 
@@ -125,7 +137,13 @@ prefer what an actual recent post does if the two ever disagree.
   `UNRESOLVED`, etc.) leak into either published body.
 - Unresolvable references are visible placeholders, listed in the PR — not
   silently dropped or guessed.
-- `scripts/verify_post.py` passes for the new/changed post directory.
+- The post carries a small number of contextual internal links to related
+  paper-intro posts where genuinely applicable (per
+  `references/hugo-conventions.md`), in both language files — or the PR
+  says why none applied.
+- `scripts/verify_post.py` passes for the new/changed post directory, and
+  its SEO warnings (title/description length, heading structure, internal
+  links) were reviewed, not just ignored.
 - A real `hugo build` was attempted (per `references/hugo-build.md`) for
   anything beyond a trivial fix, and its output was actually inspected —
   not just assumed to be fine because the markdown looks right.

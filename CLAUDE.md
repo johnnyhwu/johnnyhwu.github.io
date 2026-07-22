@@ -66,3 +66,10 @@ It is almost never already attached to a fresh session — bootstrap it first:
   post.** See the skill's bundle-resources note for exactly why a
   single-language post actively breaks the *other* language's images too,
   not just its own content.
+- **On-page SEO is part of Step 3, not an afterthought.** Canonical URL,
+  hreflang, Open Graph/Twitter tags, and JSON-LD are already handled
+  site-wide by the theme/layout — nothing to add there. What the skill
+  itself is responsible for (title/description length, image alt-text
+  quality, contextual internal links to related posts) is in
+  `hugo-paper-post`'s `references/hugo-conventions.md`; do it at publish
+  time rather than leaving it for a later cleanup pass.

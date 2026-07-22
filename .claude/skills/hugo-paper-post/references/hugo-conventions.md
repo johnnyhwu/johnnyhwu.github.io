@@ -101,6 +101,59 @@ requirement from the source, and a human may prefer something else.
 - Preserve the Writer's `alt` text content (translate it if you're
   producing the other language's version) — don't rewrite its meaning.
 
+## SEO checklist for front matter
+
+This site's technical SEO (canonical URL, hreflang alternates, Open Graph /
+Twitter Card tags, JSON-LD `BlogPosting` schema) is already handled globally
+by `layouts/partials/head/link.html` and the DoIt theme's `head/seo.html` —
+it reads straight from front matter (`description`, `tags`, `featuredImage`),
+so there's nothing to add per-post for those. What *is* per-post and easy to
+get wrong:
+
+- `title`: keep it in the ~50-60 character range where practical (it's
+  what search results truncate to) — but don't sacrifice the "editorial,
+  not a literal paper-title translation" rule above to hit the count.
+- `description`: 150-160 chars (already stated above) — this is the exact
+  string search engines show, so it must stand alone, not read like a
+  fragment.
+- Image `alt` text (from the Writer, preserved per the shortcode rule
+  below): sanity-check it reads as a real descriptive sentence of what the
+  figure shows, not a keyword list or a bare "Figure 1". If the Writer's
+  alt text is genuinely just a label, tighten it — the meaning must stay
+  the same (per the hard rules), but a threadbare alt is worth a small
+  factual improvement, unlike the article's prose which you must not
+  touch.
+- `featuredImage`: since it's usually a repurposed figure (see below), it
+  may fall short of the ~1200x630 size link previews want. That's fine —
+  don't fabricate a replacement — but if it's noticeably small or a
+  non-16:9 crop, mention the actual dimensions in the PR so a human can
+  judge whether to swap it later.
+
+### Internal linking to related posts
+
+Established practice on this site (see how `agentopt`, `cer`, `clam`, and
+others cross-link within the "Test-Time Scaling / Inference Optimization"
+cluster) is to add a small number of **contextual** inline links from a new
+post to existing paper-intro posts covering closely related work — e.g.
+"...the kind of Planner-Executor architecture we've seen in
+[Plan-and-Act](../plan-and-act/) and [HiRA](../hira/)". This has been done
+as a retroactive cleanup pass before; do it at publish time instead so it
+doesn't pile up:
+
+1. Find candidates by tag overlap: `grep -l '"<tag>"' content/posts/paper-intro/*/index.en.md`
+   for each tag on the new post.
+2. Where the new post's prose already naturally references a concept,
+   method, or comparison covered by one of those candidates, turn that
+   mention into a relative link (`../<slug>/`) instead of plain text — 2-4
+   such links is typical, more if the paper genuinely builds on several.
+3. Never bolt on an unrelated "See also" list just to hit a count, and
+   never force a link where the two papers aren't actually related — a
+   missing link is better than a misleading one.
+4. Add the equivalent link (to the same target post) in `index.zh-tw.md`
+   too, with the anchor text translated naturally.
+5. It's fine — and expected — for a post about a genuinely novel topic to
+   end up with few or zero such links; don't invent connections.
+
 ## Inline math notation
 
 Check `config/_default/markup.toml`'s `[goldmark.extensions.passthrough]`
