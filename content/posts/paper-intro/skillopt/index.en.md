@@ -1,10 +1,10 @@
 ---
 # weight: 1
-title: "SkillOpt: Turning Skill-File Edits Into a Real Optimizer for Frozen LLM Agents"
+title: "SkillOpt: Treating an Agent's Skill File as a Trainable Weight"
 date: 2026-07-22
 lastmod: 2026-07-22
 draft: false
-description: "SkillOpt treats an agent's skill file as a trainable weight: batched rollouts, a cosine-decayed edit budget, and a strict held-out validation gate replace ad hoc prompt patching."
+description: "SkillOpt treats an agent's skill file as a trainable weight: batched rollouts, a bounded edit budget, and a strict validation gate replace ad hoc prompt patching."
 featuredImage: "featured-image.png"
 
 tags: ["Large Language Model", "Agent Memory", "Prompting", "Single-Agent"]
@@ -18,7 +18,7 @@ url: "paper-intro/:contentbasename"
 
 <!--more-->
 
-Any engineer building on top of a frozen, API-only LLM eventually hits the same wall: the model can't be fine-tuned for the task at hand, and its default behavior isn't quite right. It writes SQL that ignores some detail of the schema, forgets to check an edge case, or reaches for the wrong tool — and it may have made that exact mistake ten times before. The usual fix is a hand-tuned system prompt, or a "skill" document: a page of instructions prepended to every call. The problem is that this kind of document is almost always either hand-tuned once and never touched again, or "improved" through a loop where the model reflects on its most recent failure and rewrites the prompt on the spot. The second approach sounds appealing, but in practice it tends to overfit to whatever error just happened, bloating the prompt with one-off patches and quietly erasing lessons learned earlier — a kind of catastrophic forgetting, except it happens in plain text instead of in weights.
+Any engineer building on top of a frozen, API-only LLM eventually hits the same wall: the model can't be fine-tuned for the task at hand, and its default behavior isn't quite right. It writes SQL that ignores some detail of the schema, forgets to check an edge case, or reaches for the wrong tool — and it may have made that exact mistake ten times before. The usual fix is a hand-tuned system prompt, or a "skill" document: a page of instructions prepended to every call. The problem is that this kind of document is almost always either hand-tuned once and never touched again, or "improved" through a loop where the model reflects on its most recent failure and rewrites the prompt on the spot — the approach taken by test-time context-curation methods like [Dynamic Cheatsheet](../dynamic-cheatsheet/) and [Agentic Context Engineering](../agentic-context-engineering/). The second approach sounds appealing, but in practice it tends to overfit to whatever error just happened, bloating the prompt with one-off patches and quietly erasing lessons learned earlier — a kind of catastrophic forgetting, except it happens in plain text instead of in weights.
 
 SkillOpt, a paper recently published by Microsoft, doesn't try to patch this problem further — it reframes it entirely. Its core move is to stop treating skill-document edits as an unconstrained, ad hoc rewriting process, and instead treat the document the way a deep learning optimizer treats a weight tensor: an external, versioned, trainable piece of state that gets updated through controlled, bounded steps, kept only if it passes validation, and rolled back if it doesn't help. The target model itself never changes at all — all of the "learning" happens inside a text file.
 
