@@ -123,9 +123,7 @@ Extreme values are nearly wiped out entirely: before post-processing, several tr
 
 {{< image src="table2.png" alt="A table comparing chunk-size statistics and runtime across chunking methods" caption="Table 2: Chunk-size and runtime statistics across chunking methods. Methods marked with a dagger (†) are unprocessed traditional baselines — notice their minimum-length columns frequently show 0-to-4-token meaningless fragments. (Source: original paper, Table 2)" >}}
 
-<!-- UNRESOLVED IMAGE: img-012 -- the extracted PNG for this manifest entry (Table 7, the before/after Size Compliance comparison) only contains an appendix running header ("Appendix I. Post-Processing Effect Details"), not the actual table data; the parser appears to have captured the wrong region. Needs a manual re-crop from the source PDF. -->
-
-The concrete magnitude of the improvement: before post-processing, LLM Regex and the semantic splitter had Size Compliance rates of only around 58% and 48% respectively; after both "oversized re-split" and "tiny-chunk merge" are applied, both rates jump above 99%. (Source: original paper, Table 7)
+The concrete magnitude of the improvement: before post-processing, LLM Regex and the semantic splitter had Size Compliance rates of only around 58% and 48% respectively; after both "oversized re-split" and "tiny-chunk merge" are applied, both rates jump above 99%.
 
 ## The core innovation: five metrics that score chunks without ever running RAG
 
