@@ -19,6 +19,18 @@ REQUIRED_FRONT_MATTER_FIELDS = [
 SHORTCODE_SRC_RE = re.compile(r'\{\{<\s*image\s+([^>]*?)\s*>\}\}')
 SRC_ATTR_RE = re.compile(r'src="([^"]+)"')
 BARE_INLINE_MATH_RE = re.compile(r'(?<!\$)\$(?!\$)[^$\n]+?(?<!\$)\$(?!\$)')
+RELATIVE_POST_LINK_RE = re.compile(r'\]\(\.\./[a-z0-9-]+/?\)')
+HEADING_RE = re.compile(r'^(#{1,6})\s+\S', re.MULTILINE)
+CODE_FENCE_RE = re.compile(r'^(`{3,}).*?\n.*?^\1\s*$', re.MULTILINE | re.DOTALL)
+
+# zh-tw ranges are looser and skew shorter: CJK characters carry more
+# information per character than Latin ones, and this site's existing
+# zh-tw front matter is inconsistent about translating vs. keeping the
+# paper's original English title, so a tight range would be mostly noise.
+SEO_LEN_RANGES = {
+    "index.en.md": {"title": (30, 70), "description": (120, 170)},
+    "index.zh-tw.md": {"title": (10, 55), "description": (40, 180)},
+}
 
 
 def split_front_matter(text):
@@ -41,6 +53,66 @@ def check_front_matter_fields(fm_text, label, errors):
     if m:
         return m.group(1)
     return None
+
+
+def check_seo_field_lengths(fm_text, label, warnings):
+    ranges = SEO_LEN_RANGES.get(label)
+    if not ranges:
+        return
+    m = re.search(r'^title\s*:\s*"((?:[^"\\]|\\.)*)"', fm_text, re.MULTILINE)
+    if m:
+        length = len(m.group(1))
+        lo, hi = ranges["title"]
+        if not (lo <= length <= hi):
+            warnings.append(
+                f"{label}: title is {length} chars, outside the usual {lo}-{hi} "
+                "char range search results tend to display well"
+            )
+    m = re.search(r'^description\s*:\s*"((?:[^"\\]|\\.)*)"', fm_text, re.MULTILINE)
+    if m:
+        length = len(m.group(1))
+        lo, hi = ranges["description"]
+        if not (lo <= length <= hi):
+            warnings.append(
+                f"{label}: description is {length} chars, outside the usual "
+                f"{lo}-{hi} char range"
+            )
+
+
+def check_heading_structure(body_text, label, errors, warnings):
+    # Prompt templates / code samples embedded in a paper-intro post routinely
+    # contain lines starting with '#' (Python/YAML comments) -- strip fenced
+    # code blocks first so those aren't mistaken for markdown headings.
+    prose = CODE_FENCE_RE.sub('', body_text)
+
+    if re.search(r'^#\s+\S', prose, re.MULTILINE):
+        errors.append(
+            f"{label}: body contains a top-level '# ' heading -- the front-matter "
+            "title already renders as H1, don't duplicate it in the body"
+        )
+
+    prev = 1
+    warned = False
+    for m in HEADING_RE.finditer(prose):
+        lvl = len(m.group(1))
+        if lvl == 1:
+            continue
+        if not warned and lvl > prev + 1:
+            warnings.append(
+                f"{label}: heading level skips from H{prev} to H{lvl} "
+                f"(near {m.group(0)[:60]!r}) -- keep hierarchy contiguous"
+            )
+            warned = True
+        prev = lvl
+
+
+def check_internal_links(body_text, label, warnings):
+    if not RELATIVE_POST_LINK_RE.search(body_text):
+        warnings.append(
+            f"{label}: no relative links to other paper-intro posts found "
+            "(e.g. '](../other-slug/)') -- see hugo-conventions.md's internal-linking "
+            "section; fine to skip if genuinely no related post exists"
+        )
 
 
 def check_body(body_text, label, post_dir, errors, warnings):
@@ -115,7 +187,10 @@ def main():
         featured = check_front_matter_fields(fm, label, errors)
         if featured and not (post_dir / featured).exists():
             errors.append(f"{label}: featuredImage '{featured}' does not exist in {post_dir}")
+        check_seo_field_lengths(fm, label, warnings)
         check_body(body, label, post_dir, errors, warnings)
+        check_heading_structure(body, label, errors, warnings)
+        check_internal_links(body, label, warnings)
 
     if warnings:
         print("WARNINGS:")
