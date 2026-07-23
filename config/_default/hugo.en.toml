@@ -1,10 +1,10 @@
 weight = 2
 
 # language code
-languageCode = "en"
+locale = "en"
 
 # language name
-languageName = "English"
+label = "English"
 
 # whether to include Chinese/Japanese/Korean
 hasCJKLanguage = false

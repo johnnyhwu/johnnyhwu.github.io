@@ -1,10 +1,10 @@
 weight = 1
 
 # language code
-languageCode = "zh-TW"
+locale = "zh-TW"
 
 # language name
-languageName = "繁體中文"
+label = "繁體中文"
 
 # whether to include Chinese/Japanese/Korean
 hasCJKLanguage = true
