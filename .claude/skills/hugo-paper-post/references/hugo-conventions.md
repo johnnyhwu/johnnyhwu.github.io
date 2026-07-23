@@ -168,6 +168,56 @@ convention, not this site's). **Convert every inline `$...$` occurrence to
 as-is. (See any post that uses inline math, e.g. `agentopt`, for a working
 example of the converted form.)
 
+Don't be tempted to "simplify" this by adding `math: enable: true` to front
+matter instead — that toggle only controls the client-side KaTeX/MathJax JS
+bundle (auto-render, `copy-tex`, `mhchem`). It does nothing for the delimiter
+question above: Hugo's Goldmark passthrough extension server-renders `\( \)`
+and `$$ $$` regardless of that flag, but it still won't touch a bare `$...$`
+either way. The fix for unrendered math is always "convert the delimiter,"
+never "flip the front-matter flag."
+
+## Admonitions for callouts
+
+The theme's `{{< admonition type="..." title="..." >}}...{{< /admonition >}}`
+shortcode is already used in most existing paper-intro posts and is the
+standard way to make a long section scannable — prefer it over a plain
+paragraph when the content is genuinely a TL;DR, an aside, or a caveat, not
+as decoration. Positional form (`{{< admonition tip "A title" >}}`) works
+too; named form is easier to read when combining with `open=false`.
+
+Use this vocabulary consistently rather than picking a type ad hoc:
+
+| Type | Use for |
+|---|---|
+| `abstract` | A "Key Takeaways (TL;DR)" box near the top of the post, summarizing the paper's core contribution in 2-4 bullets — the single most common admonition on this site. |
+| `tip` | An aside that helps the reader understand a subtle mechanism or implementation detail the main prose doesn't have room to unpack. |
+| `info` | Background/context a reader may not have, that isn't the article's main point but helps interpret it. |
+| `warning` | A caveat, limitation, or place where the paper's claim is narrower than it first sounds. |
+| `quote` | A direct quotation from the paper worth setting apart verbatim. |
+| `success` / `question` | Occasional use for a notable positive result or an open question the paper raises — don't force these if `tip`/`info` already fits better. |
+
+Don't invent a TL;DR, caveat, or aside that isn't grounded in `article.md` —
+an admonition is a formatting choice, not a license to add content the
+Writer step didn't produce. A post with zero admonitions is fine if nothing
+in it warrants one; don't add one just to "use the feature."
+
+## Heading structure (H2 vs. H3)
+
+The theme auto-numbers headings and builds the sidebar TOC from them for
+free (H2–H6, no per-post config needed) — use that instead of leaving a long
+section as an undifferentiated wall of text. As a rule of thumb: once an H2
+section (e.g. "Methodology", "Experiments") runs past roughly 4-5 paragraphs
+*or* visibly covers more than one sub-idea (e.g. "the training procedure"
+and "the evaluation protocol" both living under one "Method" heading), break
+it into H3 subsections with their own short, descriptive titles.
+
+This is a readability judgement call on how to present the article's
+existing structure, not a license to restructure its argument (see "What NOT
+to change" below) — the sub-ideas must already be there in the prose; adding
+H3s only makes existing structure visible, it doesn't invent new structure.
+Keep hierarchy contiguous (H2 → H3, not H2 → H4) — `verify_post.py` warns on
+skips.
+
 ## Stripping pipeline artifacts
 
 Before publishing, remove from the rendered body (but do surface in the PR
