@@ -204,7 +204,7 @@ bundle = false
   
   # KaTeX mathematical formulas config (KaTeX https://katex.org/)
   [page.math]
-    enable = false
+    enable = true
     # default block delimiter is $$ ... $$ and \\[ ... \\]
     blockLeftDelimiter = ""
     blockRightDelimiter = ""
@@ -451,7 +451,7 @@ bundle = false
 
 # Sponsor config
 [sponsor]
-  nable = true
+  enable = true
   bio = "If you find this post helpful, please consider sponsoring."
   link = "https://buymeacoffee.com/hongwei"
   # custom = "<a href=\"https://www.buymeacoffee.com/PCloud\" target=\"_blank\"><img src=\"https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png\" alt=\"Buy Me A Coffee\" style=\"height: 40px !important;width: 145 !important;\" ></a>"
