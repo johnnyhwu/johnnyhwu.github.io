@@ -89,8 +89,9 @@ prefer what an actual recent post does if the two ever disagree.
 4. **Write both language versions of the post** at
    `content/posts/paper-intro/<slug>/index.en.md` and `index.zh-tw.md`,
    following `references/hugo-conventions.md` for front matter, the image
-   shortcode, inline math notation, tag vocabulary, and the featured-image
-   fallback. Copy the resolved image files flat into the same directory
+   shortcode, inline math notation, admonition usage, heading structure,
+   tag vocabulary, and the featured-image fallback. Copy the resolved
+   image files flat into the same directory
    (page bundle), named descriptively (`figure1.png`, `table1.png`, ... —
    not the manifest's docling-native filenames). Strip the trailing
    `figure-map` block and any `NO-MANIFEST`/`UNRESOLVED` pipeline comments
@@ -155,7 +156,7 @@ hugo-paper-post/
 ├── SKILL.md                              (this file)
 ├── references/
 │   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
-│   ├── hugo-conventions.md               front matter, image shortcode, math notation, tags, featured-image fallback
+│   ├── hugo-conventions.md               front matter, image shortcode, math notation, admonitions, heading structure, tags, featured-image fallback
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
 └── scripts/
