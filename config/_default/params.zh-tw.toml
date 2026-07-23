@@ -177,7 +177,7 @@ keywords = ["DataSci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "A
 
 # Sponsor config
 [sponsor]
-  enable = false
+  enable = true
   bio = "如果你覺得這篇文章對你有幫助，歡迎贊助！"
   link = "https://buymeacoffee.com/hongwei"
   # custom = "<a href=\"https://www.buymeacoffee.com/PCloud\" target=\"_blank\"><img src=\"https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png\" alt=\"Buy Me A Coffee\" style=\"height: 40px !important;width: 145 !important;\" ></a>"
