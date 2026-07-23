@@ -41,10 +41,18 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
    reverses, but the requirement to ship both languages does not change.
 
 4. **Never fabricate metadata the site expects but the source doesn't
-   supply** (most commonly: there's no dedicated cover/header image for a
-   paper). Make a defensible, clearly-flagged substitution instead (see
-   `references/hugo-conventions.md` on featured images) and say so in the
-   PR — don't invent a stock photo or claim a fact the article didn't make.
+   supply** — most commonly a dedicated cover/header image, which papers
+   rarely have and some topics (e.g. a reading note on a blog post, not an
+   academic paper) may lack entirely, with zero figures anywhere. Make a
+   defensible, clearly-flagged substitution instead (see
+   `references/hugo-conventions.md`'s "Featured image" section for the two
+   concrete fallbacks — reuse the article's own Figure 1 when one exists,
+   or generate a small original graphic depicting the article's own central
+   concept when it doesn't) and say so in the PR. The line not to cross
+   isn't "used a substitute image" — every existing post already does that
+   in one form or another — it's *claiming* a substitute is something it
+   isn't (passing a generated diagram off as a real figure, or asserting a
+   fact the article never made).
 
 5. **Preserve the Writer's prose.** Translating is expected (rule 3); adding
    unrelated commentary, restructuring the argument, or "improving" claims

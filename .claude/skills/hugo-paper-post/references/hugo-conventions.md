@@ -56,8 +56,8 @@ match across both.
 
 ### Tag vocabulary
 
-Reuse the site's existing controlled vocabulary rather than inventing new
-tags — pick 2-4 that genuinely apply:
+Default to the site's existing controlled vocabulary — pick 2-4 that
+genuinely apply:
 
 ```
 Agent Memory, Benchmark, Deep Research, Domain Adaptation, Evaluation,
@@ -75,14 +75,47 @@ this list genuinely fits, but that should be the exception, not the norm.
 
 ### Featured image (there usually isn't a dedicated one)
 
-Papers rarely come with a dedicated cover/header photo, and other posts on
-this site mostly use generic stock photos unrelated to the paper's own
-figures for `featuredImage`. Don't fabricate or go source a stock photo.
-Instead, reuse the article's own most representative figure (usually
-"Figure 1", the overview/architecture diagram) as `featured-image.png`,
-copied alongside its normal in-body copy under its own descriptive name.
-**Say so explicitly in the PR** — it's a reasonable default, not a
-requirement from the source, and a human may prefer something else.
+Papers rarely come with a dedicated cover/header photo. `verify_post.py`
+treats `featuredImage` as a required front-matter field, and every existing
+post on this site has one — so this always needs an answer, never an
+omission. Two cases, depending on whether the topic has any images at all:
+
+**Normal case — the article has at least one figure.** Reuse the article's
+own most representative one (usually "Figure 1", the overview/architecture
+diagram) as `featured-image.png`, copied alongside its normal in-body copy
+under its own descriptive name. **Say so explicitly in the PR** — it's a
+reasonable default, not a requirement from the source, and a human may
+prefer something else. (Separately, some existing posts instead use a
+generic, topic-unrelated stock photo, or the paper/product's own logo
+banner if one is genuinely public and on-topic — reusing Figure 1 is simply
+the safer default that needs no external sourcing.)
+
+**The article has no images at all** (no manifest, no `assets/` dir — e.g.
+a reading-note/analysis of someone else's blog post rather than an
+academic paper with figures). There's nothing to repurpose, and going out
+to source a stock photo means either fabricating a claim the source didn't
+make or spending a web fetch on an image of unclear licensing — skip both.
+Instead:
+
+1. **Don't spend context loading other existing posts' real
+   `featured-image.*` files just to study "what a stock photo should look
+   like."** That reads real image bytes into context for a decision that
+   doesn't need it — the whole point of this skill's image-frugality rules.
+2. **Generate a small, original, self-contained graphic locally instead.**
+   Python's Pillow is not always preinstalled — `pip install Pillow` if
+   `import PIL` fails — and DejaVu/Liberation TrueType fonts are available
+   under `/usr/share/fonts/truetype/{dejavu,liberation}/` for any text in
+   the graphic. Make it depict the article's own central concept or
+   metaphor (e.g. a post organized around a "narrow waist" data-flow model
+   got a simple hourglass diagram with the write/read-side labels from the
+   article) — not generic decoration. This keeps it honest: it illustrates
+   something the article actually says, rather than posing as a sourced
+   photo or a real figure that doesn't exist.
+3. Save it as `featured-image.png` in the page bundle, same as any other
+   featured image.
+4. **State explicitly in the PR** that it's a generated placeholder
+   illustration (not a sourced photo, not a paper figure) and what it
+   depicts, so a human can swap it for something else later if they want.
 
 ## Image shortcode
 
