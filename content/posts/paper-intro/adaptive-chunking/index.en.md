@@ -2,7 +2,7 @@
 # weight: 1
 title: "Adaptive Chunking: A Smarter, Per-Document Way to Split Text for RAG"
 date: 2026-07-22
-lastmod: 2026-07-22
+lastmod: 2026-07-23
 draft: false
 description: "One-size-fits-all text splitting quietly wrecks RAG pipelines. See how Adaptive Chunking scores candidate splits with five metrics and keeps the best per document."
 featuredImage: "featured-image.png"
@@ -39,6 +39,13 @@ The third problem is more fundamental: the industry lacks an independent ruler f
 The **Adaptive Chunking** framework this paper proposes centers on replacing "static, blind splitting" with "dynamic evaluation and selection": instead of chasing one universal splitting method, it runs several splitting methods on the same document in parallel.
 
 It then scores each result with a set of "intrinsic evaluation metrics" that don't require actually running RAG at all, and automatically picks the highest-scoring version to write to the database — in short, letting the system "teach each document according to its nature."
+
+{{< admonition abstract "Key Takeaways (TL;DR)" >}}
+1. **The Adaptive Chunking framework**: instead of hunting for one "best" splitting method, it runs several splitting algorithms on every document in parallel, scores each with five intrinsic metrics that don't require running RAG at all, and automatically keeps the highest-scoring version for the vector database.
+2. **Two new algorithms**: the LLM-guided Regex Splitter (the LLM only generates a regex rule; Python does the actual splitting) and the Split-then-Merge Recursive Splitter (shred everything first, then greedily merge with structure-aware backtracking overlap) — both backed by mandatory "oversized re-split" and "tiny-chunk merge" post-processing.
+3. **Five intrinsic metrics** — RC, ICC, DCC, BI, SC — respectively check pronoun-reference integrity, intra-chunk topical purity, contextual coherence, structural integrity, and size compliance; an equal-weight average of the five decides which splitting method wins.
+4. **Real-world payoff**: across 33 cross-domain document corpora, no single method dominates; downstream Retrieval Completeness improves by 9.6 percentage points and correctly-answered questions rise 32.7% in relative terms — evidence that chunking quality has an "amplification" effect on overall RAG performance.
+{{< /admonition >}}
 
 ## Pre-processing: turning the PDF into clean Markdown first
 
@@ -139,6 +146,7 @@ The calculation works by first running the coreference-resolution model **Maveri
 
 Then it checks whether any split point falls inside the range of a given pair — if a single cut lands inside the range, that pair counts as "broken"; only if no cut falls inside is it considered fully preserved. RC is the proportion of pairs preserved intact.
 
+{{< admonition tip "Worked example: how one cut can 'break' a pronoun" >}}
 A concrete example makes this easier to grasp. Suppose the input text is:
 
 ```
@@ -164,6 +172,7 @@ The Maverick model would output coreference-cluster data roughly like this:
 The system extracts two key ranges from this data: "Elon Musk → He" spans character positions 0 to 28, and "Elon Musk → his" spans 0 to 57.
 
 If the splitter happens to cut right after "founded" (around character position 15), that cut lands inside both ranges — RC would mark both pairs as "broken." A cut that looks perfectly unremarkable in position actually damages two pronoun references at once.
+{{< /admonition >}}
 
 ### ICC (Intrachunk Cohesion)
 
@@ -228,10 +237,12 @@ That said, tuning a single parameter can't max out all five metrics at once in p
 
 {{< image src="figure1.png" alt="A matrix of Spearman correlation coefficients between each pair of the five intrinsic metrics" caption="Figure 1: Correlation matrix between intrinsic metrics. ICC and DCC show a significant negative correlation (ρ = -0.44), and ICC and BI are also negatively correlated (ρ = -0.34). (Source: original paper, Figure 1)" >}}
 
+{{< admonition warning "You can't max out all five metrics at once" >}}
 Both of these negative correlations have a physical explanation:
 
 - **ICC vs. DCC**: reflects the inherent limits of chunk size. The smaller a chunk gets, the purer its topic (higher ICC) — but the more it loses connection with its surrounding text (lower DCC).
 - **ICC vs. BI**: is a different trade-off. If you keep an entire table or paragraph bundled together to protect a high BI score, you often end up dragging in irrelevant lead-ins or transition sentences into the same chunk, which drags topical purity (ICC) down.
+{{< /admonition >}}
 
 Rather than chasing a mythical parameter that maxes out all five metrics, engineers should accept that these trade-offs are structural, and lean toward whichever side actually matters for their use case.
 
