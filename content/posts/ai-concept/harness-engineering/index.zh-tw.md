@@ -24,7 +24,7 @@ url: "ai-concept/:contentbasename"
 *   **核心痛點：** AI Agent 在工業界落地時面臨的兩大難題：
     1.  **無狀態與幻覺：** Agent 容易在同一個坑裡跌倒兩次，且單純的 RAG 會引發「語義噪音」。
     2.  **規模化與穩定性：** 複雜任務導致 Context Rot (上下文腐爛)，且微調 (Fine-tuning) 模型成本極高、容易引發災難性遺忘。
-*   **本筆記目標：** 結合 [《MemRL》論文](../mem-rl/) 的演算法設計，以及 LangChain 的 [《Agent Harness》](https://blog.langchain.com/the-anatomy-of-an-agent-harness/) 與 [《Continual Learning》](https://blog.langchain.com/continual-learning-for-ai-agents/) 系統觀，提供一份從「記憶檢索」到「執行腳手架」的全方位架構藍圖。
+*   **本筆記目標：** 結合 [《MemRL》論文](../../paper-intro/mem-rl/) 的演算法設計，以及 LangChain 的 [《Agent Harness》](https://blog.langchain.com/the-anatomy-of-an-agent-harness/) 與 [《Continual Learning》](https://blog.langchain.com/continual-learning-for-ai-agents/) 系統觀，提供一份從「記憶檢索」到「執行腳手架」的全方位架構藍圖。
 
 ## Agent 系統的三層架構解剖
 
@@ -73,7 +73,7 @@ Context 是 Harness 根據當前任務，從外部動態拼湊出來給 Model �
     2.  **Org-level：** 內部專案標準、專屬 API 文檔。
     3.  **User-level：** 使用者的編碼偏好、歷史操作習慣。
 *   **Injection Logic：**
-    Harness 會在發送請求給 Model 前，執行一次檢索（例如用 [MemRL 算法](../mem-rl/)），將最相關的高效能經驗 (High-utility experiences) 注入 Context。
+    Harness 會在發送請求給 Model 前，執行一次檢索（例如用 [MemRL 算法](../../paper-intro/mem-rl/)），將最相關的高效能經驗 (High-utility experiences) 注入 Context。
 
 ### Harness Engineering Pseudo-code
 

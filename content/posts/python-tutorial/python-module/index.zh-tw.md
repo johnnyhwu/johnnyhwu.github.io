@@ -20,7 +20,7 @@ url: "python-tutorial/:contentbasename"
 
 ## 前言
 
-在 [Python 中的函式 (Function) 觀念 (Part 1)](../python-function-1/)、[Python 中的函式 (Function) 觀念 (Part 2)](../python-function-2/) 與 [Python 中的函式 (Function) 觀念 (Part 3)](../python-function-3/) 中，我們透過三篇文章清楚的介紹了 Python 中函式 (Function) 的觀念。
+在 [Python 中的函式 (Function) 觀念 (Part 1)](../python-function/)、[Python 中的函式 (Function) 觀念 (Part 2)](../python-function-2/) 與 [Python 中的函式 (Function) 觀念 (Part 3)](../python-function-3/) 中，我們透過三篇文章清楚的介紹了 Python 中函式 (Function) 的觀念。
 
 透過 Function，我們可以讓我們撰寫的程式碼更有結構。舉例來說，當我們撰寫完某一個功能的 Python 程式碼時，我們可以將這段程式碼打包成一個 Function，如此一來，當我們要使用到這一個功能時，就只需要呼叫這一個 Function，而不需要重複撰寫程式碼。
 

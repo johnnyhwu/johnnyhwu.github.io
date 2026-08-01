@@ -24,7 +24,7 @@ url: "ai-concept/:contentbasename"
 *   **Core Pain Points:** Two major challenges when AI Agents are deployed in industry:
     1.  **Statelessness and Hallucinations:** Agents tend to fall into the same trap twice, and simple RAG (Retrieval-Augmented Generation) can introduce "semantic noise."
     2.  **Scalability and Stability:** Complex tasks lead to Context Rot, and the cost of fine-tuning models is extremely high, often leading to catastrophic forgetting.
-*   **Goal of this Note:** Combining the algorithmic design of the [《MemRL》paper](../mem-rl/) with the system perspectives of LangChain's [《Agent Harness》](https://blog.langchain.com/the-anatomy-of-an-agent-harness/) and [《Continual Learning》](https://blog.langchain.com/continual-learning-for-ai-agents/), providing a comprehensive architectural blueprint from "memory retrieval" to "execution harness."
+*   **Goal of this Note:** Combining the algorithmic design of the [《MemRL》paper](../../paper-intro/mem-rl/) with the system perspectives of LangChain's [《Agent Harness》](https://blog.langchain.com/the-anatomy-of-an-agent-harness/) and [《Continual Learning》](https://blog.langchain.com/continual-learning-for-ai-agents/), providing a comprehensive architectural blueprint from "memory retrieval" to "execution harness."
 
 ## Anatomy of the Three-Layer Agent Architecture
 
@@ -73,7 +73,7 @@ The Context is the input dynamically pieced together by the Harness based on the
     2.  **Org-level:** Internal project standards, proprietary API documentation.
     3.  **User-level:** User coding preferences, historical operation habits.
 *   **Injection Logic:**
-    Before sending a request to the Model, the Harness performs a retrieval (for example, using the [MemRL algorithm](../mem-rl/)) to inject the most relevant "High-utility experiences" into the Context.
+    Before sending a request to the Model, the Harness performs a retrieval (for example, using the [MemRL algorithm](../../paper-intro/mem-rl/)) to inject the most relevant "High-utility experiences" into the Context.
 
 ### Harness Engineering Pseudo-code
 

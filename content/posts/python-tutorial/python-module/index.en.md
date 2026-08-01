@@ -20,7 +20,7 @@ url: "python-tutorial/:contentbasename"
 
 ## Introduction
 
-In "[Understanding Functions in Python (Part 1)](../python-function-1/)," "[Understanding Functions in Python (Part 2)](../python-function-2/)," and "[Understanding Functions in Python (Part 3)](../python-function-3/)," we provided a clear and comprehensive introduction to the concept of functions in Python across three articles.
+In "[Understanding Functions in Python (Part 1)](../python-function/)," "[Understanding Functions in Python (Part 2)](../python-function-2/)," and "[Understanding Functions in Python (Part 3)](../python-function-3/)," we provided a clear and comprehensive introduction to the concept of functions in Python across three articles.
 
 By using functions, we can give our code a better structure. For example, after writing Python code for a specific functionality, we can package this code into a function. This way, whenever we need to use this functionality, we only need to call the function instead of rewriting the code.
 
