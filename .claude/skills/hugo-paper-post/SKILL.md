@@ -167,6 +167,41 @@ prefer what an actual recent post does if the two ever disagree.
    front-matter fields, any internal links added (or why none applied), and
    confirmation that both language files were verified to build.
 
+## Publishing several topics at once — dispatch one subagent per topic
+
+When a task covers more than one topic directory, **the default is one
+subagent per topic** (`Agent` tool, `general-purpose`), not doing them all
+inline. Each article is self-contained — topic directory in, page bundle
+out — so they parallelise cleanly, and writing two full-length language
+versions per article consumes a lot of context that the orchestrator needs
+for the cross-article work below.
+
+Tell each subagent to invoke this skill by name and give it exactly one
+topic. Delegate per topic:
+
+- read `<Topic>/article.md` + the manifest (workflow steps 2, 4),
+- resolve images, including any bounded spot-check, and copy them into the
+  bundle,
+- write `index.en.md` **and** `index.zh-tw.md` (both — the bilingual rule is
+  per post, so it binds each subagent individually),
+- run `verify_post.py` on that one directory and report its warnings back.
+
+**Keep these with the orchestrator — they are cross-article and break if
+split up:**
+
+| Decide centrally | Why it cannot be delegated |
+|---|---|
+| Section + slug for every topic | Slugs depend on the whole site's link graph, and two subagents choosing independently can collide or pick different spellings of the same series (`python-function` vs `python-function-1`). |
+| Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. |
+| Cross-post internal links | A link from topic A to topic B is only correct once B's slug is fixed — and both posts in a batch may link to each other. |
+| One final `hugo build` + site-wide link audit | Per-topic builds are slow and redundant, and the bilingual page-bundle bug and dangling-link checks are only meaningful site-wide. |
+| The PR | One PR describes the batch. |
+
+So the shape is: orchestrator decides sections, slugs and dates up front →
+subagents write the posts in parallel → orchestrator does one build, one
+link audit, one PR. A single-topic task doesn't need a subagent at all;
+just do it inline.
+
 ## Definition of done
 
 - The post is in the **right section** per this repo's `CLAUDE.md` routing
