@@ -12,14 +12,47 @@ produce the material this repo's step turns into a real post. Nothing in
 | 2 | Parser — extracts figures/tables from the PDF into an image manifest | No (`AI-Research`) | n/a |
 | 3 | Publisher — wires `article.md` + manifest + images into a Hugo post, in **both** languages this site ships | **Yes** | `.claude/skills/hugo-paper-post/` |
 
-If you're working in this repo on a paper-intro post, you are doing Step 3.
+If you're publishing anything in this repo from an `AI-Research` topic
+directory, you are doing Step 3.
 
 ## What to do when the user says...
 
 | User says (roughly) | Do this |
 |---|---|
-| "產生 `<Paper>` 文章" / "generate the `<Paper>` post" / "publish `<Paper>`" / "把 `<Paper>` 發布成 Hugo post" | Use the **`hugo-paper-post`** skill (`.claude/skills/hugo-paper-post/`) against topic directory `<Paper>/` in `johnnyhwu/AI-Research`. |
-| Anything about fixing/updating an *existing* paper-intro post's images, front matter, or translation | Same skill — it also covers touch-ups, not just first publication. |
+| "產生 `<Topic>` 文章" / "generate the `<Topic>` post" / "publish `<Topic>`" / "把 `<Topic>` 發布成 Hugo post" | Use the **`hugo-paper-post`** skill (`.claude/skills/hugo-paper-post/`) against topic directory `<Topic>/` in `johnnyhwu/AI-Research`. |
+| Anything about fixing/updating an *existing* post's images, front matter, or translation | Same skill — it also covers touch-ups, not just first publication. |
+
+The skill's directory name says "paper", but that is historical. It is the
+publisher for **every** kind of `AI-Research` topic, not just academic
+papers — see "Which section does it belong in?" below.
+
+## Which section does it belong in? (decide this first)
+
+**Most `AI-Research` topic directories are not papers.** Of its ~53 topics,
+only a minority are paper walkthroughs; the rest are concept explainers,
+language tutorials, and infra/how-to write-ups. Picking the wrong section
+is not cosmetic — it changes the post's URL, and this site's posts
+cross-link each other by relative path (`../<slug>/`), so a
+misfiled post silently breaks those links.
+
+Route by what the article *is*, not by which repo it came from:
+
+| Section | For | Examples |
+|---|---|---|
+| `paper-intro` | A walkthrough of a specific published paper — has authors, a venue/arXiv link, and figures extracted from that paper | `skillopt`, `agentopt`, `persona-aware-d2s` |
+| `ai-concept` | An explainer of an ML/AI *concept* or technique that isn't tied to one paper, including reading notes on a talk or blog post | `dropout`, `backpropagation`, `context-engineering` |
+| `python-tutorial` | Python language teaching material | `python-module`, `python-exception` |
+| `other` | Infra, tooling, web, and everything else | `yarn`, `wordpress-https-ssl` |
+
+A useful tie-breaker: if the article's own references section points at
+*one* paper it is walking through, it's `paper-intro`; if it cites several
+sources as background for a concept, it's `ai-concept`. A post citing a
+famous paper in passing (e.g. the 1986 backpropagation paper) is still
+`ai-concept` — the article is teaching the idea, not reviewing the paper.
+
+When it is genuinely ambiguous, say which way you're leaning and why, and
+ask — a wrong section is expensive to move after publication (the URL is
+already indexed and other posts may already link to it).
 
 **No spec document will be supplied alongside a task.** The skill (this file
 plus `.claude/skills/hugo-paper-post/SKILL.md` + its `references/`) is the
@@ -40,7 +73,7 @@ It is almost never already attached to a fresh session — bootstrap it first:
    show up as a system-reminder on your next turn — until you do this, you
    only have the raw files, not that repo's own house rules.
 3. Read `AI-Research/CLAUDE.md` once it loads. It documents that repo's
-   topic-directory layout (each paper gets a directory at the repo **root**,
+   topic-directory layout (each topic gets a directory at the repo **root**,
    e.g. `SkillOpt/` — not `docs/SkillOpt/`) and any per-topic path
    exceptions (e.g. `SkillOpt/` itself keeps its manifest at
    `SkillOpt/parsed/assets/image-manifest.json` instead of the canonical
@@ -48,7 +81,7 @@ It is almost never already attached to a fresh session — bootstrap it first:
    written down — check `AI-Research/CLAUDE.md` for the current exception
    list rather than assuming the canonical path blindly).
 
-## Global rules for anything touching a paper-intro post
+## Global rules for anything touching a published post
 
 - **Never read the source PDF.** It isn't even in this repo. Step 3 works
   from `article.md` + `image-manifest.json` + the already-extracted image

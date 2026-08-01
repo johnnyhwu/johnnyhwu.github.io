@@ -79,6 +79,13 @@ grep -o '<img[^>]*src=[^ >]*' public/en/paper-intro/<slug>/index.html
 grep -o '<img[^>]*src=[^ >]*' public/paper-intro/<slug>/index.html   # zh-tw output has no /en/ prefix (it's the default language)
 ```
 
+Use those commands as written: `--minify` strips attribute quotes, so the
+rendered HTML contains `src=/ai-concept/foo.png`, not `src="..."`. Grepping
+for `src="` returns **zero matches on a perfectly healthy build** — don't
+read that as "the images are broken". (Same trap when checking math: the
+KaTeX output that server-rendering produces ends in `</annotation>`, which
+truncates to a confusing-looking `</a` in narrow grep context.)
+
 Every `src=` should look like a real permalink
 (`/paper-intro/<slug>/figure1.png`) and the file should actually exist
 under `public/` at that path. A literal bare filename in `src=` (e.g.
