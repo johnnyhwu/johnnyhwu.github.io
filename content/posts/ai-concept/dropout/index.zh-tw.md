@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "一篇文搞懂 Dropout：為何它能有效解決神經網路的 Overfitting？"
-date: 2022-08-06
-lastmod: 2025-11-01
+date: 2026-07-20
+lastmod: 2026-07-20
 draft: false
 description: "訓練神經網路時遇到 Overfitting？本文將帶你深入了解 Dropout 原理，從 Ensemble 和 Co-Adaptation 的角度，解釋為何這個簡單的技巧能有效解決模型過擬合問題"
 featuredImage: "featured-image.png"

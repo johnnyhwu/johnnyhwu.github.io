@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Dropout Explained: The Simple Secret to Preventing Neural Network Overfitting"
-date: 2022-08-06
-lastmod: 2025-11-01
+date: 2026-07-20
+lastmod: 2026-07-20
 draft: false
 description: "Struggling with overfitting in your neural networks? Learn how the Dropout technique works to improve model generalization. A deep dive into its principles and why it's so effective."
 featuredImage: "featured-image.png"

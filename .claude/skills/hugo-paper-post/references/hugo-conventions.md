@@ -1,13 +1,18 @@
-# This site's paper-intro post conventions
+# This site's post conventions
 
-Always inspect a real, recent post before writing (e.g.
-`content/posts/paper-intro/agentopt/`) — this doc is a durable summary, not
-a substitute for checking current reality if the two ever disagree.
+Always inspect a real, recent post from the **same section** before writing
+(e.g. `content/posts/paper-intro/agentopt/` for a paper walkthrough,
+`content/posts/ai-concept/dropout/` for a concept explainer) — this doc is a
+durable summary, not a substitute for checking current reality if the two
+ever disagree.
+
+These conventions apply to every section (`paper-intro`, `ai-concept`,
+`python-tutorial`, `other`); see this repo's `CLAUDE.md` for how to pick one.
 
 ## Directory layout
 
 ```
-content/posts/paper-intro/<slug>/
+content/posts/<section>/<slug>/
   index.en.md
   index.zh-tw.md
   featured-image.png            (or .jpg -- see "Featured image" below)
@@ -38,16 +43,26 @@ description: "<~150-160 char meta description, derived from the article, not cop
 featuredImage: "featured-image.png"
 
 tags: ["Large Language Model", "..."]
-categories: ["paper-intro"]
+categories: ["<section>"]
 # series: ["getting-start"]
 # series_weight: 1
 lightgallery: true
 
-url: "paper-intro/:contentbasename"
+url: "<section>/:contentbasename"
 ---
 
 <!--more-->
 ```
+
+**`categories` and `url` both encode the section — change both together.**
+The most likely way to get this wrong is copying front matter from a post
+in a different section and updating only the directory path. `url:` is what
+actually determines the published URL, so a stale
+`url: "paper-intro/:contentbasename"` on a post living in
+`content/posts/ai-concept/` publishes it at `/paper-intro/<slug>/` — which
+also means every `../<slug>/` relative link aimed at it from its real
+section resolves to nothing. `verify_post.py` does not catch this; check it
+by eye, and confirm the built path in the `hugo build` output.
 
 `title`/`description` differ between `index.en.md` and `index.zh-tw.md`
 (each written natively in its own language, not translated word-for-word);
@@ -69,9 +84,18 @@ Text-to-SQL, Uncertainty Estimation, Vision Language Model
 ```
 
 (Re-derive this list with
-`grep -h "^tags:" content/posts/paper-intro/*/index.en.md` if it's been a
+`grep -h "^tags:" content/posts/*/*/index.en.md` if it's been a
 while — new tags do get added over time.) A new tag is fine if nothing in
 this list genuinely fits, but that should be the exception, not the norm.
+
+**`tags: []` is a legitimate answer for classic ML/DL fundamentals.** The
+vocabulary above grew up around LLM-era papers, so a post on
+backpropagation, dropout, or gradient descent often has *nothing* that
+genuinely applies. The site's own precedent for exactly this case is
+`ai-concept/dropout`, which ships an empty tag list. Prefer matching that
+over either forcing a bad-fit LLM tag onto a fundamentals post or minting a
+one-off tag (`"Deep Learning"`) that no other post shares — a tag with a
+single member does nothing for discovery. Say which you chose in the PR.
 
 ### Featured image (there usually isn't a dedicated one)
 
@@ -79,6 +103,15 @@ Papers rarely come with a dedicated cover/header photo. `verify_post.py`
 treats `featuredImage` as a required front-matter field, and every existing
 post on this site has one — so this always needs an answer, never an
 omission. Two cases, depending on whether the topic has any images at all:
+
+**Best case — the source directory already ships one.** Check
+`<Topic>/assets/images/` for a file named like `feature-image.*` /
+`featured-image.*` before doing anything else. Topics migrated by hand from
+the original blog (rather than parsed out of a PDF) often carry the original
+post's real cover image, and it will *not* be listed in
+`image-manifest.json` — so it is easy to miss if you only read the manifest.
+Copy it to `featured-image.<ext>` and you're done; this is the one case that
+needs no substitution and no caveat beyond noting its dimensions.
 
 **Normal case — the article has at least one figure.** Reuse the article's
 own most representative one (usually "Figure 1", the overview/architecture
@@ -173,19 +206,50 @@ post to existing paper-intro posts covering closely related work — e.g.
 as a retroactive cleanup pass before; do it at publish time instead so it
 doesn't pile up:
 
-1. Find candidates by tag overlap: `grep -l '"<tag>"' content/posts/paper-intro/*/index.en.md`
-   for each tag on the new post.
-2. Where the new post's prose already naturally references a concept,
+1. Find candidates by tag overlap: `grep -l '"<tag>"' content/posts/*/*/index.en.md`
+   for each tag on the new post. For an untagged fundamentals post, search
+   by concept name instead (`grep -ril "backpropagation" content/posts/`).
+2. **Check who already links *to* you**, not just who you can link to:
+   ```bash
+   grep -rn "\.\./<your-slug>/" content/posts/*/*/index.*.md
+   ```
+   Existing posts routinely link forward to unpublished ones, so this both
+   pins your slug (see SKILL.md workflow step 3) and reveals the genuinely
+   related posts — a post that already links to you is, by definition, one
+   a reciprocal link makes sense from.
+3. Where the new post's prose already naturally references a concept,
    method, or comparison covered by one of those candidates, turn that
    mention into a relative link (`../<slug>/`) instead of plain text — 2-4
-   such links is typical, more if the paper genuinely builds on several.
-3. Never bolt on an unrelated "See also" list just to hit a count, and
-   never force a link where the two papers aren't actually related — a
+   such links is typical, more if the article genuinely builds on several.
+4. Never bolt on an unrelated "See also" list just to hit a count, and
+   never force a link where the two posts aren't actually related — a
    missing link is better than a misleading one.
-4. Add the equivalent link (to the same target post) in `index.zh-tw.md`
+5. Add the equivalent link (to the same target post) in `index.zh-tw.md`
    too, with the anchor text translated naturally.
-5. It's fine — and expected — for a post about a genuinely novel topic to
+6. It's fine — and expected — for a post about a genuinely novel topic to
    end up with few or zero such links; don't invent connections.
+
+### Linking to posts that don't exist yet
+
+This site deliberately contains forward links to unpublished posts —
+`ai-concept/dropout` links to `../gradient-descent/` and
+`../stochastic-gradient-descent/`, neither of which is published, and both
+have topic directories queued in `AI-Research`. So a dangling relative link
+is an accepted convention here, not an accident.
+
+That makes it a narrow licence, not a blank cheque. A forward link is
+justified only when **both** hold:
+
+- The article's own prose already refers to that topic (you are linking the
+  Writer's existing words, not adding a new claim), **and**
+- the target slug is already pinned by an existing link elsewhere on the
+  site — so when that post lands, every reference to it lights up at once.
+
+If the slug is *not* already pinned anywhere, leave the mention as plain
+text. Inventing a slug for an unwritten post is a coin-flip that a future
+publish will silently lose, and you have no way to know which spelling it
+will pick. Always list forward links you added in the PR so a human can
+see which targets are still pending.
 
 ## Inline math notation
 

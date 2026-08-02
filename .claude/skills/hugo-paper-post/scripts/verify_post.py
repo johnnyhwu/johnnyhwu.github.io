@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Sanity checks for a paper-intro post before opening a PR.
+"""Sanity checks for a post before opening a PR.
+
+Works for any section (paper-intro, ai-concept, python-tutorial, other) --
+pass the post's bundle directory.
 
 Usage:
-    python3 verify_post.py content/posts/paper-intro/<slug>
+    python3 verify_post.py content/posts/<section>/<slug>
 
 Not a substitute for a real `hugo build` (see references/hugo-build.md) --
 this only catches mistakes that don't require actually rendering the site.
@@ -109,7 +112,7 @@ def check_heading_structure(body_text, label, errors, warnings):
 def check_internal_links(body_text, label, warnings):
     if not RELATIVE_POST_LINK_RE.search(body_text):
         warnings.append(
-            f"{label}: no relative links to other paper-intro posts found "
+            f"{label}: no relative links to other posts found "
             "(e.g. '](../other-slug/)') -- see hugo-conventions.md's internal-linking "
             "section; fine to skip if genuinely no related post exists"
         )

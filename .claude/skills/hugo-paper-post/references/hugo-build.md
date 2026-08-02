@@ -79,6 +79,28 @@ grep -o '<img[^>]*src=[^ >]*' public/en/paper-intro/<slug>/index.html
 grep -o '<img[^>]*src=[^ >]*' public/paper-intro/<slug>/index.html   # zh-tw output has no /en/ prefix (it's the default language)
 ```
 
+Use those commands as written: `--minify` strips attribute quotes, so the
+rendered HTML contains `src=/ai-concept/foo.png`, not `src="..."`. Grepping
+for `src="` returns **zero matches on a perfectly healthy build** — don't
+read that as "the images are broken". (Same trap when checking math: the
+KaTeX output that server-rendering produces ends in `</annotation>`, which
+truncates to a confusing-looking `</a` in narrow grep context.)
+
+**Checking internal links has its own version of this trap.** A body link
+written `[text](../other-slug/)` renders **relative**, verbatim —
+`href=../other-slug/` — while the theme's own prev/next navigation renders
+the *same* post as an absolute `href=/ai-concept/other-slug/`. So grepping
+for the absolute form finds the nav link and misses every body link, which
+looks exactly like "my cross-post links didn't render". Grep for the bare
+slug instead:
+
+```bash
+grep -c 'other-slug' public/ai-concept/<linking-post>/index.html
+```
+
+then confirm `public/<section>/<other-slug>/` exists. Relative body links
+are correct and are what every existing post on this site uses.
+
 Every `src=` should look like a real permalink
 (`/paper-intro/<slug>/figure1.png`) and the file should actually exist
 under `public/` at that path. A literal bare filename in `src=` (e.g.

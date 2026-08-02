@@ -78,7 +78,7 @@ url: "paper-intro/:contentbasename"
 
 自從 Large Language Model (LLM) 盛行以來，就有許多研究希望透過 LLM 來替其他 LLM 進行 Evaluation，這個系列的 Work 通常稱為 [LLM-as-a-Judge](https://arxiv.org/abs/2306.05685)。
 
-使用 LLM 來替其他 LLM Evaluation 除了有速度更快、成本更低等優點以外，別忘了 LLM 還能透過 [SFT 或 RLHF](../../ai-concept/intro-sft-rlhf/) / [DPO](../dpo/) 的訓練，使其輸出更符合 Human Preference。
+使用 LLM 來替其他 LLM Evaluation 除了有速度更快、成本更低等優點以外，別忘了 LLM 還能透過 [SFT 或 RLHF](../../ai-concept/llm-fine-tuning-rlhf/) / [DPO](../dpo/) 的訓練，使其輸出更符合 Human Preference。
 
 ChatEval 說穿了就是一個透過 LLM 來替其他 LLM 做 Evaluation 的方法，然而比較有趣的是，它不是只用一個 LLM (Agent)，而是**透過多個 LLM (Agent) 來互相 Debate 得到共識的方法（就是一個評審團的概念）**。 ChatEval 論文以及方法設計上都相當簡單，主要就是理解兩個部分：「**每一個 Agent 的 Role 怎麼定義**」以及「**Agent 之間怎麼互相溝通**」。
 

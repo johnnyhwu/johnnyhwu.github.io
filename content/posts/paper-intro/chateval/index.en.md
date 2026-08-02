@@ -79,7 +79,7 @@ Yes, there is! This is one of the problems ChatEval aims to solve.
 
 Since the rise of Large Language Models (LLMs), much research has focused on using LLMs to evaluate other LLMs. This line of work is often referred to as [LLM-as-a-Judge](https://arxiv.org/abs/2306.05685).
 
-Besides being faster and cheaper, using an LLM to evaluate another LLM has another advantage: an LLM can be trained through [SFT or RLHF](../../ai-concept/intro-sft-rlhf/) / [DPO](../dpo/) to make its output more aligned with Human Preference.
+Besides being faster and cheaper, using an LLM to evaluate another LLM has another advantage: an LLM can be trained through [SFT or RLHF](../../ai-concept/llm-fine-tuning-rlhf/) / [DPO](../dpo/) to make its output more aligned with Human Preference.
 
 In essence, ChatEval is a method that uses LLMs to evaluate other LLMs. What makes it interesting, however, is that it doesn't use just one LLM (Agent), but rather **a method where multiple LLMs (Agents) debate with each other to reach a consensus (essentially, the concept of a jury)**. The ChatEval paper and its methodology are quite simple, primarily involving understanding two parts: "**how each agent's role is defined**" and "**how the agents communicate with each other**."
 
