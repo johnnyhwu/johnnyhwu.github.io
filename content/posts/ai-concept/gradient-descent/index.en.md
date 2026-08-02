@@ -26,7 +26,7 @@ In "The Principles of Deep Learning: How a Neural Network Classifies Images", we
 - Cost function
 - Optimizer
 
-The first two were covered in "Deep Learning Fundamentals: Understanding the MNIST Dataset and the Cost Function". This article covers the third element — the optimizer — and specifically the most basic and most important one of all: gradient descent. By the end of this article you will know what gradient descent actually does, what the mathematics behind it looks like, and what role the learning rate plays in it.
+The first two were covered in [Deep Learning Fundamentals: The MNIST Dataset and the Cost Function](../mnist-and-cost-function/). This article covers the third element — the optimizer — and specifically the most basic and most important one of all: gradient descent. By the end of this article you will know what gradient descent actually does, what the mathematics behind it looks like, and what role the learning rate plays in it.
 
 {{< admonition abstract "Key Takeaways (TL;DR)" >}}
 - **What training a neural network really is**: adjusting the parameters (w and b) so that the cost function's value gets smaller.
@@ -81,7 +81,7 @@ After taking one step along \( \Delta v \), the change in \( C(v_1, v_2) \) is c
 
 {{< image src="cost-function-change.jpg" alt="The equation for ΔC: the partial derivative of C with respect to v1 multiplied by Δv1, plus the partial derivative of C with respect to v2 multiplied by Δv2." caption="The effect on ΔC of taking one step along Δv" >}}
 
-The concept of partial derivatives was introduced in "An Improved Perceptron: Understanding the Sigmoid Neuron". Here you can simply think of it as the "rate of change" of a multivariable function with respect to one independent variable. For example, when \( v_1 \) increases by 5 (\( \Delta v_1 = 5 \)), the effect on C is not necessarily an increase of 5 (\( \Delta C \) doesn't necessarily equal 5) — it must be multiplied by C's rate of change with respect to \( v_1 \) (how much C changes when \( v_1 \) changes by 1).
+The concept of partial derivatives was introduced in [An Improved Perceptron: Understanding the Sigmoid Neuron](../sigmoid-neuron/). Here you can simply think of it as the "rate of change" of a multivariable function with respect to one independent variable. For example, when \( v_1 \) increases by 5 (\( \Delta v_1 = 5 \)), the effect on C is not necessarily an increase of 5 (\( \Delta C \) doesn't necessarily equal 5) — it must be multiplied by C's rate of change with respect to \( v_1 \) (how much C changes when \( v_1 \) changes by 1).
 
 Next, we extract the partial-derivative part of the \( \Delta C \) equation and give it a new symbol, \( \nabla C \), called the "gradient of C":
 

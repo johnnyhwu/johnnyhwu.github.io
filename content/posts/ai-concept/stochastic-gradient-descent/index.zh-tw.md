@@ -35,7 +35,7 @@ url: "ai-concept/:contentbasename"
 
 在進入 Stochastic Gradient Descent 之前，先複習一下 Gradient Descent 是怎麼更新 Neural Network 裡的參數的。
 
-在〈Deep Learning 基本功：認識 MNIST 資料集與損失函數〉一文中我們提過，Cost Function 的用途是評估目前 Neural Network 中參數（包含 Weight 與 Bias）的好壞：Cost 愈小，代表這組參數讓模型的輸出愈接近正確答案。
+在[Deep Learning 基本功：認識 MNIST 資料集與損失函數](../mnist-and-cost-function/)一文中我們提過，Cost Function 的用途是評估目前 Neural Network 中參數（包含 Weight 與 Bias）的好壞：Cost 愈小，代表這組參數讓模型的輸出愈接近正確答案。
 
 {{< image src="Deep-Learning-Cost-Function.jpg" alt="Cost Function 接收 Neural Network 的 Weight 與 Bias，輸出一個評估參數好壞的數值。" caption="利用 Cost Function 評估 Neural Network 中參數的好壞" >}}
 

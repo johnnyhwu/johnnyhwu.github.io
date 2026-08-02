@@ -73,7 +73,7 @@ Backpropagation 演算法早在 1970 年代就已經出現，但一直到 David 
 
 {{< image src="calculate-activation.png" alt="Activation 的計算式，前一層 Activation 的加權總和加上 Bias 後再送入 Sigmoid Function" caption="計算 Neural Network 中的 Activation" >}}
 
-Activation 的計算方式如上圖所示：前一個 Layer Activation 的 Weighted Sum 再加上 Bias，最後經過一個 Activation Function（我們這裡使用 Sigmoid Function，細節可以參考〈Perceptron 的改良版：了解什麼是 Sigmoid Neuron〉那篇文章）。
+Activation 的計算方式如上圖所示：前一個 Layer Activation 的 Weighted Sum 再加上 Bias，最後經過一個 Activation Function（我們這裡使用 Sigmoid Function，細節可以參考[Perceptron 的改良版：了解什麼是 Sigmoid Neuron](../sigmoid-neuron/)那篇文章）。
 
 ### 用 Matrix 與 Vector 簡化表示
 

@@ -73,7 +73,7 @@ We use a to denote the activations in a neural network. Its form is the same as 
 
 {{< image src="calculate-activation.png" alt="The activation equation: the weighted sum of the previous layer's activations plus a bias, passed through a sigmoid function" caption="Computing the activations in a neural network" >}}
 
-The activation is computed as shown above: the weighted sum of the previous layer's activations plus the bias, finally passed through an activation function (here we use the sigmoid function; for details, see the article "An Improved Perceptron: Understanding the Sigmoid Neuron").
+The activation is computed as shown above: the weighted sum of the previous layer's activations plus the bias, finally passed through an activation function (here we use the sigmoid function; for details, see the article [An Improved Perceptron: Understanding the Sigmoid Neuron](../sigmoid-neuron/)).
 
 ### Simplifying with matrices and vectors
 

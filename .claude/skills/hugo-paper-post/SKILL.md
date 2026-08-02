@@ -202,6 +202,35 @@ subagents write the posts in parallel → orchestrator does one build, one
 link audit, one PR. A single-topic task doesn't need a subagent at all;
 just do it inline.
 
+### Tell each subagent what it may link to
+
+Give every subagent an explicit allow-list of slugs it may link to: the
+already-published ones, plus **the slugs of the other topics in this same
+batch** (those don't exist on disk yet, so a subagent that checks will
+correctly conclude they're unpublished and skip them unless you say
+otherwise). Everything not on the list is off limits — a subagent has no
+way to know which of the ~50 remaining `AI-Research` topics are unpublished,
+and a wrong guess ships a dead link.
+
+### Require a fixed report back, and re-check titles against inbound prose
+
+Ask each subagent to report: the id → filename map, which images it
+spot-checked and which condition triggered it, what it used for
+`featuredImage` and where that came from **plus its pixel dimensions**,
+anything unresolved or guessed, its final `verify_post.py` output, and which
+internal links it added. The orchestrator cannot write the PR description
+without these, and it is the only record of what happened inside the
+subagent.
+
+One thing to re-check yourself when the reports come back: **a subagent may
+legitimately shorten a title to hit the SEO length range, which can break
+the anchor text an existing post already uses to refer to that article in
+prose.** This is a real failure mode, not a hypothetical — it happened the
+first time this flow was run. When you convert those plain-text mentions
+into links, read the anchor text against the title the subagent actually
+chose and reword the anchor if they've drifted, rather than assuming the
+existing wording still matches.
+
 ## Definition of done
 
 - The post is in the **right section** per this repo's `CLAUDE.md` routing

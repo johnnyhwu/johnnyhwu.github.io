@@ -35,7 +35,7 @@ However, applying gradient descent directly to updating a neural network's param
 
 Before getting into stochastic gradient descent, let's review how gradient descent updates the parameters inside a neural network.
 
-As mentioned in "Deep Learning Fundamentals: Understanding the MNIST Dataset and the Cost Function", the purpose of the cost function is to evaluate how good the network's current parameters (weights and biases) are: the smaller the cost, the closer this set of parameters brings the model's output to the correct answer.
+As mentioned in [Deep Learning Fundamentals: The MNIST Dataset and the Cost Function](../mnist-and-cost-function/), the purpose of the cost function is to evaluate how good the network's current parameters (weights and biases) are: the smaller the cost, the closer this set of parameters brings the model's output to the correct answer.
 
 {{< image src="Deep-Learning-Cost-Function.jpg" alt="The cost function takes a neural network's weights and biases and outputs a single value evaluating how good those parameters are." caption="Using a cost function to evaluate a neural network's parameters" >}}
 

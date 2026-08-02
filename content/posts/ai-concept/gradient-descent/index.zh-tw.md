@@ -26,7 +26,7 @@ url: "ai-concept/:contentbasename"
 - 損失函數 (Cost Function)
 - 最佳化演算法 (Optimizer)
 
-前兩個元素在〈Deep Learning 基本功：認識 MNIST 資料集與損失函數〉一文中已經介紹過，本文要談的是第三個元素：最佳化演算法 (Optimizer)，而且是其中最基本、也最重要的一種——Gradient Descent。讀完本文，你會知道 Gradient Descent 到底在做什麼、它背後的數學長什麼樣子，以及 Learning Rate 在裡面扮演什麼角色。
+前兩個元素在[Deep Learning 基本功：認識 MNIST 資料集與損失函數](../mnist-and-cost-function/)一文中已經介紹過，本文要談的是第三個元素：最佳化演算法 (Optimizer)，而且是其中最基本、也最重要的一種——Gradient Descent。讀完本文，你會知道 Gradient Descent 到底在做什麼、它背後的數學長什麼樣子，以及 Learning Rate 在裡面扮演什麼角色。
 
 {{< admonition abstract "重點整理 (TL;DR)" >}}
 - **訓練 Neural Network 的本質**：調整參數 (w 與 b)，使得 Cost Function 的數值變小。
@@ -81,7 +81,7 @@ Cost Function 會把「目前這組參數表現得如何」濃縮成一個數字
 
 {{< image src="cost-function-change.jpg" alt="ΔC 的算式：C 對 v1 的偏微分乘上 Δv1，加上 C 對 v2 的偏微分乘上 Δv2。" caption="往 Δv 前進一步，對 ΔC 造成的影響" >}}
 
-偏微分的概念在〈Perceptron 的改良版：了解什麼是 Sigmoid Neuron〉一文中介紹過，這裡可以簡單把它視為：一個多變數函數對於某一個獨立變數的「改變率」。舉例來說，當 \( v_1 \) 加上 5 時 (\( \Delta v_1 = 5 \))，對 C 的影響不一定就是加上 5 (\( \Delta C \) 不一定等於 5)，而是要再乘上 C 對 \( v_1 \) 的改變率（\( v_1 \) 變動 1 時，C 變動多少）。
+偏微分的概念在[Perceptron 的改良版：了解什麼是 Sigmoid Neuron](../sigmoid-neuron/)一文中介紹過，這裡可以簡單把它視為：一個多變數函數對於某一個獨立變數的「改變率」。舉例來說，當 \( v_1 \) 加上 5 時 (\( \Delta v_1 = 5 \))，對 C 的影響不一定就是加上 5 (\( \Delta C \) 不一定等於 5)，而是要再乘上 C 對 \( v_1 \) 的改變率（\( v_1 \) 變動 1 時，C 變動多少）。
 
 接著，我們把 \( \Delta C \) 算式中偏微分的部分抽出來，給它一個新符號 \( \nabla C \)，稱為「Gradient of C」：
 
