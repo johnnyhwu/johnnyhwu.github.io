@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Backpropagation 介紹：Neural Network 的 Gradient 怎麼算？"
-date: 2022-07-15
-lastmod: 2026-08-01
+date: 2026-07-15
+lastmod: 2026-07-15
 draft: false
 description: "Neural Network 的 Gradient 到底怎麼算出來的？本文從符號定義出發，逐一拆解 Backpropagation 的四大公式 BP(1) 到 BP(4)，帶你看懂誤差如何一層一層往回傳遞。"
 featuredImage: "featured-image.jpg"

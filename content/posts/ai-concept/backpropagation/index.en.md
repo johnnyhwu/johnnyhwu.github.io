@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Understanding Backpropagation: How Gradients Are Calculated"
-date: 2022-07-15
-lastmod: 2026-08-01
+date: 2026-07-15
+lastmod: 2026-07-15
 draft: false
 description: "How are the gradients in a neural network actually computed? This article defines the notation, then walks through all four backpropagation equations, BP(1) to BP(4)."
 featuredImage: "featured-image.jpg"
