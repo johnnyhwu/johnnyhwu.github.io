@@ -49,9 +49,19 @@ Each time this rule is applied, the weights and biases move one step in the dire
 
 Gradient descent is already a very usable method, but it has a structural drawback, and the problem lies in how the cost gets averaged.
 
-The cost function mentioned above takes the form **\( C = \frac{1}{n} \sum_x C_x \)**, where **\( C_x \)** is the cost the model computes for a single training example (that is, the error between the model's output for that example and the correct answer). We sum the cost of every training example and divide by the number of training examples, giving the average cost per training example.
+The cost function mentioned above takes the form:
 
-The gradient is computed the same way: first compute a gradient from a single training example's cost (\( \nabla C_x \)), then sum the gradients across all training examples and divide by the number of them, giving the average gradient per training example: **\( \nabla C = \frac{1}{n} \sum_x \nabla C_x \)**.
+\[
+C = \frac{1}{n} \sum_x C_x
+\]
+
+where \( C_x \) is the cost the model computes for a single training example (that is, the error between the model's output for that example and the correct answer). We sum the cost of every training example and divide by the number of training examples, giving the average cost per training example.
+
+The gradient is computed the same way: first compute a gradient from a single training example's cost (\( \nabla C_x \)), then sum the gradients across all training examples and divide by the number of them, giving the average gradient per training example:
+
+\[
+\nabla C = \frac{1}{n} \sum_x \nabla C_x
+\]
 
 And that's exactly the problem: the model has to see the entire training set before it can compute one gradient, and therefore before it can update the parameters once. For a dataset like MNIST with 60,000 images, a full pass buys you a single parameter update — training obviously isn't going to be fast.
 
