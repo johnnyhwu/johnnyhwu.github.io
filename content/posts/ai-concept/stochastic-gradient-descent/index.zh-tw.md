@@ -49,9 +49,19 @@ url: "ai-concept/:contentbasename"
 
 Gradient Descent 已經算是很好用的方法了，但它有個結構性的缺點，問題出在 Cost 是怎麼被平均出來的。
 
-前面提到的 Cost Function，其形式為 **\( C = \frac{1}{n} \sum_x C_x \)**。其中 **\( C_x \)** 表示模型針對一筆訓練資料所計算出來的 Cost（也就是模型的這一筆輸出與正確答案的誤差），我們會將每一筆訓練資料的 Cost 加總再除以訓練資料的數目，得到平均每一筆訓練資料的 Cost。
+前面提到的 Cost Function，其形式為：
 
-Gradient 也是同樣的算法：先用一筆訓練資料的 Cost 算出一個 Gradient（\( \nabla C_x \)），再把所有訓練資料的 Gradient 加總後除以訓練資料的數量，得到平均每一筆訓練資料的 Gradient：**\( \nabla C = \frac{1}{n} \sum_x \nabla C_x \)**。
+\[
+C = \frac{1}{n} \sum_x C_x
+\]
+
+其中 \( C_x \) 表示模型針對一筆訓練資料所計算出來的 Cost（也就是模型的這一筆輸出與正確答案的誤差），我們會將每一筆訓練資料的 Cost 加總再除以訓練資料的數目，得到平均每一筆訓練資料的 Cost。
+
+Gradient 也是同樣的算法：先用一筆訓練資料的 Cost 算出一個 Gradient（\( \nabla C_x \)），再把所有訓練資料的 Gradient 加總後除以訓練資料的數量，得到平均每一筆訓練資料的 Gradient：
+
+\[
+\nabla C = \frac{1}{n} \sum_x \nabla C_x
+\]
 
 問題就在這裡：模型必須看過整個訓練資料集，才算得出一個 Gradient，也才能更新一次參數。以 MNIST 這種有 60000 張圖像的資料集來說，跑完一整輪才換來一次參數更新，訓練當然快不起來。
 

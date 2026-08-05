@@ -86,6 +86,22 @@ read that as "the images are broken". (Same trap when checking math: the
 KaTeX output that server-rendering produces ends in `</annotation>`, which
 truncates to a confusing-looking `</a` in narrow grep context.)
 
+**A math grep only proves the LaTeX parsed — not that it renders at the
+right size.** Hugo's built-in server-side math renderer and the theme's
+vendored `lib/katex/katex.min.css` are two independently-versioned things;
+if their CSS class names for font-size scaling ever drift apart again (it
+happened once — see `assets/css/_custom.scss` for the fix and its comment
+explaining the exact class mismatch), subscripts/superscripts will keep
+the right DOM structure and position but silently render at full size
+instead of shrinking, e.g. `v_1` shows a full-size `1` instead of a small
+one. `grep` for `</annotation>` or `msub` cannot catch this — the markup
+looks identical either way. If a rendering complaint like this comes up
+again, first check whether `assets/css/_custom.scss` still matches the
+class names Hugo is actually emitting (`grep -o 'class="sizing[^"]*"'` on
+a built page) before re-diagnosing from scratch; only fall back to an
+actual screenshot (build + serve + Playwright) if that override is
+present and still doesn't fix it.
+
 **Checking internal links has its own version of this trap.** A body link
 written `[text](../other-slug/)` renders **relative**, verbatim —
 `href=../other-slug/` — while the theme's own prev/next navigation renders

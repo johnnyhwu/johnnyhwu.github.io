@@ -95,7 +95,13 @@ With \( \Delta v \) and \( \nabla C \) in hand, the original \( \Delta C \) equa
 
 This equation makes it clearer: \( \Delta C \) (the change in the function) is determined by the product of \( \Delta v \) (how much each parameter moves) and \( \nabla C \) (the effect on C of moving each parameter by one unit).
 
-Don't forget our goal. We're a ball, and we want the value of \( C(v_1, v_2) \) to decrease after moving by \( \Delta v \) — that is, \( \Delta C \leq 0 \). So how do we pick \( \Delta v \)? Simply set **\( \Delta v = -\eta \nabla C \)**. Substituting gives \( \Delta C \approx -\eta \nabla C \cdot \nabla C = -\eta \|\nabla C\|^2 \). Because \( \|\nabla C\|^2 \) is always greater than or equal to 0, \( \Delta C \) is guaranteed to be less than or equal to 0 — this step is guaranteed not to go uphill.
+Don't forget our goal. We're a ball, and we want the value of \( C(v_1, v_2) \) to decrease after moving by \( \Delta v \) — that is, \( \Delta C \leq 0 \). So how do we pick \( \Delta v \)? Simply set:
+
+\[
+\Delta v = -\eta \nabla C
+\]
+
+Substituting gives \( \Delta C \approx -\eta \nabla C \cdot \nabla C = -\eta \|\nabla C\|^2 \). Because \( \|\nabla C\|^2 \) is always greater than or equal to 0, \( \Delta C \) is guaranteed to be less than or equal to 0 — this step is guaranteed not to go uphill.
 
 At this point we know how to take each step. When the ball is currently at v and moves to a new position v':
 

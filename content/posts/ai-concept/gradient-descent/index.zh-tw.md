@@ -95,7 +95,13 @@ Cost Function 會把「目前這組參數表現得如何」濃縮成一個數字
 
 從這個算式可以看得更清楚：\( \Delta C \)（函數的變化量）取決於 \( \Delta v \)（每一個參數的變動量）與 \( \nabla C \)（每一個參數變動一單位時對 C 造成的影響）兩者相乘。
 
-別忘了我們的目的。我們是一顆球，希望移動 \( \Delta v \) 之後 \( C(v_1, v_2) \) 的數值變小，也就是 \( \Delta C \leq 0 \)。那要怎麼挑 \( \Delta v \)？只要設定 **\( \Delta v = -\eta \nabla C \)**，代入後會得到 \( \Delta C \approx -\eta \nabla C \cdot \nabla C = -\eta \|\nabla C\|^2 \)。因為 \( \|\nabla C\|^2 \) 一定大於等於 0，所以 \( \Delta C \) 一定小於等於 0——這一步保證不會走上坡。
+別忘了我們的目的。我們是一顆球，希望移動 \( \Delta v \) 之後 \( C(v_1, v_2) \) 的數值變小，也就是 \( \Delta C \leq 0 \)。那要怎麼挑 \( \Delta v \)？只要設定：
+
+\[
+\Delta v = -\eta \nabla C
+\]
+
+代入後會得到 \( \Delta C \approx -\eta \nabla C \cdot \nabla C = -\eta \|\nabla C\|^2 \)。因為 \( \|\nabla C\|^2 \) 一定大於等於 0，所以 \( \Delta C \) 一定小於等於 0——這一步保證不會走上坡。
 
 到這裡，我們已經知道每一步該怎麼走了。當球目前位於 v，要移動到新位置 v'：
 

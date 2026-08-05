@@ -273,6 +273,27 @@ and `$$ $$` regardless of that flag, but it still won't touch a bare `$...$`
 either way. The fix for unrendered math is always "convert the delimiter,"
 never "flip the front-matter flag."
 
+### When to promote inline math to block math
+
+Not every `\( ... \)` should stay inline just because that's how
+`article.md` wrote it. If a formula is a **standalone definition** (it has
+a top-level `=`, not just a bare symbol reference like `\( C_x \)` or
+`\( \eta \)`) **and** contains a tall construct — `\frac`, `\sum`, `\int`,
+a matrix, stacked limits — promote it to block math (`\[ ... \]` on its
+own line, blank line before and after) instead of leaving it embedded
+mid-sentence. Inline mode doesn't shrink `\frac`/`\sum`; a full-size stack
+crammed between two words blows out that line's height and reads as
+visually broken, even though nothing is technically wrong with the LaTeX.
+A bare symbol reference (`\( C_x \)`, `\( \nabla C \)`) is fine to leave
+inline regardless of length — this is about promoting *definitions*, not
+every piece of math. See `content/posts/ai-concept/gradient-descent/` and
+`stochastic-gradient-descent/` for worked examples of both the promoted
+block equations and the symbol references correctly left inline.
+
+This falls under this skill's "math-notation conversion" responsibility
+(see "What NOT to change" below) — it's a formatting call, not a change to
+the article's substance.
+
 ## Admonitions for callouts
 
 The theme's `{{< admonition type="..." title="..." >}}...{{< /admonition >}}`
