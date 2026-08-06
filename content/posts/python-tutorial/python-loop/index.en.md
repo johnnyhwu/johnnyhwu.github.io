@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Loops in Python: while, for, and range()"
-date: 2026-05-04
-lastmod: 2026-05-04
+date: 2022-01-27T06:18:52
+lastmod: 2026-08-06
 draft: false
 description: "Understand Python loops in one article: the difference between while and for loops, how break and continue redirect the flow, and how range()'s start, stop and step work."
 featuredImage: "featured-image.jpg"
@@ -20,7 +20,7 @@ url: "python-tutorial/:contentbasename"
 
 ## Introduction
 
-The previous article, "IF, ELIF and ELSE in Python", covered flow control: using `if`, `elif` and `else` to add "conditional checks" to a program, then running the corresponding code based on the result. This article pushes the idea of a "condition" one step further, to another thing you'll use every single day in programming: the loop.
+The previous article, ["if, elif and else in Python"](../python-if-elif-else/), covered flow control: using `if`, `elif` and `else` to add "conditional checks" to a program, then running the corresponding code based on the result. This article pushes the idea of a "condition" one step further, to another thing you'll use every single day in programming: the loop.
 
 By the end you'll know what a loop actually repeats, which situations Python's `while` and `for` forms each suit, how `break` and `continue` change a loop's flow, and how to use `range()`'s three arguments.
 

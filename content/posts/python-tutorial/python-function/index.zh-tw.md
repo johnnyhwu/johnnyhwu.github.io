@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Python 中的函式 (Function) 觀念 (Part 1)"
-date: 2026-05-13
-lastmod: 2026-05-13
+date: 2022-02-24T07:05:44
+lastmod: 2026-08-06
 draft: false
 description: "從零開始搞懂 Python 函式：如何用 def 定義函式、Parameter 與 Argument 的差別、用 return 回傳數值，以及初學者最常卡住的 NoneType 與 None。"
 featuredImage: "featured-image.jpg"
@@ -159,9 +159,9 @@ print(output)
 
 ## Python 中的 NoneType 與 None
 
-在先前介紹 Python 變數與資料類型的文章中，我們提過 Python 的基本資料型態，例如 Integer、String 與 Floating-Point Number。
+在先前介紹 [Python 變數與資料類型](../python-variable-data-type/)的文章中，我們提過 Python 的基本資料型態，例如 Integer、String 與 Floating-Point Number。
 
-今天要再介紹一種新的 Data Type，稱為 **NoneType**。NoneType 很特別，它只有唯一一個數值，就是 `None`。一個 Type 裡頭只包含 1 個或 2 個數值其實並不奇怪，我們之前學過的 Boolean Type 裡頭就只有 `True` 與 `False` 兩種數值。
+今天要再介紹一種新的 Data Type，稱為 **NoneType**。NoneType 很特別，它只有唯一一個數值，就是 `None`。一個 Type 裡頭只包含 1 個或 2 個數值其實並不奇怪，我們之前學過的 [Boolean Type](../python-boolean-operator/) 裡頭就只有 `True` 與 `False` 兩種數值。
 
 那為什麼要多學 NoneType 這種看起來有點神奇的型態？原因和函式的回傳值有關。
 

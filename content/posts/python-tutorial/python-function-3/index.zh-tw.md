@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Python 中的函式 (Function) 觀念 (Part 3)"
-date: 2026-06-05
-lastmod: 2026-06-05
+date: 2022-05-14T14:01:44
+lastmod: 2026-08-06
 draft: false
 description: "為什麼變數明明寫在那裡，Python 卻說它不存在？本文用四段可以自己跑的程式碼，逐一說明 Local Scope 與 Global Scope 的四項重要性質。"
 featuredImage: "featured-image.jpg"

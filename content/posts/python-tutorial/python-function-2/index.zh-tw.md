@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Python 中的函式 (Function) 觀念 (Part 2)"
-date: 2026-05-25
-lastmod: 2026-05-25
+date: 2022-04-02T01:54:59
+lastmod: 2026-08-06
 draft: false
 description: "深入 Python 函式：Default Argument 與 Keyword Argument 讓呼叫更有彈性，並徹底搞懂 Scope、Local Variable 與 Global Variable 的生命週期。"
 featuredImage: "featured-image.jpg"
