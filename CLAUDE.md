@@ -19,8 +19,9 @@ directory, you are doing Step 3.
 
 | User says (roughly) | Do this |
 |---|---|
-| "產生 `<Topic>` 文章" / "generate the `<Topic>` post" / "publish `<Topic>`" / "把 `<Topic>` 發布成 Hugo post" | Use the **`hugo-paper-post`** skill (`.claude/skills/hugo-paper-post/`) against topic directory `<Topic>/` in `johnnyhwu/AI-Research`. |
-| Anything about fixing/updating an *existing* post's images, front matter, or translation | Same skill — it also covers touch-ups, not just first publication. |
+| "產生 `<Topic>` 文章" / "generate the `<Topic>` post" / "publish `<Topic>`" / "把 `<Topic>` 發布成 Hugo post" | Use the **`hugo-paper-post`** skill (`.claude/skills/hugo-paper-post/`) against topic directory `done/unpublished/<Topic>/` in `johnnyhwu/AI-Research`. |
+| "有哪些文章可以發布？" / "what's ready to publish?" | List `done/unpublished/` in `AI-Research`. That directory *is* the publishing queue — every topic in it has an `article.md` and no Hugo post yet. |
+| Anything about fixing/updating an *existing* post's images, front matter, or translation | Same skill — it also covers touch-ups, not just first publication. The source topic will be under `done/published/` in that case. |
 
 The skill's directory name says "paper", but that is historical. It is the
 publisher for **every** kind of `AI-Research` topic, not just academic
@@ -28,9 +29,11 @@ papers — see "Which section does it belong in?" below.
 
 ## Which section does it belong in? (decide this first)
 
-**Most `AI-Research` topic directories are not papers.** Of its ~53 topics,
-only a minority are paper walkthroughs; the rest are concept explainers,
-language tutorials, and infra/how-to write-ups. Picking the wrong section
+**Most `AI-Research` topic directories are not papers.** Of the ~33 topics
+still sitting in `done/unpublished/`, only a minority are paper
+walkthroughs; the rest are concept explainers, machine-learning
+fundamentals, language tutorials, and infra/how-to write-ups (LINE bots,
+Heroku deploys, terminal setup). Picking the wrong section
 is not cosmetic — it changes the post's URL, and this site's posts
 cross-link each other by relative path (`../<slug>/`), so a
 misfiled post silently breaks those links.
@@ -73,13 +76,51 @@ It is almost never already attached to a fresh session — bootstrap it first:
    show up as a system-reminder on your next turn — until you do this, you
    only have the raw files, not that repo's own house rules.
 3. Read `AI-Research/CLAUDE.md` once it loads. It documents that repo's
-   topic-directory layout (each topic gets a directory at the repo **root**,
-   e.g. `SkillOpt/` — not `docs/SkillOpt/`) and any per-topic path
-   exceptions (e.g. `SkillOpt/` itself keeps its manifest at
-   `SkillOpt/parsed/assets/image-manifest.json` instead of the canonical
-   `SkillOpt/assets/image-manifest.json`, from before that convention was
-   written down — check `AI-Research/CLAUDE.md` for the current exception
-   list rather than assuming the canonical path blindly).
+   topic-directory layout and any per-topic path exceptions — check it for
+   the current exception list rather than assuming the canonical path
+   blindly (e.g. `SkillOpt` keeps its manifest at
+   `done/published/SkillOpt/parsed/assets/image-manifest.json` instead of
+   the canonical `<TopicDir>/assets/image-manifest.json`, from before that
+   convention was written down).
+
+### The three buckets, and which one you want
+
+Topic directories live **two** levels down under `done/`, one under
+`in-progress/`:
+
+| Bucket | Means | Step 3's interest |
+|---|---|---|
+| `in-progress/<Topic>/` | Step 1 hasn't written `article.md` yet | **Nothing to publish.** If asked to publish one of these, say so — don't write the article yourself; that's the other repo's job. |
+| `done/unpublished/<Topic>/` | `article.md` exists, no Hugo post yet | **This is the publishing queue.** Every normal Step 3 task starts here. |
+| `done/published/<Topic>/` | A Hugo post already exists here in `content/posts/<section>/<slug>/` | Only for touch-ups to an already-published post. |
+
+Do **not** rely on a bare `done/<Topic>/` path — that layout is gone, and a
+path built that way will simply not exist.
+
+### Finish the loop: mark the topic published
+
+Publishing a post is only half of Step 3. Once the Hugo post is merged (or
+at least once the PR here is open), the topic must move buckets in
+`AI-Research`:
+
+```bash
+git mv done/unpublished/<Topic> done/published/<Topic>
+```
+
+and the manifest's baked-in `source_pdf` / `images[].file` paths must be
+rewritten from `done/unpublished/...` to `done/published/...`, then
+`verify_manifest.py` re-run — `git mv` does not rewrite file contents, so
+skipping this leaves every image path in that manifest pointing at nothing.
+`AI-Research/CLAUDE.md`'s "Moving a topic between buckets" section is the
+authority on the exact procedure.
+
+That means a publish task normally produces **two** PRs: the post here, and
+a small bucket-move commit in `AI-Research`. Attach the content repo with
+`add_repo`'s `access: "push"` (plain `read` will not let you push a branch)
+and say in each PR that the other one exists. If you genuinely can't open
+the `AI-Research` PR, say so explicitly rather than leaving the topic
+silently mis-bucketed — a topic stuck in `done/unpublished/` after its post
+ships will be offered up for publishing all over again.
 
 ## Global rules for anything touching a published post
 
