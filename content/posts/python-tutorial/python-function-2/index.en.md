@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Understanding Functions in Python (Part 2)"
-date: 2026-05-25
-lastmod: 2026-05-25
+date: 2022-04-02T01:54:59
+lastmod: 2026-08-06
 draft: false
 description: "Going deeper into Python functions: default and keyword arguments for more flexible calls, plus a thorough look at scope and the lifetime of local and global variables."
 featuredImage: "featured-image.jpg"

@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Understanding Functions in Python (Part 1)"
-date: 2026-05-13
-lastmod: 2026-05-13
+date: 2022-02-24T07:05:44
+lastmod: 2026-08-06
 draft: false
 description: "Understand Python functions from scratch: defining them with def, parameters vs arguments, returning values, and the NoneType and None gotcha."
 featuredImage: "featured-image.jpg"
@@ -159,9 +159,9 @@ The result of running this code is exactly the same as the previous snippet, bec
 
 ## NoneType and None in Python
 
-In the earlier article introducing Python variables and data types, we covered Python's basic data types such as integer, string and floating-point number.
+In the earlier article introducing [Python variables and data types](../python-variable-data-type/), we covered Python's basic data types such as integer, string and floating-point number.
 
-Today we'll introduce one more data type, called **NoneType**. NoneType is unusual in that it has exactly one value: `None`. A type containing only 1 or 2 values isn't actually strange — the boolean type we learned about earlier contains only the two values `True` and `False`.
+Today we'll introduce one more data type, called **NoneType**. NoneType is unusual in that it has exactly one value: `None`. A type containing only 1 or 2 values isn't actually strange — the [boolean type](../python-boolean-operator/) we learned about earlier contains only the two values `True` and `False`.
 
 So why learn about this somewhat magical-looking NoneType? The reason has to do with function return values.
 

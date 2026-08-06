@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Understanding Functions in Python (Part 3)"
-date: 2026-06-05
-lastmod: 2026-06-05
+date: 2022-05-14T14:01:44
+lastmod: 2026-08-06
 draft: false
 description: "Why does Python say a variable doesn't exist when it's right there? Walk through the four key properties of local and global scope with runnable code."
 featuredImage: "featured-image.jpg"

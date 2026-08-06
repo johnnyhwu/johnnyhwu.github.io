@@ -1,8 +1,8 @@
 ---
 # weight: 1
 title: "Python 中的迴圈 (Loop) 觀念：while、for 與 range()"
-date: 2026-05-04
-lastmod: 2026-05-04
+date: 2022-01-27T06:18:52
+lastmod: 2026-08-06
 draft: false
 description: "一篇搞懂 Python 迴圈！本文說明 while loop 與 for loop 的差別、break 與 continue 如何改變迴圈流向，以及 range() 的 start、stop、step 三個參數怎麼用。"
 featuredImage: "featured-image.jpg"
@@ -20,7 +20,7 @@ url: "python-tutorial/:contentbasename"
 
 ## 前言
 
-前一篇〈Python 中的 IF、ELIF 與 ELSE〉談的是流程控制：用 `if`、`elif`、`else` 在程式中加入「條件的判斷」，再依照判斷結果執行對應的程式碼。這篇文章把「條件」的概念再往前推一步，講程式裡另一個天天都會用到的東西：迴圈 (Loop)。
+前一篇[〈Python 中的 if、elif 與 else〉](../python-if-elif-else/)談的是流程控制：用 `if`、`elif`、`else` 在程式中加入「條件的判斷」，再依照判斷結果執行對應的程式碼。這篇文章把「條件」的概念再往前推一步，講程式裡另一個天天都會用到的東西：迴圈 (Loop)。
 
 讀完之後，你會知道迴圈到底在重複什麼、Python 裡 `while` 與 `for` 兩種寫法各自適合什麼場合、`break` 與 `continue` 分別怎麼改變迴圈的流向，以及 `range()` 的三個參數要怎麼用。
 
