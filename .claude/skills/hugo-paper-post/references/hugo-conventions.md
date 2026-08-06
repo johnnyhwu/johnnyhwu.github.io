@@ -105,7 +105,7 @@ post on this site has one — so this always needs an answer, never an
 omission. Two cases, depending on whether the topic has any images at all:
 
 **Best case — the source directory already ships one.** Check
-`<Topic>/assets/images/` for a file named like `feature-image.*` /
+`<TopicDir>/assets/images/` for a file named like `feature-image.*` /
 `featured-image.*` before doing anything else. Topics migrated by hand from
 the original blog (rather than parsed out of a PDF) often carry the original
 post's real cover image, and it will *not* be listed in
@@ -231,11 +231,13 @@ doesn't pile up:
 
 ### Linking to posts that don't exist yet
 
-This site deliberately contains forward links to unpublished posts —
-`ai-concept/dropout` links to `../gradient-descent/` and
-`../stochastic-gradient-descent/`, neither of which is published, and both
-have topic directories queued in `AI-Research`. So a dangling relative link
-is an accepted convention here, not an accident.
+This site deliberately tolerates forward links to posts that don't exist
+yet: `ai-concept/dropout` shipped linking to `../gradient-descent/` and
+`../stochastic-gradient-descent/` before either was published, and when
+those two later landed under exactly those slugs, both links lit up with no
+cleanup pass. (Both are live now, so as of this writing the site has no
+dangling relative links at all — verify before assuming otherwise.) So a
+dangling relative link is an accepted convention here, not an accident.
 
 That makes it a narrow licence, not a blank cheque. A forward link is
 justified only when **both** hold:

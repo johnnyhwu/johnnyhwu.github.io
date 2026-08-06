@@ -62,19 +62,38 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
 ## Inputs
 
 For a target topic `<Topic>` (e.g. `SkillOpt`, `Backpropagation-Explain`),
-from `johnnyhwu/AI-Research`:
-- `<Topic>/article.md` — the platform-neutral article body + trailing
+from `johnnyhwu/AI-Research`. **Topic directories are bucketed by state, so
+`<Topic>` is never a top-level path there** — see this repo's `CLAUDE.md`,
+"The three buckets, and which one you want". The short version:
+
+- `done/unpublished/<Topic>/` — where every normal publish task's source
+  lives. If the user names a topic without a path, look here first.
+- `done/published/<Topic>/` — the source for a *touch-up* to a post that
+  already exists.
+- `in-progress/<Topic>/` — has no `article.md` yet. Nothing to publish;
+  report that rather than writing the article yourself (that's Step 1, in
+  the other repo).
+
+Writing `<Topic>/...` as if the topic sat at the content repo's root will
+just miss. Below, `<TopicDir>` means the full bucketed path:
+
+- `<TopicDir>/article.md` — the platform-neutral article body + trailing
   ```` ```figure-map ```` block.
-- `<Topic>/assets/image-manifest.json` (canonical) or a documented per-topic
-  exception path (check `AI-Research/CLAUDE.md`'s topic-directory section —
-  e.g. `SkillOpt/parsed/assets/image-manifest.json`) — the figure/table
-  catalog.
-- `<Topic>/assets/images/` (or the equivalent exception path) — the actual
-  extracted image files.
+- `<TopicDir>/assets/image-manifest.json` (canonical) or a documented
+  per-topic exception path (check `AI-Research/CLAUDE.md`'s topic-directory
+  section — e.g.
+  `done/published/SkillOpt/parsed/assets/image-manifest.json`) — the
+  figure/table catalog.
+- `<TopicDir>/assets/images/` (or the equivalent exception path) — the
+  actual extracted image files.
 
 Not every topic has a manifest or images at all (some are prose-only
 reading notes) — that case is handled in `references/hugo-conventions.md`'s
 featured-image section, not by skipping the post.
+
+**The manifest's `file` paths are repo-relative and include the bucket**
+(`done/unpublished/<Topic>/assets/images/foo.png`). Resolve them against
+the content repo's clone root, not against the topic directory.
 
 From this repo, **inspect a real existing post before writing anything** —
 pick one from the *same section* you're publishing into
@@ -89,11 +108,16 @@ prefer what an actual recent post does if the two ever disagree.
 
 1. **Bootstrap access to `AI-Research`** per this repo's `CLAUDE.md` if it
    isn't already attached to the session (`add_repo` → clone →
-   `register_repo_root`).
+   `register_repo_root`). Ask for `access: "push"` up front — step 9 needs
+   to push a branch there, and re-attaching later means a second clone at a
+   different path.
 
-2. **Read `<Topic>/article.md` and `<Topic>/assets/image-manifest.json`**
-   (whichever path is actually correct per the exception check above). Do
-   not read the PDF. Do not open any image file yet.
+2. **Locate the topic and read its inputs.** Confirm which bucket it's in
+   (`ls done/unpublished/ done/published/ in-progress/`) rather than
+   guessing from the name, then read `<TopicDir>/article.md` and
+   `<TopicDir>/assets/image-manifest.json` (whichever path is actually
+   correct per the exception check above). Do not read the PDF. Do not open
+   any image file yet.
 
 3. **Decide the section and the slug — before writing anything.** Most
    `AI-Research` topics are *not* papers, so `paper-intro` is a choice, not
@@ -159,13 +183,40 @@ prefer what an actual recent post does if the two ever disagree.
    submodule preinstalled, and do that too when the change is non-trivial
    (new post, not a one-line fix).
 
-8. **Open a PR** whose description covers: which `<Topic>/` topic directory
-   it came from, **which section you routed it to and why** (plus whether
-   the slug was already pinned by existing links), the id → filename image
-   mapping, which images (if any)
+8. **Open a PR** whose description covers: which topic directory it came
+   from (full bucketed path), **which section you routed it to and why**
+   (plus whether the slug was already pinned by existing links), the
+   id → filename image mapping, which images (if any)
    were spot-checked and why, any unresolved images or missing/fabricated
    front-matter fields, any internal links added (or why none applied), and
    confirmation that both language files were verified to build.
+
+9. **Move the topic to `done/published/` in `AI-Research` — a second PR.**
+   Step 3 isn't finished when the post exists here; the content repo still
+   thinks the topic is waiting to be published, and the next person asking
+   "what's ready to publish?" will be handed it again. In the content repo
+   clone:
+
+   ```bash
+   git checkout -b <branch>
+   git mv done/unpublished/<Topic> done/published/<Topic>
+   # rewrite done/unpublished/ -> done/published/ in that manifest's
+   # source_pdf and every images[].file, then:
+   python3 .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
+       done/published/<Topic>/assets/image-manifest.json .
+   ```
+
+   The manifest rewrite is not optional — `git mv` doesn't touch file
+   contents, so every `file` path in that manifest would otherwise point at
+   a location that no longer exists. `AI-Research/CLAUDE.md`'s "Moving a
+   topic between buckets" section is the authority.
+
+   Cross-reference the two PRs in each other's description. For a batch,
+   one bucket-move PR covering every topic in the batch is right — don't
+   open one per topic. Skip this step only for a touch-up to an
+   already-published post (the topic is already in `done/published/`), and
+   if you can't push to `AI-Research` at all, say so in the Hugo PR instead
+   of quietly leaving the buckets wrong.
 
 ## Publishing several topics at once — dispatch one subagent per topic
 
@@ -179,7 +230,9 @@ for the cross-article work below.
 Tell each subagent to invoke this skill by name and give it exactly one
 topic. Delegate per topic:
 
-- read `<Topic>/article.md` + the manifest (workflow steps 2, 4),
+- read `<TopicDir>/article.md` + the manifest (workflow steps 2, 4) —
+  give it the **full bucketed path**, e.g.
+  `done/unpublished/<Topic>/`, not a bare `<Topic>/`,
 - resolve images, including any bounded spot-check, and copy them into the
   bundle,
 - write `index.en.md` **and** `index.zh-tw.md` (both — the bilingual rule is
@@ -196,10 +249,11 @@ split up:**
 | Cross-post internal links | A link from topic A to topic B is only correct once B's slug is fixed — and both posts in a batch may link to each other. |
 | One final `hugo build` + site-wide link audit | Per-topic builds are slow and redundant, and the bilingual page-bundle bug and dangling-link checks are only meaningful site-wide. |
 | The PR | One PR describes the batch. |
+| The `done/unpublished/` → `done/published/` bucket move in `AI-Research` (workflow step 9) | It is one commit covering every topic in the batch, on one branch in the other repo. Subagents pushing to it concurrently would conflict. |
 
 So the shape is: orchestrator decides sections, slugs and dates up front →
 subagents write the posts in parallel → orchestrator does one build, one
-link audit, one PR. A single-topic task doesn't need a subagent at all;
+link audit, one Hugo PR, and one bucket-move PR in `AI-Research`. A single-topic task doesn't need a subagent at all;
 just do it inline.
 
 ### Tell each subagent what it may link to
@@ -209,8 +263,11 @@ already-published ones, plus **the slugs of the other topics in this same
 batch** (those don't exist on disk yet, so a subagent that checks will
 correctly conclude they're unpublished and skip them unless you say
 otherwise). Everything not on the list is off limits — a subagent has no
-way to know which of the ~50 remaining `AI-Research` topics are unpublished,
-and a wrong guess ships a dead link.
+way to know which of the remaining `done/unpublished/` topics have posts,
+and a wrong guess ships a dead link. (Anything under `done/published/` is
+by definition already live and safe to link to — that bucket is the cheapest
+way to answer "does a post exist for this topic?" without grepping the
+whole site.)
 
 ### Require a fixed report back, and re-check titles against inbound prose
 
@@ -254,6 +311,11 @@ existing wording still matches.
 - A real `hugo build` was attempted (per `references/hugo-build.md`) for
   anything beyond a trivial fix, and its output was actually inspected —
   not just assumed to be fine because the markdown looks right.
+- The source topic has been moved from `done/unpublished/` to
+  `done/published/` in `AI-Research`, its manifest paths rewritten and
+  `verify_manifest.py` re-run, on its own PR cross-referenced from this one
+  (workflow step 9) — or the Hugo PR says explicitly why that couldn't be
+  done. This does not apply to touch-ups of already-published posts.
 
 ## Files in this skill
 
