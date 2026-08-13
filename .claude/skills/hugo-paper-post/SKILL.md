@@ -245,7 +245,8 @@ split up:**
 | Decide centrally | Why it cannot be delegated |
 |---|---|
 | Section + slug for every topic | Slugs depend on the whole site's link graph, and two subagents choosing independently can collide or pick different spellings of the same series (`python-function` vs `python-function-1`). |
-| Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. |
+| The order of a numbered/sequential batch | Don't assume the order topics were listed or requested in is the series' real order — it may just be alphabetical. An article that's actually part of a numbered series usually self-declares its position ("第 N 篇") and points to its neighbors ("前一篇"/"下一篇"); grep every topic's `article.md` for these before deciding anything else, since front-matter dates and the internal-link chain both depend on getting this right first. |
+| Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. For topics migrated by hand from an old blog (`article.md` + `original-post.md`, manifest's `source_pdf: null`), check whether `original-post.md`'s own front matter carries the real historical publish date before inventing dates from scratch — it's a second, independent signal for the batch's true order, and if the task asks you to backdate the posts, it gives you a real relative cadence to mirror instead of picking arbitrary spacing. |
 | Cross-post internal links | A link from topic A to topic B is only correct once B's slug is fixed — and both posts in a batch may link to each other. |
 | One final `hugo build` + site-wide link audit | Per-topic builds are slow and redundant, and the bilingual page-bundle bug and dangling-link checks are only meaningful site-wide. |
 | The PR | One PR describes the batch. |

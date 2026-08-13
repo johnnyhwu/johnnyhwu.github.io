@@ -113,6 +113,34 @@ post's real cover image, and it will *not* be listed in
 Copy it to `featured-image.<ext>` and you're done; this is the one case that
 needs no substitution and no caveat beyond noting its dimensions.
 
+**Unclaimed image that doesn't match the naming pattern.** The cover image
+isn't always named `feature-image.*`. If `assets/images/` has a file that
+isn't referenced by any manifest entry but also doesn't look like a
+`feature-image.*`/`featured-image.*` filename (e.g. a raw stock-photo
+download like `lightbulb-g62867252e_640.jpg`), don't assume it's *not* the
+cover just because the name doesn't match — and don't assume it *is*,
+either. Corroborate against `original-post.md` when the topic has one
+(hand-migrated topics do): check whether that same filename appears first
+in its own front-matter image list, and whether it's the first image
+embedded in the body, directly under the title (often paired with a
+source/credit line) — that combination is strong evidence it was the
+original post's cover. Use it as `featuredImage` if so; otherwise treat it
+as an ordinary body figure.
+
+**Worst case — no unclaimed image at all.** Every image in
+`assets/images/` may already be claimed by the manifest, with nothing left
+over to be a cover-image candidate. Before falling back to reusing a body
+figure, check `original-post.md` (if the topic has one) the same way as
+above — its front-matter image ordering and which image leads the body —
+since the original cover image may simply have been re-used as a regular
+in-body figure by the parser rather than lost. If that identifies a clear
+original cover image, use it, but **say so explicitly in the PR**: this
+path is inferred from the old post's structure, not a direct file-naming
+signal, so it's a weaker claim than the best case above and a human may
+want to give the post a dedicated cover image later. If `original-post.md`
+gives no signal either (or doesn't exist), fall through to the normal case
+below.
+
 **Normal case — the article has at least one figure.** Reuse the article's
 own most representative one (usually "Figure 1", the overview/architecture
 diagram) as `featured-image.png`, copied alongside its normal in-body copy
