@@ -4,7 +4,7 @@ title: "Deploying a Django App to Heroku on macOS"
 date: 2023-02-06
 lastmod: 2023-02-06
 draft: false
-description: "A hands-on Heroku deployment walkthrough: create a conda virtual environment on macOS, install Django and gunicorn, and push a brand-new Django app live on Heroku step by step."
+description: "A hands-on Heroku walkthrough: create a conda virtual environment on macOS, install Django and gunicorn, and push a brand-new Django app live step by step."
 featuredImage: "featured-image.jpg"
 
 tags: ["Heroku", "Django", "Python"]
