@@ -4,7 +4,7 @@ title: "AWS AI Services Explained: 13 Ready-to-Use ML Capabilities"
 date: 2023-02-10
 lastmod: 2023-02-10
 draft: false
-description: "AWS's machine learning lineup can be overwhelming. This guide covers the top AI Services layer -- 13 use cases, from medical transcription to fraud detection, you can call as an API without training a model."
+description: "AWS's machine learning lineup can be overwhelming. This guide covers the AI Services layer: 13 ready-made use cases you can call via API, no model training needed."
 featuredImage: "featured-image.jpeg"
 
 tags: ["AWS", "Machine Learning"]

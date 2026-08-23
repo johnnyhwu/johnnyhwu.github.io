@@ -4,7 +4,7 @@ title: "How to Create a LINE Bot in LINE Developers"
 date: 2023-02-07
 lastmod: 2023-02-07
 draft: false
-description: "A step-by-step guide to registering a LINE Developers account, creating a Provider and Messaging API Channel, and disabling auto-reply while enabling the Webhook so your own code can answer users."
+description: "A step-by-step guide to registering a LINE Developers account, creating a Provider and Channel, and enabling the Webhook so your own code can reply to users."
 featuredImage: "featured-image.jpg"
 
 tags: ["LINE", "Chatbot"]
