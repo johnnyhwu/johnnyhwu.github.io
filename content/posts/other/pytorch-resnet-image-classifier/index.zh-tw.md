@@ -430,3 +430,5 @@ airliner
 除了圖像分類之外，在其他許多人工智慧的應用上我們都可以善用別人訓練好的模型。因為有時候我們沒有辦法取得那麼大量的資料集，或是沒有辦法訓練這麼龐大的模型，因此我們可以基於別人幫我們用龐大資料集訓練好的模型，再使用我們自己準備的資料集對模型進行訓練。
 
 這樣可以大幅降低我們訓練模型的成本，而這樣的技巧又稱為 [Transfer Learning](https://en.wikipedia.org/wiki/Transfer_learning)。而我們在使用我們自己所準備的資料集訓練模型時，通常資料集不會太大，也只會針對模型的一部份參數進行訓練，這樣的訓練過程又稱為 Fine Tune。
+
+如果你使用的是 Apple Silicon 的 Mac，想讓這類流程改用 GPU 加速、而不是只靠 CPU 跑，可以參考 [PyTorch 支援 Apple Silicon GPU (Mac M1)](../pytorch-apple-silicon-m1-gpu/) 這篇，了解如何讓 PyTorch 吃到 M1 的 GPU。
