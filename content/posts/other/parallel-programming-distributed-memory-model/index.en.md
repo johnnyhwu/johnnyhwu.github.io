@@ -4,7 +4,7 @@ title: "Distributed Memory Model, MPI, and the Deadlock Trap"
 date: 2023-02-24
 lastmod: 2023-02-24
 draft: false
-description: "How the Distributed Memory Model turns a program into independent, communicating processes, how MPI handles message passing, and how a naive send/receive order causes deadlock."
+description: "How the Distributed Memory Model splits a program into independent processes, how MPI handles message passing, and how a naive send/receive order causes deadlock."
 featuredImage: "featured-image.jpg"
 
 tags: ["Parallel Programming"]
