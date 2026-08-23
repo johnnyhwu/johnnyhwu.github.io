@@ -76,9 +76,15 @@ Back to the pseudocode above. When Processor 1 executes **send xlocal, proc2**, 
 
 The problem is that both sides' first action is a send. If, by unlucky coincidence, both processors execute their send at the same moment (Processor 1 running **send xlocal, proc2**, and Processor 2 running **send xlocal, proc1**), both end up stuck at their send line waiting for the other to receive — and the other is equally stuck at its own send, with neither ever reaching receive. The program just stops there.
 
-{{< image src="example-pseudocode-fixed.jpg" alt="Revised pseudocode where Processor 2 now receives before sending, offsetting it from Processor 1." caption="Avoiding deadlock by ensuring the two processors don't send at the same time [source: Parallel Programming Course from NYCU]" >}}
+The fix is actually simple: just make sure the two processors never send at the same time. Swap the order of Processor 2's send and receive:
 
-The fix is actually simple: just make sure the two processors never send at the same time. The figure above swaps the order of Processor 2's send and receive, so Processor 1 sends first while Processor 2 receives first — the two actions are offset, and the deadlock can no longer happen.
+```
+Processor 1:                    Processor 2:
+    send    xlocal, proc2           receive xremote, proc1   # swapped: receive first
+    receive xremote, proc2          send    xlocal, proc1    # then send
+```
+
+Processor 1 still sends first, but Processor 2 now receives first instead of sending — the two actions are offset, so Processor 1's send always finds a waiting receive, and the deadlock can no longer happen.
 
 ## Shared Memory vs. Message Passing
 

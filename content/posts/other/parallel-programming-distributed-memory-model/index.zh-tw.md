@@ -76,9 +76,15 @@ Deadlock 是學作業系統時一定會碰到的觀念。說白了，Deadlock �
 
 問題就出在兩邊的第一個動作都是 send。如果兩個 Processor 非常巧合地在同一個時間點各自執行 send（Processor 1 執行 **send xlocal, proc2**，Processor 2 執行 **send xlocal, proc1**），就會變成兩邊都停在 send 這一行等對方來接收，而對方也同樣卡在自己的 send 上，沒有人有機會走到 receive。程式就這樣停住了。
 
-{{< image src="example-pseudocode-fixed.jpg" alt="調整順序後的虛擬碼，Processor 2 改成先 receive 再 send，與 Processor 1 錯開。" caption="兩個 Processor 不要同時 Send 與 Receive 解決可能發生的 Deadlock [source: Parallel Programming Course from NYCU]" >}}
+解法其實很單純：只要確保兩個 Processor 不會同時傳送訊息就好。把 Processor 2 的 send 與 receive 順序對調：
 
-解法其實很單純：只要確保兩個 Processor 不會同時傳送訊息就好。上圖把 Processor 2 的 send 與 receive 順序對調，變成 Processor 1 先 send、Processor 2 先 receive，兩邊的動作錯開，Deadlock 自然就不會發生。
+```
+Processor 1:                    Processor 2:
+    send    xlocal, proc2           receive xremote, proc1   # 對調：先 receive
+    receive xremote, proc2          send    xlocal, proc1    # 再 send
+```
+
+Processor 1 一樣先 send，但 Processor 2 這次先做的是 receive 而不是 send，兩邊的動作因此錯開：Processor 1 送出訊息時，Processor 2 早就已經在等著接收了，Deadlock 自然就不會發生。
 
 ## Shared Memory vs Message Passing
 
