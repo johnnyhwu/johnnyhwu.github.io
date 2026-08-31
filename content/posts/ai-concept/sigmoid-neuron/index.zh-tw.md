@@ -20,7 +20,7 @@ url: "ai-concept/:contentbasename"
 
 ## 前言
 
-在前一篇「了解什麼是 Perceptron」中，我們認識了最古老的人造神經元 (Artificial Neuron)：感知器 Perceptron，也看過它的數學算式以及它與 NAND Gate 之間的關係。但 Perceptron 並不是現代神經網路 (Modern Neural Network) 實際在用的神經元。
+在前一篇[「了解什麼是 Perceptron」](../what-is-perceptron/)中，我們認識了最古老的人造神經元 (Artificial Neuron)：感知器 Perceptron，也看過它的數學算式以及它與 NAND Gate 之間的關係。但 Perceptron 並不是現代神經網路 (Modern Neural Network) 實際在用的神經元。
 
 這篇文章要介紹一種「更接近」現代神經網路的神經元：Sigmoid Neuron。我們會從「神經網路到底怎麼學習」講起，看看 Perceptron 卡在哪裡，再說明 Sigmoid Neuron 做了什麼修改、為什麼這個修改剛好解決問題，最後談談它的輸出該怎麼解讀。沒讀過前一篇也不影響閱讀，需要的觀念這裡都會補上。
 
