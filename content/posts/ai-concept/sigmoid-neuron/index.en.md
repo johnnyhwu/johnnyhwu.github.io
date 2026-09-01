@@ -20,7 +20,7 @@ url: "ai-concept/:contentbasename"
 
 ## Introduction
 
-In the previous article, "Understanding the Perceptron", we met the oldest artificial neuron of all — the perceptron — and looked at its mathematical formulation as well as its relationship to the NAND gate. But the perceptron is not the neuron that modern neural networks actually use.
+In the [previous article, "Understanding the Perceptron"](../what-is-perceptron/), we met the oldest artificial neuron of all — the perceptron — and looked at its mathematical formulation as well as its relationship to the NAND gate. But the perceptron is not the neuron that modern neural networks actually use.
 
 This article introduces a neuron that is much "closer" to modern neural networks: the sigmoid neuron. We'll start from the question of how a neural network actually learns, look at where the perceptron gets stuck, then explain what modification the sigmoid neuron makes, why that modification happens to solve the problem, and finally how its output should be interpreted. You don't need to have read the previous article — every concept you need is covered here.
 
