@@ -65,7 +65,22 @@ don't reconstruct the process from memory of some prior conversation.
 ## Where the source material actually lives
 
 `johnnyhwu/AI-Research` is a **separate GitHub repo**, not a subfolder here.
-It is almost never already attached to a fresh session — bootstrap it first:
+A fresh, single-repo session usually doesn't have it attached — bootstrap it
+per the steps below. But **check first, don't assume**: a session already
+set up for a cross-repo publish task (e.g. one whose designated branches
+already cover both `johnnyhwu.github.io` and `AI-Research`) can start with
+`AI-Research` already cloned on disk *and* its `CLAUDE.md` already showing
+up as a system-reminder in the conversation — bootstrapping from scratch in
+that case is wasted work, and can actively fail: `add_repo` may report the
+repo as already attached at an internal clone-target path (e.g. lowercase
+`ai-research`) that differs in case from where it actually lives on disk
+(e.g. `AI-Research`), and `register_repo_root` will then reject your real
+directory for not matching that managed path. If you hit that, it's a sign
+the repo is already loaded some other way, not a real error to fix — just
+confirm the clone is valid with `git -C <path> rev-parse HEAD` and move on
+to reading `CLAUDE.md` (step 3 below) without insisting on
+`register_repo_root`. Only run the full bootstrap when neither the clone
+nor its `CLAUDE.md` is already there:
 
 1. `add_repo` (owner `johnnyhwu`, repo `AI-Research`) — the tool response
    gives you the exact clone command and a workspace path. Follow its
