@@ -142,14 +142,23 @@ gives no signal either (or doesn't exist), fall through to the normal case
 below.
 
 **Normal case — the article has at least one figure.** Reuse the article's
-own most representative one (usually "Figure 1", the overview/architecture
-diagram) as `featured-image.png`, copied alongside its normal in-body copy
-under its own descriptive name. **Say so explicitly in the PR** — it's a
-reasonable default, not a requirement from the source, and a human may
-prefer something else. (Separately, some existing posts instead use a
-generic, topic-unrelated stock photo, or the paper/product's own logo
-banner if one is genuinely public and on-topic — reusing Figure 1 is simply
-the safer default that needs no external sourcing.)
+own most representative one — usually the paper's architecture/overview
+diagram — as `featured-image.png`, copied alongside its normal in-body copy
+under its own descriptive name. **Don't assume that's Figure 1 without
+checking**: figure numbering follows the paper's own narrative order, not
+"how representative is this," so the overview diagram just as often turns
+out to be Figure 2 or later, with Figure 1 being something else entirely
+(e.g. a headline results chart). WikiSkill is a concrete case of this:
+Figure 1 was the main results bar chart, while Figure 2 was the actual
+three-layer architecture diagram and the right featured-image pick. Look at
+what each figure's caption/`agent_match_hint` actually describes and pick
+the one that depicts the core mechanism, not whichever has the lowest
+number. **Say so explicitly in the PR** — it's a reasonable default, not a
+requirement from the source, and a human may prefer something else.
+(Separately, some existing posts instead use a generic, topic-unrelated
+stock photo, or the paper/product's own logo banner if one is genuinely
+public and on-topic — reusing the overview figure is simply the safer
+default that needs no external sourcing.)
 
 **The article has no images at all** (no manifest, no `assets/` dir — e.g.
 a reading-note/analysis of someone else's blog post rather than an
