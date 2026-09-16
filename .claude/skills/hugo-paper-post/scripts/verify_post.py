@@ -24,6 +24,17 @@ SRC_ATTR_RE = re.compile(r'src="([^"]+)"')
 BARE_INLINE_MATH_RE = re.compile(r'(?<!\$)\$(?!\$)[^$\n]+?(?<!\$)\$(?!\$)')
 RELATIVE_POST_LINK_RE = re.compile(r'\]\(\.\./[a-z0-9-]+/?\)')
 HEADING_RE = re.compile(r'^(#{1,6})\s+\S', re.MULTILINE)
+# The theme auto-numbers headings, so a heading that also carries its own
+# manual number (article.md's "一、" / "2.1" / "1.") renders the number
+# twice. Deliberately narrow: "## 2-opt local search" and "## 5 Ways ..."
+# must NOT match -- only a CJK numeral with 、, a dotted sequence, or a
+# number with trailing punctuation.
+# A CJK number is followed directly by CJK text ("## 一、典範轉移") with no
+# space, so only the Latin-digit branches require trailing whitespace.
+MANUAL_HEADING_NUMBER_RE = re.compile(
+    r'^(#{2,6}\s+(?:[一二三四五六七八九十百]+[、.]|\d+\.\d+(?:\.\d+)*\s|\d+[.、)]\s))',
+    re.MULTILINE,
+)
 CODE_FENCE_RE = re.compile(r'^(`{3,}).*?\n.*?^\1\s*$', re.MULTILINE | re.DOTALL)
 
 # zh-tw ranges are looser and skew shorter: CJK characters carry more
@@ -92,6 +103,16 @@ def check_heading_structure(body_text, label, errors, warnings):
         errors.append(
             f"{label}: body contains a top-level '# ' heading -- the front-matter "
             "title already renders as H1, don't duplicate it in the body"
+        )
+
+    manual = [m.group(1).strip() for m in MANUAL_HEADING_NUMBER_RE.finditer(prose)]
+    if manual:
+        sample = ", ".join(repr(h) for h in manual[:3])
+        warnings.append(
+            f"{label}: {len(manual)} heading(s) carry their own number "
+            f"({sample}{', ...' if len(manual) > 3 else ''}) -- the theme "
+            "auto-numbers headings, so these render twice (e.g. '3.1 2.1 Foo'). "
+            "Strip article.md's manual numbering when publishing"
         )
 
     prev = 1
