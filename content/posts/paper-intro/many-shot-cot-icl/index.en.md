@@ -31,7 +31,7 @@ Not really, it turns out. The authors find that Many-Shot CoT hits a series of c
 - The ordering principle is operationalized by CDS: treat example ordering as a TSP in high-dimensional space, minimizing both distance and turning curvature. It runs in under a minute on a single CPU core and touches no model parameters.
 {{< /admonition >}}
 
-## 1. A Paradigm Shift: ICL Isn't Copying Answers, It's Real-Time Learning at Test Time
+## A Paradigm Shift: ICL Isn't Copying Answers, It's Real-Time Learning at Test Time
 
 To understand why the old rules fail, you first have to grasp the authors' redefinition of ICL.
 
@@ -43,9 +43,9 @@ Another way to see it: the traditional approach is like handing a student a chea
 
 This shift to an "educational" perspective leads directly to the paper's two core design principles: content must be comprehensible, and ordering must be smooth. The next section looks at what goes wrong when you *don't* follow them.
 
-## 2. Three Counterintuitive Findings: Where Many-Shot CoT Actually Breaks
+## Three Counterintuitive Findings: Where Many-Shot CoT Actually Breaks
 
-### 2.1 More Examples, More Confusion
+### More Examples, More Confusion
 
 By the old rules, going from 16 examples to 128 should steadily improve performance. The paper does observe that trend on non-reasoning tasks (SuperGLUE, BANKING77). But switch to reasoning tasks like geometry, number theory, or GSM8K, and the accuracy curve starts oscillating violently — and in some cases clearly declines.
 
@@ -57,7 +57,7 @@ At first this negative scaling looks like a symptom of insufficient model scale,
 
 This isn't hard to picture: take an average student, hand them a hundred-page problem book full of complex geometry proofs, and give them no guidance whatsoever. They won't suddenly have a breakthrough from reading a few more pages — they're more likely to get tangled up in the sheer volume of information and start botching even the easy problems they could previously solve.
 
-### 2.2 Picking the "Most Similar" Examples Is a Trap
+### Picking the "Most Similar" Examples Is a Trap
 
 The gold standard in traditional RAG is semantic similarity retrieval — find the examples that most resemble the test question on the surface, since those are the easiest for the model to imitate. But the paper finds that on reasoning tasks, the most similar examples are often poison.
 
@@ -71,7 +71,7 @@ In Section 4.3, the authors run a controlled comparison: on non-reasoning tasks,
 If your retrieval pipeline takes the user's question, matches it against a vector store, and drops the Top-k most similar examples into the prompt, then on reasoning-type tasks that default may be costing you accuracy. Along the same lines of questioning Top-k defaults, [Adaptive-k](../adaptive-k/) tackles "how many to retrieve," while this paper tackles whether similarity is the right ranking signal in the first place.
 {{< /admonition >}}
 
-### 2.3 With More Examples, Ordering Matters *More*, Not Less
+### With More Examples, Ordering Matters *More*, Not Less
 
 By the old rules, once you have enough examples, randomly shuffling their order should have almost no effect — this is "order robustness." The paper measures accuracy standard deviation across 5 different random orderings, and classification tasks do follow the old rule: more examples, smaller standard deviation, more stable model. Reasoning tasks do exactly the opposite — standard deviation grows explosively as examples are added.
 
@@ -79,7 +79,7 @@ By the old rules, once you have enough examples, randomly shuffling their order 
 
 This means Many-Shot CoT exhibits clear "path dependence" — randomly shuffling a hundred reasoning examples is like a textbook with chaotic chapter ordering, teaching addition on page one, jumping to calculus on page two, then back to subtraction on page three. These conceptual hairpin turns send the model's reasoning trajectory ricocheting back and forth, and the more examples there are, the higher the odds of hitting one of these "logical cliffs."
 
-## 3. Principle One: Examples Should Be "Understandable," Not "Well-Written"
+## Principle One: Examples Should Be "Understandable," Not "Well-Written"
 
 The fix for the first challenge comes from the "Zone of Proximal Development" concept in educational psychology: the most effective teaching material isn't the most difficult textbook, but the material that falls within what the student "can understand with appropriate guidance."
 
@@ -93,17 +93,17 @@ To test this hypothesis, the authors had LLaMA 3.1 (8B) use three different exam
 
 In other words, what the model genuinely absorbs during ICL is "procedural supervision" — the logical framework and steps of solving the problem — not rote memorization of the final answer's digits. This advantage shrinks as model scale grows, because a model with stronger comprehension is better able to see through the semantic structure of a difficult reference answer; and the reasoning models mentioned earlier, like Qwen 3 and DeepSeek-R1, also show higher resistance to misaligned reference answers.
 
-## 4. Principle Two: CDS — Turning Ordering into a Journey Without Hairpin Turns
+## Principle Two: CDS — Turning Ordering into a Journey Without Hairpin Turns
 
 With "what content to pick" settled, the next problem is "how to order it." This is the paper's weightiest contribution: the CDS (Curvilinear Demonstration Selection) algorithm.
 
-### 4.1 Example Ordering as a Journey Through High-Dimensional Space
+### Example Ordering as a Journey Through High-Dimensional Space
 
 Feed each example (question + chain of thought + answer) into an embedding model and it becomes a point in high-dimensional space. With 100 examples you have 100 points, and ordering them is essentially finding a single continuous route through all 100. If the route keeps making hairpin turns and doubling back through concept space, the model's reasoning gets muddled; if the route is smooth and the transitions between concepts are natural, the model absorbs it cleanly.
 
 This maps neatly onto a classic optimization problem: the Traveling Salesperson Problem (TSP) — visit every city exactly once, return to the start, and minimize total distance. TSP is NP-hard; 100 cities means 100! possible permutations, so in practice you rely on heuristics to find a "good enough" solution in reasonable time rather than solving for the global optimum. In the CDS setting, the cities are the examples, the route is the ordering, and the fare is "the comprehension burden of reading the next example after the previous one."
 
-### 4.2 The Cost Function: Distance and Turning Angle Together
+### The Cost Function: Distance and Turning Angle Together
 
 In CDS, the cost of moving from example \( i \) to example \( j \) has two components:
 
@@ -113,7 +113,7 @@ $$D_{CDS}(i, j) = \delta_{ij} + \gamma_{ij}$$
 
 There's a technical subtlety here: to judge whether the path turns sharply at point \( j \), you theoretically need to know the direction of both the previous step (\( i \to j \)) and the next one (\( j \to k \)) — but at the time you place \( j \), the algorithm has no idea what comes next. The authors' solution is to find the candidate example closest to "the geometric midpoint of \( i \) and \( j \)" and treat it as the "anticipated next step \( k(i,j) \)," then use an inner product to compute the angle between \( i \to j \) and \( j \to k \). The sharper the turn, the higher the curvature cost.
 
-### 4.3 The Four-Step Workflow: Greedy Init → Local Search → Multi-Start → Cut the Loop
+### The Four-Step Workflow: Greedy Init → Local Search → Multi-Start → Cut the Loop
 
 CDS in practice breaks down into four steps:
 
@@ -126,17 +126,17 @@ The 2-opt step deserves a closer look, since it's where the algorithm actually p
 
 The whole pipeline runs in under a minute on a single CPU core and requires no changes to model parameters, making it a fairly cost-effective prompt-preprocessing module.
 
-## 5. The Experimental Numbers: Do These Principles Actually Work?
+## The Experimental Numbers: Do These Principles Actually Work?
 
 Everything so far has been mechanism; this section looks at the actual numbers.
 
-### 5.1 Semantic Similarity Fails Across the Board on Reasoning Tasks
+### Semantic Similarity Fails Across the Board on Reasoning Tasks
 
 Comparing three example-selection methods — original (ori), semantically similar (sim), and semantically dissimilar (dis) — sim performs best on the non-reasoning task (BANKING77); but on geometry, number theory, and DetectiveQA, sim sits at the bottom almost throughout, and picking the "least similar" examples actually beats picking the "most similar" ones.
 
 {{< image src="figure5.png" alt="On the red curve (BANKING77, a non-reasoning task) Sim performs best; on the green and blue curves (reasoning tasks such as geometry, number theory and DetectiveQA) Sim is at the bottom almost throughout." caption="Figure 5 — Semantic similarity has the exact opposite effect on non-reasoning versus reasoning tasks." >}}
 
-### 5.2 The Self-Generated Advantage Has Hard Numbers Behind It
+### The Self-Generated Advantage Has Hard Numbers Behind It
 
 At a 32-shot setting, LLaMA 3.1 (8B) reaches only 22.21% accuracy with reference answers (origin), but jumps to 35.91% using its own *wrong* answers. Feeding it examples generated by a stronger model (e.g. Qwen 2.5 14B) also performs markedly worse (33.53%–34.28%) than feeding it its own self-generated examples (35.57%–35.91%).
 
@@ -144,13 +144,13 @@ At a 32-shot setting, LLaMA 3.1 (8B) reaches only 22.21% accuracy with reference
 
 {{< image src="table8.png" alt="A data table comparing examples generated by a stronger model against self-generated examples, with accuracy and standard deviation across shot counts on the geometry task." caption="Table 8 — Feeding a weaker model examples generated by a stronger model performs worse than the weaker model's own self-generated examples." >}}
 
-### 5.3 CDS Ordering Delivers Stable, Cross-Model Gains
+### CDS Ordering Delivers Stable, Cross-Model Gains
 
 On Qwen3-14B's geometry task (64-shot), random ordering reaches only 65.14% accuracy, while CDS ordering raises it to 68.89%; swapping in the open-source bge-m3 embedding for ordering pushes it further to 70.36%. This gain isn't a single-model coincidence — with the closed-source gpt-5.2 on number theory (32-shot), CDS likewise lifts accuracy from 91.11% under random ordering to 92.59%, showing the method is picky about neither the embedding model nor the LLM.
 
 {{< image src="table3.png" alt="A data table listing accuracy for the origin, CDS and CDSbge ordering methods across different tasks, LLMs and embedding models." caption="Table 3 — CDS delivers stable accuracy gains across multiple tasks, embedding models and LLMs." >}}
 
-### 5.4 Curvature Is the Causal Variable, Not Just a Clustering Effect
+### Curvature Is the Causal Variable, Not Just a Clustering Effect
 
 To rule out the objection that "CDS only works because it groups similar problems into the same block," the authors designed a control condition that deliberately manufactures hairpin turns (high curv) — both conditions use Euclidean distance to cluster similar problems together, but the high-curv condition deliberately picks the sharpest-turning arrangement at block transitions. Both comparisons come out decisively: on number theory (16-shot), Qwen3-14B scores 85.37% with CDS versus only 79.26% with high curv; on geometry (16-shot), gpt-5.2 scores 80.37% with CDS but drops to 72.65% with high curv — a gap of 7.72 percentage points. This shows the turning angle is itself a causal factor behind the performance difference, not a byproduct of clustering.
 
