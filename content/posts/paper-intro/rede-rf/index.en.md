@@ -95,7 +95,7 @@ What does this mean? It means we **do not need** to recalculate vectors during i
 
 The experimental results directly slap generative methods in the face, especially in the **Low-Resource Domains** we care about most.
 
-### 1. Who is more accurate in niche domains?
+### Who is more accurate in niche domains?
 The authors tested on the BEIR Benchmark (which includes datasets for biomedicine, finance, scientific fact-checking, etc.):
 
 {{< image src="table1.png" alt="Large retrieval table reporting nDCG on high-resource DL19 and DL20 and several low-resource BEIR datasets, grouping BM25 and hybrid baselines, zero-shot methods like HyDE, ReDE-RF, and supervised dense retrievers, where ReDE-RF beats HyDE on the BEIR average and leads on domains like Covid and SciFact" caption="Table 1: ReDE-RF significantly outperforms HyDE on the BEIR dataset, especially in domains where LLMs lack background knowledge." >}}
@@ -103,14 +103,14 @@ The authors tested on the BEIR Benchmark (which includes datasets for biomedicin
 *   **Failure of HyDE**: In these fields, because the LLM doesn't understand the jargon, the hypothetical documents generated are full of misleading keywords.
 *   **Victory of ReDE-RF**: Because it corrects the Query based on **real documents**, it never "makes things up." The features it captures are all truly existing in the database.
 
-### 2. Speed Revolution
+### Speed Revolution
 This chart should excite anyone who designs system architectures:
 
 {{< image src="figure3.png" alt="Horizontal bar charts of query latency on Covid, Robust04 and DBPedia comparing HyDE-PRF, HyDE and the two ReDE-RF variants, where ReDE-RF is far faster, running about 10 times faster than HyDE-PRF with 20 documents" caption="Figure 3: Query latency comparison. HyDE is extremely long, while ReDE-RF is significantly shorter." >}}
 
 The data shows that ReDE-RF is about **4 times** faster than standard HyDE and **7 to 11 times** faster than HyDE-PRF. This proves the massive advantage of "Logits Judgment" in engineering implementation — the same "the decoding loop is the bottleneck" instinct that motivates approaches like [Multi-Token Prediction](../multi-token/), just applied to a retrieval problem instead of generation.
 
-### 3. Can it be Distilled?
+### Can it be Distilled?
 What if I don't want to run even that single Forward Pass of the LLM?
 The paper proposes **DistillReDE**: Using the results produced by ReDE-RF as a Teacher to train a small Contriever model.
 The results show that this small model retains the vast majority of performance gains (see the orange Bar below), and requires **absolutely no LLM** when online.

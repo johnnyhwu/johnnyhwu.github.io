@@ -210,7 +210,7 @@ Please refer to the experimental data in Figure 2 of the paper:
 The only exception is Anthropic's models (Claude) when processing extremely long texts (Custom Tasks), where latency increased significantly. The authors speculate this might be related to the internal Prefill processing mechanism or caching strategy of the Claude API. But in the vast majority of general scenarios, the "zero latency increase" conclusion holds true.
 {{< /admonition >}}
 
-### 4. Reasoning vs. Non-Reasoning Tasks
+### Reasoning vs. Non-Reasoning Tasks
 
 To explore the boundaries, the authors conducted an interesting control experiment: forcing the model to turn on **"Think step by step" (CoT)**.
 

@@ -28,7 +28,7 @@ The fix is simple: stop taking the argmax, compute the expectation instead. The 
 
 This article does two things: explain the mechanism clearly enough that you can implement it yourself, and honestly flag where the paper's evidence is weaker than it claims to be. Bottom line up front — **this is a paper whose value is in engineering, not research novelty**. Expectation decoding, repeated sampling, and ensembling are none of them new inventions; the real contribution is systematic packaging, solid ablations, and the ranking algorithm. And its most compelling empirical result isn't the one in the abstract.
 
-## 1. The Problem: Information Gets Flattened at the Argmax Step
+## The Problem: Information Gets Flattened at the Argmax Step
 
 The classic LM-judge setup looks roughly like this:
 
@@ -55,7 +55,7 @@ It's worth flagging what this chart's job actually is: it's not an independent, 
 
 One preemptive clarification: the 98.9% here is the oracle coverage ceiling **as K grows without bound**, whereas the 92.1% figure that shows up later in the main results table is the oracle Pass@N when the candidate pool is actually fixed at **N=5**. The two numbers measure different things — the former is a theoretical ceiling, the latter is the actual space this system is competing for. When we compare "how much of the gap got cashed in" later, it's the latter number that matters.
 
-## 2. The Method: Reading Scores as Probability Distributions
+## The Method: Reading Scores as Probability Distributions
 
 {{< image src="framework-overview.png" alt="Overall LLM-as-a-Verifier framework diagram: text, image, and video inputs on the left; a verification core made of Uncertainty, Granularity, Repetition, and Decomposition blocks plus a reward formula in the middle; test-time scaling, progress tracking, and reinforcement learning as downstream applications on the right" caption="Figure 2 — The full framework: any modality goes in, the full distribution over the score token comes out, feeding three downstream uses. (Source: original paper.)" >}}
 
@@ -192,7 +192,7 @@ The paper treats R as the latent strength directly, skipping the most expensive 
 
 So why not just compare directly which is larger? Because that only gives you 0 or 1, flattening the information a second time. Converting to a probability preserves "by how much," and it's the probability — not the win/loss outcome — that PPT sums up.
 
-## 3. Three Scaling Dimensions
+## Three Scaling Dimensions
 
 {{< image src="three-scaling-dimensions.png" alt="Three side-by-side line and bar charts showing verification accuracy rising with score-token granularity, number of repeated evaluations, and criteria decomposition, where the three-criteria ensemble outperforms any single criterion" caption="Figure 3 — Verification accuracy rises along all three dimensions: score granularity, repetition count, and criteria decomposition. (Source: original paper.)" >}}
 
@@ -276,7 +276,7 @@ That said, this section has more problems than the other two dimensions. **The p
 
 One last gap: these three criteria are explicitly designed for code-agent trajectories, yet the robotics and medical experiments claim to reuse the same set. What does "does the output format match expectations" even mean for a robot-arm video? The paper never answers this anywhere.
 
-## 4. Query-Optimize: A Case Study That Brings the Mechanism to Life
+## Query-Optimize: A Case Study That Brings the Mechanism to Life
 
 This case comes from Terminal-Bench V2, and it's the single most intuition-building part of the paper.
 
@@ -333,7 +333,7 @@ What the paper wants you to see is the diagonal: **a verifier running just once 
 
 The "16x compute" framing is a bit exaggerated — the gap between judge and verifier at every K sits between 2.7 and 2.9pp, and that comparison only holds if all you care about is hitting the 74.7% threshold specifically. The more substantive difference is that their ceilings differ: the judge is already saturated by K=16 (74.4 → 74.7), while the verifier is still climbing toward 77.5%.
 
-## 5. PPT: Picking the Best of N Candidates
+## PPT: Picking the Best of N Candidates
 
 A verifier can only compare two at a time, but the real task is "pick the best out of N." A full round-robin is O(N²):
 
@@ -433,7 +433,7 @@ But three caveats:
 - **The savings are smaller than they sound**: k=9 only saves 27% relative to round-robin. The O(N²) → O(Nk) asymptotic advantage only becomes visible when N is large enough, and N=20 isn't there yet.
 - **This N=20 table is a specially curated setting, and this is the most important caveat.** The main experiments only use N=3 to 5, where C(5,2)=10 pairs — PPT barely saves anything at all. In other words, PPT's actual contribution to those headline SOTA numbers is quite limited.
 
-## 6. Experimental Results: How You Read Them Matters More Than What They Show
+## Experimental Results: How You Read Them Matters More Than What They Show
 
 All four benchmarks use the exact same pipeline: a generation strategy produces N candidates per task → the verifier scores them pairwise via PPT → the highest normalized-score candidate is submitted. This pipeline has two key properties:
 
@@ -500,7 +500,7 @@ There's another side result worth remembering: switching RoboReward-8B's own out
 
 That said, the paper offers zero explanation for why purpose-trained robotics reward models lose on their own home turf. The relevant section just lists the numbers, with no analysis at all. There's also an undisclosed conflict of interest: RoboRewardBench comes from the RoboReward paper, which shares a co-author with this one, and RoboReward-8B — the model being beaten here — is that same paper's own model.
 
-## 7. Progress Tracking: Where the Paper Overreaches
+## Progress Tracking: Where the Paper Overreaches
 
 Continuous scores have a second use beyond picking the best candidate: reflecting "how far along is the agent." The paper defines Value-Order Correlation (VOC), the Spearman rank correlation between "a step's position in time" and "the verifier's score for that step's prefix." If the score increases perfectly monotonically with step number, VOC approaches 1.
 
@@ -540,7 +540,7 @@ The robotics-side VOC numbers do look impressive (this method 0.966, RoboReward-
 
 The paper's final artifact is an engineering deliverable called TurboAgent — an extension for Claude Code and OpenAI-API-compatible clients, sitting as an inference-time proxy layer between client and LLM provider so that neither side needs modification: every request gets sent out as N parallel candidates, and PPT picks the best one to return. It's a reasonable idea, but the paper gives it **no quantitative evaluation at all** — no latency numbers, no cost analysis, no user study. It's purely a proof of concept.
 
-## 8. Practical Takeaways
+## Practical Takeaways
 
 **The highest-ROI change: swap your existing LLM-as-judge argmax for reading the top-k logprobs and computing an expectation.** A binary or discrete judgment turns into a continuous score, immediately gaining both ranking ability and a confidence level. The precondition is confirming your G falls under the "obtainable from the same API call" reading — that's the only case where it's actually free; under the other reading, changing G means re-running the prompt.
 

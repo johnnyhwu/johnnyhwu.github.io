@@ -95,7 +95,7 @@ $$ \hat{v}_{q_{ReDE}} = \frac{1}{k^* + 1} \left( f(q) + \sum_{i=1}^{k^*} C_E[d_{
 
 實驗結果非常直接地打臉了生成式方法，特別是在我們最在意的**低資源領域 (Low-Resource Domains)**。
 
-### 1. 誰在冷門領域更準？
+### 誰在冷門領域更準？
 作者在 BEIR Benchmark（包含生醫、財經、科學查核等特定領域資料集）上進行測試：
 
 {{< image src="table1.png" alt="大型檢索表格，列出在高資源的 DL19、DL20 與多個低資源 BEIR 資料集上的 nDCG，分為 BM25 與 hybrid 基線、HyDE 等 zero-shot 方法與 ReDE-RF，以及監督式密集檢索器，其中 ReDE-RF 在 BEIR 平均上勝過 HyDE，並於 Covid、SciFact 等領域領先" caption="Table 1: ReDE-RF 在 BEIR 資料集上顯著超越 HyDE，特別是在那些 LLM 缺乏背景知識的領域。" >}}
@@ -103,14 +103,14 @@ $$ \hat{v}_{q_{ReDE}} = \frac{1}{k^* + 1} \left( f(q) + \sum_{i=1}^{k^*} C_E[d_{
 *   **HyDE 的失敗**：在這些領域，LLM 因為不懂專有名詞，生成的虛構文檔充滿了誤導性的關鍵字。
 *   **ReDE-RF 的勝利**：因為它是基於**真實文檔**來修正 Query，所以永遠不會「無中生有」。它抓到的特徵（Feature）都是資料庫裡真實存在的。
 
-### 2. 速度革命
+### 速度革命
 這張圖應該會讓所有做系統架構的人感到興奮：
 
 {{< image src="figure3.png" alt="Covid、Robust04 與 DBPedia 上查詢延遲的水平長條圖，比較 HyDE-PRF、HyDE 與兩種 ReDE-RF 版本，ReDE-RF 明顯更快，約比使用 20 份文件的 HyDE-PRF 快 10 倍" caption="圖 3：各方法的查詢延遲比較。HyDE 極長，而 ReDE-RF 顯著縮短。" >}}
 
 數據顯示，ReDE-RF 比標準 HyDE 快了約 **4 倍**，比 HyDE-PRF 快了 **7 到 11 倍**。這證明了「Logits 判斷」在工程落地上的巨大優勢 — 這與 [Multi-Token Prediction](../multi-token/) 背後「Decoding Loop 才是瓶頸」的直覺其實是同一件事，只是套用在檢索問題而不是生成問題上。
 
-### 3. 可以蒸餾 (Distillation) 嗎？
+### 可以蒸餾 (Distillation) 嗎？
 如果我連 LLM 那一次 Forward Pass 都不想跑呢？
 論文提出 **DistillReDE**：利用 ReDE-RF 產生的結果作為 Teacher，訓練一個小型的 Contriever 模型。
 結果發現，這個小模型保留了絕大部分的效能提升（見下圖橘色 Bar），而且上線時**完全不需要 LLM**。
