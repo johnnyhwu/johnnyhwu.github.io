@@ -375,12 +375,56 @@ H3s only makes existing structure visible, it doesn't invent new structure.
 Keep hierarchy contiguous (H2 → H3, not H2 → H4) — `verify_post.py` warns on
 skips.
 
+### Never number headings by hand — the theme already does it
+
+Because the theme auto-numbers (above), a heading that carries its **own**
+number renders it twice. `article.md` routinely arrives with manual
+numbering (`## 一、典範轉移…`, `### 2.1 範例越多…`, `## 1. A Paradigm Shift…`)
+because it's a platform-neutral document with no theme to do the numbering
+for it. **Strip that prefix when publishing** — keep the heading text, drop
+the `一、` / `2.1` / `1.` in front of it.
+
+This shipped to production once (`many-shot-cot-icl`, fixed after the fact).
+It's worse than a cosmetic duplicate, because the theme counts the
+`前言`/`Introduction` H2 as section 1, so the two numbering schemes also sit
+**off by one** and actively contradict each other:
+
+| Rendered | Source heading |
+|---|---|
+| `2 一、典範轉移：ICL 不是抄答案…` | `## 一、典範轉移：ICL 不是抄答案…` |
+| `3.1 2.1 範例越多，模型反而越亂` | `### 2.1 範例越多，模型反而越亂` |
+| `5.3 4.3 The Four-Step Workflow…` | `### 4.3 The Four-Step Workflow…` |
+
+Every other post on this site (`agentopt`, `recursivemas`, …) numbers
+nothing by hand. `verify_post.py` now warns on this, but the warning fires
+on the Markdown source — the rendered HTML is where you *see* it, so when
+in doubt grep the build output:
+
+```bash
+grep -o '<h2 id=[^>]*>.\{0,80\}' public/<section>/<slug>/index.html
+```
+
+One caveat: a heading that legitimately *begins* with a number is fine and
+the check is deliberately built not to flag it — `## 2-opt local search`,
+`## 5 Ways to …`. Only a CJK numeral with `、`, a dotted sequence (`2.1`),
+or a number with trailing punctuation (`1.`) counts as manual numbering.
+
+**Cross-references to section numbers.** Before stripping, check whether the
+prose points at its own sections ("見第 3 節" / "as we saw in Section 2"). If
+it does, reword to a relative reference ("前一節" / "the previous section")
+rather than leaving a number that no longer matches anything. A reference to
+the *paper's* section numbers ("論文第 4.3 節" / "In Section 4.3, the authors
+…") is about the source paper, not the post — leave those alone.
+
 ## Stripping pipeline artifacts
 
 Before publishing, remove from the rendered body (but do surface in the PR
 description instead):
 - the trailing ```` ```figure-map ```` fenced block — pipeline metadata,
   never meant for readers,
+- manual heading numbers (`## 一、`, `### 2.1`, `## 1.`) — the theme
+  auto-numbers, so leaving these renders the number twice; see "Never number
+  headings by hand" below,
 - any `<!-- NO-MANIFEST: ... -->` or `<!-- UNRESOLVED IMAGE: ... -->`
   comments — replace `UNRESOLVED IMAGE` markers with an actual visible
   placeholder if the image truly couldn't be resolved (see

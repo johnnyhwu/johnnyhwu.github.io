@@ -210,7 +210,7 @@ $$ X_{\text{method}} = [P ; P] $$
 唯一的例外是 Anthropic 的模型 (Claude) 在處理極長文本 (Custom Tasks) 時，延遲有顯著增加。作者推測這可能與 Claude API 內部的 Prefill 處理機制或緩存策略有關。但在絕大多數通用場景下，「零延遲增加」的結論是成立的。
 {{< /admonition >}}
 
-### 4. 推理任務 vs. 非推理任務
+### 推理任務 vs. 非推理任務
 
 為了探討邊界，作者做了一個有趣的對照實驗：強制模型開啟 **"Think step by step" (CoT)**。
 

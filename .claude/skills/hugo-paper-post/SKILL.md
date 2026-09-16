@@ -175,7 +175,8 @@ prefer what an actual recent post does if the two ever disagree.
    pipeline artifacts leaked into the body, no unsupported `$...$` inline
    math slipped in, plus SEO sanity warnings (title/description length
    outside the usual range, a body `# ` heading duplicating the title's
-   H1, skipped heading levels, zero internal links to other
+   H1, skipped heading levels, headings carrying their own manual numbering
+   on top of the theme's, zero internal links to other
    posts). Warnings aren't failures — use judgement — but investigate each
    one. It is a fast sanity net, **not** a substitute for an actual Hugo
    build — see `references/hugo-build.md` for how to get a real
@@ -300,6 +301,9 @@ existing wording still matches.
   intact, via this site's `{{< image ... >}}` shortcode convention.
 - No `figure-map` block or internal pipeline comments (`NO-MANIFEST`,
   `UNRESOLVED`, etc.) leak into either published body.
+- No heading carries `article.md`'s own manual numbering (`一、`, `2.1`,
+  `1.`) — the theme auto-numbers, so those render twice. See
+  `references/hugo-conventions.md`, "Never number headings by hand".
 - Unresolvable references are visible placeholders, listed in the PR — not
   silently dropped or guessed.
 - The post carries a small number of contextual internal links to related
