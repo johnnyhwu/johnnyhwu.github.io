@@ -231,6 +231,15 @@ get wrong:
   don't fabricate a replacement — but if it's noticeably small or a
   non-16:9 crop, mention the actual dimensions in the PR so a human can
   judge whether to swap it later.
+- AI-citation readiness (GEO/AEO) rides on the same readability work this
+  skill already does, not a separate pass: a section an LLM can quote and
+  have it stand alone (the "Heading structure" section's H2/H3 nesting and
+  self-contained-section rules below) is the same thing a human skimmer
+  needs. Don't add keyword-stuffed phrasing, FAQ schema, or an `llms.txt`
+  entry chasing this — for a single-author technical blog with no
+  analytics/CMS layer, there's no evidence any of that outperforms just
+  writing a clear, well-structured post, and it's scope this skill doesn't
+  own.
 
 ### Internal linking to related posts
 
@@ -333,6 +342,31 @@ This falls under this skill's "math-notation conversion" responsibility
 (see "What NOT to change" below) — it's a formatting call, not a change to
 the article's substance.
 
+### A code fence that's actually a formula, not a formula that's actually code
+
+`blog-writer` now writes genuine formal definitions (named variables, `=`,
+set/operator notation) as LaTeX directly, but an older `article.md` — or
+one from a source that hasn't picked up that rule yet — can still hand you
+a fenced code block that's really a definition wearing a code block as a
+costume:
+
+```
+r      = 根節點,代表最初的工作空間狀態
+v      = 樹上一個非根節點,代表一次嘗試
+s_v    = v 這次嘗試的分數(越大越好)
+```
+
+Recognize it by content, not just shape: assignment-style lines
+(`symbol = description`) with no actual control flow, loop, or executable
+syntax. Convert it to LaTeX (`\[ \begin{aligned} ... \end{aligned} \]` or a
+short list of `\( r = ... \)` lines, whichever reads better) rather than
+publishing it as a code fence — a reader's eye treats a code fence as
+"skippable implementation detail," which is backwards for a load-bearing
+definition. Leave a genuine procedural trace alone (a concrete
+round-by-round walkthrough with real numbers, or actual code) — that's
+correctly a code fence; only the "this is really math" case gets converted.
+Same category as the delimiter conversion above: formatting, not substance.
+
 ## Admonitions for callouts
 
 The theme's `{{< admonition type="..." title="..." >}}...{{< /admonition >}}`
@@ -374,6 +408,34 @@ to change" below) — the sub-ideas must already be there in the prose; adding
 H3s only makes existing structure visible, it doesn't invent new structure.
 Keep hierarchy contiguous (H2 → H3, not H2 → H4) — `verify_post.py` warns on
 skips.
+
+### A grouped "extension" theme: nest it, don't flatten it
+
+`blog-writer` articles sometimes carry two parts: the paper walkthrough
+itself, and a clearly-flagged second theme of standalone lessons (often
+introduced by its own short lead-in paragraph, e.g. "以下內容跟這篇論文本身的
+關係,比較像是引子…"). That second theme's own sub-topics belong as **H3
+children of one H2**, not as a flat run of sibling H2s — a wall of 6-8
+same-level headings reads as unrelated topics, not as "these are one group,
+separate from the paper." `article.md` should already arrive with correct
+levels for this (one `##` for the theme, `###` for each sub-topic) —
+mirror that directly. If an older or malformed `article.md` instead has the
+theme itself promoted to a second top-level `#` (a real bug that shipped
+once), don't mirror that literally: treat it as the same grouping signal
+and render one H2 for the theme with H3 children, exactly as if the source
+had been leveled correctly.
+
+### Don't let admonitions become their own repeated pattern
+
+The "Admonitions for callouts" section above picks a *type* per callout;
+this is about *frequency*. Five `warning` admonitions in a row, or every
+section closing with the same kind of callout, reads as a template no
+matter how well-chosen each individual type is — the same "structural
+repetition" failure mode as a repeated sentence shape, just expressed as
+formatting instead of prose. When a passage rewrite would otherwise trigger
+several similar callouts back to back, fold the minor ones into the body
+prose and reserve the admonition for the one that genuinely needs visual
+separation.
 
 ### Never number headings by hand — the theme already does it
 

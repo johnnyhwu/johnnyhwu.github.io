@@ -29,11 +29,12 @@ papers — see "Which section does it belong in?" below.
 
 ## Which section does it belong in? (decide this first)
 
-**Most `AI-Research` topic directories are not papers.** Of the ~33 topics
-still sitting in `done/unpublished/`, only a minority are paper
-walkthroughs; the rest are concept explainers, machine-learning
-fundamentals, language tutorials, and infra/how-to write-ups (LINE bots,
-Heroku deploys, terminal setup). Picking the wrong section
+**Most `AI-Research` topic directories are not papers.** Run
+`ls done/unpublished/` in `AI-Research` to see the current queue — only a
+minority have historically been paper walkthroughs; the rest are concept
+explainers, machine-learning fundamentals, language tutorials, and
+infra/how-to write-ups (LINE bots, Heroku deploys, terminal setup). Picking
+the wrong section
 is not cosmetic — it changes the post's URL, and this site's posts
 cross-link each other by relative path (`../<slug>/`), so a
 misfiled post silently breaks those links.
@@ -159,6 +160,7 @@ ships will be offered up for publishing all over again.
   hreflang, Open Graph/Twitter tags, and JSON-LD are already handled
   site-wide by the theme/layout — nothing to add there. What the skill
   itself is responsible for (title/description length, image alt-text
-  quality, contextual internal links to related posts) is in
-  `hugo-paper-post`'s `references/hugo-conventions.md`; do it at publish
-  time rather than leaving it for a later cleanup pass.
+  quality, contextual internal links to related posts, and AI-citation
+  readiness — which rides on the same self-contained-section work, not a
+  separate pass) is in `hugo-paper-post`'s `references/hugo-conventions.md`;
+  do it at publish time rather than leaving it for a later cleanup pass.
