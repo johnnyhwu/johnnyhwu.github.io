@@ -21,7 +21,20 @@ REQUIRED_FRONT_MATTER_FIELDS = [
 
 SHORTCODE_SRC_RE = re.compile(r'\{\{<\s*image\s+([^>]*?)\s*>\}\}')
 SRC_ATTR_RE = re.compile(r'src="([^"]+)"')
-BARE_INLINE_MATH_RE = re.compile(r'(?<!\$)\$(?!\$)[^$\n]+?(?<!\$)\$(?!\$)')
+# A backslash-escaped \$ is a literal dollar sign -- prices ("\$0.001/doc vs
+# \$0.10/doc") are the common case and are not math, so neither delimiter
+# may be escaped.
+BARE_INLINE_MATH_RE = re.compile(r'(?<![$\\])\$(?!\$)[^$\n]+?(?<![$\\])\$(?!\$)')
+# Even unescaped, most paired $ in these posts are prices ("$5 or $10",
+# "costs $1.90, while Opus costs $9") or shell/nginx variables ("$uri
+# $host") -- all of which render correctly as literal text precisely
+# because this site does not passthrough bare $. Only warn when what sits
+# between the delimiters actually looks like LaTeX: a backslash command,
+# a sub/superscript, a brace group, or a bare one-or-two-char symbol (a
+# longer bare word is far more likely a shell variable like $uri than math).
+MATHY_INNER_RE = re.compile(
+    r'[\\^_{}]|\A\s*[A-Za-zα-ωΑ-Ω][A-Za-z0-9α-ωΑ-Ω]?\s*\Z'
+)
 RELATIVE_POST_LINK_RE = re.compile(r'\]\(\.\./[a-z0-9-]+/?\)')
 HEADING_RE = re.compile(r'^(#{1,6})\s+\S', re.MULTILINE)
 # The theme auto-numbers headings, so a heading that also carries its own
@@ -36,6 +49,31 @@ MANUAL_HEADING_NUMBER_RE = re.compile(
     re.MULTILINE,
 )
 CODE_FENCE_RE = re.compile(r'^(`{3,}).*?\n.*?^\1\s*$', re.MULTILINE | re.DOTALL)
+INLINE_CODE_RE = re.compile(r'`[^`\n]+`')
+# A URL path segment ("/i_benchmarked_o...") and a shortcode's alt/caption
+# text both look like notation but neither is: alt text is read aloud by
+# screen readers, where LaTeX would be strictly worse.
+URL_RE = re.compile(r'<https?://[^>]+>|https?://\S+|\]\([^)]*\)')
+SHORTCODE_RE = re.compile(r'\{\{[<%].*?[>%]\}\}', re.DOTALL)
+# Math spans already converted correctly. Stripped before scanning for raw
+# notation, otherwise every correct \( s_v \) reports itself.
+MATH_SPAN_RE = re.compile(r'\\\[.*?\\\]|\\\(.*?\\\)|\$\$.*?\$\$', re.DOTALL)
+# A find-and-replace pass that protects code fences but not existing math
+# spans double-wraps notation that was already LaTeX, producing
+# "\( \( s_v \) \)" or a \[ ... \] block with a \( ... \) inside it. Always
+# a bug, never intentional -- and invisible until the page renders.
+NESTED_MATH_RE = re.compile(r'\\\([^()]*\\\(|\\\[[^\[\]]*\\\(')
+# Notation still sitting in the body as raw text. Deliberately narrow: a
+# single letter or Greek letter carrying a sub/superscript, a Greek letter
+# with an index digit, or a numeric power. "Figure 2", "B.2", "5xx" and
+# snake_case identifiers must NOT match.
+RAW_NOTATION_RES = [
+    (re.compile(r'[α-ωΑ-Ω][\^_]'),            'Greek letter with a sub/superscript'),
+    (re.compile(r'[α-ωΑ-Ω]\d'),               'Greek letter with an index digit'),
+    (re.compile(r'\b[A-Za-z][\^_][A-Za-z0-9{]'), 'single letter with a sub/superscript'),
+    (re.compile(r'\b\d+\^\d'),                'numeric power'),
+    (re.compile(r'\b[A-Za-z]\*\s*='),         'starred symbol in an assignment'),
+]
 
 # zh-tw ranges are looser and skew shorter: CJK characters carry more
 # information per character than Latin ones, and this site's existing
@@ -152,12 +190,41 @@ def check_body(body_text, label, post_dir, errors, warnings):
             "make sure each is also called out in the PR description"
         )
 
-    bare_math = BARE_INLINE_MATH_RE.findall(body_text)
+    # Both math checks below scan prose only, with every legitimate home for
+    # a $ or a symbol removed first: a shell/nginx snippet is wall-to-wall
+    # "$uri$is_args$args", and notation left raw inside a code span or an
+    # existing math span is not left raw at all.
+    prose = MATH_SPAN_RE.sub(" ", CODE_FENCE_RE.sub(" ", body_text))
+    prose = SHORTCODE_RE.sub(" ", INLINE_CODE_RE.sub(" ", prose))
+    prose = URL_RE.sub(" ", prose)
+
+    bare_math = [
+        s for s in BARE_INLINE_MATH_RE.findall(CODE_FENCE_RE.sub(" ", body_text))
+        if MATHY_INNER_RE.search(s[1:-1])
+    ]
     if bare_math:
         warnings.append(
             f"{label}: {len(bare_math)} possible bare-$ inline math span(s) found "
             "(this site only passthrough-renders \\( ... \\) inline, not single $...$) "
             f"e.g. {bare_math[0]!r}"
+        )
+
+    for nested in NESTED_MATH_RE.findall(body_text):
+        errors.append(
+            f"{label}: nested math delimiters ({nested.strip()!r}...) -- a replace pass "
+            "fired inside an existing math span. This renders as literal garbage."
+        )
+
+    raw_hits = []
+    for pattern, kind in RAW_NOTATION_RES:
+        for m in pattern.finditer(prose):
+            snippet = prose[max(0, m.start() - 12):m.end() + 12].replace("\n", " ")
+            raw_hits.append(f"{kind}: ...{snippet.strip()}...")
+    if raw_hits:
+        warnings.append(
+            f"{label}: {len(raw_hits)} raw math notation span(s) outside code/LaTeX -- "
+            "convert to \\( ... \\) so they don't read as broken next to converted ones. "
+            + " | ".join(raw_hits[:3])
         )
 
     for match in SHORTCODE_SRC_RE.finditer(body_text):

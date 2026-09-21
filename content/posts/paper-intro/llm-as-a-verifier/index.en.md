@@ -98,19 +98,16 @@ There's also a literal contradiction: the prompt itself is labeled `INTEGER_1_TO
 
 ### The Core Formula: Expectation Replaces Argmax
 
-```
-R(x,τ) = (1/CK) · Σ_c Σ_k Σ_g  p_θ(v_g | x,c,τ) · φ(v_g)
-                    C   K   G
-```
+\[ R(x,\tau) = \frac{1}{CK} \sum_{c=1}^{C} \sum_{k=1}^{K} \sum_{g=1}^{G} p_\theta(v_g \mid x,c,\tau) \cdot \varphi(v_g) \]
 
 | Symbol | Meaning |
 |---|---|
-| `x` / `τ` | task description / the trajectory being scored |
-| `c` / `C` | the c-th evaluation criterion / total number of criteria (C=3 in the main experiments) |
-| `k` / `K` | the k-th repeated evaluation / number of repetitions (K=8 in the main experiments) |
-| `v_g` / `G` | the g-th score token / number of score tokens used (G=20 in the main experiments) |
-| `p_θ(v_g \| ...)` | the model's probability of `v_g` at that position |
-| `φ(v_g)` | maps a score token back to an actual numeric value (the token for "3" → 3.0) |
+| \( x \) / \( \tau \) | task description / the trajectory being scored |
+| \( c \) / \( C \) | the c-th evaluation criterion / total number of criteria (C=3 in the main experiments) |
+| \( k \) / \( K \) | the k-th repeated evaluation / number of repetitions (K=8 in the main experiments) |
+| \( v_g \) / \( G \) | the g-th score token / number of score tokens used (G=20 in the main experiments) |
+| \( p_\theta(v_g \mid \ldots) \) | the model's probability of \( v_g \) at that position |
+| \( \varphi(v_g) \) | maps a score token back to an actual numeric value (the token for "3" → 3.0) |
 
 Broken into three layers, it's easier to parse:
 
@@ -132,16 +129,16 @@ Note the denominator isn't divided by G. That's because the innermost layer is a
 
 Working through an example makes this concrete. Suppose G=5 and a trajectory's score distribution is:
 
-| v_g | φ(v_g) | p_θ(v_g) | product |
+| \( v_g \) | \( \varphi(v_g) \) | \( p_\theta(v_g) \) | product |
 |---|---|---|---|
-| v_1 | 1 | 0.02 | 0.02 |
-| v_2 | 2 | 0.05 | 0.10 |
-| v_3 | 3 | 0.13 | 0.39 |
-| v_4 | 4 | 0.35 | 1.40 |
-| v_5 | 5 | 0.45 | 2.25 |
+| \( v_1 \) | 1 | 0.02 | 0.02 |
+| \( v_2 \) | 2 | 0.05 | 0.10 |
+| \( v_3 \) | 3 | 0.13 | 0.39 |
+| \( v_4 \) | 4 | 0.35 | 1.40 |
+| \( v_5 \) | 5 | 0.45 | 2.25 |
 | | | **Total** | **4.16** |
 
-The discrete judge takes the argmax and gets **5**; the verifier computes the expectation and gets **4.16**. Here's the key point: if a second trajectory's distribution is p(v_5)=0.52, p(v_4)=0.30, argmax also gives 5 (**a tie**), but the expectation lands around 4.3 (**not a tie**). This is exactly the mechanism that drives the tie rate to zero.
+The discrete judge takes the argmax and gets **5**; the verifier computes the expectation and gets **4.16**. Here's the key point: if a second trajectory's distribution is \( p(v_5)=0.52 \), \( p(v_4)=0.30 \), argmax also gives 5 (**a tie**), but the expectation lands around 4.3 (**not a tie**). This is exactly the mechanism that drives the tie rate to zero.
 
 The probabilities above are illustrative, because **the paper never publishes any actual score distribution from a real evaluation**.
 
@@ -209,7 +206,7 @@ There's a practically important point here that the paper contradicts itself on:
 | Reading | Textual evidence | Cost consequence |
 |---|---|---|
 | No re-run needed | Section 1 says "scaling the number of extracted token logits"; Section 4 says Gemini 2.5 Flash "can extract 20 top logprobs per scoring token" | G is just retrieving more candidates from what the API already returned — **free** |
-| Re-run required | Section 3.2 defines `V_score = {v_1,...,v_G}` as the set of score-level tokens; Table 2 labels G=5 as "the expectation over the same 1–5 scale," and 1–5 and 1–20 are two different prompts | changing G means changing the prompt and re-running — **not free** |
+| Re-run required | Section 3.2 defines \( V_{\text{score}} = \{v_1,\ldots,v_G\} \) as the set of score-level tokens; Table 2 labels G=5 as "the expectation over the same 1–5 scale," and 1–5 and 1–20 are two different prompts | changing G means changing the prompt and re-running — **not free** |
 
 The paper never resolves this, and the two readings directly conflict. This matters a lot: under the second reading, the earlier claim that "G doesn't affect call count" no longer holds, and the entire cost estimate needs to be redone.
 
@@ -306,7 +303,7 @@ So where's the problem? **The verifier caught it, but expressed it in hedged, gr
 
 {{< image src="judge-vs-verifier-table.png" alt="A three-row table comparing the discrete judge and continuous verifier's ranking outcomes over 100 repeated evaluations of the same task; the discrete judge ties 88 times, the continuous verifier zero times" caption="Figure 4 — The same task run 100 times: the discrete judge can't distinguish the two trajectories 88 times; the continuous verifier, zero times. (Source: original paper.)" >}}
 
-| Method | s_c > s_i ✓ | Tie | s_c < s_i ✗ |
+| Method | \( s_c > s_i \) ✓ | Tie | \( s_c < s_i \) ✗ |
 |---|---|---|---|
 | Judge (discrete, G=5) | 12/100 | **88/100** | 0/100 |
 | Verifier (continuous, G=5) | 69/100 | 0/100 | 31/100 |
@@ -388,11 +385,11 @@ w_i += p        c_i += 1      ← w_i is "win mass"
 w_j += (1 − p)  c_j += 1      ← the two always sum to 1
 ```
 
-Because of the ring structure, every candidate's c_i is exactly 2 after this pass; candidates are then ranked by w_i/c_i and the top-k become pivots — no extra rules, pure top-k.
+Because of the ring structure, every candidate's \( c_i \) is exactly 2 after this pass; candidates are then ranked by \( w_i/c_i \) and the top-k become pivots — no extra rules, pure top-k.
 
 Why pick the strongest performers as pivots? Because the goal is finding the single best candidate, which means what needs finer discrimination is who's at the top, not who's least bad at the bottom. If pivots were picked from clearly weak candidates, every comparison would just produce the uninformative "everyone beats it," with no discriminative power at all. This mirrors quickselect's choice of pivot: you don't need a full sort, just the maximum, so resources should concentrate on the region likely to contain the answer.
 
-There's a concern the paper never analyzes at all: **pivots are chosen based on just two ring-pass comparisons — an extremely small sample.** If the actual best candidate happens to draw two strong opponents in the ring pass, its w_i/c_i comes out low, and it can be excluded from the pivot set entirely. The paper never quantifies the probability of this "a genuinely good candidate gets filtered out by bad luck" failure mode.
+There's a concern the paper never analyzes at all: **pivots are chosen based on just two ring-pass comparisons — an extremely small sample.** If the actual best candidate happens to draw two strong opponents in the ring pass, its \( w_i/c_i \) comes out low, and it can be excluded from the pivot set entirely. The paper never quantifies the probability of this "a genuinely good candidate gets filtered out by bad luck" failure mode.
 
 Next come two kinds of pairwise comparisons: every non-pivot against every pivot ((N−k)×k pairs), and pivots against each other (C(k,2) pairs). The latter is necessary because the pivots themselves still need to be ranked against one another.
 
@@ -403,7 +400,7 @@ N=20, k=5 →  20 + 75 + 10 = 105 pairs
              vs. 190 for round-robin — about 45% saved
 ```
 
-The final winner is `i* = argmax_i w_i / c_i`. Why divide by c_i? Because pivots participate in far more rounds than non-pivots (pivots compare against everyone, non-pivots only against the k pivots) — looking at raw w_i alone would let a pivot accumulate a bigger number purely from playing more rounds. Dividing by c_i converts it to "average win per round," which is a fair comparison.
+The final winner is \( i^* = \arg\max_i w_i / c_i \). Why divide by \( c_i \)? Because pivots participate in far more rounds than non-pivots (pivots compare against everyone, non-pivots only against the k pivots) — looking at raw \( w_i \) alone would let a pivot accumulate a bigger number purely from playing more rounds. Dividing by \( c_i \) converts it to "average win per round," which is a fair comparison.
 
 ### Budget vs. Accuracy
 

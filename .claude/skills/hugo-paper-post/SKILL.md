@@ -173,7 +173,9 @@ prefer what an actual recent post does if the two ever disagree.
    This checks both language files exist, front matter parses, every image
    shortcode's `src` resolves to a file actually present in the bundle, no
    pipeline artifacts leaked into the body, no unsupported `$...$` inline
-   math slipped in, plus SEO sanity warnings (title/description length
+   math slipped in, no nested math delimiters from a scripted replace pass
+   (an error — it renders as literal garbage), no notation still sitting in
+   the body as raw text, plus SEO sanity warnings (title/description length
    outside the usual range, a body `# ` heading duplicating the title's
    H1, skipped heading levels, headings carrying their own manual numbering
    on top of the theme's, zero internal links to other
@@ -312,6 +314,22 @@ existing wording still matches.
   converted to LaTeX, not published as a plain-text code fence — see
   `references/hugo-conventions.md`, "A code fence that's actually a
   formula".
+- **Every** piece of notation in the body is LaTeX, not just the formulas
+  you happened to touch — inline symbol references in prose (`π_{t+1}`,
+  `V^0`, `β1`) and inside table cells and headers (`s_v`, `V_i^m`,
+  `k*=3`, `分數 V`) count, and a symbol left raw beside a converted one
+  is exactly what reads as broken. `verify_post.py` warns on what it can
+  detect; see `references/hugo-conventions.md`, "Convert the whole symbol,
+  and don't double-wrap" — which also covers the nested-delimiter bug a
+  scripted pass causes.
+- A code fence that's really *structure or flow* (an ASCII tree, an arrow
+  chain that closes a cycle, a routing/decision split) was considered for
+  a mermaid diagram — the theme supports it with no configuration. This is
+  a judgement call, not a requirement: concrete round-by-round traces and
+  definition lists stay as code fences. See
+  `references/hugo-conventions.md`, "Diagrams: a code fence that's
+  actually a flowchart". If a post ships diagrams, they were checked in a
+  real browser, since `hugo build` cannot validate mermaid.
 - No admonition type is repeated back-to-back enough to read as a template
   (five `warning`s in a row, every section closing the same way) — see
   `references/hugo-conventions.md`, "Don't let admonitions become their
@@ -323,8 +341,8 @@ existing wording still matches.
   `references/hugo-conventions.md`), in both language files — or the PR
   says why none applied.
 - `scripts/verify_post.py` passes for the new/changed post directory, and
-  its SEO warnings (title/description length, heading structure, internal
-  links) were reviewed, not just ignored.
+  its warnings (SEO title/description length, heading structure, internal
+  links, raw math notation) were reviewed, not just ignored.
 - A real `hugo build` was attempted (per `references/hugo-build.md`) for
   anything beyond a trivial fix, and its output was actually inspected —
   not just assumed to be fine because the markdown looks right.
@@ -341,9 +359,9 @@ hugo-paper-post/
 ├── SKILL.md                              (this file)
 ├── references/
 │   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
-│   ├── hugo-conventions.md               front matter, image shortcode, math notation, admonitions, heading structure, tags, featured-image fallback
+│   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image fallback
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
 └── scripts/
-    └── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation checks
+    └── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter checks
 ```
