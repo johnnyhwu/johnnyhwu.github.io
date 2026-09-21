@@ -304,6 +304,18 @@ existing wording still matches.
 - No heading carries `article.md`'s own manual numbering (`一、`, `2.1`,
   `1.`) — the theme auto-numbers, so those render twice. See
   `references/hugo-conventions.md`, "Never number headings by hand".
+- A grouped "extension" theme (standalone lessons distinct from the paper
+  walkthrough) renders as one H2 with its sub-topics nested as H3, never as
+  a flat run of sibling H2s — see `references/hugo-conventions.md`, "A
+  grouped 'extension' theme".
+- A fenced code block that's actually a symbol-only formal definition was
+  converted to LaTeX, not published as a plain-text code fence — see
+  `references/hugo-conventions.md`, "A code fence that's actually a
+  formula".
+- No admonition type is repeated back-to-back enough to read as a template
+  (five `warning`s in a row, every section closing the same way) — see
+  `references/hugo-conventions.md`, "Don't let admonitions become their
+  own repeated pattern".
 - Unresolvable references are visible placeholders, listed in the PR — not
   silently dropped or guessed.
 - The post carries a small number of contextual internal links to related
