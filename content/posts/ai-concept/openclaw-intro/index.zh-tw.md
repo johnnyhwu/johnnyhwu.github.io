@@ -137,7 +137,7 @@ Agent 如何長出手腳來操控電腦？這依賴於 **ReAct (Reasoning and Ac
 
 LLM 宛如每天醒來都失憶的患者，系統必須建立嚴謹的持久層管理：
 *   **主動寫入機制**：系統規範 LLM 若發現重要資訊，必須主動調用 `[tool_use] Edit(MEMORY.md, "...")`。單純在對話中回覆「我記住了」是無效的，必須觸發實體檔案的 I/O 操作。
-*   **加權檢索 (Weighted Multi-search)**：當 LLM 呼叫 `memory_search` 時，底層採用公式 $s = a \cdot s_1 (\text{Keyword Match}) + b \cdot s_2 (\text{Vector Similarity})$ 進行比對，取出 Top K 的記憶區塊注入 Context。
+*   **加權檢索 (Weighted Multi-search)**：當 LLM 呼叫 `memory_search` 時，底層採用公式 \( s = a \cdot s_1 (\text{Keyword Match}) + b \cdot s_2 (\text{Vector Similarity}) \) 進行比對，取出 Top K 的記憶區塊注入 Context。
 *   **上下文壓縮機制**：
     1.  **Soft Trim (平滑壓縮)**：當歷史紀錄逼近 Context 上限的 80% 時，框架啟動隱形任務，要求 LLM 將過去的長篇對話濃縮成幾百字的摘要，替換掉原本的紀錄。
     2.  **Hard Clear (暴力修剪)**：直接將已處理完畢的龐大 `[tool_output]` (如幾萬字的 HTML 原始碼) 從 Context 中強制刪除。

@@ -21,7 +21,20 @@ REQUIRED_FRONT_MATTER_FIELDS = [
 
 SHORTCODE_SRC_RE = re.compile(r'\{\{<\s*image\s+([^>]*?)\s*>\}\}')
 SRC_ATTR_RE = re.compile(r'src="([^"]+)"')
-BARE_INLINE_MATH_RE = re.compile(r'(?<!\$)\$(?!\$)[^$\n]+?(?<!\$)\$(?!\$)')
+# A backslash-escaped \$ is a literal dollar sign -- prices ("\$0.001/doc vs
+# \$0.10/doc") are the common case and are not math, so neither delimiter
+# may be escaped.
+BARE_INLINE_MATH_RE = re.compile(r'(?<![$\\])\$(?!\$)[^$\n]+?(?<![$\\])\$(?!\$)')
+# Even unescaped, most paired $ in these posts are prices ("$5 or $10",
+# "costs $1.90, while Opus costs $9") or shell/nginx variables ("$uri
+# $host") -- all of which render correctly as literal text precisely
+# because this site does not passthrough bare $. Only warn when what sits
+# between the delimiters actually looks like LaTeX: a backslash command,
+# a sub/superscript, a brace group, or a bare one-or-two-char symbol (a
+# longer bare word is far more likely a shell variable like $uri than math).
+MATHY_INNER_RE = re.compile(
+    r'[\\^_{}]|\A\s*[A-Za-zα-ωΑ-Ω][A-Za-z0-9α-ωΑ-Ω]?\s*\Z'
+)
 RELATIVE_POST_LINK_RE = re.compile(r'\]\(\.\./[a-z0-9-]+/?\)')
 HEADING_RE = re.compile(r'^(#{1,6})\s+\S', re.MULTILINE)
 # The theme auto-numbers headings, so a heading that also carries its own
@@ -177,7 +190,18 @@ def check_body(body_text, label, post_dir, errors, warnings):
             "make sure each is also called out in the PR description"
         )
 
-    bare_math = BARE_INLINE_MATH_RE.findall(body_text)
+    # Both math checks below scan prose only, with every legitimate home for
+    # a $ or a symbol removed first: a shell/nginx snippet is wall-to-wall
+    # "$uri$is_args$args", and notation left raw inside a code span or an
+    # existing math span is not left raw at all.
+    prose = MATH_SPAN_RE.sub(" ", CODE_FENCE_RE.sub(" ", body_text))
+    prose = SHORTCODE_RE.sub(" ", INLINE_CODE_RE.sub(" ", prose))
+    prose = URL_RE.sub(" ", prose)
+
+    bare_math = [
+        s for s in BARE_INLINE_MATH_RE.findall(CODE_FENCE_RE.sub(" ", body_text))
+        if MATHY_INNER_RE.search(s[1:-1])
+    ]
     if bare_math:
         warnings.append(
             f"{label}: {len(bare_math)} possible bare-$ inline math span(s) found "
@@ -191,12 +215,6 @@ def check_body(body_text, label, post_dir, errors, warnings):
             "fired inside an existing math span. This renders as literal garbage."
         )
 
-    # Notation left as raw text reads as broken next to the spans that did
-    # get converted, so scan the prose with every legitimate home for a
-    # symbol (code, math) removed first.
-    prose = MATH_SPAN_RE.sub(" ", CODE_FENCE_RE.sub(" ", body_text))
-    prose = SHORTCODE_RE.sub(" ", INLINE_CODE_RE.sub(" ", prose))
-    prose = URL_RE.sub(" ", prose)
     raw_hits = []
     for pattern, kind in RAW_NOTATION_RES:
         for m in pattern.finditer(prose):

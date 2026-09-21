@@ -228,7 +228,7 @@ So why does fine-tuning just a small slice of parameters even work? That comes b
 
 {{< image src="finetune-representation-h-to-hprime.png" alt="Conceptual diagram showing an original representation h becoming h-prime after fine-tuning, with the difference between them labeled delta-h" caption="Fine-tuning aims to change the pre-trained model's representation so it performs better on the downstream task" >}}
 
-The figure above makes this concrete: the pre-trained model's original representation is h; after fine-tuning the whole model, the representation becomes h_prime. If the only goal is to get from h to h_prime, why touch the whole model at all? PEFT's core idea is to add a small module that produces an additional delta_h, such that h + delta_h = h_prime.
+The figure above makes this concrete: the pre-trained model's original representation is \( h \); after fine-tuning the whole model, the representation becomes \( h' \). If the only goal is to get from \( h \) to \( h' \), why touch the whole model at all? PEFT's core idea is to add a small module that produces an additional \( \Delta h \), such that \( h \) + \( \Delta h \) = \( h' \).
 
 PEFT has four main implementations, covered one by one below:
 
@@ -243,7 +243,7 @@ PEFT has four main implementations, covered one by one below:
 
 The idea behind Adapter is to insert a small extra module right after the Multi-Head Self-Attention block and again after the Feed-Forward Layer within a Transformer layer — this module is what's called an Adapter. Its architecture is shown on the right of the figure above: two feed-forward layers sandwiching a non-linear layer, plus a skip connection.
 
-Mapping this back to #9's h and delta_h: the two feed-forward layers plus the non-linear layer are what transform the original representation h into delta_h, and the skip connection is what adds h and delta_h together to get the fine-tuned h_prime.
+Mapping this back to #9's \( h \) and \( \Delta h \): the two feed-forward layers plus the non-linear layer are what transform the original representation \( h \) into \( \Delta h \), and the skip connection is what adds \( h \) and \( \Delta h \) together to get the fine-tuned \( h' \).
 
 ## #11: PEFT — LoRA (Low-Rank Adaptation of Large Language Models)
 
@@ -257,7 +257,7 @@ Concretely, the Feed-Forward Layer inside a Transformer layer is actually made o
 
 {{< image src="lora-low-rank-projection.png" alt="Diagram showing an input vector first projected down to a very small dimension and then projected back up, with the output added to the main branch" caption="A LoRA module projects the original representation into a much smaller dimension before projecting it back up to produce a new representation" >}}
 
-What's distinctive is that a LoRA module first projects the original input down into a very small dimension, then back up to produce a new representation (delta_h), which is finally added to the original representation (h) to get h_prime. This "squeeze then expand" is exactly what "low-rank" means, and it's also why LoRA's parameter count stays so small.
+What's distinctive is that a LoRA module first projects the original input down into a very small dimension, then back up to produce a new representation (\( \Delta h \)), which is finally added to the original representation (\( h \)) to get \( h' \). This "squeeze then expand" is exactly what "low-rank" means, and it's also why LoRA's parameter count stays so small.
 
 ## #12: PEFT — Prefix Tuning
 
@@ -273,7 +273,7 @@ In Prefix Tuning, we add some extra vectors to the "front" of the input to the S
 
 {{< image src="prefix-tuning-input-sequence.png" alt="Diagram showing several additional vectors inserted before the input sequence to a self-attention layer, participating in the same attention computation as the rest of the sequence" caption="Prefix Tuning adds extra vectors to the front of the Self-Attention layer's input sequence" >}}
 
-As shown above, once the Prefix is added, computing x1's output now also has to factor in the Prefix's Query, Key, and Value. The weighted sum over the original vectors' Values gives the original representation (h), and the weighted sum over the Prefix's Values gives delta_h; adding the two together gives the fine-tuned h_prime. Same h + delta_h pattern as before — this time, delta_h just comes from within attention itself.
+As shown above, once the Prefix is added, computing x1's output now also has to factor in the Prefix's Query, Key, and Value. The weighted sum over the original vectors' Values gives the original representation (\( h \)), and the weighted sum over the Prefix's Values gives \( \Delta h \); adding the two together gives the fine-tuned \( h' \). Same \( h + \Delta h \) pattern as before — this time, \( \Delta h \) just comes from within attention itself.
 
 ## #13: PEFT — Soft Prompting
 

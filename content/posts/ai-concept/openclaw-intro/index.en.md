@@ -146,7 +146,7 @@ For a sub-agent waking up inside a black box, the `Spawn` tool simply does not e
 
 An LLM is like a patient who wakes up with amnesia every day. The system must establish rigorous persistence layer management:
 *   **Active Write Mechanism**: The system mandates that if the LLM finds important information, it must actively call `[tool_use] Edit(MEMORY.md, "...")`. Replying "I've remembered it" in a chat is useless; it must trigger physical file I/O.
-*   **Weighted Multi-search**: When the LLM calls `memory_search`, the backend uses a formula to find the best match: $s = a \cdot s_1 (\text{Keyword Match}) + b \cdot s_2 (\text{Vector Similarity})$. The Top K memory blocks are then injected into the Context.
+*   **Weighted Multi-search**: When the LLM calls `memory_search`, the backend uses a formula to find the best match: \( s = a \cdot s_1 (\text{Keyword Match}) + b \cdot s_2 (\text{Vector Similarity}) \). The Top K memory blocks are then injected into the Context.
 *   **Context Compression Mechanisms**:
     1.  **Soft Trim**: When history approaches 80% of the Context limit, the framework triggers a hidden task asking the LLM to condense long past conversations into a few-hundred-word summary, replacing the original logs.
     2.  **Hard Clear**: Forcefully deleting massive `[tool_output]` data (like 10,000 lines of HTML source code) from the Context once processing is finished.
