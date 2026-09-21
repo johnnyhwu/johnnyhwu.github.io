@@ -33,9 +33,7 @@ Persona-Aware-D2S, from EACL 2024, sets out to fill that gap. It turns "is the a
 
 ## Why This Task Was Worth Redefining
 
-{{< image src="figure1.png" alt="Side-by-side slide content Persona-Aware-D2S generated from the same paper for two different audiences" caption="Figure 1 — The same paper, with the model's two audience-specific versions side by side: one emphasizes the overall application workflow, the other the model architecture details." >}}
-
-The paper's opening example is intuitive: in front of a general or business audience, content that is too technically dense actually reduces engagement, because what these listeners want to know is "what is this for," not how many modules the model has. This figure is the visualization of the paper's entire motivation — one input, two outputs, differing not in quality but in who is being addressed.
+The paper's opening example is intuitive: in front of a general or business audience, content that is too technically dense actually reduces engagement, because what these listeners want to know is "what is this for," not how many modules the model has. This is the paper's core motivation in a nutshell: one input, two outputs, differing not in quality but in who is being addressed.
 
 Laying out the problems the paper raises in §1 and its related work, there are really five challenges with dependencies among them:
 
