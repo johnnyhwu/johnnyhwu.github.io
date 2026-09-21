@@ -56,17 +56,12 @@ Notably, only the exploration policy's code changes — the coding agent that ac
 
 Every node in the discovery tree represents one "generate-and-evaluate" attempt. The paper formalizes it with a small set of symbols:
 
-```
-r      = the root node, representing the initial workspace state
-v      = a non-root node in the tree, representing one attempt
-parent = v's parent node (can be r, or another v)
-         -> when the agent produces v, it continues from parent's
-            saved workspace, using parent's accumulated observations
-            as context
-s_v    = the score of attempt v (higher is better)
-```
+- \( r \): the root node, representing the initial workspace state.
+- \( v \): a non-root node in the tree, representing one attempt.
+- \( \mathrm{parent}(v) \): \( v \)'s parent node (can be \( r \), or another \( v \)) — when the agent produces \( v \), it continues from \( \mathrm{parent}(v) \)'s saved workspace, using its accumulated observations as context.
+- \( s_v \): the score of attempt \( v \) (higher is better).
 
-A node stores more than just a score — it includes a filesystem snapshot, the produced artifact, and evaluation diagnostics, making it a complete, replayable record of that attempt. At any point, only two kinds of nodes can be extended further: the root node r (opening an entirely new branch), or an existing leaf node (continuing a branch already in progress). The paper writes this selectable set as `A(T) = {r} ∪ {every leaf node currently in tree T}`. Given W parallel workers, the policy selects a batch C of at most size W from A(T) each round.
+A node stores more than just a score — it includes a filesystem snapshot, the produced artifact, and evaluation diagnostics, making it a complete, replayable record of that attempt. At any point, only two kinds of nodes can be extended further: the root node \( r \) (opening an entirely new branch), or an existing leaf node (continuing a branch already in progress). The paper writes this selectable set as \( A(T) = \{r\} \cup L(T) \), where \( L(T) \) denotes every leaf node currently in tree \( T \). Given W parallel workers, the policy selects a batch \( C \) of at most size W from \( A(T) \) each round.
 
 A small concrete example (W=2) is much easier to follow than the formula:
 
@@ -153,11 +148,15 @@ A concrete example makes the design's intent clearest. Using the same tree as be
 | Policy A (conservative, sequential) | v1, v1a, v1a1 | 0.58 | 3 (1 per round, k*=3) | 3/3=1.0 | 0.58 − 0.05×3 + 0.1×1.0 | **0.53** |
 | Policy B (aggressive, batched) | all 5 | 0.60 | 5 (2 each in rounds 2, 3, k*=3) | 5/3≈1.667 | 0.60 − 0.05×5 + 0.1×1.667 | 0.5167 |
 
-Policy B has both a higher top score and higher parallelism, but because it revealed two more nodes, the cost term deducts more, and the final computed score actually favors the conservative Policy A — "conservative but precise" beats "aggressive but wasteful." That is the core intent of this scoring formula: it's not simply about who scores highest, but a trade-off between "how good" and "how expensive," with the balance entirely determined by β1 and β2. Also, a candidate policy's final score (`V^m = (1/t) × Σ V_i^m`) is the average of scores computed separately across **all** historical trees, not a score from a single tree — otherwise the chosen policy might just happen to fit that one tree's particular structure and fail on a different one.
+Policy B has both a higher top score and higher parallelism, but because it revealed two more nodes, the cost term deducts more, and the final computed score actually favors the conservative Policy A — "conservative but precise" beats "aggressive but wasteful." That is the core intent of this scoring formula: it's not simply about who scores highest, but a trade-off between "how good" and "how expensive," with the balance entirely determined by β1 and β2. Also, a candidate policy's final score is the average of scores computed separately across **all** historical trees:
+
+\[ V^m = \frac{1}{t}\sum_{i=1}^{t} V_i^m \]
+
+not a score from a single tree — otherwise the chosen policy might just happen to fit that one tree's particular structure and fail on a different one.
 
 ### A "never gets worse" safety net
 
-Each round of policy improvement works like this: first, let the currently deployed policy replay itself, unchanged, to get a baseline score V^0. Then a policy-development agent (itself an LLM), whose job is to rewrite code, reads this replay record and produces a new version π^1, which also gets replayed and scored. This process repeats up to M-1, producing M versions in total. Finally, among all candidate versions, the one with the highest replay score (`m* = argmax V^m`) is picked to become the policy π_{t+1} that actually gets deployed next round.
+Each round of policy improvement works like this: first, let the currently deployed policy replay itself, unchanged, to get a baseline score V^0. Then a policy-development agent (itself an LLM), whose job is to rewrite code, reads this replay record and produces a new version π^1, which also gets replayed and scored. This process repeats up to M-1, producing M versions in total. Finally, among all candidate versions, the one with the highest replay score (\( m^* = \arg\max_m V^m \)) is picked to become the policy π_{t+1} that actually gets deployed next round.
 
 The candidate pool always keeps the "completely unchanged" original version π^0, so the picked score is never worse than the original — worst case, none of the rewrites improved anything, and you just keep using the original instead of regressing from a bad edit. This design is called **monotonic non-regression**, and it's a simple health-check that any "LLM edits its own logic" system can be checked against: does the candidate set always keep an "unchanged" option as a floor?
 
@@ -244,7 +243,7 @@ But honestly, the contribution doesn't carry much weight. Quality improvement is
 
 What follows relates to Dream-RSI less as "the subject of this post" and more as "the paper that happens to be the trigger." Even if you'd never heard of Dream-RSI, these things hold up on their own, and there's a good chance they'll come in handy the next time you design an agent system — this is the part of the post that gets the most space from here on.
 
-## Is this really a "World Model"?
+### Is this really a "World Model"?
 
 Dream-RSI frames the whole mechanism as analogous to a "World Model," echoing Dreamer-style model-based RL systems. That analogy sounds impressive, but it doesn't hold up under close inspection.
 
@@ -278,7 +277,7 @@ This is exactly the gap between Dream-RSI and a genuine world model. Dream-RSI's
 The next time a paper claims to use a "simulator," "world model," or "imagination," the first question worth asking is: **can it evaluate possibilities that never actually happened?** If yes, it's a genuine model. If no, it's a replay mechanism — still valuable, but with a ceiling locked to "things that have already happened."
 {{< /admonition >}}
 
-## Why not just search with a world model at every single step?
+### Why not just search with a world model at every single step?
 
 A natural question: if you already have a world model that generalizes, why not just try every action at every state and pick the one with the highest reward, at every step — wouldn't that find the reward-maximizing trajectory directly?
 
@@ -302,7 +301,7 @@ Comparing all three approaches side by side makes this clearer:
 
 The transferable rule: when the action space is small and discrete, a single-step model computes quickly, and you can tolerate spending more compute at decision time (turn-based board games) — lean toward pure planning or a hybrid approach; when the action space is continuous, real-time response is required, and the horizon is long — lean toward Dreamer's approach of moving the search cost into training. This "move the expensive computation to the background so real-time decisions stay cheap" idea is a general system-design principle, not specific to RL — [MemRL](../mem-rl/)'s move of treating memory retrieval itself as a policy trained via RL, rather than re-judged live every time, is another application of exactly the same cost-shifting logic.
 
-## Will accumulated history blow out the context?
+### Will accumulated history blow out the context?
 
 As mentioned earlier, the exploration prompt in the appendix explicitly requires the agent, before proposing a new plan, to read through every sibling attempt's proposal and every record in the complete history — explicitly not sampled, not just the most recent rounds, not just the current branch. Pulled out and examined on its own, this is a gap the paper never addresses at all, and it isn't unique to Dream-RSI — any long-running agent system has to deal with it.
 
@@ -314,7 +313,7 @@ A plausible reason is that the Gemini models the paper uses already have very la
 
 The more general question is: should an agent stuff its entire history into context, or instead use a retrieval-based (pick only what's relevant), summarization-based (compress before inserting), or hierarchical (wiki-style, tiered management) memory mechanism — this is a design choice any long-running agent system has to face. The paper itself cites approaches like ReasoningBank in its Related Work section, yet never applies the same concern to the history-reading design of its own exploration prompt — an inconsistency worth noting.
 
-## What is replay actually replaying?
+### What is replay actually replaying?
 
 An easy point of confusion: "at a given node, the policy can't take a different action" — this intuition is correct, but you need to be precise about what "action" actually refers to here.
 
@@ -331,7 +330,7 @@ The Lasso solver code shown in Appendix C is the content of the highest-scoring 
 
 Back to the Policy A / B example from earlier: neither policy, at any step, regenerates any content — the v2, v1a, v2a, and v1a1 nodes Policy B reveals would be identical to what Policy A would reveal if it happened to select the same nodes, because both are reading the same stored record. The only difference is at the decision level: who to select, in what order, with what batch size, and when to stop. The payoff of this is direct: if A and B each ran a real online exploration in the real world, that would cost two genuinely expensive rounds of coding-agent generation plus evaluator scoring — potentially hundreds of API calls and actual code execution. But comparing how efficiently A and B "walk" the same already-existing tree, two replays together might take milliseconds, since it's just reading a tree structure sitting in memory. That lets you cheaply test thousands of walking strategies, screen for the most efficient one, and only actually deploy the single one you finally chose online.
 
-## The replay-to-real gap: two independent sources
+### The replay-to-real gap: two independent sources
 
 As noted earlier, monotonic non-regression only guarantees "the replay score doesn't regress" — it says nothing about whether "real online performance doesn't regress" either. This gap has two independent sources, not a causal chain — they're easy to lump together as one thing, but pulling them apart is more precise.
 
@@ -345,13 +344,13 @@ The paper treats the two very differently. For "beta isn't set right," the paper
 
 This breakdown is itself a transferable framework for judgment: any system that uses historical data for off-policy evaluation can ask itself these two questions — does what the scoring formula measures actually equal what I care about? Does the range covered by historical data actually approximate the real situation I need to decide in? The answers to the two questions point to different remedies — they can't be conflated and solved with a single approach.
 
-## Failure classification: from distributed systems to agent tool-calling
+### Failure classification: from distributed systems to agent tool-calling
 
 The paper's appendix requires the policy-development agent to write failure-classification logic into the exploration policy's code — the four categories were already listed earlier (hard-unrecoverable, repairable implementation failure, weak-but-underexplored, repeatedly unpromising). What's worth doing here is placing this framework into a bigger context, because it actually stands on the logic of two different fields.
 
 **Which errors are "usually" considered repairable**: output/correctness mismatches, shared-memory/resource limits, variable/code errors, and mask/layout/shape errors. The appendix explicitly warns: seeing a generic error label like "compile_other" is not grounds to permanently declare the direction unrecoverable — it's just a one-off compilation-issue label, not evidence the direction itself is flawed.
 
-### The bigger context behind this framework: transient vs. permanent
+#### The bigger context behind this framework: transient vs. permanent
 
 This problem was first, and most systematically, discussed in the field of **distributed systems and cloud services** — that's this vocabulary's native domain, not a general-purpose AI term.
 
@@ -375,7 +374,7 @@ Permanent failure:
 
 In practice, the most common way to judge this is by HTTP status code family: 5xx (server-side problems) is usually treated as transient and worth retrying; 4xx (problems with the client request itself) is usually treated as permanent, where retrying is pointless. The accompanying retry techniques are old friends too: **exponential backoff** — wait 1 second before the first retry, 2 seconds before the second, 4 before the third, so you don't hammer a server that's already overloaded and make the overload worse; **jitter** — add a bit of random noise to the backoff wait time, so you don't have 1,000 clients fail simultaneously and then retry at exactly the same moment, causing a new wave of collective overload (a problem with its own name — the thundering herd); and the **circuit breaker** — after enough consecutive failures against the same target, stop and pause for a while rather than keep trying, which maps directly onto Dream-RSI's "repeatedly unpromising" category: once enough failure evidence has accumulated, stop wasting resources on that direction.
 
-### The third state that shows up in AI/agent settings
+#### The third state that shows up in AI/agent settings
 
 The traditional transient/permanent dichotomy assumes "retrying doesn't accumulate new information just by trying more" — retrying a dropped connection 10 times doesn't teach you anything more about the network link. But in a generative, exploratory setting like Dream-RSI's, there's a third state (this is an inference drawn from observation, not a term from the paper or an industry standard):
 
@@ -402,7 +401,7 @@ Dream-RSI's design in this area is actually stacking the logic of two different 
 
 The transferable rule: when designing any system that automatically decides whether to retry or keep investing, first ask whether this negative result relates to "the execution process" or to "the thing itself" (transient vs. permanent); if it's a problem with "the thing itself," ask whether the evidence on hand right now is actually sufficient to draw that conclusion (whether to first classify it as "insufficient evidence" rather than pronounce it dead on the spot). Asking these two questions separately, rather than relying on one blunt success/failure dichotomy, avoids two common mistakes: giving up too early on a promising direction, and stubbornly wasting resources on a direction that's genuinely hopeless.
 
-### Applying this to an agent's tool-calling error handling design
+#### Applying this to an agent's tool-calling error handling design
 
 "Retrying" a tool call isn't quite the same as "retrying" a network request — in traditional distributed systems, "retry" usually means "send the exact same request again," but an agent's tool call is generated by an LLM, which means there's a richer spectrum of options beyond just "retry or not": retry unchanged (only meaningful for genuinely transient errors), retry with corrected parameters (the tool itself is fine, the LLM just filled in the wrong parameters), switch to a different tool or approach (this direction itself might be wrong), or give up and escalate to the user (repeated failure, time to cut losses).
 
