@@ -61,9 +61,9 @@ Every node in the discovery tree represents one "generate-and-evaluate" attempt.
 - \( \mathrm{parent}(v) \): \( v \)'s parent node (can be \( r \), or another \( v \)) — when the agent produces \( v \), it continues from \( \mathrm{parent}(v) \)'s saved workspace, using its accumulated observations as context.
 - \( s_v \): the score of attempt \( v \) (higher is better).
 
-A node stores more than just a score — it includes a filesystem snapshot, the produced artifact, and evaluation diagnostics, making it a complete, replayable record of that attempt. At any point, only two kinds of nodes can be extended further: the root node \( r \) (opening an entirely new branch), or an existing leaf node (continuing a branch already in progress). The paper writes this selectable set as \( A(T) = \{r\} \cup L(T) \), where \( L(T) \) denotes every leaf node currently in tree \( T \). Given W parallel workers, the policy selects a batch \( C \) of at most size W from \( A(T) \) each round.
+A node stores more than just a score — it includes a filesystem snapshot, the produced artifact, and evaluation diagnostics, making it a complete, replayable record of that attempt. At any point, only two kinds of nodes can be extended further: the root node \( r \) (opening an entirely new branch), or an existing leaf node (continuing a branch already in progress). The paper writes this selectable set as \( A(T) = \{r\} \cup L(T) \), where \( L(T) \) denotes every leaf node currently in tree \( T \). Given \( W \) parallel workers, the policy selects a batch \( C \) of at most size \( W \) from \( A(T) \) each round.
 
-A small concrete example (W=2) is much easier to follow than the formula:
+A small concrete example (\( W=2 \)) is much easier to follow than the formula:
 
 ```
 Round 0: T0={r}, A(T0)={r}, select C0={r}
@@ -80,7 +80,7 @@ Round 2: A(T2)={r,v2,v1a}
 ```
 
 {{< admonition warning "What the paper doesn't clarify" true >}}
-In the formalization, batch C is a set, which implies the root node r can only be selected once per round — opening 10 parallel branches at once would, by this definition, have to be built up one round at a time. Yet when the paper describes its baseline policy, it says the baseline "starts by opening 10 or 32 independent workspaces in parallel," which sounds like several branches are opened simultaneously from the very first step. How the two reconcile isn't spelled out — whether the formalization is only an abstract framework handled differently in the actual implementation, or whether a detail was simply omitted, is unclear.
+In the formalization, batch \( C \) is a set, which implies the root node \( r \) can only be selected once per round — opening 10 parallel branches at once would, by this definition, have to be built up one round at a time. Yet when the paper describes its baseline policy, it says the baseline "starts by opening 10 or 32 independent workspaces in parallel," which sounds like several branches are opened simultaneously from the very first step. How the two reconcile isn't spelled out — whether the formalization is only an abstract framework handled differently in the actual implementation, or whether a detail was simply omitted, is unclear.
 {{< /admonition >}}
 
 {{< image src="figure2.png" alt="A discovery tree labeled with node scores and parent-child relationships, alongside an alternative exploration policy that replays it in a different expansion order." caption="Figure 2 — The complete history left behind by one online exploration run, which can be replayed by a different exploration policy. (Source: original paper.)" >}}
@@ -93,24 +93,31 @@ This is the fundamental mechanism behind everything the paper saves in cost. Onl
 |---|---|---|
 | Where node content comes from | The coding agent generates it live; the evaluator scores it live | Read directly from content already stored in the historical tree |
 | Does the same action give a different result? | Yes (stochastic) | No (deterministic) |
-| Which child does selecting root r return? | Generates a brand-new branch live | Always the "earliest-created, not-yet-revealed" child in the historical tree — order entirely fixed |
-| When selecting an already-expanded node v | Generates a brand-new child live | Directly returns the child already stored in history |
+| Which child does selecting root \( r \) return? | Generates a brand-new branch live | Always the "earliest-created, not-yet-revealed" child in the historical tree — order entirely fixed |
+| When selecting an already-expanded node \( v \) | Generates a brand-new child live | Directly returns the child already stored in history |
 
 Online rollout stores the newly built tree into the history pool at the end of every outer iteration; offline replay instead replays **every** tree accumulated so far, evaluating the same candidate policy version's performance across all of history rather than just replaying the most recent one.
 
-A full worked example is the clearest way to feel the difference. Suppose real online exploration left behind this complete historical tree (W=2):
+A full worked example is the clearest way to feel the difference. Suppose real online exploration left behind this complete historical tree (\( W=2 \)):
 
-```
-T_1 (in creation order):
-  r
-  ├─ v1 (created round 1, score=0.42)
-  │   └─ v1a (created round 2, score=0.51)
-  │        └─ v1a1 (created round 3, score=0.58)
-  └─ v2 (created round 2, score=0.55)
-       └─ v2a (created round 3, score=0.60)
+```mermaid
+graph TD
+    r["r<br/>root node"]
+    v1["v1<br/>round 1 · 0.42"]
+    v1a["v1a<br/>round 2 · 0.51"]
+    v1a1["v1a1<br/>round 3 · 0.58"]
+    v2["v2<br/>round 2 · 0.55"]
+    v2a["v2a<br/>round 3 · 0.60"]
+    r --> v1
+    r --> v2
+    v1 --> v1a
+    v1a --> v1a1
+    v2 --> v2a
 ```
 
-Replaying this tree with an alternative policy π^m:
+The two branches were created in order — v1 before v2 — and replay locks that order in.
+
+Replaying this tree with an alternative policy \( \pi^m \):
 
 ```
 Round 1: select C={r} -> returns r's earliest-created, unrevealed
@@ -127,7 +134,7 @@ Round 3: A={r,v2,v1a}, r has no children left to reveal,
          everything revealed -> stop
 ```
 
-It takes only 3 rounds to reveal the entire tree, and every round fills the full W=2 — if the original online exploration expanded branch by branch, round by round, without ever fully using its parallelism, this alternative policy's replay result reveals exactly that: it should have batched more aggressively from the start. That's exactly where replay's value lies: you don't have to re-execute any code at all, you just read the existing record in a different order or grouping and can already see the efficiency difference between policies.
+It takes only 3 rounds to reveal the entire tree, and every round fills the full \( W=2 \) — if the original online exploration expanded branch by branch, round by round, without ever fully using its parallelism, this alternative policy's replay result reveals exactly that: it should have batched more aggressively from the start. That's exactly where replay's value lies: you don't have to re-execute any code at all, you just read the existing record in a different order or grouping and can already see the efficiency difference between policies.
 
 {{< admonition warning "A limitation read directly from the formalization" true >}}
 The order in which a root node's children get revealed is fixed to their original creation order (v1 first, then v2), so replay cannot test "what would have happened if v2's branch had been opened first" — that path simply cannot be recovered and evaluated inside replay. What an alternative policy is free to decide is whether to open a new branch, how many, when, how to batch them, how deep to go into a given branch, and when to stop — but it cannot change the order in which branches were originally opened.
@@ -139,16 +146,16 @@ The exploration prompt in the appendix explicitly requires the coding agent, bef
 
 ### Avoiding "the winner is always whoever traverses the whole tree"
 
-Looking at the highest score revealed during replay isn't enough on its own — traversing the entire tree always yields that tree's global best score, which fails to distinguish "efficiently finding a good result" from "brute-forcing the whole thing." The paper's replay score is therefore made up of three terms: the highest score among revealed nodes (quality), minus the number of revealed nodes times a coefficient (cost — the more you reveal, the more you're penalized), plus the average number of revealed nodes per round times another coefficient (a parallelism bonus, rewarding policies that know how to batch). The main text denotes these two coefficient weights β1 and β2, but never states the actual values used in the experiments, either in the main text or the appendix.
+Looking at the highest score revealed during replay isn't enough on its own — traversing the entire tree always yields that tree's global best score, which fails to distinguish "efficiently finding a good result" from "brute-forcing the whole thing." The paper's replay score is therefore made up of three terms: the highest score among revealed nodes (quality), minus the number of revealed nodes times a coefficient (cost — the more you reveal, the more you're penalized), plus the average number of revealed nodes per round times another coefficient (a parallelism bonus, rewarding policies that know how to batch). The main text denotes these two coefficient weights \( \beta_1 \) and \( \beta_2 \), but never states the actual values used in the experiments, either in the main text or the appendix.
 
-A concrete example makes the design's intent clearest. Using the same tree as before, suppose β1=0.05 and β2=0.1 (illustrative values, not the paper's actual settings):
+A concrete example makes the design's intent clearest. Using the same tree as before, suppose \( \beta_1 = 0.05 \) and \( \beta_2 = 0.1 \) (illustrative values, not the paper's actual settings):
 
-| | Nodes revealed | Highest score (quality) | Nodes revealed N | Avg. revealed/round (parallelism) | Formula | Score V |
+| | Nodes revealed | Highest score (quality) | Nodes revealed \( N \) | Avg. revealed/round (parallelism) | Formula | Score \( V \) |
 |---|---|---|---|---|---|---|
-| Policy A (conservative, sequential) | v1, v1a, v1a1 | 0.58 | 3 (1 per round, k*=3) | 3/3=1.0 | 0.58 − 0.05×3 + 0.1×1.0 | **0.53** |
-| Policy B (aggressive, batched) | all 5 | 0.60 | 5 (2 each in rounds 2, 3, k*=3) | 5/3≈1.667 | 0.60 − 0.05×5 + 0.1×1.667 | 0.5167 |
+| Policy A (conservative, sequential) | v1, v1a, v1a1 | 0.58 | 3 (1 per round, \( k^*=3 \)) | \( 3/3 = 1.0 \) | \( 0.58 - 0.05 \times 3 + 0.1 \times 1.0 \) | **0.53** |
+| Policy B (aggressive, batched) | all 5 | 0.60 | 5 (2 each in rounds 2, 3, \( k^*=3 \)) | \( 5/3 \approx 1.667 \) | \( 0.60 - 0.05 \times 5 + 0.1 \times 1.667 \) | 0.5167 |
 
-Policy B has both a higher top score and higher parallelism, but because it revealed two more nodes, the cost term deducts more, and the final computed score actually favors the conservative Policy A — "conservative but precise" beats "aggressive but wasteful." That is the core intent of this scoring formula: it's not simply about who scores highest, but a trade-off between "how good" and "how expensive," with the balance entirely determined by β1 and β2. Also, a candidate policy's final score is the average of scores computed separately across **all** historical trees:
+Policy B has both a higher top score and higher parallelism, but because it revealed two more nodes, the cost term deducts more, and the final computed score actually favors the conservative Policy A — "conservative but precise" beats "aggressive but wasteful." That is the core intent of this scoring formula: it's not simply about who scores highest, but a trade-off between "how good" and "how expensive," with the balance entirely determined by \( \beta_1 \) and \( \beta_2 \). Also, a candidate policy's final score is the average of scores computed separately across **all** historical trees:
 
 \[ V^m = \frac{1}{t}\sum_{i=1}^{t} V_i^m \]
 
@@ -156,20 +163,20 @@ not a score from a single tree — otherwise the chosen policy might just happen
 
 ### A "never gets worse" safety net
 
-Each round of policy improvement works like this: first, let the currently deployed policy replay itself, unchanged, to get a baseline score V^0. Then a policy-development agent (itself an LLM), whose job is to rewrite code, reads this replay record and produces a new version π^1, which also gets replayed and scored. This process repeats up to M-1, producing M versions in total. Finally, among all candidate versions, the one with the highest replay score (\( m^* = \arg\max_m V^m \)) is picked to become the policy π_{t+1} that actually gets deployed next round.
+Each round of policy improvement works like this: first, let the currently deployed policy replay itself, unchanged, to get a baseline score \( V^0 \). Then a policy-development agent (itself an LLM), whose job is to rewrite code, reads this replay record and produces a new version \( \pi^1 \), which also gets replayed and scored. This process repeats up to \( M-1 \), producing \( M \) versions in total. Finally, among all candidate versions, the one with the highest replay score (\( m^* = \arg\max_m V^m \)) is picked to become the policy \( \pi_{t+1} \) that actually gets deployed next round.
 
-The candidate pool always keeps the "completely unchanged" original version π^0, so the picked score is never worse than the original — worst case, none of the rewrites improved anything, and you just keep using the original instead of regressing from a bad edit. This design is called **monotonic non-regression**, and it's a simple health-check that any "LLM edits its own logic" system can be checked against: does the candidate set always keep an "unchanged" option as a floor?
+The candidate pool always keeps the "completely unchanged" original version \( \pi^0 \), so the picked score is never worse than the original — worst case, none of the rewrites improved anything, and you just keep using the original instead of regressing from a bad edit. This design is called **monotonic non-regression**, and it's a simple health-check that any "LLM edits its own logic" system can be checked against: does the candidate set always keep an "unchanged" option as a floor?
 
 There are actually three roles in the full pipeline that potentially involve an LLM, and knowing which is expensive and which is cheap matters — including whether the evaluator itself is LLM-based at all, which the paper never states:
 
 | Role | Which prompt | What it produces | When it runs | Cost |
 |---|---|---|---|---|
 | Discovery agent | Appendix B.1 | The candidate solution content for the task | Only during Online Explore | Expensive (actually solving the problem) |
-| Evaluator | Not stated whether it's an LLM | Score s_v | Only during Online Explore | Usually cheap (running code to measure) |
-| Policy-development agent | Appendix B.2 | The exploration policy's code | Dreaming stage, runs M times per round | Moderate (rewriting code, no need to actually solve the task) |
-| Replay itself | No prompt, pure program logic | Score V_i^m | Dreaming stage, runs for every candidate version | Nearly free (pure table lookup) |
+| Evaluator | Not stated whether it's an LLM | Score \( s_v \) | Only during Online Explore | Usually cheap (running code to measure) |
+| Policy-development agent | Appendix B.2 | The exploration policy's code | Dreaming stage, runs \( M \) times per round | Moderate (rewriting code, no need to actually solve the task) |
+| Replay itself | No prompt, pure program logic | Score \( V_i^m \) | Dreaming stage, runs for every candidate version | Nearly free (pure table lookup) |
 
-Genuinely expensive LLM calls only happen in role 1 (a limited number of times) and role 3 (M times per round, usually single- to double-digit) — replay scoring itself involves no LLM at all. That's why "thousands of candidate policy evaluations" doesn't turn into thousands of expensive API calls.
+Genuinely expensive LLM calls only happen in role 1 (a limited number of times) and role 3 (\( M \) times per round, usually single- to double-digit) — replay scoring itself involves no LLM at all. That's why "thousands of candidate policy evaluations" doesn't turn into thousands of expensive API calls.
 
 That said, this safety net has an easily overlooked limitation: it guarantees only that "the replay score doesn't regress," not that "real online performance doesn't regress" either. That gap is the replay-to-real gap, and it's unpacked fully later.
 
@@ -179,11 +186,11 @@ The paper's appendix includes an approximately 270-line prompt that guides how t
 
 **The prefix-only constraint**: every decision the policy makes may only use "nodes this particular replay has itself actively revealed so far" — never the score of an unrevealed node, budget statistics, or any "god's-eye-view" information. This prevents cheating — scanning the whole tree upfront for the highest score and pretending exploration happened to find it — because real online deployment offers no such opportunity to cheat, since the online tree hasn't even grown yet. This restriction — decisions can only use what's currently known, never peek at the future or the global picture — is a standard requirement in reinforcement learning and online algorithms called the **causality constraint**. It isn't something Dream-RSI invented (off-policy evaluation follows the same logic).
 
-**A three-way split for batch decisions**: each round selects up to W candidate nodes to form a batch, and the prompt requires composing it from three roles — exploitation (extending the currently most promising line normally), exploration (opening a new root, or digging deeper into an under-explored branch), and recovery (at most one, a genuinely repairable failed attempt). This is fundamentally the classic multi-armed bandit explore-exploit trade-off, but with an added recovery role that isn't part of the traditional bandit framework, because "failure" here might just be an implementation bug rather than the direction itself being bad. The rules explicitly require: recovery takes at most one slot and can never crowd out exploitation's slot or leave a worker idle; it can't use a fixed quota — it has to be decided dynamically based on prefix evidence; and random sampling, or picking a candidate "just because it's obviously good," are both prohibited.
+**A three-way split for batch decisions**: each round selects up to \( W \) candidate nodes to form a batch, and the prompt requires composing it from three roles — exploitation (extending the currently most promising line normally), exploration (opening a new root, or digging deeper into an under-explored branch), and recovery (at most one, a genuinely repairable failed attempt). This is fundamentally the classic multi-armed bandit explore-exploit trade-off, but with an added recovery role that isn't part of the traditional bandit framework, because "failure" here might just be an implementation bug rather than the direction itself being bad. The rules explicitly require: recovery takes at most one slot and can never crowd out exploitation's slot or leave a worker idle; it can't use a fixed quota — it has to be decided dynamically based on prefix evidence; and random sampling, or picking a candidate "just because it's obviously good," are both prohibited.
 
 **A four-way failure taxonomy**: hard-unrecoverable (definitely can't be fixed), repairable implementation failure (the idea might be fine, it's an implementation bug), weak-but-underexplored (mediocre score but not yet tried deeply enough), and repeatedly unpromising (there's already enough evidence this direction genuinely doesn't work). One easily overlooked detail: `valid==False` doesn't mean "failure" — an attempt's code might run to completion without throwing an error, yet the produced solution still fails to satisfy correctness conditions; that's a normal evaluation that produced a weaker solution, not something that should be dumped into the "repairable failure" bucket and retried. And no classification is ever a permanent verdict — even if a branch is judged hard-unrecoverable, a single subsequent successful result reopens that branch. The bigger context behind this framework — including its relationship to classic distributed-systems design and how it maps onto an agent's tool-calling error handling — gets fully unpacked later in the "Failure Classification" section.
 
-**Beta: the policy's internal conservative/aggressive dial**: `beta` in the prompt is a hyperparameter internal to the policy's own code that determines how lenient or conservative its behavior is — it is not the same thing as β1/β2 from the main-text formula. The main text uses β1/β2, while the appendix's implementation uses `beta` alongside a different set of symbols (`pareto.reward`, `pareto.auc`, `lambda`), and the paper never clarifies how the two correspond.
+**Beta: the policy's internal conservative/aggressive dial**: `beta` in the prompt is a hyperparameter internal to the policy's own code that determines how lenient or conservative its behavior is — it is not the same thing as \( \beta_1 \)/\( \beta_2 \) from the main-text formula. The main text uses \( \beta_1 \)/\( \beta_2 \), while the appendix's implementation uses `beta` alongside a different set of symbols (`pareto.reward`, `pareto.auc`, `lambda`), and the paper never clarifies how the two correspond.
 
 **Grid planning**: before a brand-new round of online exploration begins, there's an even earlier decision — how many root branches to open (width), and how many levels deep to extend each one (depth). This is handled by a separate `plan_grid()` method, which likewise cannot peek at this round's not-yet-happened results and can only decide based on the history of past rounds. The rough decision rules: if many directions show early promise but stall once explored deeper, increase width; if high scores only emerge after refining many levels and are concentrated in few directions, increase depth; if directions are already explored deep enough but still stalled while untried types of directions remain, increase width; if failures repeat as hard failures or directions are highly redundant, scale both width and depth back conservatively.
 
@@ -257,16 +264,14 @@ But there's a crucial precondition here: for a world model to be useful, it must
 
 Concretely, this is how Dreamer does it: it first compresses high-dimensional input (game frames) into a low-dimensional latent vector z (the latent state), rather than predicting directly in pixel space. It then learns a function inside this compressed space — "current z plus action a → predicted next z' plus reward" — and this function (often called an RSSM, Recurrent State-Space Model) is the core of the world model, trained on data collected from real interaction. The "dreaming" process then unfolds entirely inside latent space: starting from some z, repeatedly "use the policy to decide action a → use the dynamics model to predict z' → decide the next action," rolling out an entire imagined future trajectory — never touching the real environment, and never decoding back to real frames. The full loop looks like:
 
-```
-real environment interaction -> collect (frame, action, reward) data
-                              -> train encoder + dynamics model (world model)
-                              -> from any starting point, "imagine" many
-                                 future trajectories in latent space (dreaming)
-                              -> use these imagined trajectories to
-                                 train/improve the policy
-                              -> deploy the improved policy to the real
-                                 environment, collect new data
-                              -> loop back to the top
+```mermaid
+graph TD
+    A["Real environment interaction"] --> B["Collect frame, action, reward data"]
+    B --> C["Train encoder + dynamics model<br/>(world model)"]
+    C --> D["Imagine many future trajectories<br/>in latent space (dreaming)"]
+    D --> E["Train / improve the policy<br/>on imagined trajectories"]
+    E --> F["Deploy the improved policy<br/>to the real environment"]
+    F --> A
 ```
 
 The dynamics model is a neural network, which is fundamentally a learned continuous function — it usually produces a reasonable prediction for z-and-a combinations that are "similar to, but not identical to" anything it has seen before. That's exactly where its ability to generalize to unseen states comes from.
@@ -285,7 +290,7 @@ This approach genuinely exists — it's called **Planning**, with concrete techn
 
 **Problem one: in a continuous action space, there's no such thing as "having tried every action."** In the scenarios Dreamer targets (robot control, continuous Atari-style operation), actions are often continuous-valued, so you can sample at most a few dozen or few hundred candidates — this is no longer "finding the optimal solution," it's "approximating by sampling."
 
-**Problem two: search compute explodes exponentially with horizon.** Suppose you try 10 discretized actions per step and plan 15 steps ahead: that's 10^15 combinations — and this is the amount of compute needed to be recomputed at every single real timestep, which is completely infeasible for anything requiring real-time response. MCTS uses heuristics to prune away most meaningless branches, but even with pruning, the compute cost is still far higher than "train a policy network once, and at decision time just do a single forward pass."
+**Problem two: search compute explodes exponentially with horizon.** Suppose you try 10 discretized actions per step and plan 15 steps ahead: that's \( 10^{15} \) combinations — and this is the amount of compute needed to be recomputed at every single real timestep, which is completely infeasible for anything requiring real-time response. MCTS uses heuristics to prune away most meaningless branches, but even with pruning, the compute cost is still far higher than "train a policy network once, and at decision time just do a single forward pass."
 
 **Problem three: planning far into the future accumulates and amplifies the model's prediction error.** Planning 15 steps ahead means feeding "a step-1 prediction that already has error" into the model to compute step 2, then feeding an even-more-erroneous result into step 3, and so on — the error compounds as you go, so searching deeper actually increases the risk of being misled by an increasingly inaccurate model.
 
@@ -317,7 +322,7 @@ The more general question is: should an agent stuff its entire history into cont
 
 An easy point of confusion: "at a given node, the policy can't take a different action" — this intuition is correct, but you need to be precise about what "action" actually refers to here.
 
-"Action" does not mean "deciding what content to generate at node v" — that part is frozen; v's children's content was already generated and stored in the tree back when real online exploration happened, and replay never regenerates it. The real "action," at every round's decision point, is which nodes the policy selects from A(T) to put into batch C — who to pick, how many together, in what order, and when to select an empty batch and stop. That is the one and only thing that varies, and the one thing that's genuinely different between policies. Put plainly: the tree's "content" is dead (whose child is whose, what score, all fixed), but "how you plan to walk this tree" is alive — that's what the policy is actually doing.
+"Action" does not mean "deciding what content to generate at node \( v \)" — that part is frozen; \( v \)'s children's content was already generated and stored in the tree back when real online exploration happened, and replay never regenerates it. The real "action," at every round's decision point, is which nodes the policy selects from \( A(T) \) to put into batch \( C \) — who to pick, how many together, in what order, and when to select an empty batch and stop. That is the one and only thing that varies, and the one thing that's genuinely different between policies. Put plainly: the tree's "content" is dead (whose child is whose, what score, all fixed), but "how you plan to walk this tree" is alive — that's what the policy is actually doing.
 
 There are two easily confused pieces of code here, and it's worth keeping them straight:
 
@@ -334,13 +339,13 @@ Back to the Policy A / B example from earlier: neither policy, at any step, rege
 
 As noted earlier, monotonic non-regression only guarantees "the replay score doesn't regress" — it says nothing about whether "real online performance doesn't regress" either. This gap has two independent sources, not a causal chain — they're easy to lump together as one thing, but pulling them apart is more precise.
 
-**Source one: the beta (β1/β2) setting might not reflect what you actually care about.** Even if replay could see every possible path in the universe, if β1 is set too high (over-penalizing cost), the selected policy would still get pushed toward "reveal as little as possible," even when that's a suboptimal choice in the real world. This gap comes from whether "what this scoring formula measures" actually equals "what we care about" — it has nothing to do with how much of history the tree covers.
+**Source one: the beta (\( \beta_1 \)/\( \beta_2 \)) setting might not reflect what you actually care about.** Even if replay could see every possible path in the universe, if \( \beta_1 \) is set too high (over-penalizing cost), the selected policy would still get pushed toward "reveal as little as possible," even when that's a suboptimal choice in the real world. This gap comes from whether "what this scoring formula measures" actually equals "what we care about" — it has nothing to do with how much of history the tree covers.
 
-**Source two: a replay context is, after all, a historical context, not a real environment.** Even with perfectly tuned β, replay can still only choose among branches that have already been walked, and cannot evaluate any possibility that was never explored. This gap does not go away, because it has nothing to do with whether beta is well-tuned — it comes purely from "how big this simulator's world is."
+**Source two: a replay context is, after all, a historical context, not a real environment.** Even with perfectly tuned \( \beta \), replay can still only choose among branches that have already been walked, and cannot evaluate any possibility that was never explored. This gap does not go away, because it has nothing to do with whether beta is well-tuned — it comes purely from "how big this simulator's world is."
 
 Verifying these two sources are genuinely independent doesn't take much — a simple thought experiment suffices: suppose beta is tuned perfectly but the tree is still just a historical tree — the gap still exists (from source two). Conversely, suppose the tree covers every possible branch (idealized) but beta is poorly tuned — the gap still exists (from source one). In both hypothetical scenarios, removing one variable doesn't make the other gap disappear, which proves the two exist in parallel, independent of each other.
 
-The paper treats the two very differently. For "beta isn't set right," the paper does attempt a fix — the appendix designs a beta sweep plus an adaptive default-beta rule that recalibrates next round's default β based on the previous round's real online performance, which is, in a sense, using real feedback to correct the objective function itself. For "replay can only see history," the paper has no particular remedy — the only way to shrink this gap is the overall RSI loop itself: every online exploration round adds another tree to the history pool, so the world the simulator can replay keeps growing. But that only expands the "known world" after the fact — it doesn't solve the in-the-moment limitation that, at the point of any given round's decision, the simulator simply cannot see possibilities that haven't happened yet.
+The paper treats the two very differently. For "beta isn't set right," the paper does attempt a fix — the appendix designs a beta sweep plus an adaptive default-beta rule that recalibrates next round's default \( \beta \) based on the previous round's real online performance, which is, in a sense, using real feedback to correct the objective function itself. For "replay can only see history," the paper has no particular remedy — the only way to shrink this gap is the overall RSI loop itself: every online exploration round adds another tree to the history pool, so the world the simulator can replay keeps growing. But that only expands the "known world" after the fact — it doesn't solve the in-the-moment limitation that, at the point of any given round's decision, the simulator simply cannot see possibilities that haven't happened yet.
 
 This breakdown is itself a transferable framework for judgment: any system that uses historical data for off-policy evaluation can ask itself these two questions — does what the scoring formula measures actually equal what I care about? Does the range covered by historical data actually approximate the real situation I need to decide in? The answers to the two questions point to different remedies — they can't be conflated and solved with a single approach.
 
@@ -407,28 +412,17 @@ The transferable rule: when designing any system that automatically decides whet
 
 There's a reasonably sensible way to split these four options between what the harness (program logic) handles directly and what should be handed off to the LLM's judgment:
 
-```
-Harness layer (structural, no LLM judgment needed, handled
-automatically):
-  - Rate limits (429), server temporarily unavailable
-    (503/timeout)
-    -> auto-retry + exponential backoff; the LLM doesn't even
-       need to know this happened
-       (unless retries are exhausted, in which case report
-       "this tool is currently unavailable" to the LLM)
-  - Schema validation errors (missing required fields, wrong type)
-    -> can be caught by the harness before sending and the LLM
-       asked to regenerate the parameters directly, without
-       ever hitting the actual API to find out
-
-LLM-judgment layer (requires semantic understanding, something
-the harness can't hard-code with rules):
-  - "This parameter is logically wrong" (not a format error,
-    a semantic one)
-  - "This tool keeps failing — should I switch tools or
-    approaches?"
-  - "This direction has failed to produce anything useful after
-    several attempts — should I give up and ask the user?"
+```mermaid
+graph TD
+    E["Tool call fails"] --> H{"Is the error structural?"}
+    H -->|"Rate limit 429<br/>503 / timeout"| A1["Harness auto-retries<br/>+ exponential backoff<br/>LLM never needs to know"]
+    H -->|"Schema validation error<br/>missing field, wrong type"| A2["Harness catches it before sending<br/>asks LLM to regenerate parameters"]
+    H -->|"Needs semantic understanding<br/>can't be hard-coded"| L["Hand off to LLM judgment"]
+    A1 -->|"retries exhausted"| L
+    A2 --> L
+    L --> L1["Parameter is semantically wrong<br/>→ correct it and retry"]
+    L --> L2["This tool keeps failing<br/>→ switch tool or approach"]
+    L --> L3["Several attempts, nothing useful<br/>→ give up and ask the user"]
 ```
 
 What the system prompt should provide is "judgment principles," not an exhaustive error-code lookup table — real-world tool error messages are far too varied to enumerate. A more robust approach (borrowing from how the B.2 prompt itself is written — it gives judgment principles plus example characteristics, not a literal lookup table) is to put a principle like this in the system prompt: "if the error message indicates a parameter/format problem, try correcting the parameters and retrying once; if it still fails after two correction attempts, consider whether this tool is even applicable, or switch to another tool/report to the user" — while the harness ensures that whenever it does hand off to LLM judgment, it always includes the actual raw error message in context, rather than giving the LLM only an abstract "it failed" — only then does the LLM have something to actually reason about.

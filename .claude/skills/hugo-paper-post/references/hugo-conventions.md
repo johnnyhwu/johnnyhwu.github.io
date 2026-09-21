@@ -367,6 +367,74 @@ round-by-round walkthrough with real numbers, or actual code) — that's
 correctly a code fence; only the "this is really math" case gets converted.
 Same category as the delimiter conversion above: formatting, not substance.
 
+### Convert the whole symbol, and don't double-wrap
+
+Two traps show up as soon as you start converting notation in bulk:
+
+1. **Don't leave a symbol's siblings behind.** If one symbol in a sentence
+   becomes `\( C \)`, every other symbol in that same sentence has to go
+   too — a line reading "從 \( A(T) \) 裡選出一個批次 \( C \),大小最多是 W"
+   looks broken precisely *because* the `W` didn't get converted. Tables are
+   the usual casualty here: a `分數 s_v` or `k*=3` cell is just as much
+   notation as anything in the prose, and the header's own `分數 V` /
+   `Score V` counts too.
+2. **Never run a blind find-and-replace.** Protecting fenced code blocks is
+   not enough — a rule like `s_v → \( s_v \)` will happily fire *inside*
+   already-converted `\( s_v \)` and inside a `\[ ... \]` block, producing
+   nested `\( \( s_v \) \)` that renders as literal garbage. After any
+   scripted pass, grep for nested delimiters before building:
+
+   ```bash
+   grep -nE '\\\([^)]*\\\(|\\\[[^]]*\\\(' content/posts/<section>/<slug>/index.*.md
+   ```
+
+   That grep returning nothing is the check; `verify_post.py` does not
+   catch this case.
+
+## Diagrams: a code fence that's actually a flowchart
+
+The theme ships **mermaid** support with no configuration required —
+both a ```` ```mermaid ```` fenced block (via
+`themes/DoIt/layouts/_markup/render-codeblock-mermaid.html`) and a
+`{{< mermaid >}}` shortcode render, and the page then lazy-loads
+`mermaid@10` from jsDelivr and picks its light/dark variant from
+`window.theme`. Prefer the fenced form — it stays readable as plain
+Markdown.
+
+`article.md` is platform-neutral, so the Writer has no way to emit a
+diagram; structural content arrives as ASCII art or an arrow chain
+instead. Converting it is Step 3's call, the same way math-delimiter
+conversion is. Convert when the snippet is genuinely **structure or
+flow**:
+
+- an ASCII tree drawn with `├─` / `└─` box-drawing characters → `graph TD`
+- an arrow chain that closes a cycle (`A -> B -> ... -> 迴圈回到最上面`)
+  → `graph TD` with the last node pointing back at the first
+- a two-layer routing / decision split ("handle these automatically,
+  escalate these") → `graph TD` with a `{"..."}` diamond and labeled edges
+
+**Leave it as a code fence** when it's a concrete round-by-round trace
+with real numbers, actual code, or a definition list ("Label: — trait —
+example"). A definition list is not a flow; forcing it into a diagram
+makes it worse, not better. The same "recognize it by content, not shape"
+test as the formula rule above applies.
+
+Two practical notes:
+
+- Quote every node label (`A["文字"]`) and use `<br/>` for line breaks —
+  unquoted parentheses and CJK punctuation will break the parse.
+- **A `hugo build` cannot validate mermaid**, because it renders
+  client-side; a syntax error surfaces only as a "Syntax error in graph"
+  box in the browser. Check it in a real browser (see `hugo-build.md`).
+  In a sandbox the jsDelivr CDN is typically blocked, so `npm pack
+  mermaid@10`, extract it, and route
+  `**/cdn.jsdelivr.net/npm/mermaid@10/dist/**` to the local `dist/` with
+  Playwright's `page.route` — then assert every `pre.mermaid` actually
+  contains an `svg`.
+- Known theme limitation, not worth "fixing" in a post: mermaid reads
+  `window.theme` once at init, so toggling dark/light after page load
+  leaves the diagram in its original palette until a refresh.
+
 ## Admonitions for callouts
 
 The theme's `{{< admonition type="..." title="..." >}}...{{< /admonition >}}`
