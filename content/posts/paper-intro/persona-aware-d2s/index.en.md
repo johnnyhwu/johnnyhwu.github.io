@@ -2,7 +2,7 @@
 # weight: 1
 title: "Persona-Aware D2S: One Paper, Four Audience-Tailored Slide Decks"
 date: 2026-07-29
-lastmod: 2026-07-29
+lastmod: 2026-09-21
 draft: false
 description: "Persona-Aware D2S (EACL 2024) generates four slide-deck versions of one paper by audience and length, via an RLHF-lite pipeline we unpack and critique."
 featuredImage: "featured-image.png"
@@ -20,123 +20,290 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-Hand the same paper to an engineer and to a business executive, and in principle the resulting presentation should look nothing alike: different jargon density, different depth of detail, even different key points. Yet most existing document-to-slides (D2S) systems produce a single, one-size-fits-all output — whoever ends up watching, the outline that comes out is the same.
+There is no single right way to turn a paper into slides. Presenting to researchers in your own field, you jump straight into the model architecture; presenting to a business executive, you first have to make clear what problem the thing solves, and architectural detail becomes a distraction. Yet nearly every "document-to-slides" (D2S) system out there produces a single output: feed in the document, and what comes out is always the same outline.
 
-Persona-Aware-D2S, an EACL 2024 paper, sets out to solve exactly this problem: generate four different versions of slide content from the same document, conditioned on two variables — whether the audience is an expert, and whether the deck should be long or short. The method combines supervised fine-tuning with a lightweight preference-tuning trick borrowed from Decision Transformer; this article refers to that combination collectively as "RLHF-lite." We'll walk through the paper's three-stage pipeline and unpack the method stage by stage, while being upfront about where the approach doesn't hold up on data scale and architecture design. The conclusion first: this paper's real value is in clearly defining the task of persona-aware generation, not in offering a system you can drop straight into production.
+Persona-Aware-D2S, from EACL 2024, sets out to fill that gap. It turns "is the audience an expert?" and "should the deck be long or short?" into model input conditions, so one document grows four versions of slide content. For training it pairs SFT with a lightweight preference-tuning trick borrowed from Decision Transformer, sidestepping the infrastructure that PPO (the reinforcement-learning algorithm at the heart of mainstream RLHF) demands. This article walks the three-stage pipeline apart, fills in two pieces of technical background you'll probably get stuck on (Decision Transformer and the Bradley-Terry model), and then honestly assesses whether it's worth reproducing in engineering terms. The conclusion up front: this paper's contribution lies mainly in the task definition and the dataset; the method itself is an assembly of off-the-shelf techniques, and several architecture-level problems will block adoption outright.
 
 {{< admonition abstract "Key Takeaways (TL;DR)" >}}
-- **Task definition**: Persona-Aware-D2S (EACL 2024) is the first to clearly define the task of generating four different slide-deck versions of the same document, conditioned on audience (expert / non-expert) and length (long / short), and builds a matching parallel dataset for it.
-- **Method**: a three-stage pipeline (topic generation → content extraction → summarization and alignment). The first two stages use supervised fine-tuning plus a lightweight preference-tuning trick borrowed from Decision Transformer (reward-conditioning) — but in practice this means training four separate models for the four persona combinations, rather than one model conditioned on persona.
-- **The most cost-effective parts**: Stage 2's two-tier retrieval (literal matching first, semantic matching as fallback) and Stage 3's untrained "extract-then-summarize-and-reorder" prompting step — the paper's own ablation confirms the latter measurably improves readability and coherence.
-- **Where it falls short**: the training data is tiny (only 80 samples for topic generation, a 5-paper dev split), the reward model is a 66M-parameter DistilBERT with no capacity ablation, and the four-models-per-persona architecture can't scale as the persona dimension grows.
+- **Task definition**: Persona-Aware-D2S (EACL 2024) turns "generate four versions of slide content from one document, conditioned on audience (expert / non-expert) and length (long / short)" into a clearly defined task, and builds the matching parallel dataset for it.
+- **Method**: a three-stage pipeline (outline generation → content extraction → summarization and reordering). The first two stages use supervised fine-tuning plus a lightweight preference tuning (reward-conditioning) trick borrowed from Decision Transformer — but in practice that means training a separate model for each of the four persona combinations, rather than one conditional model.
+- **The most cost-effective parts**: the two-tier retrieval in Stage 2's first step (literal matching first, semantic matching as fallback), and Stage 3's entirely training-free "summarize and reorder" step, which the paper's own ablation confirms improves readability and coherence.
+- **Where it falls short**: the training data is tiny (only 80 samples for outline generation, a 5-paper dev split), the reward model has just 66M parameters with no capacity ablation, and the one-model-per-persona architecture can't scale as persona dimensions grow.
 {{< /admonition >}}
 
-## Same Document, Very Different Needs for Two Kinds of Readers
+## Why This Task Was Worth Redefining
 
-The paper's example is intuitive: presenting the same paper to a general audience or a business executive should focus on the overall "what can this do" workflow; presenting it to a technical audience requires going deep into the model architecture. This sounds obvious, but past D2S systems (like Doc2PPT and D2S) were architecturally a fixed mapping — document in, single deck out — with no way to add or adjust "who the audience is" as an input variable.
+{{< image src="figure1.png" alt="Side-by-side slide content Persona-Aware-D2S generated from the same paper for two different audiences" caption="Figure 1 — The same paper, with the model's two audience-specific versions side by side: one emphasizes the overall application workflow, the other the model architecture details." >}}
 
-Beyond the missing audience condition, the paper points to three more problems. Length constraints were also never treated as an input: a one-hour technical talk and a five-minute overview need vastly different information density, but past systems had no adjustable dimension for this either. The training approach itself is problematic: if you train only by "maximizing similarity to a single gold reference" — the common ROUGE-score approach — the model ends up learning to approximate one particular annotator's writing style, rather than understanding that different audiences need different things. That's a fundamental conflict between a one-to-many problem and a single-answer training method. Extractive approaches (directly copy-pasting original sentences as slide content) are another long-standing issue, reading stiffly and failing to integrate across sentences. Finally, conditional generation like this needs parallel data — the same paper mapped to multiple persona versions — and no such dataset existed before this paper.
+The paper's opening example is intuitive: in front of a general or business audience, content that is too technically dense actually reduces engagement, because what these listeners want to know is "what is this for," not how many modules the model has. This figure is the visualization of the paper's entire motivation — one input, two outputs, differing not in quality but in who is being addressed.
 
-## Method Overview: A Three-Stage Pipeline
+Laying out the problems the paper raises in §1 and its related work, there are really five challenges with dependencies among them:
 
-{{< image src="figure2.png" alt="Complete pipeline diagram for Persona-Aware-D2S, including the Topic Generator, Content Extractor, and Reward Model training flow" caption="Figure 2 — The complete pipeline: the top half is the topic-generation training flow, the bottom half is content extraction, which finally feeds into summarization and alignment to produce the final slide deck." >}}
+| # | Challenge | What prior methods did | Why it wasn't enough |
+|---|---|---|---|
+| 1 | Single output, can't adapt to different audiences | Doc2PPT (Fu et al., 2021), D2S (Sun et al., 2021) | Architecturally a fixed "document → single deck" mapping, with no "audience" input variable at all — no way in even if you wanted to extend it |
+| 2 | Can't adapt to duration constraints | Same as above | A one-hour talk and a five-minute overview need completely different slide counts and information density, but duration was likewise never treated as a condition |
+| 3 | Training objective misaligned with diverse human preferences | Maximizing similarity to a single gold reference (ROUGE, which compares word overlap between output and reference) | This maximum-likelihood (MLE) training presumes "there is only one correct answer," which directly conflicts with the inherently one-to-many nature of the persona problem |
+| 4 | Extractive methods produce incoherent content | Heuristic rules (Masum et al., 2005, etc.), ML-based extractive methods (Hu & Wan, 2013, etc.) | Rule-based approaches rely on hand-crafted features and generalize poorly; extractive approaches can only pull sentences from the source, with no ability to summarize or rewrite, so they read stiffly |
+| 5 | No dataset to train or evaluate on | — | Prior work mostly handled only one format — the technical conference talk — with no parallel data pairing one paper against multiple personas |
 
-The paper frames the entire task as a conditional probability: given document content C, audience B (expert or non-expert), and length L (long or short), generate the final slide deck O — that is, p(O | C, B, L). Strictly speaking, the paper's body never explicitly decomposes this objective into a product of factors, but based on how the pipeline actually runs, it can be approximated as three stages:
+These five aren't parallel items. Challenge 5 is the precondition: without data there is no conditional generation to speak of. Only with the data can the conditions in challenges 1 and 2 become model inputs; and once you set out to train such a conditional model, you must confront challenge 3 (a single reference can't support diverse preferences). Challenge 4 is an independent content-quality problem, unrelated to persona but equally in need of a fix.
 
-1. **Stage 1 (topic outline generation)**: first generate the sequence of slide titles
-2. **Stage 2 (content extraction)**: for each title, pick out the relevant sentences and figure/table captions from the document
-3. **Stage 3 (summarization and logical alignment)**: organize the extracted, scattered content into a coherent deck
+## Unpacking the Method: From Problem Formalization to a Three-Stage Pipeline
 
-The three stages run in sequence, with each stage's output feeding the next. Below we unpack what each stage actually does, in order.
+### Getting the Notation Straight First
 
-## Stage 1: Deciding What Topics the Slides Should Cover
+The paper's formalization isn't hard, but the symbols are scattered across sections, so let's collect them here:
 
-The first stage's goal is simple: given document content plus a persona condition, produce a sequence of slide titles. This happens in two steps — first supervised fine-tuning to establish a baseline, then correction using preference data.
+| Symbol | Meaning |
+|---|---|
+| \( D \) | The whole document (the paper) |
+| \( SE \) | The set of sections in \( D \) |
+| \( F \) | The set of all figures and tables in the document |
+| \( F_q = \{I_q, Cap_q\} \) | The \( q \)-th figure/table, comprising image \( I_q \) and caption \( Cap_q \) |
+| \( C \) | The paper's body content |
+| \( H \) / \( A \) | The paper's title / abstract |
+| \( B \in \{e, ne\} \) | Audience background: expert / non-expert |
+| \( L \in \{l, s\} \) | Deck length: long / short |
+| \( IN = \{C, B, L\} \) | The input triple to the model |
+| \( t = \{t_1, \dots, t_j\} \) | The sequence of slide titles, i.e. the outline |
+| \( S_u \) | Candidate content snippets filtered from the document (sentences plus captions) |
+| \( O \) | The final slide output |
 
-### Supervised Fine-Tuning (SFT-F)
+There's an easily missed design decision here: although \( F_q \) is written as "image + caption," the model actually only consumes the caption text — the image itself is never understood at any point. We'll settle that bill when we get to the limitations.
 
-This uses standard cross-entropy loss to make the generated titles match human-annotated ground truth as closely as possible. There's a notable design choice worth flagging here: the paper trains **four separate models**, one each for "expert + long," "expert + short," "non-expert + long," and "non-expert + short," rather than training a single model with audience and length as prompt-level conditioning text. The training data is also small — the train split has only 20 papers times 4 configurations, for a total of 80 samples, used to fine-tune GPT-3.5-turbo. The paper does not further validate how much generalization a model trained on 80 samples retains when moved to domains with substantially different writing styles.
+The overall objective is to model \( p(O \mid C, B, L) \). This joint probability can't be trained directly, so the pipeline effectively splits it into three parts (this decomposition is my reading, derived by lining it up against the three stages — the paper never writes it out as a single equation):
 
-### Preference Fine-Tuning (P-F)
+$$p(O \mid C, B, L) \approx \underbrace{p(t \mid IN)}_{\text{Stage 1: outline generation}} \times \underbrace{p(S_u \mid t, IN)}_{\text{Stage 2: content extraction}} \times \underbrace{p(O \mid S_u, t, IN)}_{\text{Stage 3: summarization and reordering}}$$
 
-This is meant to solve the "a single gold reference isn't enough" problem, in three steps. Step one collects human preferences: each of the four SFT models generates five candidate topic sets using different temperature, top-K, and top-p settings; experts and non-experts then perform pairwise comparisons on the configuration matching their own group, judged on "is this comprehensible for the target audience" and "does the length match the requirement." Only samples with majority-decision consensus are kept; samples without consensus are discarded outright.
+{{< admonition info "A typo in the paper's own equations" >}}
+Watch out when reading the original equations: §3.1 writes the Outline Generation objective as \( P(t \mid IN) \), which is fine, but §3.2 still writes \( P(t \mid IN) \) when describing Content Extraction, where the text clearly calls for \( P(S_u \mid IN) \). This is a writing slip, not a different objective.
+{{< /admonition >}}
 
-Step two trains a reward model on this preference data, mathematically using the Bradley-Terry model — an old statistical method from 1952, originally used for ranking sports teams. Its core assumption is that every item has an unobserved "strength" value, and comparison outcomes are just a probabilistic reflection of that strength. The formula is P(i beats j) = strength_i / (strength_i + strength_j): if A's strength is 8 and B's is 2, P(A beats B) is 0.8 — A is four times stronger and wins 80% of the time, but B still has a 20% chance of an upset. This tolerance for uncertainty happens to fit the inherently noisy setting of "human preference" well — which is why the same underlying Bradley-Terry loss runs from the 2017 RLHF founding paper, through InstructGPT, and on to later [DPO](../dpo/). The paper trains four reward models (for expert/non-expert comprehensibility and length-based satisfaction respectively), using a distilbert-base-cased encoder with only about 66M parameters — whether that capacity is enough for a semantically complex task like judging "comprehensibility" is never validated with an ablation study.
+{{< image src="figure2.png" alt="The full Persona-Aware-D2S information flow, with Topic Generator training and fine-tuning on top and content extraction plus final summarization alignment below" caption="Figure 2 — The full pipeline: the upper half is the SFT-to-preference-tuning flow for outline generation (including the reward model and human feedback), the lower half the matching flow for content extraction, all feeding into summarization and reordering to produce the deck." >}}
 
-Step three is the actual preference fine-tuning, borrowing a technique from Decision Transformer (Chen et al., 2021): sample prompts from the training set, generate five candidates with the SFT model, have the reward model score each one, treat (prompt, reward score) pairs as training data, and fine-tune the LLM on them once more. At inference time, feeding in the "maximum reward value" as a condition produces the corresponding high-scoring output. Decision Transformer originally reframed reinforcement learning as a sequence-prediction problem: a trajectory consists of a series of (state, action, reward) tuples; during training the model looks at "how much return-to-go is still wanted" plus "the current state" to predict what action to take; at inference time, the user first sets a target score, and the model produces actions toward that target, one step at a time.
+Treat this figure as the map for the whole section: the three subsections that follow correspond to the three parts of the diagram.
 
-But there's an incomplete borrowing here: Decision Transformer's real power lies in handling multi-step decision problems where "this step's choice affects how much reward can be earned in the next step" — while Persona-Aware-D2S's use case is single-shot generation: feed in a prompt once, get out a complete outline once. There's no real multi-step decision structure and no notion of a "trajectory." Strictly speaking, the paper only borrows the surface-level trick of "feeding reward in as a condition to supervised learning" to sidestep the training complexity of PPO, without actually engaging with the problem Decision Transformer was designed to solve. The paper also never explains exactly how the "maximum reward" value is determined, or whether reward is merged into a single scalar or fed in as multiple dimensions — these missing implementation details make full reproduction difficult.
+### Stage 1: Generating a Persona-Aware Slide Outline
 
-## Stage 2: Picking Out the Content That's Actually Useful From the Document
+This stage's goal is to take the paper's content plus the persona conditions and generate the slide title sequence \( t \). It proceeds in two steps: supervised fine-tuning first, then preference tuning.
 
-Once there's a title outline, the second stage needs to find matching content for each title. Handing the entire paper to an LLM to pick sentences is too expensive, and the paper states its goal is to keep the prompt within GPT-3.5-turbo's 4096-token limit — so it designs a two-tier retrieval mechanism that doesn't rely on an LLM at all. First, compare each slide title against the paper's section headings with literal similarity (fuzzy matching) and keep candidates above a threshold; only if no section clears that threshold does it fall back to computing semantic similarity with Sentence-BERT and picking the closest section. Once a section is selected, every sentence and figure/table caption under that section is concatenated together to form the candidate content pool for that title.
+#### Supervised Fine-Tuning (SFT-F)
 
-The cost savings this mechanism buys are clearly stated — the paper's own Table 10 compares three retrieval strategies:
+The approach itself is standard: cross-entropy loss, minimizing the gap between generated titles and ground-truth titles. What's really worth noting is the architectural decision — the paper trains **four independent models**, one per persona combination:
 
-| Strategy | Avg. GPT Calls | Recall |
+$$\pi_{SFT}^{(B=ne,\,L=l)},\quad \pi_{SFT}^{(B=ne,\,L=s)},\quad \pi_{SFT}^{(B=e,\,L=l)},\quad \pi_{SFT}^{(B=e,\,L=s)}$$
+
+rather than training a single model with \( B \) and \( L \) as conditions inside the prompt. The choice may be cleaner in terms of quality, but it comes at a steep cost, and it will be the main line of attack when we get to scalability.
+
+The training scale is modest indeed: the train split holds only 20 papers, which times 4 configurations gives **80 training samples**, used to fine-tune GPT-3.5-turbo (3 epochs, lr=0.2, batch size 256).
+
+#### Preference Fine-Tuning (P-F)
+
+This step addresses challenge 3 above: a single gold standard can't support diverse preferences. The process has three parts.
+
+**Part one is collecting human preference data.** Each of the four \( \pi_{SFT} \) models generates 5 candidate outlines using different temperature, top-K and top-p settings; 3 experts pairwise-rank the two expert configurations (long vs. short), and 3 non-experts do the same for the two non-expert configurations. There are two rating criteria: comprehensibility for the target audience, and satisfaction with the length. Only samples with majority-vote consensus are kept; those without consensus are discarded.
+
+**Part two is training the reward model**, using a Bradley-Terry loss:
+
+$$\mathcal{L} = -\mathbb{E}_{x \sim \text{train}}\left[\log \sigma(s_w - s_r)\right]$$
+
+where \( s_w \) is the score of the chosen version and \( s_r \) the score of the rejected one. Because there are two rating criteria and two audiences, this yields four reward models: \( RM_{C\text{-}E} \) and \( RM_{L\text{-}E} \) (comprehensibility and length for experts), plus \( RM_{C\text{-}NE} \) and \( RM_{L\text{-}NE} \) (the non-expert counterparts).
+
+{{< admonition warning "The reward model's capacity is never validated" >}}
+Here's a choice I think deserves scrutiny: the reward model is distilbert-base-cased, a small encoder of roughly 66M parameters. "Is this outline comprehensible to a non-expert?" is a judgment that leans heavily on semantic understanding, and the paper runs no ablation at all on whether that capacity suffices.
+{{< /admonition >}}
+
+**Part three is the actual preference tuning**, borrowing Decision Transformer's reward-conditioning trick (the next section explains in full what that trick is in its original context). The steps: sample prompts from the train set, generate 5 outlines with \( \pi_{SFT} \), score each with the reward model, yielding training pairs of the form "(prompt, reward) → outline," then fine-tune the LLM on that batch. Fundamentally this is still supervised learning; the input just carries an extra reward as a condition. At inference you simply feed in the "maximum reward value" and let the model generate the outline that corresponds to that high score.
+
+The paper skips two details at this step: where the so-called "maximum reward" number actually comes from (the largest value observed in the training data? a manually set constant?), and whether the two reward scores are merged into a single scalar or both stuffed into the prompt. Without these, reproduction is going to hurt.
+
+### Stage 2: Extracting the Content That Belongs on Each Slide
+
+With the outline in hand, the next job is to find the sentences and figure captions matching each title — that is, \( S_u \). This stage has two steps: first narrow the candidate pool cheaply, then use a trained model to pick content from the candidates.
+
+#### Step One: A High-Recall Section Filter (No LLM Involved)
+
+Why is this step needed? Handing the whole paper to an LLM to pick sentences is expensive, and it won't fit inside GPT-3.5-turbo's 4096-token limit. So the paper narrows the range cheaply first:
+
+1. Each slide title \( t_i \) is **fuzzy-matched** (literal similarity) against the paper's section headings, taking the top-k above a threshold \( th \).
+2. If no section clears the threshold, fall back to **Sentence-BERT** (Reimers & Gurevych, 2019) semantic similarity and pick the closest section.
+3. Once a section is selected, all of its sentences and captions are concatenated into \( S_u \).
+
+In plain terms, it's "cheap literal matching first, semantic model only when literal matching fails" — a two-tier retrieval, a classic retrieve-then-rerank pattern, and in my view the single most directly borrowable design in the paper.
+
+{{< admonition warning "Two worries about the section filter" >}}
+The threshold \( th \) was tuned on a dev split of only **5 papers**, a sample so small that a change of domain (different section-naming habits) will probably require retuning. More fundamentally, the whole mechanism leans heavily on the document having a standardized section structure; point it at meeting notes or a PRD and the literal-matching half fails outright, falling back entirely to semantic matching.
+{{< /admonition >}}
+
+#### Step Two: Persona-Aware Content Extraction
+
+This step reuses Stage 1's machinery wholesale — the same cross-entropy SFT, the same Bradley-Terry reward model, the same Decision-Transformer-style preference tuning — only with input and output swapped to "\( (t, S_u) \) → relevant snippets," producing a policy dedicated to content extraction.
+
+#### What the Saved API Cost Actually Costs
+
+The paper claims this candidate filtering cuts GPT calls to roughly one eighth. The claim has data behind it, but it also has a price:
+
+{{< image src="table10.png" alt="Table of the trade-off between GPT call count and recall under different candidate-filtering strategies" caption="Table 1 — The cost/recall trade-off of candidate filtering (Table 10 in the original): the more calls, the higher the recall." >}}
+
+| Strategy | Average GPT calls | Recall |
 |---|---|---|
 | The paper's lightweight filter | ~1 | 78.89% |
-| Medium-range candidate set | ~5.3 | 81.34% |
-| Nearly the entire paper as candidates | ~8.2 | 100% |
+| Medium candidate range | ~5.3 | 81.34% |
+| Nearly the whole paper | ~8.2 | 100% |
 
-The paper claims an eightfold reduction in GPT calls, at the cost of permanently missing about 21% of genuinely relevant content — this filtering step is irreversible, and later stages have no chance to see the sentences that were dropped. The threshold itself was only tuned on a 5-paper dev split, a very small sample, so it will likely need retuning for domains with different section-naming conventions; and the whole mechanism depends heavily on documents having standardized section structure, so it would simply fail on unstructured documents like meeting notes or PRDs. (As an aside: the paper's Table 10 also lists a precision column that isn't included in the simplified table above; those numbers look implausible — precision should normally fall between 0 and 1, but the paper's listed values are clearly larger than that. This is likely a table layout or column-alignment issue, worth flagging if you ever cite it.)
+The key point is that this filtering is **irreversible**: a sentence filtered out here is invisible to every later stage. So that 21% of relevant content isn't "temporarily unselected," it's permanently gone. Whether trading one fifth of your content coverage for one eighth of the call cost is worth it depends on how much omission your application can tolerate.
 
-Once candidate content is selected, which sentences are actually relevant is extracted using the exact same mechanism as Stage 1 — the same cross-entropy supervised fine-tuning, the same Bradley-Terry reward model, the same Decision-Transformer-style preference fine-tuning — just with the input/output swapped to "(title, candidate content) → the actually relevant content."
+{{< admonition info "A note on data quality" >}}
+This table (Table 10 in the original) also has a precision column, not reproduced above, with values of 6.73, 5.93 and 5.88 — which look implausible, since precision should normally fall in the 0–1 or percentage range. I suspect a column misalignment in the original table; check against the source PDF before citing these numbers. The recall figures look normal.
+{{< /admonition >}}
 
-## Stage 3: No Training At All, Yet the Most Effective Step
+### Stage 3: Summarization and Logical Reordering
 
-The first two stages invest heavily in SFT plus preference fine-tuning, while the third stage does no custom training at all — it relies on just two rounds of prompting: first summarize the extracted content into bullet points, then feed those bullet points back to an LLM and ask it to reorder them, within a title or across titles, to make the content easier for the audience to digest. The paper never explains why the step with the biggest impact on user experience is also the one with the least resources invested — an oddly asymmetric allocation.
+What the first two stages extract is scattered sentence fragments, which would be hard to read pasted straight onto slides. Stage 3 organizes them into a coherent final output through two-step prompting: first summarize the content of \( S_u \) into bullet points, then feed those bullets back to the LLM and ask it to reorder them within a title, or across titles, so the sequence better matches how an audience takes things in. Concretely, that means flipping a "results" slide that led with numbers and only later gave the experimental setup, or moving definitional bullets ahead of application ones.
 
-To show what this actually looks like in practice, the paper contrasts two versions of the same title, "Model Details":
+Stage 3's resource allocation visibly drops a level: Stages 1 and 2 both invest heavily in SFT plus preference tuning, yet Stage 3 — the stage with the most direct impact on user experience — gets **no custom training whatsoever** and relies purely on prompting. The paper never explains whether this asymmetry is deliberate or accidental.
 
-{{< image src="figure6.png" alt="Two versions produced by the P-F model for the same slide title, one for non-experts and one for experts" caption="Figure 6 — Left is the non-expert version, which explains terms like LSTM and semantic similarity and keeps content more concise; right is the expert version, which goes straight into training details and network architecture without explaining terminology." >}}
+First, what the output actually looks like:
 
-This side-by-side comparison is the most direct way to verify the final effect of the whole pipeline (all three stages stacked together): the difference in term density and depth of detail between the two sides is visible at a glance.
+{{< image src="figure6.png" alt="Two slides the model produced for non-experts and for experts under the same 'Model Details' title, side by side" caption="Figure 3 — The same 'Model Details' title: on the left the non-expert version (explaining terms like LSTM and semantic similarity, with fewer details), on the right the expert version (going straight into training details and network architecture, with no jargon explained)." >}}
 
-To check whether this summarize-and-reorder step in Stage 3 actually helps, the paper runs an ablation study on 10 papers, comparing "the version directly extracted by Stage 2" against "the version summarized and reordered by Stage 3":
+This figure is the most direct way to check the whole pipeline — without looking at a single score, just compare the jargon density and depth of detail on each side and you can tell whether the conditioning actually took effect.
 
-{{< image src="figure5.png" alt="Bar chart comparing Coherence, Coverage, Readability, and Relevance before and after Summarization+Alignment" caption="Figure 5 — Red is after alignment, blue is before; Readability and Coherence both show clear improvement, while Coverage and Relevance barely change." >}}
+As for whether Stage 3 itself helps, the paper ran a before/after ablation (10 papers, Stage 2's extractive version vs. Stage 3's summarized-and-reordered version):
 
-The specific numbers: Coherence improves by 0.5 points, Readability improves by 1.0 point, Coverage drops by only 0.05 points (essentially unchanged), and Relevance is completely unchanged. This is the most solidly evidenced experiment in the whole paper — a direct before/after comparison confirming that summarizing and reordering does improve readability and coherence, without noticeably sacrificing content coverage. That said, the sample is only 10 papers, and the raters weren't independent third parties, so how far the conclusion generalizes is limited.
+| Metric | Change |
+|---|---|
+| Coherence | +0.5 |
+| Readability | +1.0 |
+| Coverage | -0.05 (essentially unchanged) |
+| Relevance | 0 (unchanged) |
 
-How hallucination is handled is also worth noting: the paper doesn't do any automated fact-checking, and instead has annotators rate "how relevant the content is to the title," using that score as an indirect proxy for hallucination. This isn't rigorous — content can be "highly relevant to the title" while simultaneously "fabricating details the paper never actually stated," and that type of hallucination is invisible to a relevance score.
+{{< image src="figure5.png" alt="Bar-chart comparison of Coherence, Coverage, Readability and Relevance ratings before and after summarization and reordering" caption="Figure 4 — User ratings before and after summarization and reordering: Readability and Coherence improve clearly, while Coverage and Relevance hold roughly flat." >}}
 
-## End-to-End Evaluation Results
+This is one of the more solidly evidenced experiments in the paper: a direct before/after comparison confirming that summarization plus reordering really does improve readability and coherence without noticeably sacrificing content coverage. That said, the sample is only 10 papers, and the raters aren't an independent third party.
 
-With all three stages chained together, how does end-to-end performance look?
+**How are hallucinations handled?** The paper runs no automated fact-checking; instead annotators rate "content relevance," and that score stands in indirectly for whether hallucination occurred.
 
-{{< image src="table4.png" alt="End-to-end ROUGE-1/2/L evaluation results for Zero-shot, Few-shot, SFT-F, and P-F across four persona configurations" caption="Table 4 — The P-F model beats Zero-shot, Few-shot, and SFT-F in almost every configuration, with the sole exception of the Expert-Short configuration." >}}
+{{< admonition warning "Relevance is not a rigorous proxy for hallucination" >}}
+A passage can perfectly well be "highly relevant to the title" while also "fabricating details the paper never stated," and hallucinations of that type slip straight through this evaluation.
+{{< /admonition >}}
 
-P-F performs best across most configurations, with the sole exception of "expert + short," where SFT-F actually wins instead (R-1 scores of 0.17 vs. 0.13 in the table). Overall, fine-tuning clearly helps, with both Zero-shot and Few-shot lagging noticeably behind. It's also worth noting that the paper's Appendices D through G provide the complete prompts used by the Zero-shot and Few-shot versions for both the topic-generation and content-extraction modules — but not the prompt template used for Stage 3's summarization and reordering, making it the one step among the four modules that can't be reconstructed from the appendices.
+Appendices D–G provide the complete zero-shot / few-shot prompts for outline generation and content extraction, but **not** the prompt template used in Stage 3. Of the four modules, this is the one step that can't be reconstructed from the appendix — and it happens to be the one most readily lifted and reused.
 
-## Critical Assessment: Where This Paper Falls Short
+## Background: Two Techniques You Might Get Stuck On
 
-### Limitations the Paper Admits Itself
+This section fills in two pieces of technical background that Persona-Aware-D2S borrows but that the paper itself only mentions in passing. Their value is independent of this paper — even if slide generation doesn't interest you, both are useful elsewhere.
 
-The paper itself acknowledges several points in its Limitations section:
+### Decision Transformer: Packaging Reinforcement Learning as Sequence Prediction
 
-- Limited content faithfulness
-- Most technical terms need extra explanation for non-experts to understand, but model capability is limited here
-- Fully dependent on human-written figure/table captions — it doesn't generate original figures or understand image content itself
-- Can only produce text bullet-point summaries, with no involvement in layout/design
-- No multimodal representation capability, so image-related information may be lost as a result
+Decision Transformer (Chen et al., 2021) went up on arXiv in June 2021 and was published at NeurIPS the same year. The timing sits after GPT-3 and before ChatGPT, making it a representative work of that wave of research into whether Transformers could solve sequential decision problems.
 
-### Problems the Paper Doesn't Mention, But Show Up Under Scrutiny
+What it set out to fix were the old ailments of traditional RL: methods like Q-learning and policy gradient train unstably, need careful tuning, and often require online interaction with the environment. Decision Transformer proposes a paradigm shift — repackage the RL problem as a sequence prediction problem, train it with GPT-style supervised learning, and estimate no value function and do no bootstrapping at all.
 
-Beyond what the paper admits itself, there are several problems it doesn't mention but that become apparent under analysis. Training data scale is the most obvious one: topic-generation training has only 80 samples, and the dev split has only 5 papers — small-sample fine-tuning easily overfits to that batch of papers' writing style, and how well it generalizes to a different domain is questionable. Architecture scalability is another real weakness: four persona configurations already require training four separate SFT models plus four sets of reward models; if the persona dimension is ever expanded (say, adding role distinctions like PM, engineer, executive), the number of models grows multiplicatively — this doesn't scale at all. The retrieval mechanism's hidden costs mentioned earlier (21% of content permanently dropped, a threshold tuned on only 5 papers, dependence on standardized section structure) are also real pitfalls in practice.
+How it works is easiest to picture as navigating a maze:
 
-Reward model capacity, missing P-F training details, Stage 3's asymmetric resource allocation, and the weak hallucination-evaluation method — these have each already been discussed in earlier sections, so we won't repeat them here. Worth adding: sample sizes are consistently small across the board — the qualitative analysis covers only 10 papers, the cognitive-load study only recruited 3 experts, and the ablation study is also 10 papers, so statistical power is low throughout. That said, this doesn't mean the paper "didn't run experiments" — module-level evaluation, end-to-end evaluation, ablation studies, and qualitative analysis are all covered; it's just that every one of them runs on a thin sample. Finally, the output itself still has a clear gap from "an actual slide deck": it contains no layout, color, or font — visual design elements at all. What it produces is, in essence, a structured text outline, not a presentation ready to walk up on stage with.
+- A trajectory consists of a series of (state, action, reward) triples.
+- Before training, rewards are converted into **return-to-go**: from this step to the end, how many points remain to be earned in total.
+- The model's input is an interleaved sequence of those triples: `[return-to-go, state, action, return-to-go, state, action, ...]`.
+- **During training**, the action is masked, and the model predicts which action to output from the preceding (return-to-go, state). The mapping it learns is roughly "I still want 10 points, and I'm at position A → go right."
+- **At inference**, the user makes a wish first: set a target return (say "I want 10 points"), and the model emits an action from that goal plus the current state; after each step the remaining return-to-go decreases by the points actually earned, repeating until the end.
 
-## What to Take From This Paper — and What to Skip — in Practice
+In one sentence: training is "watch how others moved and how many points they ended with, and learn the association between the two"; usage is "you set the score you want, and the model works backward to how to get there."
 
-Broken apart, the modules in this paper have very different practical value. Stage 2's two-tier retrieval design (cheap literal matching first, falling back to a semantic model only when that fails) is mature and easy to port over — it genuinely solves a real pain point, saving substantial API cost, and its approach aligns with the general retrieve-then-rerank RAG design pattern, making it worth borrowing directly. Stage 3's two-step "extract, then summarize and reorder" prompting pattern has the best return on investment: no extra training needed, just two more LLM calls per title, and the ablation study confirms the effect — this is the most cost-effective part of the whole paper.
+**Did it become mainstream afterward?** Within the research community it certainly had influence: Trajectory Transformer (Janner et al., 2021) proposed a similar idea around the same time, Online Decision Transformer followed, and the approach was extended to recommender systems, robotics, embodied AI, web-navigation agents and more. But it did **not** become the mainstream route for LLM alignment — today's [RLHF](../../ai-concept/llm-fine-tuning-rlhf/) ecosystem still runs mainly on PPO (the InstructGPT line) or the later [DPO](../dpo/). Decision Transformer is better understood as a continuing influence within offline RL and robotic control, not a household-name production technique.
 
-By contrast, the "train one separate model per condition" architecture shared by Stage 1 and Stage 2 is not recommended for direct reuse — training and maintenance cost grows multiplicatively with the persona dimension. The Decision-Transformer-style preference fine-tuning trick depends on context: if you need lightweight preference alignment yourself and want to avoid PPO's infrastructure complexity, the idea of "feeding reward in as a condition to supervised learning" is worth considering — but be clear-eyed that it gives up Decision Transformer's real multi-step decision-making advantage; it's only borrowing the shell.
+Back to this paper: it borrows only the "reward-conditioned generation" training trick — stuff the reward into the input as a condition, train with supervised learning, and thereby sidestep PPO's infrastructure complexity. But this is an **incomplete appropriation**. Decision Transformer's real power lies in multi-step sequential decisions with causal structure: how you choose at this step affects how many points you can earn at the next. Persona-Aware-D2S's setting is single-shot generation — prompt in, complete outline out — with no multi-step decision structure and no notion of a trajectory.
 
-Overall, this paper is better used as a reference for "problem definition" than for "solution" — its value is in clearly describing what the task of persona-aware generation should look like, not in providing a system you can lift and use directly.
+| Decision Transformer concept | Its Persona-Aware-D2S counterpart |
+|---|---|
+| return-to-go (how many points you still want) | The score the reward model assigns |
+| state (where you are now) | The prompt (paper content plus persona conditions) |
+| action (which way to go) | The outline to be generated |
+| A full trajectory | Doesn't exist — only single-step generation |
+
+The last row of that table is the point: the surface trick was borrowed, but the core problem it was designed to solve never comes into play.
+
+### The Bradley-Terry Model: From Team Rankings to the Shared Foundation of RLHF
+
+The Bradley-Terry model (Bradley & Terry, 1952) is a very old statistical model, originally addressing "how do you infer an overall ranking from pairwise comparisons" — ranking sports teams, say, with nothing to do with AI.
+
+Its core assumption is that each item has an invisible "strength" value, and a comparison result is merely a probabilistic reflection of that strength, not a guarantee. As an equation:
+
+$$P(i \text{ beats } j) = \frac{\text{strength}_i}{\text{strength}_i + \text{strength}_j}$$
+
+A concrete example: if team A has strength 8 and team B has strength 2, then \( P(A \text{ beats } B) = 8/(8+2) = 0.8 \). A is four times as strong and wins eight times out of ten, but B still has a two-in-ten chance of an upset. That tolerance for uncertainty is exactly what suits a noisy setting like human preference, where even the same person may not judge consistently at different times.
+
+Reparameterize \( P(i > j) \) into exponential form (letting \( p_i = e^{r_i} \)) and you get the \( \sigma(r_i - r_j) \) form familiar from reward-model training — which is precisely the loss in Stage 1 above. This is the most widely adopted preference model in RLHF: from Christiano et al. (2017), the [founding RLHF paper](../../ai-concept/llm-fine-tuning-rlhf/), through OpenAI's InstructGPT, all the way to the later [DPO](../dpo/), the underlying math is the same Bradley-Terry loss, differing only in how it's applied. In other words, Persona-Aware-D2S's reward modeling isn't original at all — it applies the industry-standard approach directly.
+
+In practice, training looks like this: if the reward model scores the chosen version 3.5 and the rejected one 1.0, then \( s_w - s_r = 2.5 \), \( \sigma(2.5) \approx 0.92 \), and the loss is \( -\log(0.92) \approx 0.08 \) — very small, meaning the model judged correctly. Conversely, if the scoring is inverted (the chosen version gets the lower score), the loss shoots up to around 2.53 and the gradient pushes hard to correct it.
+
+**Why pairwise comparison instead of direct scoring?** Because direct scoring ("please rate this 1 to 10") has very low inter-annotator agreement — one person's 7 isn't another's. But "which of A and B is better" is intuitively easy for humans to judge, with far higher consensus. That's also why the paper's annotation process is designed around pairwise ranking.
+
+{{< admonition warning "Bradley-Terry's transitivity assumption" >}}
+Bradley-Terry has a known methodological weakness: it relies on transitivity (if A>B and B>C then A>C), and human preferences frequently violate that assumption. This paper's practice of "keep only samples with majority consensus and discard the rest" sidesteps the problem to some degree rather than genuinely solving it.
+{{< /admonition >}}
+
+## How Well Does It Work: End-to-End Evaluation
+
+{{< image src="table4.png" alt="Table of end-to-end ROUGE-1/2/L results for Zero-shot, Few-shot, SFT-F and P-F across the four persona configurations" caption="Table 2 — End-to-end ROUGE evaluation of the full pipeline across the four persona configurations. Both fine-tuned models beat zero-shot and few-shot across the board; preference tuning leads in most configurations, except Expert-Short, where plain supervised fine-tuning does better." >}}
+
+This table is the primary quantitative basis for the conclusion that "fine-tuning does work," and the number source you should look at hardest when assessing engineering ROI (a reminder on the abbreviations above: SFT-F is supervised fine-tuning alone, P-F adds preference tuning on top). Two observations:
+
+- SFT-F and P-F beat the zero-shot and few-shot baselines across the board, by a fair margin. That conclusion holds up.
+- P-F wins in most configurations, but **Expert-Short** is the exception, where plain supervised fine-tuning is better (R-1: SFT-F 0.17 vs. P-F 0.13). The paper's reading is that plain supervised fine-tuning does better at concise summarization for expert audiences. Right or wrong, this at least shows preference tuning is not an unconditional improvement.
+
+## Critical Assessment
+
+### Limitations the Paper Acknowledges Itself
+
+The paper's Limitations section lists five, all of them fair:
+
+1. The method is constrained by having to stay faithful to the document's content.
+2. Most technical jargon needs extra explanation to be comprehensible to non-experts, and the model's ability to provide it is limited.
+3. It relies entirely on human-written figure captions, generates no original figures, and does not understand image content itself.
+4. It can only produce bullet-point text summaries, and **involves no layout design at all**.
+5. It has no multimodal representation ability, so image-related information may be lost along the way.
+
+Points 3 and 4 together already determine that this system's output is a long way from "a deck you could walk in and present."
+
+### Problems the Paper Doesn't Mention, but I Think Are There
+
+| Aspect | Problem |
+|---|---|
+| Training data scale | Outline generation has only 80 training samples (20 papers × 4 configurations), and the dev split is only 5 papers. Small-sample fine-tuning easily overfits to this batch of papers' writing style, leaving cross-domain generalization in doubt |
+| Architectural scalability | Four persona configurations require training 4 independent SFT models plus 4 reward models. Add another persona dimension (a role, say: PM / engineer / executive) and the model count grows multiplicatively — not scalable at all |
+| Hidden cost of the retrieval mechanism | Section filtering is irreversible, so 21% of relevant content is permanently lost; the threshold was tuned on only 5 papers; and the whole thing depends heavily on standardized section structure, failing outright on unstructured documents |
+| Reward model capacity | Using a 66M-parameter distilbert-base-cased to judge something as semantically complex as "comprehensibility" is never validated as sufficient |
+| Missing preference-tuning details | How the "maximum reward" value is decided, and whether the reward is a scalar or multi-dimensional, are never explained, making reproduction hard |
+| Asymmetric resourcing of Stage 3 | The summarization and reordering step with the greatest impact on the end experience is the only one with no custom training, with no explanation given and no prompt for it in the appendix |
+| Weak hallucination evaluation | Using relevance ratings as a proxy for hallucination can't detect the "relevant but fabricated in the details" category |
+| Uniformly small experimental samples | 10 papers for the qualitative analysis, 3 experts for the cognitive-load study, 10 papers for the ablation — statistical power is low throughout |
+| A gap between the output and a real deck | No layout, color or typography at all; what it outputs is fundamentally a structured text outline, not a usable presentation |
+
+The sample-size row deserves a fair framing: this is "insufficient scale," not "never ran the experiment." The paper's experimental coverage is in fact quite complete — module-level evaluation, end-to-end evaluation, ablation, qualitative analysis are all there — it's just that each one's sample size is too small to support strong statistical conclusions.
+
+## Engineering Adoption: What to Copy, What to Leave Alone
+
+Having covered the method and its limitations, the practical question is: if I were building a similar system tomorrow, which parts of this paper could I take straight?
+
+| Module | Adoption viability | Judgment |
+|---|---|---|
+| Stage 1 and Stage 2's second step (the four-model SFT + P-F architecture) | Low | Training and operational cost grows multiplicatively with persona dimensions; not recommended for direct reproduction |
+| Stage 2's **first step** (section filtering: fuzzy match + SBERT fallback) | **High** | Mature, transferable, and solves a real pain point (API cost), consistent with the retrieve-then-rerank pattern of general RAG |
+| Stage 3 (summarize + reorder, no training required) | **Highest** | Lowest cost (just two extra LLM calls), with an ablation confirming a clear improvement — the best return on investment in the whole paper |
+| The Decision-Transformer-style training trick | Medium (depends on context) | If you need lightweight preference alignment while avoiding PPO's infrastructure complexity, the idea is worth borrowing, but be clear that it discards the original technique's genuine multi-step decision advantage |
+
+Concrete recommendations:
+
+- **Worth borrowing directly**: the two-tier retrieval in Stage 2's first step, and Stage 3's summarization and reordering. Neither requires training, and the transfer cost is close to zero.
+- **Not recommended for reproduction**: the "one independent model per condition" architecture of Stage 1 and Stage 2's second step. Small-sample SFT is itself fairly risky, unless your task is likewise "teach the model an output format or style" rather than "teach the model new knowledge" — the former has a chance with small samples, the latter essentially none.
+- Overall, **this paper works better as a reference for "problem definition" than for "solution"**. Its value lies in clearly describing what the persona-aware generation task should look like, not in providing a system you can put into production.
 
 ## Conclusion
 
-Persona-Aware-D2S's core contribution is defining the new task of "dynamically generating slides conditioned on audience and length" and building a matching dataset for it; the methodology itself (SFT plus an RLHF-lite combination) has no originality of its own — it's assembled directly from Christiano et al. 2017's RLHF framework and Chen et al. 2021's Decision Transformer. Its research value is medium-to-low, and its engineering value is also low: the training data scale can't support real-world domain diversity, the architecture's fourfold model count doesn't scale, and the output still has a long way to go before being "a slide deck you can directly use."
+Persona-Aware-D2S's core contribution is defining a new task and building a new dataset: for the first time, document-to-slides treats "who the audience is" and "how long the talk runs" as model input conditions. That problem definition is genuinely valuable, and it's mainly what got the paper into EACL 2024 as a long paper.
 
-If you want to take away two things from this paper, one is Stage 2's retrieve-then-rerank retrieval design (literal matching plus Sentence-BERT fallback), and the other is the basic idea behind Decision Transformer's "reward-conditioning" training approach — even though this paper itself only borrows it incompletely, the idea is still worth considering if you're building lightweight preference alignment of your own.
+The methodology itself, though, isn't original — the SFT-plus-RLHF-lite combination assembles Christiano et al. (2017)'s reward modeling with Chen et al. (2021)'s reward-conditioning, and even then borrows only the surface of the latter. Reproducing the whole thing is even less advisable from an engineering standpoint: 80 training samples can't support real-world domain diversity, a four-times-the-models architecture doesn't scale, and the output falls visibly short of a directly usable deck.
+
+Only two things are genuinely worth taking away: the two-tier retrieval of fuzzy match plus SBERT fallback from Stage 2's first step, and the "stuff the reward into supervised learning as a condition" training idea that sidesteps PPO. The former you can use tomorrow; for the latter, first think hard about whether your task has a genuine multi-step structure — if it doesn't, what you've borrowed is just the shell.
