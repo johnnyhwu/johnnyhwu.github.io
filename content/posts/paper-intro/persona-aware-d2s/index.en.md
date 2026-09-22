@@ -142,7 +142,7 @@ This step reuses Stage 1's machinery wholesale — the same cross-entropy SFT, t
 
 The paper claims this candidate filtering cuts GPT calls to roughly one eighth. The claim has data behind it, but it also has a price:
 
-{{< image src="table10.png" alt="Table of the trade-off between GPT call count and recall under different candidate-filtering strategies" caption="Table 1 — The cost/recall trade-off of candidate filtering (Table 10 in the original): the more calls, the higher the recall." >}}
+Table 1 — The cost/recall trade-off of candidate filtering (Table 10 in the original): the more calls, the higher the recall.
 
 | Strategy | Average GPT calls | Recall |
 |---|---|---|
