@@ -363,5 +363,5 @@ hugo-paper-post/
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
 └── scripts/
-    └── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter checks
+    └── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter / zh-tw full-width-punctuation checks
 ```

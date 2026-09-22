@@ -177,6 +177,42 @@ def check_internal_links(body_text, label, warnings):
         )
 
 
+# Half-width , ; : ? ! doing a Chinese comma/semicolon/colon/question-mark/
+# exclamation-mark's job. Only flags one sitting directly between two CJK
+# characters (or CJK-then-space-then-CJK for the trailing ones), so an
+# English abbreviation (TL;DR), a thousands separator (4,000), or shortcode
+# boilerplate ({{< image src="..." >}}) never matches -- none of those sit
+# next to a CJK character. Deliberately NOT run through SHORTCODE_RE first,
+# since admonition titles and alt/caption text are exactly what this needs
+# to check, not skip.
+HALF_WIDTH_PUNCT_RE = re.compile(
+    r'[一-鿿][,;:]|[,;:][一-鿿]'
+    r'|[一-鿿][?!](?!\S)|(?<!\S)[?!][一-鿿]'
+)
+
+
+def check_full_width_punctuation(text, label, warnings):
+    """zh-tw only: half-width ASCII punctuation used as Chinese punctuation,
+    in front matter (title/description) or body (including shortcode
+    attributes this skill authors itself, like admonition titles and
+    translated alt/caption text)."""
+    if label != "index.zh-tw.md":
+        return
+    prose = MATH_SPAN_RE.sub(' ', CODE_FENCE_RE.sub(' ', text))
+    prose = URL_RE.sub(' ', INLINE_CODE_RE.sub(' ', prose))
+    hits = []
+    for m in HALF_WIDTH_PUNCT_RE.finditer(prose):
+        snippet = prose[max(0, m.start() - 10):m.end() + 10].replace('\n', ' ')
+        hits.append(snippet.strip())
+    if hits:
+        warnings.append(
+            f"{label}: {len(hits)} half-width , ; : ? ! spot(s) in Chinese text -- "
+            "use full-width ，；：？！ instead, including in title/description and "
+            "shortcode attributes this skill authors itself (see hugo-conventions.md's "
+            "full-width-punctuation section). " + " | ".join(hits[:5])
+        )
+
+
 def check_body(body_text, label, post_dir, errors, warnings):
     if "```figure-map" in body_text:
         errors.append(f"{label}: trailing figure-map block was not stripped")
@@ -279,6 +315,7 @@ def main():
         if featured and not (post_dir / featured).exists():
             errors.append(f"{label}: featuredImage '{featured}' does not exist in {post_dir}")
         check_seo_field_lengths(fm, label, warnings)
+        check_full_width_punctuation(fm + body, label, warnings)
         check_body(body, label, post_dir, errors, warnings)
         check_heading_structure(body, label, errors, warnings)
         check_internal_links(body, label, warnings)
