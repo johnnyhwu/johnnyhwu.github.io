@@ -142,7 +142,7 @@ $$\mathcal{L} = -\mathbb{E}_{x \sim \text{train}}\left[\log \sigma(s_w - s_r)\ri
 
 論文宣稱這套候選過濾能把 GPT 呼叫次數壓到約八分之一。這個宣稱有數據支撐，但也有代價：
 
-{{< image src="table10.png" alt="不同候選過濾策略下 GPT 呼叫次數與 recall 的取捨關係表" caption="表 1 — 候選過濾的成本與 recall 取捨（原文 Table 10）：呼叫次數愈多，recall 愈高。" >}}
+表 1 — 候選過濾的成本與 recall 取捨（原文 Table 10）：呼叫次數愈多，recall 愈高。
 
 | 策略 | 平均 GPT 呼叫次數 | Recall |
 |---|---|---|
