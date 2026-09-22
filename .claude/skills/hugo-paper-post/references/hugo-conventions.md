@@ -216,6 +216,18 @@ get wrong:
 - `title`: keep it in the ~50-60 character range where practical (it's
   what search results truncate to) — but don't sacrifice the "editorial,
   not a literal paper-title translation" rule above to hit the count.
+  **Lead with the article's actual hook, not a flat description.** Read the
+  finished article and find the one tension, surprising number, or gap it
+  spends most of its length on (a claim vs. what was actually verified, a
+  common assumption the article overturns, a concrete before/after) and put
+  that in the title — not "X: an overview of Y," which describes the topic
+  without giving a reader scanning a feed any reason to click *this* post
+  over any other post on the same topic. A vendor's own headline number
+  paired with what independent testing actually found is a good example of
+  this kind of hook when the article has one; don't force it onto a post
+  that's a straightforward explainer with no such tension. This applies to
+  both `index.en.md` and `index.zh-tw.md` — each written natively, not a
+  translation of the other's title, per the rule above.
 - `description`: 150-160 chars (already stated above) — this is the exact
   string search engines show, so it must stand alone, not read like a
   fragment.
@@ -298,6 +310,25 @@ text. Inventing a slug for an unwritten post is a coin-flip that a future
 publish will silently lose, and you have no way to know which spelling it
 will pick. Always list forward links you added in the PR so a human can
 see which targets are still pending.
+
+## Full-width Chinese punctuation in `index.zh-tw.md`
+
+`article.md`'s own prose should already use full-width punctuation
+(，。；：？！「」『』, not `,` `;` `:` `?` `!`) — that's a `blog-writer`
+house rule in the content repo, checked by that skill's own Reviewer step
+and `verify_article.py`. But this skill also *authors* Chinese text of its
+own that never passes through that check: the `title`, `description`,
+admonition titles (`{{< admonition ... "..." >}}`), and any `alt`/`caption`
+text you translate or tighten (per the SEO checklist above). Hold that
+self-authored text to the same standard — a half-width comma or colon
+sitting between two Chinese characters is wrong in a title exactly the same
+way it's wrong in a body paragraph, and it's happened in a published
+`title`/`description` before. The exceptions are the same as `article.md`'s
+own: a digit-to-digit thousands separator (`4,000`) stays half-width, and
+so does punctuation that's genuinely part of an English abbreviation
+(`TL;DR`), an inline code span, or a URL — don't "fix" those. This has
+nothing to do with `index.en.md`, which keeps ordinary English punctuation
+throughout.
 
 ## Inline math notation
 
