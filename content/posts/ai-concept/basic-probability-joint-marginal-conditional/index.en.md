@@ -93,4 +93,4 @@ Finally, we tied all three together with the multiplication rule:
 
 \[ P(A \mid B) = \frac{P(A \cap B)}{P(B)} \]
 
-A follow-up article will cover more foundational concepts, going into more detail on the difference between joint probability and conditional probability, as well as the concepts of AND and OR in probability.
+The follow-up article, [Conditional vs Joint Probability: A Deck of Cards Clears It Up](../conditional-vs-joint-probability/), covers more foundational concepts, going into more detail on the difference between joint probability and conditional probability, as well as the concepts of AND and OR in probability.

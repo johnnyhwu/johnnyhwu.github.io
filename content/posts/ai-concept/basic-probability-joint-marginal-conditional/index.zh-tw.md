@@ -93,4 +93,4 @@ url: "ai-concept/:contentbasename"
 
 \[ P(A \mid B) = \frac{P(A \cap B)}{P(B)} \]
 
-下一篇文章會補上其他基本觀念，更詳細地說明 Joint Probability 與 Conditional Probability 的差別，以及機率中 AND 與 OR 的概念。
+下一篇[「條件機率 vs 聯合機率」](../conditional-vs-joint-probability/)會補上其他基本觀念，更詳細地說明 Joint Probability 與 Conditional Probability 的差別，以及機率中 AND 與 OR 的概念。
