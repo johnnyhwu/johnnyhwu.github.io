@@ -20,7 +20,7 @@ url: "other/:contentbasename"
 
 ## 前言
 
-在前一篇「平行程式設計模型：Shared Memory Model」中，我們介紹了[平行程式設計](../what-is-parallel-programming/)的第一種模型，它對應到的通常是 Multi-Thread 程式：多條 Thread 共用同一塊記憶體，靠讀寫同一份資料來互相溝通。
+在前一篇[「平行程式設計模型：Shared Memory Model 與 Race Condition 陷阱」](../parallel-programming-shared-memory-model/)中，我們介紹了[平行程式設計](../what-is-parallel-programming/)的第一種模型，它對應到的通常是 Multi-Thread 程式：多條 Thread 共用同一塊記憶體，靠讀寫同一份資料來互相溝通。
 
 本篇要談的是第二種模型 Distributed Memory Model。它走的是完全相反的路線，每個執行單元都有自己獨立的記憶體，誰也碰不到誰的資料，溝通只能靠明確地「寄訊息」。文章會從模型的基本概念講到 Message Passing Interface (MPI)，接著用一個兩個元素的加總範例，示範這個模型最容易踩到的雷 Deadlock，最後把兩種模型的優缺點擺在一起比較。
 

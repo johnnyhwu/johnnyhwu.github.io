@@ -20,7 +20,7 @@ url: "other/:contentbasename"
 
 ## Introduction
 
-In the previous article, "Parallel Programming Model: Shared Memory Model," we introduced the first of the [parallel programming](../what-is-parallel-programming/) models, the one that usually produces Multi-Thread programs: multiple threads share the same block of memory and communicate by reading and writing that shared data.
+In the previous article, ["Shared Memory Model, Multi-Threading, and the Race Condition Trap,"](../parallel-programming-shared-memory-model/) we introduced the first of the [parallel programming](../what-is-parallel-programming/) models, the one that usually produces Multi-Thread programs: multiple threads share the same block of memory and communicate by reading and writing that shared data.
 
 This article covers the second model, the Distributed Memory Model. It takes the exact opposite approach: every execution unit has its own independent memory, none of them can touch each other's data, and the only way to communicate is by explicitly "sending messages." We'll go from the model's basic concept to the Message Passing Interface (MPI), then use a simple two-element summation example to demonstrate the most common pitfall of this model, Deadlock, and finish by comparing the pros and cons of both models side by side.
 
