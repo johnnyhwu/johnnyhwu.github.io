@@ -80,4 +80,4 @@ url: "other/:contentbasename"
 
 ## 結論
 
-本篇文章介紹了 Parallel Programming 的基本概念、它與單線程程式設計的差別，也釐清了 Concurrent、Parallel、Distributed 這三種「同一時間」執行的定義，最後說明了為什麼需要用到 Parallel Programming。下一篇文章，我們會用一個簡單的例子，實際說明 Parallel Programming 的運作方式。
+本篇文章介紹了 Parallel Programming 的基本概念、它與單線程程式設計的差別，也釐清了 Concurrent、Parallel、Distributed 這三種「同一時間」執行的定義，最後說明了為什麼需要用到 Parallel Programming。[下一篇文章](../parallel-programming-example/)，我們會用一個簡單的例子，實際說明 Parallel Programming 的運作方式。

@@ -80,4 +80,4 @@ Older computers mostly had a single core (single-core), and the way to boost per
 
 ## Conclusion
 
-This article introduced the basic concept of parallel programming, how it differs from single-threaded programming, and clarified the three distinct meanings of "at the same time" — concurrent, parallel, and distributed computing — before covering why parallel programming matters. In the next article, we'll walk through a simple example that shows how parallel programming actually works in practice.
+This article introduced the basic concept of parallel programming, how it differs from single-threaded programming, and clarified the three distinct meanings of "at the same time" — concurrent, parallel, and distributed computing — before covering why parallel programming matters. In [the next article](../parallel-programming-example/), we'll walk through a simple example that shows how parallel programming actually works in practice.
