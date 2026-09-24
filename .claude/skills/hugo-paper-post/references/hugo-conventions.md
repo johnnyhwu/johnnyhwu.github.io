@@ -330,6 +330,54 @@ so does punctuation that's genuinely part of an English abbreviation
 nothing to do with `index.en.md`, which keeps ordinary English punctuation
 throughout.
 
+## Single-tilde strikethrough gotcha
+
+This site's `config/_default/markup.toml` turns on Goldmark's strikethrough
+extension (`[goldmark.extensions] strikethrough = true`), and — unlike GFM,
+which requires `~~double~~` tildes — Goldmark's default strikethrough
+parser pairs up **single** `~` delimiters too. `article.md` routinely uses
+a bare `~` as a Chinese-style numeric range separator (`1~250`) or for
+"approximately" (`~40%`), and neither is rare, formula-adjacent text —
+it's completely ordinary prose. The moment **two** unescaped tildes land in
+the same paragraph, Goldmark treats the first as opening and the second as
+closing a strikethrough span and silently draws a line through everything
+between them — this shipped once in a published post (`GPU1 存 token
+1~250、GPU2 存 251~500` rendered with `250、GPU2 存 251` struck through, an
+effect that isn't visible at all in the raw Markdown and is easy to miss on
+a text-only review pass).
+
+The delimiter follows the same CommonMark *emphasis*-style flanking rules
+as `*`/`_`, though: a `~` only becomes an active open/close delimiter when
+it sits tight against a non-space character on **both** sides (`1~250` —
+this is the dangerous form). One written with a space on either side
+(`0 ~ 1`, `#5 ~ #8`, a table cell like `| ~25x |`) is inert and renders as
+a literal tilde — confirmed by sweeping every already-published post on
+this site, where every space-padded `~` was safe and only the tight,
+unspaced form had actually shipped broken.
+
+**Rule**: whenever a tilde in the rendered body sits tight against
+non-space characters on both sides, and isn't inside a fenced code block
+or inline code span (both are safe — inline parsing doesn't run there),
+check whether a second tilde of the same tight form shows up anywhere
+later on the same line. If it does, escape both as `\~` — this renders
+identically (`1\~250` still displays as `1~250`) and is a pure
+platform-compatibility fix, the same category as the math-delimiter and
+heading-numbering fixes elsewhere on this page, not a change to the
+article's substance. Adding a space around a loose range instead (`1 ~
+250`) works too and needs no escaping, but changes the visual spacing, so
+prefer escaping when matching `article.md`'s exact original formatting
+matters. `scripts/verify_post.py` flags the tight form automatically
+(scans line by line, since this repo's own house style already puts one
+paragraph per source line, and only counts tight tildes to avoid crying
+wolf on the site's many safe spaced ones); treat its warning as something
+to actually open the file and check, not routinely dismiss. One residual
+gap the script can't rule out: two tight tildes landing in two *different*
+cells of the same table row look identical to a same-paragraph pair from a
+line-level regex, but can't actually pair (each table cell is its own
+independent inline-parsing context) — rare enough not to be worth
+cell-aware parsing, just confirm by eye if a warning turns out to be this
+shape.
+
 ## Inline math notation
 
 Check `config/_default/markup.toml`'s `[goldmark.extensions.passthrough]`
@@ -450,10 +498,40 @@ example"). A definition list is not a flow; forcing it into a diagram
 makes it worse, not better. The same "recognize it by content, not shape"
 test as the formula rule above applies.
 
-Two practical notes:
+Practical notes:
 
 - Quote every node label (`A["文字"]`) and use `<br/>` for line breaks —
   unquoted parentheses and CJK punctuation will break the parse.
+- **Always override the color palette per diagram** — don't ship mermaid's
+  bare default theme. It's a bright yellow subgraph fill with lavender
+  nodes that clashes with this site's blue/navy look, and (see the next
+  bullet) it doesn't even adapt between light/dark mode, so there's no
+  upside to leaving it. Prepend this `%%{init}%%` directive as the fenced
+  block's first line — it's scoped to that one diagram only, so it can't
+  affect any other post, and gives every diagram on the site a consistent
+  look:
+  ```
+  %%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#dbeafe', 'primaryBorderColor':'#3b82f6', 'primaryTextColor':'#1e3a5f', 'lineColor':'#3b82f6', 'secondaryColor':'#eff6ff', 'tertiaryColor':'#eff6ff', 'clusterBkg':'#eff6ff', 'clusterBorder':'#93c5fd', 'edgeLabelBackground':'#ffffff' }}}%%
+  ```
+  This overrides the global `mermaid.initialize()` call in
+  `themes/DoIt/layouts/_partials/assets.html` for that diagram, so it
+  renders with these colors regardless of the site's light/dark toggle —
+  intentional, since (per the next bullet) the toggle doesn't reliably
+  reach mermaid anyway, and a light, legible diagram beats one that's
+  correct in theory but was never actually verified in dark mode.
+- **Keep subgraph/cluster titles short — a few words, not a clause.**
+  Mermaid sizes a subgraph's box from its *child nodes'* content, not from
+  its own title text. A title longer than that box (a parenthetical aside
+  like `"Physical view (real GPU memory locations, can be non-contiguous)"`
+  is exactly the failure case) doesn't wrap or shrink — it silently
+  overflows and gets clipped once the diagram is squeezed into this site's
+  real prose-column width (~766px, not a full browser viewport), rendering
+  as something like `"...l view"` instead of the full title. This shipped
+  once in a published post and was **invisible in a wide standalone test
+  page**, since there was room for the overflow there — it only appeared
+  at the actual narrow column width. Move any context the short title
+  can't carry into a plain sentence in the prose right before the diagram
+  instead of cramming it into the title.
 - **A `hugo build` cannot validate mermaid**, because it renders
   client-side; a syntax error surfaces only as a "Syntax error in graph"
   box in the browser. Check it in a real browser (see `hugo-build.md`).
@@ -461,10 +539,20 @@ Two practical notes:
   mermaid@10`, extract it, and route
   `**/cdn.jsdelivr.net/npm/mermaid@10/dist/**` to the local `dist/` with
   Playwright's `page.route` — then assert every `pre.mermaid` actually
-  contains an `svg`.
+  contains an `svg`. **Don't stop at "an svg exists, no console errors"**
+  — that check alone would have missed the title-clipping bug above, since
+  a clipped title is still a perfectly valid, error-free SVG. Set the
+  viewport to a normal desktop width (contrary to intuition, a *wider*
+  viewport doesn't reproduce this — this site's prose column has a fixed
+  max-width, so anything roughly desktop-sized or larger renders the
+  diagram at the same real column width) and actually read the rendered
+  text in the screenshot, including a mobile-width (~390px) pass to
+  confirm the diagram still scales down legibly.
 - Known theme limitation, not worth "fixing" in a post: mermaid reads
   `window.theme` once at init, so toggling dark/light after page load
-  leaves the diagram in its original palette until a refresh.
+  leaves the diagram in its original palette until a refresh. A per-diagram
+  `%%{init}%%` override (above) sidesteps this by not depending on
+  `window.theme` at all.
 
 ## Admonitions for callouts
 
