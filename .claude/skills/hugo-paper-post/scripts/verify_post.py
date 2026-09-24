@@ -213,6 +213,45 @@ def check_full_width_punctuation(text, label, warnings):
         )
 
 
+# This site's Goldmark strikethrough extension (config/_default/markup.toml)
+# pairs even a single ~ (not just GFM's ~~), so two unescaped tildes on the
+# same line can silently strike through the text between them -- e.g. a
+# Chinese-style numeric range used twice ("1~250", "251~500"). But per the
+# same CommonMark flanking rules that govern *emphasis*/_emphasis_, a tilde
+# only becomes an active open/close delimiter when it sits tight against a
+# non-space character on *both* sides ("1~250"); one written with spaces
+# around it ("0 ~ 1", "#5 ~ #8", a table cell like "| ~25x |") is inert and
+# safe -- confirmed by sweeping every published post: every space-padded
+# "~" site-wide rendered as plain text, while the tight, unspaced form is
+# the one that actually shipped broken once. Require tight-on-both-sides so
+# this doesn't cry wolf on the site's many legitimate spaced uses. Scans
+# line by line rather than by paragraph: this repo's own house style
+# already puts one paragraph per source line (including inside
+# blockquotes), so a line-level scan is both simpler and accurate for how
+# these files are actually written. A residual false positive is possible
+# for two tight tildes that land in two *different* table cells on the
+# same row (each cell is its own independent inline-parsing context, so
+# they can't actually pair) -- rare enough not to be worth cell-aware
+# parsing for a best-effort check; just confirm by eye if that's the case.
+TILDE_RE = re.compile(r'(?<!\\)(?<=\S)~(?=\S)')
+
+
+def check_tilde_strikethrough(body_text, label, warnings):
+    prose = INLINE_CODE_RE.sub(' ', CODE_FENCE_RE.sub(' ', body_text))
+    for line in prose.splitlines():
+        hits = TILDE_RE.findall(line)
+        if len(hits) >= 2:
+            snippet = line.strip()
+            if len(snippet) > 160:
+                snippet = snippet[:160] + "..."
+            warnings.append(
+                f"{label}: {len(hits)} unescaped '~' on one line -- this site's "
+                "Goldmark strikethrough extension pairs even single tildes (not "
+                "just ~~), so the text between them can render struck-through. "
+                f"Escape as \\~ unless strikethrough is intended: {snippet!r}"
+            )
+
+
 def check_body(body_text, label, post_dir, errors, warnings):
     if "```figure-map" in body_text:
         errors.append(f"{label}: trailing figure-map block was not stripped")
@@ -319,6 +358,7 @@ def main():
         check_body(body, label, post_dir, errors, warnings)
         check_heading_structure(body, label, errors, warnings)
         check_internal_links(body, label, warnings)
+        check_tilde_strikethrough(body, label, warnings)
 
     if warnings:
         print("WARNINGS:")

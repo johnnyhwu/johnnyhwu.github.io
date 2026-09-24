@@ -322,6 +322,12 @@ existing wording still matches.
   detect; see `references/hugo-conventions.md`, "Convert the whole symbol,
   and don't double-wrap" — which also covers the nested-delimiter bug a
   scripted pass causes.
+- No paragraph has two or more unescaped `~` — this site's Goldmark
+  strikethrough extension pairs even single tildes, not just GFM's `~~`,
+  so a Chinese-style numeric range used twice in one sentence (`1~250`,
+  `251~500`) silently strikes through everything between them. See
+  `references/hugo-conventions.md`, "Single-tilde strikethrough gotcha".
+  `verify_post.py` flags this.
 - A code fence that's really *structure or flow* (an ASCII tree, an arrow
   chain that closes a cycle, a routing/decision split) was considered for
   a mermaid diagram — the theme supports it with no configuration. This is
@@ -329,7 +335,13 @@ existing wording still matches.
   definition lists stay as code fences. See
   `references/hugo-conventions.md`, "Diagrams: a code fence that's
   actually a flowchart". If a post ships diagrams, they were checked in a
-  real browser, since `hugo build` cannot validate mermaid.
+  real browser, since `hugo build` cannot validate mermaid — and checked
+  at real desktop/mobile content-column widths, not just a wide standalone
+  test page, since a clipped subgraph title is a valid, error-free SVG
+  that only shows up at the site's actual narrow prose-column width. Every
+  diagram carries a per-diagram `%%{init}%%` color override matching the
+  site's palette rather than shipping mermaid's default yellow/lavender
+  theme — see the same section.
 - No admonition type is repeated back-to-back enough to read as a template
   (five `warning`s in a row, every section closing the same way) — see
   `references/hugo-conventions.md`, "Don't let admonitions become their
