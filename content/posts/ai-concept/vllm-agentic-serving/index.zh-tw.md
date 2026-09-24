@@ -92,14 +92,15 @@ Decode 每一步都要重新看一遍前面所有內容，而這個「看」的�
 
 ### vLLM 的解法：統一分頁 + 共用池
 
-vLLM 的做法直接借用作業系統的虛擬記憶體分頁(virtual memory paging)概念——這也是 vLLM 最初的論文取名 PagedAttention 的由來。核心資料結構是 **block table(區塊對照表)**：
+vLLM 的做法直接借用作業系統的虛擬記憶體分頁(virtual memory paging)概念——這也是 vLLM 最初的論文取名 PagedAttention 的由來。核心資料結構是 **block table(區塊對照表)**：下圖左側是單一對話自己看到的邏輯順序，右側是這些區塊在 GPU 記憶體裡實際、可以不連續的實體位置，中間靠 block table 對應起來。
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#dbeafe', 'primaryBorderColor':'#3b82f6', 'primaryTextColor':'#1e3a5f', 'lineColor':'#3b82f6', 'secondaryColor':'#eff6ff', 'tertiaryColor':'#eff6ff', 'clusterBkg':'#eff6ff', 'clusterBorder':'#93c5fd', 'edgeLabelBackground':'#ffffff' }}}%%
 flowchart LR
-  subgraph 邏輯視角["邏輯視角(單一對話自己看到的順序)"]
-    L0["區塊0\ntoken 1-4"] --> L1["區塊1\ntoken 5-8"] --> L2["區塊2\ntoken 9-10"]
+  subgraph 邏輯視角["邏輯視角"]
+    L0["區塊0<br/>token 1-4"] --> L1["區塊1<br/>token 5-8"] --> L2["區塊2<br/>token 9-10"]
   end
-  subgraph 實體視角["實體視角(GPU記憶體的真實位置,可以不連續)"]
+  subgraph 實體視角["實體視角"]
     P37["位置37"]
     P12["位置12"]
     P58["位置58"]
@@ -217,7 +218,7 @@ Kimi K3 用 MLA 加上 Kimi Delta Attention(KDA)。前面講過 TP 用在 MLA �
 
 #### DCP 的切法：照「序列位置」切，不照「頭」切
 
-標準 TP 想切「頭」這個維度，但 MLA 下這個維度沒東西可切，只有一份共用的 \(c\)。DCP 換一個維度：把累積的 KV cache，依照 token 的序列位置切開，每張 GPU 只存整體的 1/N。例如 context 累積 1000 個位置，DCP 切成 4 份，GPU1 存 token 1~250、GPU2 存 251~500，依此類推，每張 GPU 真正只存 1/4，不像 TP 那樣 4 張都存一模一樣的完整版。
+標準 TP 想切「頭」這個維度，但 MLA 下這個維度沒東西可切，只有一份共用的 \(c\)。DCP 換一個維度：把累積的 KV cache，依照 token 的序列位置切開，每張 GPU 只存整體的 1/N。例如 context 累積 1000 個位置，DCP 切成 4 份，GPU1 存 token 1\~250、GPU2 存 251\~500，依此類推，每張 GPU 真正只存 1/4，不像 TP 那樣 4 張都存一模一樣的完整版。
 
 DCP 帶來兩個好處(原文 Figure 6 顯示 DCP8 相較 TP8，decode 延遲更低、能撐到更高並發量)：更低的 decode 延遲，因為切分後每張 GPU 要處理的量變少；更高的吞吐量跟 KV 容量，因為不用複製整份 KV cache，GPU 能同時容納更多在跑的序列。
 
