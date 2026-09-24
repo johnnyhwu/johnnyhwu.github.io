@@ -218,7 +218,7 @@ Kimi K3 用 MLA 加上 Kimi Delta Attention(KDA)。前面講過 TP 用在 MLA �
 
 #### DCP 的切法：照「序列位置」切，不照「頭」切
 
-標準 TP 想切「頭」這個維度，但 MLA 下這個維度沒東西可切，只有一份共用的 \(c\)。DCP 換一個維度：把累積的 KV cache，依照 token 的序列位置切開，每張 GPU 只存整體的 1/N。例如 context 累積 1000 個位置，DCP 切成 4 份，GPU1 存 token 1~250、GPU2 存 251~500，依此類推，每張 GPU 真正只存 1/4，不像 TP 那樣 4 張都存一模一樣的完整版。
+標準 TP 想切「頭」這個維度，但 MLA 下這個維度沒東西可切，只有一份共用的 \(c\)。DCP 換一個維度：把累積的 KV cache，依照 token 的序列位置切開，每張 GPU 只存整體的 1/N。例如 context 累積 1000 個位置，DCP 切成 4 份，GPU1 存 token 1\~250、GPU2 存 251\~500，依此類推，每張 GPU 真正只存 1/4，不像 TP 那樣 4 張都存一模一樣的完整版。
 
 DCP 帶來兩個好處(原文 Figure 6 顯示 DCP8 相較 TP8，decode 延遲更低、能撐到更高並發量)：更低的 decode 延遲，因為切分後每張 GPU 要處理的量變少；更高的吞吐量跟 KV 容量，因為不用複製整份 KV cache，GPU 能同時容納更多在跑的序列。
 
