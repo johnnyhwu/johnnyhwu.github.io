@@ -2,7 +2,7 @@
 # weight: 1
 title: "SketchVLM: Letting a VLM Draw Its Own Reasoning"
 date: 2026-08-08
-lastmod: 2026-08-08
+lastmod: 2026-09-24
 draft: false
 description: "A walkthrough of SketchVLM: with no retraining, a coordinate grid, XML commands and Bezier smoothing let a VLM annotate the image so its answers become verifiable."
 featuredImage: "featured-image.png"
@@ -20,11 +20,11 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-Ask today's vision language models (VLMs) a visual reasoning question and you will usually get back a wall of text: whether there's enough engine oil, which bucket the ball will land in, how to get through the maze. The problem is, how do you confirm any of it is true? There is no direct correspondence between a text answer and the image, the model may simply have guessed right, and you have no way to see what it based its judgement on.
+Ask today's most capable vision language models (VLMs) a visual reasoning question and you will usually get back a wall of text: whether there's enough engine oil, which bucket the ball will land in, how to get through the maze. The problem is, how do you verify any of it? There is no direct correspondence between the text and the image, the model may simply have guessed at the answer, and you have no way to see what its judgement was based on.
 
 - [Paper link (arXiv:2604.22875)](https://arxiv.org/abs/2604.22875)
 
-That verification gap is exactly what SketchVLM sets out to close. It lets a VLM answer not only in text but by drawing lines, boxes, and numbers directly onto the original image, laying its thought process out where you can see it. More importantly, none of this requires retraining the model, and none of it damages the original image — the annotations are an overlaid vector layer that can be removed at any time.
+That verification gap is exactly what SketchVLM sets out to close. It lets a VLM answer not only in text but by drawing lines, boxes, and numbers directly onto the original image, laying its thought process out where you can see it — and it does so without retraining the model, and without touching a single pixel of the original image.
 
 This article follows SketchVLM's technical thread: how it gets the model to draw *accurately* on the canvas, how it turns drawing into a structured instruction format the model can emit reliably, how it uses mathematics to turn jittery coordinate points into smooth curves, and finally how the framework performs on real tasks — along with the problems it hasn't solved yet.
 
@@ -52,6 +52,10 @@ Before SketchVLM, getting a VLM to "point at" what matters in a picture came in 
 - **Image editing** (e.g. Nano Banana Pro): visually intuitive, but it modifies the original pixels. That's destructive, and it readily hallucinates content unrelated to the original image.
 - **Task-specific fine-tuning** (e.g. ViLaSR, ThinkMorph): decent on the tasks it was trained for, but accuracy collapses on an unseen task type such as a new maze layout — generalisation is poor. (On the cost side of fine-tuning multimodal models specifically, see the earlier post on [LayerNorm Tuning](../layernorm-tuning-multi-modal/).)
 
+The paper spells out these three shortcomings concretely with a set of examples across ball-drop trajectories, connect-the-dots, and maze navigation: Nano Banana Pro routinely alters the original scene outright and draws trajectories that defy physical intuition, while the fine-tuned models stay reasonably steady on the tasks they were trained for but clearly falter the moment the scene changes.
+
+{{< image src="figure2.png" alt="A qualitative comparison of three methods on ball-drop, connect-the-dots, and maze-navigation tasks, with SketchVLM's trajectories and paths visibly more accurate and plausible than Nano Banana Pro's or the fine-tuned models'." caption="Figure 2 — SketchVLM's performance compared across three tasks: Nano Banana Pro often alters the original image and draws implausible trajectories, while fine-tuned models struggle to generalise to new tasks. (Source: original paper)" >}}
+
 The paper compares these routes systematically, and the crux is which of them manages to be *both* training-free *and* a non-destructive vector overlay.
 
 {{< image src="table1.png" alt="The paper's comparison table of annotation methods, listing for each whether it is training-free, supports multi-turn dialogue, requires an input image, and allows free-form drawing, plus whether its annotation type is a vector overlay or an image edit." caption="Table 1 — SketchVLM compared against other sketching models and methods; the decisive columns are \"training-free\" and \"vector overlay (non-destructive)\". (Source: original paper)" >}}
@@ -78,7 +82,7 @@ This is also why the authors call the technique *visual prompting* rather than m
 
 Interestingly, not every model takes to it. The paper's ablation shows that with the grid added, Gemini-3-Pro's error on the connect-the-dots task drops sharply; GPT-5, by contrast, is unmoved and even slips slightly. The suspected reason is that the GPT family already has a strong internal normalised coordinate system (0 to 1000), so an extra grid layered on the outside may visually interfere with that built-in sense of coordinates.
 
-{{< image src="table3.png" alt="Ablation table comparing accuracy for Gemini-3-Pro and GPT-5 across several tasks in single-turn mode, with and without the coordinate grid prompt." caption="Table 3 — The coordinate grid does not help every model equally: Gemini-3-Pro performs best with the grid, while GPT-5 actually does better without it. (Source: original paper)" >}}
+{{< image src="table3.png" alt="Ablation table comparing accuracy for Gemini-3-Pro and GPT-5 across several tasks in single-turn mode, with and without the coordinate grid prompt." caption="Table 2 — The coordinate grid does not help every model equally: Gemini-3-Pro performs best with the grid, while GPT-5 actually does better without it. (Source: original paper)" >}}
 
 ## Turning drawing into structured instructions: XML syntax and coordinate encoding
 
@@ -130,13 +134,15 @@ As for dialogue, SketchVLM supports both single-turn and multi-turn modes, which
 | Best for | Quick diagnosis, physical trajectory prediction | Software walkthroughs, complex repair guides |
 | System cost | Low, a single API call | High, repeated image upload and processing |
 
+It's worth noting that single-turn mode's accuracy holds up too. That reflects the fact that a model like today's Gemini 3 Pro can fully simulate an entire physical trajectory or solution process internally even without drawing as it thinks, effectively compressing multi-turn reasoning into a single pass — a kind of built-in "internal mental simulation" capability.
+
 {{< image src="figure3.png" alt="Side-by-side diagram of the single-turn and multi-turn generation flows, showing the same physical-reasoning sample producing all annotations and the answer in one pass under single-turn, versus producing one annotation per turn and reusing previous annotations under multi-turn." caption="Figure 3 — Single-turn generates all annotations and the answer in one call; multi-turn produces one annotation per turn and feeds the previous annotations (both the rendered image and the text record) back into the model until it gives a final answer. (Source: original paper)" >}}
 
 Multi-turn mode has an easily overlooked detail: on each turn, besides the image drawn so far, the model must also receive the XML text record of every previous annotation. The reason is that from the rendered picture alone the model struggles to identify the exact pixel coordinates at a line's end, so the next stroke easily fails to connect; the text record supplies precise numeric memory while the image supplies spatial sense, and only together do they keep multi-turn annotation coherent. The authors also add a "one stroke per turn" gating rule, forcing the model to draw a single stroke each turn and breaking a complex operation into steps the user can absorb — particularly useful in a teaching context, since the frame never fills up with annotations all at once.
 
-A concrete example is guiding a user through removing a background in Photoshop: each turn the model receives the current screenshot and uses labelled arrows and highlight boxes to indicate where to click next, teaching the operation step by step.
+The paper demonstrates a couple of real scenarios: one guides a user through removing a background in Photoshop, with the model receiving the current screenshot each turn and using labelled arrows and highlight boxes to indicate where to click next; the other walks through setting up a cloud instance in the AWS console, where the model uses the same multi-turn annotation approach to point out where to click on a button-dense, complex interface. Both examples show how much the "one stroke per turn plus text history" combination matters for genuinely complex operational tutorials.
 
-{{< image src="figure12.png" alt="A multi-turn tutorial example in which the model annotates each screenshot with labelled arrows and highlight boxes, progressively showing the user how to remove a background in image editing software." caption="Figure 12 — A multi-turn example of SketchVLM guiding a user through removing an image's background: each turn marks what to do next based on the current screen. (Source: original paper)" >}}
+{{< image src="figure12.png" alt="A multi-turn tutorial example in which the model annotates each screenshot with labelled arrows and highlight boxes, progressively showing the user how to remove a background in image editing software." caption="Figure 4 — A multi-turn example of SketchVLM guiding a user through removing an image's background: each turn marks what to do next based on the current screen. (Source: original paper)" >}}
 
 ## Experimental results: seven tasks, three metrics
 
@@ -144,19 +150,29 @@ The paper evaluates SketchVLM on seven tasks: connect-the-dots, object counting,
 
 Evaluation goes beyond whether the final answer is right. The authors define three dimensions: the accuracy of the answer itself, whether the annotation is smooth and well-formed (annotation quality), and "annotation–text alignment" — that is, whether looking at the annotations alone, without the text answer, lets you infer the model's conclusion. The authors stress that the third metric matters most, because it verifies whether the annotation genuinely reflects the model's thinking rather than being decoration that merely looks good.
 
+{{< image src="table2.png" alt="Accuracy table across physical and spatial reasoning tasks, comparing SketchVLM, its variants, and fine-tuned models on multiple tasks." caption="Table 3 — SketchVLM keeps its visual reasoning trace while remaining competitive on accuracy; fine-tuned sketching models perform close to random chance on these tasks. (Source: original paper)" >}}
+
 On the numbers, SketchVLM beats image-editing baselines (such as Nano Banana Pro) on reasoning accuracy by up to 28.5 percentage points; annotation quality is roughly 1.48x better than fine-tuned models (ViLaSR, ThinkMorph); and annotation–text alignment averages 95.5%, far above those models' 28.6% to 46.8%.
 
-{{< image src="table2.png" alt="Accuracy table across physical and spatial reasoning tasks, comparing SketchVLM, its variants, and fine-tuned models on multiple tasks." caption="Table 2 — SketchVLM keeps its visual reasoning trace while remaining competitive on accuracy; fine-tuned sketching models perform close to random chance on these tasks. (Source: original paper)" >}}
+{{< image src="table5.png" alt="A comparison table of VLM-judge-scored annotation–text alignment and annotation-quality scores, comparing SketchVLM against fine-tuned models." caption="Table 4 — On both annotation–text alignment and annotation quality, fine-tuned models score markedly lower, while SketchVLM tops both. (Source: original paper)" >}}
+
+The "annotation–text alignment" metric is more abstract, and the paper grounds why it matters with a concrete case: fine-tuned models like ThinkMorph and ViLaSR sometimes produce annotations of poor quality with clear logical errors, yet still land on the correct final text answer. This "right answer, messy process" pattern leaves users with no way to verify the model's reasoning through its annotations — a sharp contrast with SketchVLM, whose annotations and answer echo each other in high-quality output.
+
+{{< image src="figure11.png" alt="An example of low-quality annotations: ThinkMorph and ViLaSR reach the correct final answer, but their annotation process contains logical errors that make it harder for users to verify than SketchVLM's high-quality annotations." caption="Figure 5 — Fine-tuned models sometimes get the answer right, but their annotations are logically incoherent, making them harder to verify than SketchVLM's clear, consistent annotations. (Source: original paper)" >}}
 
 The part-labelling task yields one more detail worth noting: the label positions SketchVLM places land very close to the correct locations, beating the baseline at every error tolerance, with the gap down to just a few pixels.
 
-{{< image src="table4.png" alt="Comparison table of SketchVLM's label placement accuracy against the baseline at different error tolerances." caption="Table 4 — The part labels SketchVLM places nearly all fall close to the correct location, outperforming the baseline at every tolerance level by a margin of only a few pixels. (Source: original paper)" >}}
+{{< image src="table4.png" alt="Comparison table of SketchVLM's label placement accuracy against the baseline at different error tolerances." caption="Table 5 — The part labels SketchVLM places nearly all fall close to the correct location, outperforming the baseline at every tolerance level by a margin of only a few pixels. (Source: original paper)" >}}
 
 ## Limitations and open problems
 
-SketchVLM does well, but the authors flag several real limitations themselves. The first is small objects: the paper makes the honest finding that for very small objects, SketchVLM's annotation precision is slightly worse than simply outputting a coordinate box — related to VLMs being inherently less sensitive to small pixel regions.
+SketchVLM does well, but the authors flag several real limitations themselves:
 
-The second is that interaction is still incomplete. Multi-turn dialogue currently has no "undo" or "erase"; if the model draws something wrong, it cannot make a local correction the way a real whiteboard discussion would, and can only keep drawing. The third is that only static images are supported — the annotation mechanism has not yet been extended to video. All three read as clear directions for future work rather than fundamental design flaws.
+- **Small objects are a challenge**: the paper makes the honest finding that for very small objects, SketchVLM's annotation precision is slightly worse than simply outputting a coordinate box — related to VLMs being inherently less sensitive to small pixel regions.
+- **Interaction is still incomplete**: multi-turn dialogue currently has no "undo" or "erase"; if the model draws something wrong, it cannot make a local correction the way a real whiteboard discussion would, and can only keep drawing.
+- **Only static images are supported**: the annotation mechanism has not yet been extended to video.
+
+All three read as clear directions for future work rather than fundamental design flaws.
 
 ## Conclusion
 
