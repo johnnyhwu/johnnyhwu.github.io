@@ -92,14 +92,15 @@ If each type got its own dedicated slice of memory, one slice would often sit id
 
 ### vLLM's Solution: Unified Paging + a Shared Pool
 
-vLLM borrows the concept of operating-system virtual memory paging directly — this is also where vLLM's original paper got the name PagedAttention. The core data structure is the **block table**:
+vLLM borrows the concept of operating-system virtual memory paging directly — this is also where vLLM's original paper got the name PagedAttention. The core data structure is the **block table**: in the diagram below, the left side is the logical order a single conversation sees; the right side is where those blocks actually sit in GPU memory, which can be non-contiguous; the block table maps one to the other.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#dbeafe', 'primaryBorderColor':'#3b82f6', 'primaryTextColor':'#1e3a5f', 'lineColor':'#3b82f6', 'secondaryColor':'#eff6ff', 'tertiaryColor':'#eff6ff', 'clusterBkg':'#eff6ff', 'clusterBorder':'#93c5fd', 'edgeLabelBackground':'#ffffff' }}}%%
 flowchart LR
-  subgraph Logical["Logical view (the order a single conversation sees)"]
-    L0["Block 0\ntokens 1-4"] --> L1["Block 1\ntokens 5-8"] --> L2["Block 2\ntokens 9-10"]
+  subgraph Logical["Logical view"]
+    L0["Block 0<br/>tokens 1-4"] --> L1["Block 1<br/>tokens 5-8"] --> L2["Block 2<br/>tokens 9-10"]
   end
-  subgraph Physical["Physical view (real GPU memory locations, can be non-contiguous)"]
+  subgraph Physical["Physical view"]
     P37["Slot 37"]
     P12["Slot 12"]
     P58["Slot 58"]
