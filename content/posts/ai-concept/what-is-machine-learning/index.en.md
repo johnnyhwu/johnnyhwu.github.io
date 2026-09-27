@@ -85,4 +85,4 @@ Using the "large amount of data" and the "method for training the model", we tra
 
 ## Conclusion
 
-In this article we gained a first understanding of machine learning, learned the three categories of algorithms it contains, and distinguished machine learning from traditional programming. This article is the first in the AWS ML Foundation series; [the next article](../model-training/) will introduce the *model* in machine learning and the *method used to train it*.
+In this article we gained a first understanding of machine learning, learned the three categories of algorithms it contains, and distinguished machine learning from traditional programming. This article is the first in the AWS ML Foundation series; [the next article](../model-training-and-inference/) will introduce the *model* in machine learning and the *method used to train it*.

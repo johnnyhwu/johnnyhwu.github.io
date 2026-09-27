@@ -4,7 +4,7 @@ title: "Estimation Error vs. Approximation Error: Architecture or Training?"
 date: 2022-05-29
 lastmod: 2022-05-29
 draft: false
-description: "When a model isn't accurate enough, is it the architecture that can't reach the answer, or training that fell short? This post splits a model's error into approximation error and estimation error."
+description: "Is a model's inaccuracy from an architecture that can't reach the answer, or training that fell short? This splits its error into approximation and estimation error."
 featuredImage: "featured-image.jpg"
 
 tags: []

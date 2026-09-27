@@ -85,4 +85,4 @@ Machine Learning 的優勢正是能夠解決這類問題。在 Machine Learning 
 
 ## 結論
 
-在本篇文章中，對 Machine Learning 有了初步的認識，了解 Machine Learning 底下的三種類別的演算法，並區分 Machine Learning 與 Traditional Programming 的區別。此文章屬於 AWS ML Foundation 系列文章的第一篇，[下一篇文章](../model-training/)將會介紹 Machine Learning 中的「模型」以及「訓練的方法」。
+在本篇文章中，對 Machine Learning 有了初步的認識，了解 Machine Learning 底下的三種類別的演算法，並區分 Machine Learning 與 Traditional Programming 的區別。此文章屬於 AWS ML Foundation 系列文章的第一篇，[下一篇文章](../model-training-and-inference/)將會介紹 Machine Learning 中的「模型」以及「訓練的方法」。

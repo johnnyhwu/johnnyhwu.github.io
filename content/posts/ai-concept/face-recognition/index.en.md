@@ -4,7 +4,7 @@ title: "Why Face Recognition Breaks the Old Machine Learning Playbook"
 date: 2022-02-05
 lastmod: 2022-02-05
 draft: false
-description: "The 10th post in the Machine Learning Fundamentals series: house price prediction and book clustering both ran on classic models, but face recognition breaks them — the five steps stay the same, only a neural network can carry the model this time."
+description: "Face recognition breaks the classic models behind house price prediction and book clustering. Same five steps, but only a neural network gets this one working."
 featuredImage: "featured-image.jpg"
 
 tags: ["Machine Learning"]
