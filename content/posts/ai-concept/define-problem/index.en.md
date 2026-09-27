@@ -20,7 +20,7 @@ url: "ai-concept/:contentbasename"
 
 ## Introduction
 
-In earlier articles, we talked about what machine learning is, and about the relationship between a model, model training, and model inference — and we saw that machine learning can tackle problems that traditional, rule-based programs simply can't. But knowing what machine learning *can* do is still a step away from actually handing a real problem over to it.
+In earlier articles, we talked about what machine learning is, and about [the relationship between a model, model training, and model inference](../model-training-and-inference/) — and we saw that machine learning can tackle problems that traditional, rule-based programs simply can't. But knowing what machine learning *can* do is still a step away from actually handing a real problem over to it.
 
 This article closes that gap: what five steps you actually walk through when solving a problem with machine learning, and what the first of those steps — "define the problem" — really involves. Whether you're predicting housing prices or classifying images, no matter what model or training method you swap in, these five steps stay roughly the same. Having this flow chart in mind before you start makes it much less likely you'll lose your way once you get into the details.
 
