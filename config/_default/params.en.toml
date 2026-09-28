@@ -135,7 +135,7 @@ keywords = ["DataSci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "A
   Goodreads = ""
   Googlescholar = ""
   Hackernews = ""
-  Instagram = "wei_programming/"
+  Instagram = "datasciocean/"
   Jsfiddle = ""
   Keybase = ""
   Kickstarter = ""
@@ -162,7 +162,6 @@ keywords = ["DataSci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "A
   Slidershare = ""
   Snapchat = ""
   Soundcloud = ""
-  Spotify = ""
   Stackoverflow = ""
   Steam = ""
   Strava = ""
@@ -183,6 +182,14 @@ keywords = ["DataSci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "A
   Youtubelegacy = ""
   Zhihu = ""
   Bluesky = ""
+  [social.Spotify]
+    url = "https://open.spotify.com/show/3IR5znvck4YiTcEAZWsyAV"
+  [social.Applepodcast]
+    weight = 29
+    url = "https://podcasts.apple.com/us/podcast/datasci-ocean/id6816790612"
+    title = "Apple Podcast"
+    [social.Applepodcast.icon]
+      Simpleicons = "applepodcasts"
   # [social.Mastodon]
   #   id = "@xxxx"
   #   prefix = "https://mastodon.technology/"
