@@ -1,0 +1,26 @@
+{{- /*
+Override of themes/DoIt's plugin/icon.html.
+
+Built-in social icons (from the theme's data/social.yml) keep their
+original PascalCase (Fontawesome/Simpleicons/Src) since that file is
+read via transform.Unmarshal and never passed through Hugo's params
+pipeline. But a custom social icon set from our own site config (e.g.
+params.*.toml's [social.<Name>.icon]) comes back from .Site.Params
+with its keys lowercased, so the theme's PascalCase-only lookup never
+matches it and the icon silently fails to render. Fall back to the
+lowercase key so config-supplied custom icons work too.
+*/ -}}
+{{- with (.Fontawesome | default .fontawesome) -}}
+{{- partial "plugin/fontawesome.html" . -}}
+{{- else -}}
+{{- with (.Simpleicons | default .simpleicons) -}}
+{{ partial "plugin/simpleicons.html" . }}
+{{- else -}}
+{{- with (.Src | default .src) -}}
+{{- $resource := resources.Get . -}}
+{{ if not $resource }}
+{{- errorf "Icon does not exist %v" . -}}
+{{- end -}}
+{{- $resource := $resource.Content -}}
+{{- $resource | replaceRE `<svg ` `<svg class="icon" ` | safeHTML -}} {{- end -}} {{- with .Class -}} {{-
+    errorf "Deprecated %v" . -}} {{- end -}} {{- end -}} {{- end }}

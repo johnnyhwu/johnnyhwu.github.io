@@ -189,7 +189,7 @@ keywords = ["DataSci Ocean", "Machine Learning", "ML", "Deep Learning", "DL", "A
     url = "https://podcasts.apple.com/us/podcast/datasci-ocean/id6816790612"
     title = "Apple Podcast"
     [social.Applepodcast.icon]
-      Simpleicons = "applepodcasts"
+      simpleicons = "applepodcasts"
   # [social.Mastodon]
   #   id = "@xxxx"
   #   prefix = "https://mastodon.technology/"
