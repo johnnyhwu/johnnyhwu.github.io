@@ -128,7 +128,7 @@ This article introduced the neuron that is much closer to what modern neural net
 
 The key is the sigmoid function's "smoothness": it ensures that a small tweak to the parameters produces only a small change in the output, avoiding the perceptron's predicament where an output flips outright and pulls the whole network with it. Only then can learning accumulate step by step. The continuous output brings an extra benefit too — it can be read directly as a probability, using 0.5 as a classification threshold.
 
-Both this article and the previous one, "Understanding the Perceptron", focus on a single artificial neuron. The next article zooms out to introduce the artificial neural network, and what happens once these neurons are wired together.
+Both this article and the previous one, "Understanding the Perceptron", focus on a single artificial neuron. [The next article](../what-is-neural-network/) zooms out to introduce the artificial neural network, and what happens once these neurons are wired together.
 
 ### References
 

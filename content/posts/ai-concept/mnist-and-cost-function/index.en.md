@@ -20,7 +20,7 @@ url: "ai-concept/:contentbasename"
 
 ## Introduction
 
-In the previous article, "Classifying Handwritten Digit Images with a Neural Network", we designed a neural network for the handwritten-digit classification problem and got a feel, from the network's point of view, for how it understands an image: the input layer stands for each pixel in the image, the hidden layer learns to capture the image's important features, and the output layer then classifies the image based on the features that were captured.
+In the [previous article, "Classifying Handwritten Digit Images with a Neural Network",](../handwritten-digit-classification/) we designed a neural network for the handwritten-digit classification problem and got a feel, from the network's point of view, for how it understands an image: the input layer stands for each pixel in the image, the hidden layer learns to capture the image's important features, and the output layer then classifies the image based on the features that were captured.
 
 Designing the architecture, though, is only the first step. The parameters inside the network (the weights and biases) all start out random, and getting the output to become more and more accurate depends on the following 3 elements:
 
