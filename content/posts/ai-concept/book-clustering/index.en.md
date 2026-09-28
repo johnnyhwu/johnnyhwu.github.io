@@ -20,7 +20,7 @@ url: "ai-concept/:contentbasename"
 
 ## Introduction
 
-This is the 9th article in the "Machine Learning Fundamentals" series. In the previous post, we used the five-step machine-learning workflow ([Define the Problem](../define-problem/), [Prepare Dataset](../prepare-dataset/), [Model Training](../model-training/), [Model Evaluate](../model-evaluate/), and [Model Inference](../model-inference/)) to work through the "house price prediction" example, and house price prediction is a classic case of Supervised Learning: every piece of data comes with a correct answer, and the model just learns from those answers.
+This is the 9th article in the "Machine Learning Fundamentals" series. In the previous post, we used the five-step machine-learning workflow ([Define the Problem](../define-problem/), [Prepare Dataset](../prepare-dataset/), [Model Training](../model-training/), [Model Evaluate](../model-evaluate/), and [Model Inference](../model-inference/)) to work through the ["house price prediction"](../house-price-prediction/) example, and house price prediction is a classic case of Supervised Learning: every piece of data comes with a correct answer, and the model just learns from those answers.
 
 This time we're switching to a different setting. It's the same five steps, but this time there's no ground truth to learn from at all — the problem is "exploring book styles": we feed a batch of book summaries into a model and let it figure out on its own which books share a similar tone. This falls under Clustering, a task within Unsupervised Learning, and it's a very common kind of problem in practice: you know there's structure in the data, but you can't say up front what that structure looks like.
 
@@ -90,4 +90,4 @@ Running it the other way round is just as valuable: pick a cluster, pull out the
 
 This article walked through the five-step machine-learning workflow using "exploring book styles" as an Unsupervised Learning example: starting from defining the problem as a clustering task, cleaning and vectorizing the text summaries, running **K-Means** to cluster them, using the **silhouette coefficient** to pick the best k, and finally using the model to interpret book styles.
 
-Compared to the previous post's house price prediction, the process is identical — the only difference is that there's no label to work with, so both the model and the evaluation metric had to change. The next article will introduce a more powerful model (Neural Network) for tackling harder problems.
+Compared to the previous post's [house price prediction](../house-price-prediction/), the process is identical — the only difference is that there's no label to work with, so both the model and the evaluation metric had to change. [The next article](../face-recognition/) will introduce a more powerful model (Neural Network) for tackling harder problems.
