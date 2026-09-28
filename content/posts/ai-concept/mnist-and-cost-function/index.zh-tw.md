@@ -20,7 +20,7 @@ url: "ai-concept/:contentbasename"
 
 ## 前言
 
-在上一篇「用 Neural Network 分類手寫數字圖像」中，我們針對「手寫數字圖像」的分類問題設計了一個 Neural Network，並站在 Neural Network 的角度感受它如何理解圖像：Input Layer 象徵圖像中每一個像素，Hidden Layer 學習捕捉圖像中重要的特徵，Output Layer 再依據捕捉到的特徵進行圖像的分類。
+在[上一篇「用 Neural Network 分類手寫數字圖像」](../handwritten-digit-classification/)中，我們針對「手寫數字圖像」的分類問題設計了一個 Neural Network，並站在 Neural Network 的角度感受它如何理解圖像：Input Layer 象徵圖像中每一個像素，Hidden Layer 學習捕捉圖像中重要的特徵，Output Layer 再依據捕捉到的特徵進行圖像的分類。
 
 不過，設計好架構只是第一步。網路裡的參數 (weight 與 bias) 一開始都是隨機的，要讓輸出愈來愈準確，得靠接下來這 3 個元素：
 

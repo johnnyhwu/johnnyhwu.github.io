@@ -128,7 +128,7 @@ Sigmoid Neuron 的輸出不再只有 0 或 1，而是 0 到 1 之間的任意數
 
 關鍵在於 Sigmoid 函數的「平滑」特性：它讓參數微調時輸出也只微幅變動，避免了 Perceptron 那種輸出直接翻面、牽一髮動全身的困境，學習才有辦法一步一步累積。而連續的輸出也帶來額外的好處，可以直接被解讀成機率，用 0.5 當門檻做分類。
 
-本篇與前一篇「了解什麼是 Perceptron」都聚焦在單一個人工神經元 (Artificial Neuron) 上。下一篇文章會把視角拉高，進入人工神經網路 (Artificial Neural Network) 的介紹，看看這些神經元串接起來之後會發生什麼事。
+本篇與前一篇「了解什麼是 Perceptron」都聚焦在單一個人工神經元 (Artificial Neuron) 上。[下一篇文章](../what-is-neural-network/)會把視角拉高，進入人工神經網路 (Artificial Neural Network) 的介紹，看看這些神經元串接起來之後會發生什麼事。
 
 ### 參考資料
 
