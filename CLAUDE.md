@@ -10,7 +10,7 @@ produce the material this repo's step turns into a real post. Nothing in
 |---|---|---|---|
 | 1 | Writer + Reviewer — turns discussion notes + an image manifest into `article.md` | No (`AI-Research`) | n/a |
 | 2 | Parser — extracts figures/tables from the PDF into an image manifest | No (`AI-Research`) | n/a |
-| 3 | Publisher — wires `article.md` + manifest + images into a Hugo post, in **both** languages this site ships | **Yes** | `.claude/skills/hugo-paper-post/` |
+| 3 | Publisher — wires `article.md` + manifest + images into a Hugo post, in **both** languages this site ships, and designs its cover image | **Yes** | `.claude/skills/hugo-paper-post/` (cover: `.claude/skills/canvas-design/`) |
 
 If you're publishing anything in this repo from an `AI-Research` topic
 directory, you are doing Step 3.
@@ -22,6 +22,7 @@ directory, you are doing Step 3.
 | "產生 `<Topic>` 文章" / "generate the `<Topic>` post" / "publish `<Topic>`" / "把 `<Topic>` 發布成 Hugo post" | Use the **`hugo-paper-post`** skill (`.claude/skills/hugo-paper-post/`) against topic directory `done/unpublished/<Topic>/` in `johnnyhwu/AI-Research`. |
 | "有哪些文章可以發布？" / "what's ready to publish?" | List `done/unpublished/` in `AI-Research`. That directory *is* the publishing queue — every topic in it has an `article.md` and no Hugo post yet. |
 | Anything about fixing/updating an *existing* post's images, front matter, or translation | Same skill — it also covers touch-ups, not just first publication. The source topic will be under `done/published/` in that case. |
+| "幫 `<Topic>` 做 / 換 feature image" / "redo the cover for `<Topic>`" | Same skill, `references/featured-image.md`: generate the cover with the vendored **`canvas-design`** skill in the site's house style. Works on a post being published or on one already live. |
 
 The skill's directory name says "paper", but that is historical. It is the
 publisher for **every** kind of `AI-Research` topic, not just academic
@@ -146,10 +147,16 @@ ships will be offered up for publishing all over again.
 - **Never load an image file into context except a bounded, explicitly
   justified spot-check.** The skill defines exactly when that's allowed
   (only `parser_confidence: "low"` manifest entries, downscaled first) and
-  when it isn't (everything else — trust direct id matches).
+  when it isn't (everything else — trust direct id matches). The one other
+  exception is the cover you generate yourself: view its ~1000px preview
+  to check layout, never the full-size file.
 - **Never invent a manifest id or fabricate front-matter metadata the site
-  needs but the article doesn't supply** (e.g. a cover photo). Flag gaps
-  in the PR description instead of papering over them.
+  needs but the article doesn't supply.** The cover image is the common
+  case: don't leave it out, don't source a stock photo, and don't pass a
+  figure off as a cover. Generate an original one with `canvas-design` per
+  the skill, label it as generated in the PR, and keep every number or
+  label in it traceable to the article. Flag any other gap in the PR
+  description instead of papering over it.
 - **Fail loud, not silent.** An image that can't be confidently resolved
   gets a visible placeholder and a PR callout — never a silent guess.
 - **This site is bilingual (`zh-TW` + `en`), and that isn't optional per

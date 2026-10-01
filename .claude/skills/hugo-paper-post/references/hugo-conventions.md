@@ -97,12 +97,17 @@ over either forcing a bad-fit LLM tag onto a fundamentals post or minting a
 one-off tag (`"Deep Learning"`) that no other post shares — a tag with a
 single member does nothing for discovery. Say which you chose in the PR.
 
-### Featured image (there usually isn't a dedicated one)
+### Featured image (generate one unless the source already ships a real cover)
 
 Papers rarely come with a dedicated cover/header photo. `verify_post.py`
 treats `featuredImage` as a required front-matter field, and every existing
 post on this site has one — so this always needs an answer, never an
-omission. Two cases, depending on whether the topic has any images at all:
+omission. Order of preference:
+
+1. a real original cover the source already ships (next three paragraphs),
+2. otherwise **a generated cover made with the `canvas-design` skill**, in
+   the house style described in `featured-image.md` (this is the default),
+3. only if generation is impossible, the old fallback of reusing a figure.
 
 **Best case — the source directory already ships one.** Check
 `<TopicDir>/assets/images/` for a file named like `feature-image.*` /
@@ -138,54 +143,33 @@ original cover image, use it, but **say so explicitly in the PR**: this
 path is inferred from the old post's structure, not a direct file-naming
 signal, so it's a weaker claim than the best case above and a human may
 want to give the post a dedicated cover image later. If `original-post.md`
-gives no signal either (or doesn't exist), fall through to the normal case
-below.
+gives no signal either (or doesn't exist), fall through to the generated-cover default below.
 
-**Normal case — the article has at least one figure.** Reuse the article's
-own most representative one — usually the paper's architecture/overview
-diagram — as `featured-image.png`, copied alongside its normal in-body copy
-under its own descriptive name. **Don't assume that's Figure 1 without
-checking**: figure numbering follows the paper's own narrative order, not
-"how representative is this," so the overview diagram just as often turns
-out to be Figure 2 or later, with Figure 1 being something else entirely
-(e.g. a headline results chart). WikiSkill is a concrete case of this:
-Figure 1 was the main results bar chart, while Figure 2 was the actual
-three-layer architecture diagram and the right featured-image pick. Look at
-what each figure's caption/`agent_match_hint` actually describes and pick
-the one that depicts the core mechanism, not whichever has the lowest
-number. **Say so explicitly in the PR** — it's a reasonable default, not a
-requirement from the source, and a human may prefer something else.
-(Separately, some existing posts instead use a generic, topic-unrelated
-stock photo, or the paper/product's own logo banner if one is genuinely
-public and on-topic — reusing the overview figure is simply the safer
-default that needs no external sourcing.)
+**Default — generate a cover with `canvas-design`.** When the source ships no
+real cover, design an original 1800x945 cover following
+`references/featured-image.md` (fixed palette, type and margins; a
+per-post metaphor drawn from the article's one central mechanism; labels
+limited to terms and numbers the article itself contains). This applies
+whether or not the article has figures: don't reuse a paper figure as the
+cover just because one exists. `featured-image-example/` has a worked
+example, and `content/posts/paper-intro/resource2skill/` is the live post it
+produced. Check the result by viewing only the 1000px preview. **Say so
+explicitly in the PR**: it is a generated illustration, not a sourced photo
+and not a paper figure, plus what it depicts and where each number in it
+comes from.
 
-**The article has no images at all** (no manifest, no `assets/` dir — e.g.
-a reading-note/analysis of someone else's blog post rather than an
-academic paper with figures). There's nothing to repurpose, and going out
-to source a stock photo means either fabricating a claim the source didn't
-make or spending a web fetch on an image of unclear licensing — skip both.
-Instead:
-
-1. **Don't spend context loading other existing posts' real
-   `featured-image.*` files just to study "what a stock photo should look
-   like."** That reads real image bytes into context for a decision that
-   doesn't need it — the whole point of this skill's image-frugality rules.
-2. **Generate a small, original, self-contained graphic locally instead.**
-   Python's Pillow is not always preinstalled — `pip install Pillow` if
-   `import PIL` fails — and DejaVu/Liberation TrueType fonts are available
-   under `/usr/share/fonts/truetype/{dejavu,liberation}/` for any text in
-   the graphic. Make it depict the article's own central concept or
-   metaphor (e.g. a post organized around a "narrow waist" data-flow model
-   got a simple hourglass diagram with the write/read-side labels from the
-   article) — not generic decoration. This keeps it honest: it illustrates
-   something the article actually says, rather than posing as a sourced
-   photo or a real figure that doesn't exist.
-3. Save it as `featured-image.png` in the page bundle, same as any other
-   featured image.
-4. **State explicitly in the PR** that it's a generated placeholder
-   illustration (not a sourced photo, not a paper figure) and what it
-   depicts, so a human can swap it for something else later if they want.
+**Last resort — generation is impossible** (Pillow can't be installed, no
+network). Reuse the article's most representative figure as
+`featured-image.png`, copied alongside its normal in-body copy. **Don't
+assume that's Figure 1 without checking**: figure numbering follows the
+paper's own narrative order, so the overview diagram just as often turns
+out to be Figure 2 or later (WikiSkill's Figure 1 was a results bar chart
+and its architecture diagram, Figure 2, was the right pick). Look at what
+each figure's caption/`agent_match_hint` describes and pick the one that
+depicts the core mechanism. Say in the PR that generation was skipped and
+why. For an article with no images at all and no way to generate, this
+fallback doesn't exist; flag the missing cover in the PR rather than
+sourcing a stock photo of unclear licence.
 
 ## Image shortcode
 
@@ -238,11 +222,11 @@ get wrong:
   the same (per the hard rules), but a threadbare alt is worth a small
   factual improvement, unlike the article's prose which you must not
   touch.
-- `featuredImage`: since it's usually a repurposed figure (see below), it
-  may fall short of the ~1200x630 size link previews want. That's fine —
-  don't fabricate a replacement — but if it's noticeably small or a
-  non-16:9 crop, mention the actual dimensions in the PR so a human can
-  judge whether to swap it later.
+- `featuredImage`: a generated cover is 1800x945 (about 1.9:1), which is
+  already the shape link previews want. A reused figure or a migrated
+  original cover may be smaller or a different crop; if it's noticeably
+  small, mention the actual dimensions in the PR so a human can judge
+  whether to swap it later. Don't fabricate a replacement for a real cover.
 - AI-citation readiness (GEO/AEO) rides on the same readability work this
   skill already does, not a separate pass: a section an LLM can quote and
   have it stand alone (the "Heading structure" section's H2/H3 nesting and

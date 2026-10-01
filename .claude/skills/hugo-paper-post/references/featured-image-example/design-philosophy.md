@@ -1,0 +1,11 @@
+# Luminous Taxonomy
+
+An aesthetic of **distillation as a physical process**: a dense, living field of fine lines is drawn through a single point of pressure and emerges on the other side as an ordered, branching lattice. The work treats transformation the way a scientific plate treats a specimen — with patient repetition, clinical reference marks, and reverence for the structure that is revealed once noise has been resolved. Everything is meticulously crafted; every curve, tick and node is placed as though by a draftsman at the top of their field, after countless hours of refinement.
+
+Space is divided by a single axis of flow. The left half is turbulent and abundant — hundreds of hairline strokes drifting in slow, phase-shifted waves, their density read as time itself. The right half is calm and exact — a lattice of nodes whose regularity is earned, never assumed. Between them sits a narrow aperture where abundance becomes order. Negative space is deliberate: it lets the convergence be felt before it is understood. The product of deep expertise shows in the restraint of the margins, the evenness of the rhythm, and the absence of anything decorative.
+
+Colour is a closed system of three voices on deep midnight ink: a warm ember for what is living and temporal, a cool ice-blue for what has been made structural, and a quiet slate for everything that accompanies but does not lead. Brightness, not hue, carries emphasis — one path through the lattice is lit, and the rest recede in luminous patience. Painstaking calibration of opacity gives the field depth without a single gradient fill.
+
+Typography is whispered, never shouted: a refined serif for the single name the work exists to bear, a thin sans for one quiet line of context, and a monospaced hand for clinical annotation — column headers, measured values, registration marks. Text is a visual accent integrated into the structure, contained well inside generous margins, never touching or crossing the drawing. Every label has room to breathe; nothing overlaps; nothing leaves the page.
+
+The finished plate should feel like an artifact from an imaginary discipline — a diagram proving that something ephemeral can be studied, mapped and understood through sustained attention. Master-level execution, nothing added for its own sake, every mark doing the work of ten.
