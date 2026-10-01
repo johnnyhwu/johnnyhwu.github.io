@@ -2,7 +2,7 @@
 
 Not a template to fill in -- every post gets its own metaphor (see ../featured-image.md).
 It is here to show the house skeleton in code: palette, 1200x630 logical canvas drawn at
-3x and downsampled, margins + corner registration marks, serif title / sans subtitle / mono
+3x and downsampled, margins + corner registration marks, sans title and subtitle (one family) / mono
 annotations, text kept clear of the drawing, and a final contact-sheet-sized preview.
 
 Usage:  python3 render.py <out_dir>      -> <out_dir>/featured-image.png + preview.jpg
@@ -230,12 +230,12 @@ def text(x, y, s, font, col, anchor='la', spacing=0.0):
     return x + font.getlength(s) / S
 
 
-title = F('InstrumentSerif-Regular.ttf', 72)
+title = F('InstrumentSans-Regular.ttf', 62)
 sub = F('InstrumentSans-Regular.ttf', 19)
 mono = F('DMMono-Regular.ttf', 10.5)
 mono_b = F('DMMono-Regular.ttf', 11.5)
 
-text(60, 56, 'Resource2Skill', title, (236, 240, 248), spacing=3.0)
+text(60, 62, 'Resource2Skill', title, (236, 240, 248), spacing=1.2)
 text(62, 146, 'Distilling tutorial video into agent skills', sub, mix(ICE_HI, 0.72), spacing=0.5)
 
 # column headers of the lattice

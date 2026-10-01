@@ -23,7 +23,7 @@ in: copying its picture onto a different topic is exactly the failure to avoid.
 | Canvas | Design on a **1200x630 logical** canvas, draw at **3x** and downsample (LANCZOS) to a **1800x945** PNG. Link previews want about 1.9:1, and 1.5x keeps lines crisp on high-DPI screens. |
 | Output | `featured-image.png` in the post's page bundle. Never put the philosophy `.md` in the bundle: Hugo would treat it as a content file. |
 | Palette | Midnight ink background `(8,15,30)` with a faint radial lift. Ember `(244,176,72)` / `(255,226,170)` for the living, temporal or hero element. Ice blue `(122,176,255)` / `(206,228,255)` for structure that has been resolved. Slate `(98,114,140)` for everything that accompanies but doesn't lead. Brightness, not extra hues, carries emphasis. Don't add a fourth hue. |
-| Type | Title in **Instrument Serif** (about 72px, tracking +3px; untracked it reads cramped). One-line subtitle in **Instrument Sans** (about 19px, tracking +0.5). Annotations in **DM Mono** (10 to 12px). All three are in `canvas-design/canvas-fonts/`. |
+| Type | Title and subtitle in the **same family, Instrument Sans**: title about 62px with +1.2px tracking, subtitle about 19px with +0.5px. Annotations in **DM Mono** (10 to 12px). Both are in `canvas-design/canvas-fonts/`. An earlier cover set the title in Instrument Serif and read as cramped and mismatched with the subtitle, so don't mix a serif title back in. |
 | Text language | **English only.** One image serves both `index.en.md` and `index.zh-tw.md`, and the bundled fonts have no CJK glyphs. |
 | Margins | 60px text margin. Corner registration marks at 34px. Nothing touches or crosses anything else, and nothing leaves the canvas. |
 | Layout skeleton | Title block top-left; the drawing owns the rest; a measured-values line at bottom-left. Keep the title block clear of the drawing, and keep the leftmost 40% free of fine detail near the top, since list pages crop covers. |
@@ -45,7 +45,7 @@ in: copying its picture onto a different topic is exactly the failure to avoid.
    11.9 pp from its intro). If the post has no number worth showing, leave the line out. Never invent a
    statistic, a logo or a venue.
 5. **Title text** is the method or concept name as the post uses it, short enough to sit in the top-left block
-   (roughly 18 characters at 72px; scale the size down for longer names rather than wrapping).
+   (roughly 18 characters at 62px; scale the size down for longer names rather than wrapping, and keep it clear of the first column header of the drawing).
 
 ## Workflow
 
