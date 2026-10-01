@@ -26,7 +26,10 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
    whose manifest entry is `parser_confidence: "low"`, or where id-matching
    was genuinely ambiguous. See `references/image-resolution.md` for the
    exact procedure and why every other image must be trusted without a
-   look.
+   look. The one other exception is the **cover you generate yourself**:
+   view only its ~1000px `preview.jpg` to check layout and legibility (see
+   `references/featured-image.md`). That is your own output, not extracted
+   source material, and the downscaled preview keeps the cost bounded.
 
 3. **Always produce both `index.en.md` and `index.zh-tw.md` for a post, in
    the same commit, every time — never just one.** This is not a style
@@ -43,16 +46,17 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
 4. **Never fabricate metadata the site expects but the source doesn't
    supply** — most commonly a dedicated cover/header image, which papers
    rarely have and some topics (e.g. a reading note on a blog post, not an
-   academic paper) may lack entirely, with zero figures anywhere. Make a
-   defensible, clearly-flagged substitution instead (see
-   `references/hugo-conventions.md`'s "Featured image" section for the two
-   concrete fallbacks — reuse the article's own Figure 1 when one exists,
-   or generate a small original graphic depicting the article's own central
-   concept when it doesn't) and say so in the PR. The line not to cross
-   isn't "used a substitute image" — every existing post already does that
-   in one form or another — it's *claiming* a substitute is something it
-   isn't (passing a generated diagram off as a real figure, or asserting a
-   fact the article never made).
+   academic paper) may lack entirely, with zero figures anywhere. Don't
+   leave it out and don't source a stock photo. **Generate an original
+   cover with the `canvas-design` skill in this site's house style** (see
+   `references/featured-image.md`; the conventions doc's "Featured image"
+   section has the full order of preference, including keeping a real
+   cover that a hand-migrated topic already ships) and say so in the PR.
+   The line not to cross isn't "used a generated image" — every existing
+   post already has some cover — it's *claiming* a generated image is
+   something it isn't (passing it off as a real paper figure or a
+   photograph), or putting a number, name or claim in it that the article
+   never made.
 
 5. **Preserve the Writer's prose.** Translating is expected (rule 3); adding
    unrelated commentary, restructuring the argument, or "improving" claims
@@ -149,7 +153,7 @@ prefer what an actual recent post does if the two ever disagree.
    `content/posts/<section>/<slug>/index.en.md` and `index.zh-tw.md`,
    following `references/hugo-conventions.md` for front matter, the image
    shortcode, inline math notation, admonition usage, heading structure,
-   tag vocabulary, and the featured-image fallback. Copy the resolved
+   tag vocabulary, and the featured-image rules. Copy the resolved
    image files flat into the same directory
    (page bundle), named descriptively (`figure1.png`, `table1.png`, ... —
    not the manifest's docling-native filenames; if the manifest's own
@@ -157,6 +161,13 @@ prefer what an actual recent post does if the two ever disagree.
    keep them). Strip the trailing
    `figure-map` block and any `NO-MANIFEST`/`UNRESOLVED` pipeline comments
    from both rendered bodies (they may still appear in the PR description).
+
+   **Then make the cover.** Unless the topic already ships a real one,
+   generate `featured-image.png` with the `canvas-design` skill in the house
+   style from `references/featured-image.md` (1800x945, English-only text,
+   a metaphor drawn from the article's central mechanism, labels limited to
+   terms and numbers the article contains). `pip install pillow numpy`
+   first if they're missing. This replaces the old "reuse Figure 1" default.
 
 6. **Add contextual internal links to related posts**, per
    `references/hugo-conventions.md`'s "Internal linking to related posts"
@@ -190,7 +201,9 @@ prefer what an actual recent post does if the two ever disagree.
    from (full bucketed path), **which section you routed it to and why**
    (plus whether the slug was already pinned by existing links), the
    id → filename image mapping, which images (if any)
-   were spot-checked and why, any unresolved images or missing/fabricated
+   were spot-checked and why, how the cover was made (generated with
+   `canvas-design`: what it depicts, where every number or label in it
+   comes from, its size; or the real cover/fallback that was used), any unresolved images or missing/fabricated
    front-matter fields, any internal links added (or why none applied), and
    confirmation that both language files were verified to build.
 
@@ -237,7 +250,8 @@ topic. Delegate per topic:
   give it the **full bucketed path**, e.g.
   `done/unpublished/<Topic>/`, not a bare `<Topic>/`,
 - resolve images, including any bounded spot-check, and copy them into the
-  bundle,
+  bundle, then generate the cover per `references/featured-image.md`
+  (each subagent installs Pillow/numpy itself and views only the preview),
 - write `index.en.md` **and** `index.zh-tw.md` (both — the bilingual rule is
   per post, so it binds each subagent individually),
 - run `verify_post.py` on that one directory and report its warnings back.
@@ -301,6 +315,12 @@ existing wording still matches.
   both exist, in the same change.
 - Every resolved image renders with the Writer's alt text and caption
   intact, via this site's `{{< image ... >}}` shortcode convention.
+- `featuredImage` is set in both language files and the file exists: a real
+  cover the source shipped, or (the default) a cover generated with
+  `canvas-design` in the house style, checked via its preview, with every
+  number and label in it traceable to the article, and described honestly
+  in the PR as a generated illustration. Reusing a paper figure is only the
+  documented last resort.
 - No `figure-map` block or internal pipeline comments (`NO-MANIFEST`,
   `UNRESOLVED`, etc.) leak into either published body.
 - No heading carries `article.md`'s own manual numbering (`一、`, `2.1`,
@@ -371,7 +391,9 @@ hugo-paper-post/
 ├── SKILL.md                              (this file)
 ├── references/
 │   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
-│   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image fallback
+│   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image order of preference
+│   ├── featured-image.md                 house style + workflow for generating a cover with the canvas-design skill
+│   ├── featured-image-example/           render.py + design-philosophy.md: the Resource2Skill cover, reproducible byte for byte
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
 └── scripts/
