@@ -147,6 +147,10 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
   user-level Python and pollutes it. If a new package is needed, `uv add` it
   so it lands in `pyproject.toml` and `uv.lock`. (`verify_post.py` is
   stdlib-only and runs fine with plain `python3`.)
+- **Hugo is project-local too.** For the real build check, run
+  `.claude/skills/hugo-paper-post/scripts/hugo.sh ...` (see its header). It keeps
+  the binary, Hugo's cache and the build output under the gitignored `.tools/`;
+  don't `brew install` / `go install` hugo or point the build at the repo root.
 
 - **Never read the source PDF.** It sits in the `AI-Research` submodule next
   to `article.md`, so it is easy to open by accident. Step 3 works

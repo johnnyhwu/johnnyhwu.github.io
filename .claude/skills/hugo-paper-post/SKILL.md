@@ -196,10 +196,13 @@ prefer what an actual recent post does if the two ever disagree.
    on top of the theme's, zero internal links to other
    posts). Warnings aren't failures — use judgement — but investigate each
    one. It is a fast sanity net, **not** a substitute for an actual Hugo
-   build — see `references/hugo-build.md` for how to get a real
-   `hugo build` running in a sandbox that has neither `hugo` nor the theme
-   submodule preinstalled, and do that too when the change is non-trivial
-   (new post, not a one-line fix).
+   build — run one through `scripts/hugo.sh` (a project-local Hugo, downloaded
+   on first use, nothing installed system-wide; see `references/hugo-build.md`)
+   when the change is non-trivial (new post, not a one-line fix):
+
+   ```bash
+   .claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+   ```
 
 8. **Open a PR** whose description covers: which topic directory it came
    from (full bucketed path), **which section you routed it to and why**
@@ -403,9 +406,10 @@ hugo-paper-post/
 │   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
 │   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image order of preference
 │   ├── featured-image.md                 fixed technical contract + 'every cover looks different' rule + workflow for generating a cover with canvas-design
-│   ├── featured-image-example/           render.py + design-philosophy.md: the Resource2Skill cover, reproducible byte for byte
+│   ├── featured-image-example/           render.py (Resource2Skill, dark/line-art) + render-rrsi.py (RRSI, light/flat poster) + design-philosophy.md: two deliberately different covers
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
 └── scripts/
+    ├── hugo.sh                           project-local Hugo (version from the CI workflow), cache and output kept under .tools/
     └── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter / zh-tw full-width-punctuation checks
 ```

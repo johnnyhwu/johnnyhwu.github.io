@@ -5,3 +5,7 @@ __pycache__/
 
 # uv virtual environment (see pyproject.toml)
 .venv/
+
+# project-local tools (Hugo binary + cache, build output) and Hugo's generated resources
+.tools/
+resources/
