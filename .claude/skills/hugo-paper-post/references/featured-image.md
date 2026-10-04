@@ -7,28 +7,44 @@ photos. The order of preference is in `hugo-conventions.md`, "Featured image"; t
 the generated case.
 
 `canvas-design` is a generic "make art" skill: it asks for a written design philosophy, then an expression of
-it on a canvas. Used bare, every post would come out in a different palette and typeface. The house style
-below pins down what stays constant across posts, so covers read as one series, and leaves the **metaphor**
-free, since that is the part that depends on the paper.
+it on a canvas. **Each post's cover gets its own visual style.** Two covers that share a palette, typeface and
+layout read as one template, which is the opposite of what a cover is for (RRSI's first cover reused
+Resource2Skill's look and had to be redone). So only the technical contract
+is fixed; the look is not.
 
-The worked example is `featured-image-example/` (`render.py` + `design-philosophy.md`). It reproduces
-`content/posts/paper-intro/resource2skill/featured-image.png` byte for byte. Read it before drawing your
-first one, then write a new script for the new topic. It is a skeleton to learn from, not a template to fill
-in: copying its picture onto a different topic is exactly the failure to avoid.
+Two worked examples live in `featured-image-example/`: `render.py` (Resource2Skill: dark ink background,
+ember and ice-blue line work, a stream converging on an aperture) and `render-rrsi.py` (RRSI: light paper
+background, flat vermilion and ink, a condensed poster title, a plot). They are deliberately unlike each other.
+Read both for mechanics (supersampling, margins, text helpers, preview), then write a new script. Never reuse
+either one's palette, type pairing or composition for a third post.
 
-## What is fixed (house style)
+## What is fixed (the technical contract)
 
 | | |
 |---|---|
 | Canvas | Design on a **1200x630 logical** canvas, draw at **3x** and downsample (LANCZOS) to a **1800x945** PNG. Link previews want about 1.9:1, and 1.5x keeps lines crisp on high-DPI screens. |
 | Output | `featured-image.png` in the post's page bundle. Never put the philosophy `.md` in the bundle: Hugo would treat it as a content file. |
-| Palette | Midnight ink background `(8,15,30)` with a faint radial lift. Ember `(244,176,72)` / `(255,226,170)` for the living, temporal or hero element. Ice blue `(122,176,255)` / `(206,228,255)` for structure that has been resolved. Slate `(98,114,140)` for everything that accompanies but doesn't lead. Brightness, not extra hues, carries emphasis. Don't add a fourth hue. |
-| Type | Title and subtitle in the **same family, Instrument Sans**: title about 62px with +1.2px tracking, subtitle about 19px with +0.5px. Annotations in **DM Mono** (10 to 12px). Both are in `canvas-design/canvas-fonts/`. An earlier cover set the title in Instrument Serif and read as cramped and mismatched with the subtitle, so don't mix a serif title back in. |
 | Text language | **English only.** One image serves both `index.en.md` and `index.zh-tw.md`, and the bundled fonts have no CJK glyphs. |
-| Margins | 60px text margin. Corner registration marks at 34px. Nothing touches or crosses anything else, and nothing leaves the canvas. |
-| Layout skeleton | Title block top-left; the drawing owns the rest; a measured-values line at bottom-left. Keep the title block clear of the drawing, and keep the leftmost 40% free of fine detail near the top, since list pages crop covers. |
+| Legibility | 60px text margin; nothing touches, overlaps or leaves the canvas. The title is readable at list-page thumbnail size, and the leftmost 40% stays calm near the top because list pages crop covers. |
+| Fonts | Only the files in `canvas-design/canvas-fonts/`. |
+| Honesty | Labels use only terms and numbers the article contains. Anything drawn that is not paper data (a schematic scatter, say) says so on the image ("ILLUSTRATIVE"). |
 
-## What varies (the part you design)
+## What must differ from existing covers (the part you design)
+
+Before drawing, look at the covers already in `content/posts/*/*/featured-image.png` that were generated
+(start with `paper-intro/resource2skill` and `paper-intro/rrsi`). Then choose, on purpose, a combination none of
+them uses:
+
+- **Palette family.** Dark and luminous, light paper with flat spot colour, blueprint, two-colour risograph,
+  warm earth tones, monochrome with one accent... Pick a different background tone *and* a different accent hue
+  than the previous generated covers.
+- **Type pairing.** A different display face and annotation face (e.g. a condensed grotesque with a mono, a
+  serif with a sans, a geometric sans alone). Don't default to the last cover's pair.
+- **Composition.** Centred, grid/poster, diagonal, tall column, split panels, a single large object... and a
+  different drawing technique (line work, flat shapes, dot fields, halftone, stacked bars).
+- **Metaphor.** Drawn from this article's one central mechanism, as below.
+
+## How to find the idea
 
 1. **Find the one mechanism.** Read the finished `article.md`, not the PDF, and pick the single idea the post
    spends most of its length on. Express it as a *flow* or a *structure*: a stream converging on a point, a
@@ -40,21 +56,21 @@ in: copying its picture onto a different topic is exactly the failure to avoid.
 3. **Embed one subtle reference.** The skill's "deduce the subtle reference" step is where the post's real
    finding goes: in Resource2Skill the three non-video sources are drawn as thin dashed lines, so "video beats
    the other three combined" is visible without a caption.
-4. **Annotations are data, not decoration.** Column headers, labels and the bottom values line may only use
+4. **Annotations are data, not decoration.** Headers, labels and any values line may only use
    terms and numbers that appear in the article (Resource2Skill's 66.8 / 59.4 come from its Table 3, and
    11.9 pp from its intro). If the post has no number worth showing, leave the line out. Never invent a
    statistic, a logo or a venue.
-5. **Title text** is the method or concept name as the post uses it, short enough to sit in the top-left block
-   (roughly 18 characters at 62px; scale the size down for longer names rather than wrapping, and keep it clear of the first column header of the drawing).
+5. **Title text** is the method or concept name as the post uses it. Size it to the layout you chose (scale
+   down rather than wrap if it is long) and keep it clear of the drawing.
 
 ## Workflow
 
 ```bash
-pip install pillow numpy          # neither is guaranteed in a fresh session
-python3 render.py /tmp/<scratch>  # writes featured-image.png and a 1000px preview.jpg
+uv sync                                  # once: creates .venv/ from pyproject.toml (Pillow, numpy)
+uv run python render.py <scratch dir>    # writes featured-image.png and a 1000px preview.jpg
 ```
 
-1. Draw it. Use supersampled `PIL.ImageDraw` as the example does. It is dependency-light and runs in the
+1. Draw it. Use supersampled `PIL.ImageDraw` as the examples do. It is dependency-light and runs in the
    sandbox.
 2. **View `preview.jpg` only** (1000px wide, about 40KB), never the 1800px original. This is the one place the
    site's "don't load images" rule has an exception; see `SKILL.md` hard rule 2. Check, in this order: no

@@ -106,7 +106,7 @@ omission. Order of preference:
 
 1. a real original cover the source already ships (next three paragraphs),
 2. otherwise **a generated cover made with the `canvas-design` skill**, in
-   the house style described in `featured-image.md` (this is the default),
+   a style distinct from earlier generated covers, per `featured-image.md` (this is the default),
 3. only if generation is impossible, the old fallback of reusing a figure.
 
 **Best case — the source directory already ships one.** Check
@@ -147,8 +147,8 @@ gives no signal either (or doesn't exist), fall through to the generated-cover d
 
 **Default — generate a cover with `canvas-design`.** When the source ships no
 real cover, design an original 1800x945 cover following
-`references/featured-image.md` (fixed palette, type and margins; a
-per-post metaphor drawn from the article's one central mechanism; labels
+`references/featured-image.md` (fixed canvas size and legibility rules, but a
+visual style of its own, unlike earlier covers; a per-post metaphor drawn from the article's one central mechanism; labels
 limited to terms and numbers the article itself contains). This applies
 whether or not the article has figures: don't reuse a paper figure as the
 cover just because one exists. `featured-image-example/` has a worked

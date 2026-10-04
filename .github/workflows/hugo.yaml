@@ -45,8 +45,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
+      - name: Checkout theme submodule only
+        # AI-Research (content repo, ~270MB with PDFs) is a local-only submodule;
+        # the Hugo build never reads it, so don't clone it in CI.
+        run: git submodule update --init --depth 1 themes/DoIt
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5

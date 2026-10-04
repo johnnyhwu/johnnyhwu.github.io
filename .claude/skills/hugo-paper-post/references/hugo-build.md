@@ -7,6 +7,21 @@ non-trivial change (a new post, not a one-line typo fix), get a real build
 running and actually look at the rendered `<img>` tags, not just the
 source Markdown.
 
+## Quickest path: the project-local wrapper
+
+```bash
+git submodule update --init themes/DoIt     # theme only; a bare --init also clones AI-Research
+.claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+```
+
+`scripts/hugo.sh` reads `HUGO_VERSION` from `.github/workflows/hugo.yaml`, downloads exactly that release into
+`.tools/hugo/<version>/` (gitignored; on macOS it unpacks the release `.pkg` with `pkgutil` instead of running
+the installer, on Linux it untars the release), and runs it with its cache in `.tools/hugo-cache`. Nothing is
+installed system-wide and `~/Library/Caches/hugo_cache` is not touched. Arguments go straight to hugo. The first
+run downloads about 40MB (resumable and retried, since the connection can be slow); later runs reuse the binary.
+Write the build output under `.tools/` (as above) so it never lands in the repo. The sections below explain the
+problems this solves and what to check in the output; they are the manual route if the wrapper can't be used.
+
 ## The two things that will trip you up
 
 1. **`hugo` is not preinstalled in a fresh sandbox**, and the theme
@@ -36,7 +51,7 @@ environment does have:
 
 ```bash
 # 1. Check out the theme submodule (needed for an accurate build either way)
-git submodule update --init --depth 1
+git submodule update --init --depth 1 themes/DoIt   # theme only: a bare --init also clones AI-Research and its PDFs
 
 # 2. Get the exact version CI uses
 HUGO_VERSION=$(grep -oP 'HUGO_VERSION:\s*\K\S+' .github/workflows/hugo.yaml)

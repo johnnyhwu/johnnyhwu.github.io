@@ -48,7 +48,7 @@ scale = 600 / w
 im.resize((600, int(h * scale))).save(out_path, "JPEG", quality=65, optimize=True)
 ```
 
-(`pip install pillow` first if it isn't already available in the sandbox.)
+(Run it with `uv run python`; Pillow is in this repo's `pyproject.toml`. Don't `pip install` it.)
 Then read only the downscaled copy. This typically cuts a spot-check image
 from several hundred KB to under 100 KB with no loss of legibility for the
 purpose of "does this picture match the caption/hint" — you're confirming

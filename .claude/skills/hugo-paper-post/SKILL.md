@@ -9,7 +9,7 @@ description: Use this skill whenever you need to publish (or fix) a blog post in
 
 This is the complete, current spec for Step 3 ("Publisher") of this site's
 3-step blog pipeline (see this repo's `CLAUDE.md` for the pipeline overview
-and how to bootstrap access to `johnnyhwu/AI-Research`, the separate content
+and how to refresh the `AI-Research` submodule, the separate content
 repo where Steps 1–2 already ran). No external document backs this up and
 none will be supplied alongside a future task — this `SKILL.md` plus its
 `references/` and `scripts/` is the whole spec.
@@ -48,7 +48,7 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
    rarely have and some topics (e.g. a reading note on a blog post, not an
    academic paper) may lack entirely, with zero figures anywhere. Don't
    leave it out and don't source a stock photo. **Generate an original
-   cover with the `canvas-design` skill in this site's house style** (see
+   cover with the `canvas-design` skill, in a style of its own** (see
    `references/featured-image.md`; the conventions doc's "Featured image"
    section has the full order of preference, including keeping a real
    cover that a hand-migrated topic already ships) and say so in the PR.
@@ -97,7 +97,9 @@ featured-image section, not by skipping the post.
 
 **The manifest's `file` paths are repo-relative and include the bucket**
 (`done/unpublished/<Topic>/assets/images/foo.png`). Resolve them against
-the content repo's clone root, not against the topic directory.
+the content repo's root, i.e. `AI-Research/` in this checkout, not against
+the topic directory. So `<TopicDir>` below is, concretely,
+`AI-Research/done/unpublished/<Topic>/`.
 
 From this repo, **inspect a real existing post before writing anything** —
 pick one from the *same section* you're publishing into
@@ -110,11 +112,10 @@ prefer what an actual recent post does if the two ever disagree.
 
 ## Workflow
 
-1. **Bootstrap access to `AI-Research`** per this repo's `CLAUDE.md` if it
-   isn't already attached to the session (`add_repo` → clone →
-   `register_repo_root`). Ask for `access: "push"` up front — step 9 needs
-   to push a branch there, and re-attaching later means a second clone at a
-   different path.
+1. **Refresh the `AI-Research` submodule** before touching anything:
+   `git submodule update --init --remote AI-Research` (per this repo's
+   `CLAUDE.md`), so the queue and `article.md` you read are the latest
+   `main`. Step 9 later pushes a branch from inside that submodule.
 
 2. **Locate the topic and read its inputs.** Confirm which bucket it's in
    (`ls done/unpublished/ done/published/ in-progress/`) rather than
@@ -129,6 +130,9 @@ prefer what an actual recent post does if the two ever disagree.
    belong in?"), then pin the slug:
 
    ```bash
+   # The topic directory name can be a typo of the real name (the RRSI paper
+   # sat in a directory called RSSI). Take the slug from the article's own
+   # title / the paper's name, not from the directory.
    # Does the site ALREADY link to this post under an expected slug?
    grep -rn "\.\./<candidate-slug>/" content/posts/*/*/index.*.md
    ```
@@ -166,8 +170,8 @@ prefer what an actual recent post does if the two ever disagree.
    generate `featured-image.png` with the `canvas-design` skill in the house
    style from `references/featured-image.md` (1800x945, English-only text,
    a metaphor drawn from the article's central mechanism, labels limited to
-   terms and numbers the article contains). `pip install pillow numpy`
-   first if they're missing. This replaces the old "reuse Figure 1" default.
+   terms and numbers the article contains). Run it with `uv run python`
+   (`uv sync` once; Pillow and numpy come from `pyproject.toml`, never from `pip`). This replaces the old "reuse Figure 1" default.
 
 6. **Add contextual internal links to related posts**, per
    `references/hugo-conventions.md`'s "Internal linking to related posts"
@@ -192,10 +196,13 @@ prefer what an actual recent post does if the two ever disagree.
    on top of the theme's, zero internal links to other
    posts). Warnings aren't failures — use judgement — but investigate each
    one. It is a fast sanity net, **not** a substitute for an actual Hugo
-   build — see `references/hugo-build.md` for how to get a real
-   `hugo build` running in a sandbox that has neither `hugo` nor the theme
-   submodule preinstalled, and do that too when the change is non-trivial
-   (new post, not a one-line fix).
+   build — run one through `scripts/hugo.sh` (a project-local Hugo, downloaded
+   on first use, nothing installed system-wide; see `references/hugo-build.md`)
+   when the change is non-trivial (new post, not a one-line fix):
+
+   ```bash
+   .claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+   ```
 
 8. **Open a PR** whose description covers: which topic directory it came
    from (full bucketed path), **which section you routed it to and why**
@@ -210,17 +217,23 @@ prefer what an actual recent post does if the two ever disagree.
 9. **Move the topic to `done/published/` in `AI-Research` — a second PR.**
    Step 3 isn't finished when the post exists here; the content repo still
    thinks the topic is waiting to be published, and the next person asking
-   "what's ready to publish?" will be handed it again. In the content repo
-   clone:
+   "what's ready to publish?" will be handed it again. Inside the submodule
+   (`cd AI-Research`):
 
    ```bash
    git checkout -b <branch>
    git mv done/unpublished/<Topic> done/published/<Topic>
    # rewrite done/unpublished/ -> done/published/ in that manifest's
    # source_pdf and every images[].file, then:
-   python3 .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
+   uv run python .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
        done/published/<Topic>/assets/image-manifest.json .
    ```
+
+   Push that branch and open the PR from there (`gh pr create`). **Then put
+   the submodule back on `main` before staging anything in this repo** — the
+   Hugo PR's submodule pointer must name a commit already on `AI-Research`'s
+   `main`, never the unmerged bucket-move commit (`CLAUDE.md`, "Where the
+   source material actually lives").
 
    The manifest rewrite is not optional — `git mv` doesn't touch file
    contents, so every `file` path in that manifest would otherwise point at
@@ -317,7 +330,7 @@ existing wording still matches.
   intact, via this site's `{{< image ... >}}` shortcode convention.
 - `featuredImage` is set in both language files and the file exists: a real
   cover the source shipped, or (the default) a cover generated with
-  `canvas-design` in the house style, checked via its preview, with every
+  `canvas-design` in a style distinct from the other generated covers, checked via its preview, with every
   number and label in it traceable to the article, and described honestly
   in the PR as a generated illustration. Reusing a paper figure is only the
   documented last resort.
@@ -392,10 +405,11 @@ hugo-paper-post/
 ├── references/
 │   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
 │   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image order of preference
-│   ├── featured-image.md                 house style + workflow for generating a cover with the canvas-design skill
-│   ├── featured-image-example/           render.py + design-philosophy.md: the Resource2Skill cover, reproducible byte for byte
+│   ├── featured-image.md                 fixed technical contract + 'every cover looks different' rule + workflow for generating a cover with canvas-design
+│   ├── featured-image-example/           render.py (Resource2Skill, dark/line-art) + render-rrsi.py (RRSI, light/flat poster) + design-philosophy.md: two deliberately different covers
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
 └── scripts/
+    ├── hugo.sh                           project-local Hugo (version from the CI workflow), cache and output kept under .tools/
     └── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter / zh-tw full-width-punctuation checks
 ```
