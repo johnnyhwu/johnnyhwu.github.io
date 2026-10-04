@@ -1,10 +1,10 @@
 ---
 # weight: 1
-title: "RRSI：進化分數少拿 2.3 分，沒看過的題目卻多拿 3.3 分"
+title: "會自我進化的 AI Agent，只是在背考題？Google RRSI 的護欄設計"
 date: 2026-10-04
 lastmod: 2026-10-04
 draft: false
-description: "Google Cloud AI Research 的 RRSI 用七個護欄管住 harness 自我進化的過擬合：進化題少 2.3 分、沒看過的題多 3.3 分、token 少 36%，本文也檢視證據的缺口。"
+description: "讓 LLM 反覆改寫 agent 的 harness，進化題的分數會一路上升，換題目卻未必有效。Google Cloud AI Research 的 RRSI 用七個護欄管住過擬合，本文也檢視證據的缺口。"
 featuredImage: "featured-image.png"
 
 tags: ["Large Language Model", "Evaluation", "Single-Agent"]

@@ -200,18 +200,32 @@ get wrong:
 - `title`: keep it in the ~50-60 character range where practical (it's
   what search results truncate to) — but don't sacrifice the "editorial,
   not a literal paper-title translation" rule above to hit the count.
-  **Lead with the article's actual hook, not a flat description.** Read the
-  finished article and find the one tension, surprising number, or gap it
-  spends most of its length on (a claim vs. what was actually verified, a
-  common assumption the article overturns, a concrete before/after) and put
-  that in the title — not "X: an overview of Y," which describes the topic
-  without giving a reader scanning a feed any reason to click *this* post
-  over any other post on the same topic. A vendor's own headline number
-  paired with what independent testing actually found is a good example of
-  this kind of hook when the article has one; don't force it onto a post
-  that's a straightforward explainer with no such tension. This applies to
-  both `index.en.md` and `index.zh-tw.md` — each written natively, not a
-  translation of the other's title, per the rule above.
+  **A title has two jobs: tell a stranger what the post is about, and give
+  them a reason to click *this* one.** Both must work for someone who has
+  never heard of the paper or its acronym.
+  - **Plain subject first.** Say in everyday words what the post is about
+    ("self-improving AI agents", "RAG over messy tables"), using the term a
+    reader would actually search for. Do not lead with the method's name or
+    acronym unless it is already a household word (BERT, RAG). Put the name
+    after the hook (`… Inside Google's RRSI`, `… How MixRAG Fixes It`).
+  - **The hook is a tension, in the reader's terms.** Find the one claim the
+    article spends most of its length on (a common assumption it overturns,
+    a claim vs. what was verified, a concrete before/after) and state it so
+    it makes sense *without* the article. A question works when the article
+    answers it honestly; don't promise more than the article's own verdict
+    (a post that ends "low research value" must not read like a breakthrough).
+  - **No insider vocabulary, no bare numbers.** Terms the article itself
+    defines ("evolve points", "OOD", "ablation") and deltas with no object
+    ("2.3 fewer, 3.3 more") mean nothing in a feed. A number earns a place
+    only if its subject is obvious from the title alone ("cuts API costs by
+    67%").
+  - **Self-test:** cover the post and read only the title. Can you say what
+    field it is about (agents? RAG? training?) and why you'd care? If you
+    need the article to decode it, rewrite. Bad: `RRSI: Give Up 2.3 Evolve
+    Points, Win 3.3 on Unseen Benchmarks`. Better: `Do Self-Improving Agents
+    Just Memorize the Test? Inside Google's RRSI`.
+  - Each language gets its own native title, not a translation of the
+    other's. `verify_post.py` only checks length; this test is on you.
 - `description`: 150-160 chars (already stated above) — this is the exact
   string search engines show, so it must stand alone, not read like a
   fragment.
