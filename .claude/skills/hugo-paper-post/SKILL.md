@@ -48,7 +48,7 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
    rarely have and some topics (e.g. a reading note on a blog post, not an
    academic paper) may lack entirely, with zero figures anywhere. Don't
    leave it out and don't source a stock photo. **Generate an original
-   cover with the `canvas-design` skill in this site's house style** (see
+   cover with the `canvas-design` skill, in a style of its own** (see
    `references/featured-image.md`; the conventions doc's "Featured image"
    section has the full order of preference, including keeping a real
    cover that a hand-migrated topic already ships) and say so in the PR.
@@ -327,7 +327,7 @@ existing wording still matches.
   intact, via this site's `{{< image ... >}}` shortcode convention.
 - `featuredImage` is set in both language files and the file exists: a real
   cover the source shipped, or (the default) a cover generated with
-  `canvas-design` in the house style, checked via its preview, with every
+  `canvas-design` in a style distinct from the other generated covers, checked via its preview, with every
   number and label in it traceable to the article, and described honestly
   in the PR as a generated illustration. Reusing a paper figure is only the
   documented last resort.
@@ -402,7 +402,7 @@ hugo-paper-post/
 ├── references/
 │   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
 │   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image order of preference
-│   ├── featured-image.md                 house style + workflow for generating a cover with the canvas-design skill
+│   ├── featured-image.md                 fixed technical contract + 'every cover looks different' rule + workflow for generating a cover with canvas-design
 │   ├── featured-image-example/           render.py + design-philosophy.md: the Resource2Skill cover, reproducible byte for byte
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post

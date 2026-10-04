@@ -22,7 +22,7 @@ directory, you are doing Step 3.
 | "產生 `<Topic>` 文章" / "generate the `<Topic>` post" / "publish `<Topic>`" / "把 `<Topic>` 發布成 Hugo post" | Use the **`hugo-paper-post`** skill (`.claude/skills/hugo-paper-post/`) against topic directory `done/unpublished/<Topic>/` in `johnnyhwu/AI-Research`. |
 | "有哪些文章可以發布？" / "what's ready to publish?" | List `done/unpublished/` in `AI-Research`. That directory *is* the publishing queue — every topic in it has an `article.md` and no Hugo post yet. |
 | Anything about fixing/updating an *existing* post's images, front matter, or translation | Same skill — it also covers touch-ups, not just first publication. The source topic will be under `done/published/` in that case. |
-| "幫 `<Topic>` 做 / 換 feature image" / "redo the cover for `<Topic>`" | Same skill, `references/featured-image.md`: generate the cover with the vendored **`canvas-design`** skill in the site's house style. Works on a post being published or on one already live. |
+| "幫 `<Topic>` 做 / 換 feature image" / "redo the cover for `<Topic>`" | Same skill, `references/featured-image.md`: generate the cover with the vendored **`canvas-design`** skill, in a visual style distinct from the site's other generated covers. Works on a post being published or on one already live. |
 
 The skill's directory name says "paper", but that is historical. It is the
 publisher for **every** kind of `AI-Research` topic, not just academic
