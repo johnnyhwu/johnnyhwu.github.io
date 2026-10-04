@@ -5,8 +5,8 @@ It is here to show the house skeleton in code: palette, 1200x630 logical canvas 
 3x and downsampled, margins + corner registration marks, sans title and subtitle (one family) / mono
 annotations, text kept clear of the drawing, and a final contact-sheet-sized preview.
 
-Usage:  python3 render.py <out_dir>      -> <out_dir>/featured-image.png + preview.jpg
-Needs:  pip install pillow numpy
+Usage:  uv run python render.py <out_dir>      -> <out_dir>/featured-image.png + preview.jpg
+Needs:  Pillow + numpy (declared in the repo's pyproject.toml; `uv sync`)
 """
 import math, random, sys
 from pathlib import Path

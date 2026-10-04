@@ -66,8 +66,8 @@ them uses:
 ## Workflow
 
 ```bash
-python3 -m pip install pillow numpy   # neither is guaranteed in a fresh session; macOS has no bare `pip` on PATH
-python3 render.py /tmp/<scratch>  # writes featured-image.png and a 1000px preview.jpg
+uv sync                                  # once: creates .venv/ from pyproject.toml (Pillow, numpy)
+uv run python render.py <scratch dir>    # writes featured-image.png and a 1000px preview.jpg
 ```
 
 1. Draw it. Use supersampled `PIL.ImageDraw` as the examples do. It is dependency-light and runs in the

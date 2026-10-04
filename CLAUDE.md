@@ -140,6 +140,14 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
 
 ## Global rules for anything touching a published post
 
+- **Python tooling goes through `uv`, never `pip`.** Packages this repo needs
+  (Pillow and numpy, for cover rendering and image spot-checks) are declared
+  in `pyproject.toml`; run `uv sync` once, then `uv run python ...`. Don't run
+  `pip` / `pip3` / `python3 -m pip`: on this machine that installs into the
+  user-level Python and pollutes it. If a new package is needed, `uv add` it
+  so it lands in `pyproject.toml` and `uv.lock`. (`verify_post.py` is
+  stdlib-only and runs fine with plain `python3`.)
+
 - **Never read the source PDF.** It sits in the `AI-Research` submodule next
   to `article.md`, so it is easy to open by accident. Step 3 works
   from `article.md` + `image-manifest.json` + the already-extracted image

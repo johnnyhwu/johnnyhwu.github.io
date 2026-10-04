@@ -1,0 +1,15 @@
+[project]
+name = "johnnyhwu-github-io"
+version = "0.1.0"
+description = "Local tooling for the blog repo (not part of the Hugo build): featured-image rendering for the hugo-paper-post skill."
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+# Used only by .claude/skills/hugo-paper-post/references/featured-image-example/render*.py.
+# verify_post.py is stdlib-only and needs nothing.
+cover = ["pillow", "numpy"]
+
+[tool.uv]
+default-groups = ["cover"]
+package = false

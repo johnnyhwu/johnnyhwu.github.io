@@ -2,3 +2,6 @@
 # Python bytecode from running the skill scripts locally
 __pycache__/
 *.pyc
+
+# uv virtual environment (see pyproject.toml)
+.venv/

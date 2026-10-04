@@ -170,8 +170,8 @@ prefer what an actual recent post does if the two ever disagree.
    generate `featured-image.png` with the `canvas-design` skill in the house
    style from `references/featured-image.md` (1800x945, English-only text,
    a metaphor drawn from the article's central mechanism, labels limited to
-   terms and numbers the article contains). `pip install pillow numpy`
-   first if they're missing. This replaces the old "reuse Figure 1" default.
+   terms and numbers the article contains). Run it with `uv run python`
+   (`uv sync` once; Pillow and numpy come from `pyproject.toml`, never from `pip`). This replaces the old "reuse Figure 1" default.
 
 6. **Add contextual internal links to related posts**, per
    `references/hugo-conventions.md`'s "Internal linking to related posts"

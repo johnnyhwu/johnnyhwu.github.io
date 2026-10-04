@@ -4,7 +4,7 @@ labels traceable to the article); different palette, type, layout and metaphor.
 
  The noise band, the score floor and the winner's curse, drawn as a plot.
 
-Usage: python3 render.py <out_dir> -> featured-image.png + preview.jpg
+Usage: uv run python render-rrsi.py <out_dir> -> featured-image.png + preview.jpg
 """
 import math, random, sys
 from pathlib import Path
