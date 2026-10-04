@@ -206,8 +206,10 @@ prefer what an actual recent post does if the two ever disagree.
 
 8. **Open a PR** whose description covers: which topic directory it came
    from (full bucketed path), **which section you routed it to and why**
-   (plus whether the slug was already pinned by existing links), the
-   id → filename image mapping, which images (if any)
+   (plus whether the slug was already pinned by existing links), the final
+   `en` and `zh-tw` titles with a line on how they pass the title self-test in
+   `references/hugo-conventions.md` (plain subject, reader-term hook, no jargon),
+   the id → filename image mapping, which images (if any)
    were spot-checked and why, how the cover was made (generated with
    `canvas-design`: what it depicts, where every number or label in it
    comes from, its size; or the real cover/fallback that was used), any unresolved images or missing/fabricated

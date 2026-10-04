@@ -1,10 +1,10 @@
 ---
 # weight: 1
-title: "RRSI: Give Up 2.3 Evolve Points, Win 3.3 on Unseen Benchmarks"
+title: "Do Self-Improving Agents Just Memorize the Test? Inside Google's RRSI"
 date: 2026-10-04
 lastmod: 2026-10-04
 draft: false
-description: "Google Cloud AI Research's RRSI guards harness self-evolution against overfitting: 2.3 fewer evolve points, 3.3 more out-of-distribution points, 36% fewer tokens."
+description: "An agent that rewrites its own harness and is scored on the same tasks looks better every round, yet the gains may not transfer. Google's RRSI adds guardrails to curb it."
 featuredImage: "featured-image.png"
 
 tags: ["Large Language Model", "Evaluation", "Single-Agent"]
