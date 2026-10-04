@@ -36,7 +36,7 @@ environment does have:
 
 ```bash
 # 1. Check out the theme submodule (needed for an accurate build either way)
-git submodule update --init --depth 1
+git submodule update --init --depth 1 themes/DoIt   # theme only: a bare --init also clones AI-Research and its PDFs
 
 # 2. Get the exact version CI uses
 HUGO_VERSION=$(grep -oP 'HUGO_VERSION:\s*\K\S+' .github/workflows/hugo.yaml)

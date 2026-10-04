@@ -50,7 +50,7 @@ in: copying its picture onto a different topic is exactly the failure to avoid.
 ## Workflow
 
 ```bash
-pip install pillow numpy          # neither is guaranteed in a fresh session
+python3 -m pip install pillow numpy   # neither is guaranteed in a fresh session; macOS has no bare `pip` on PATH
 python3 render.py /tmp/<scratch>  # writes featured-image.png and a 1000px preview.jpg
 ```
 

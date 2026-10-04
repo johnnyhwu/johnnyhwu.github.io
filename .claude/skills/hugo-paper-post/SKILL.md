@@ -9,7 +9,7 @@ description: Use this skill whenever you need to publish (or fix) a blog post in
 
 This is the complete, current spec for Step 3 ("Publisher") of this site's
 3-step blog pipeline (see this repo's `CLAUDE.md` for the pipeline overview
-and how to bootstrap access to `johnnyhwu/AI-Research`, the separate content
+and how to refresh the `AI-Research` submodule, the separate content
 repo where Steps 1–2 already ran). No external document backs this up and
 none will be supplied alongside a future task — this `SKILL.md` plus its
 `references/` and `scripts/` is the whole spec.
@@ -97,7 +97,9 @@ featured-image section, not by skipping the post.
 
 **The manifest's `file` paths are repo-relative and include the bucket**
 (`done/unpublished/<Topic>/assets/images/foo.png`). Resolve them against
-the content repo's clone root, not against the topic directory.
+the content repo's root, i.e. `AI-Research/` in this checkout, not against
+the topic directory. So `<TopicDir>` below is, concretely,
+`AI-Research/done/unpublished/<Topic>/`.
 
 From this repo, **inspect a real existing post before writing anything** —
 pick one from the *same section* you're publishing into
@@ -110,11 +112,10 @@ prefer what an actual recent post does if the two ever disagree.
 
 ## Workflow
 
-1. **Bootstrap access to `AI-Research`** per this repo's `CLAUDE.md` if it
-   isn't already attached to the session (`add_repo` → clone →
-   `register_repo_root`). Ask for `access: "push"` up front — step 9 needs
-   to push a branch there, and re-attaching later means a second clone at a
-   different path.
+1. **Refresh the `AI-Research` submodule** before touching anything:
+   `git submodule update --init --remote AI-Research` (per this repo's
+   `CLAUDE.md`), so the queue and `article.md` you read are the latest
+   `main`. Step 9 later pushes a branch from inside that submodule.
 
 2. **Locate the topic and read its inputs.** Confirm which bucket it's in
    (`ls done/unpublished/ done/published/ in-progress/`) rather than
@@ -129,6 +130,9 @@ prefer what an actual recent post does if the two ever disagree.
    belong in?"), then pin the slug:
 
    ```bash
+   # The topic directory name can be a typo of the real name (the RRSI paper
+   # sat in a directory called RSSI). Take the slug from the article's own
+   # title / the paper's name, not from the directory.
    # Does the site ALREADY link to this post under an expected slug?
    grep -rn "\.\./<candidate-slug>/" content/posts/*/*/index.*.md
    ```
@@ -210,17 +214,23 @@ prefer what an actual recent post does if the two ever disagree.
 9. **Move the topic to `done/published/` in `AI-Research` — a second PR.**
    Step 3 isn't finished when the post exists here; the content repo still
    thinks the topic is waiting to be published, and the next person asking
-   "what's ready to publish?" will be handed it again. In the content repo
-   clone:
+   "what's ready to publish?" will be handed it again. Inside the submodule
+   (`cd AI-Research`):
 
    ```bash
    git checkout -b <branch>
    git mv done/unpublished/<Topic> done/published/<Topic>
    # rewrite done/unpublished/ -> done/published/ in that manifest's
    # source_pdf and every images[].file, then:
-   python3 .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
+   uv run python .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
        done/published/<Topic>/assets/image-manifest.json .
    ```
+
+   Push that branch and open the PR from there (`gh pr create`). **Then put
+   the submodule back on `main` before staging anything in this repo** — the
+   Hugo PR's submodule pointer must name a commit already on `AI-Research`'s
+   `main`, never the unmerged bucket-move commit (`CLAUDE.md`, "Where the
+   source material actually lives").
 
    The manifest rewrite is not optional — `git mv` doesn't touch file
    contents, so every `file` path in that manifest would otherwise point at
