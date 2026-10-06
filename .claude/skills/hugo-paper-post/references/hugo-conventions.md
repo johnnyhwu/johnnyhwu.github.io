@@ -285,6 +285,12 @@ doesn't pile up:
 6. It's fine — and expected — for a post about a genuinely novel topic to
    end up with few or zero such links; don't invent connections.
 
+**Mind the path.** A link to a post in the *same* section is `../<slug>/`;
+a link to a post in another section is `../../<section>/<slug>/` (from a
+`paper-intro` post, `../../ai-concept/jev-overview/`). Writing
+`../jev-overview/` there resolves to `/paper-intro/jev-overview/`, which
+404s, and neither `verify_post.py` nor the build flags it.
+
 ### Linking to posts that don't exist yet
 
 This site deliberately tolerates forward links to posts that don't exist
@@ -397,6 +403,16 @@ question above: Hugo's Goldmark passthrough extension server-renders `\( \)`
 and `$$ $$` regardless of that flag, but it still won't touch a bare `$...$`
 either way. The fix for unrendered math is always "convert the delimiter,"
 never "flip the front-matter flag."
+
+**Never put a literal `$` in prose, escaped or not.** Prices ("US$12.182 per
+1,000 ... US$0.044 per 1,000") look harmless, but the theme's client-side
+KaTeX auto-render treats a bare `$...$` as inline math *after* Hugo has
+already consumed any `\$` escape. Two dollar signs on one line therefore
+typeset everything between them as one formula with no spaces and no break
+points (a 691px-wide run on a 358px phone column), which broke the English
+JEV page on mobile. Spell the amount as "USD 12.182" or
+"12.182 dollars". `verify_post.py` warns on two or more `$` on a line, and `check_layout.js`
+(see `hugo-build.md`) catches the rendered result.
 
 ### When to promote inline math to block math
 

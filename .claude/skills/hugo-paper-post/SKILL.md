@@ -189,7 +189,9 @@ prefer what an actual recent post does if the two ever disagree.
    shortcode's `src` resolves to a file actually present in the bundle, no
    pipeline artifacts leaked into the body, no unsupported `$...$` inline
    math slipped in, no nested math delimiters from a scripted replace pass
-   (an error — it renders as literal garbage), no notation still sitting in
+   (an error — it renders as literal garbage), no line with an unbalanced
+   `\(` / `\)` (an error — a typo in a hand-written translation builds
+   fine and shows the delimiters as text), no notation still sitting in
    the body as raw text, plus SEO sanity warnings (title/description length
    outside the usual range, a body `# ` heading duplicating the title's
    H1, skipped heading levels, headings carrying their own manual numbering
@@ -203,6 +205,20 @@ prefer what an actual recent post does if the two ever disagree.
    ```bash
    .claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
    ```
+
+   Then look at the *rendered* page in a browser, because KaTeX runs
+   client-side and neither `verify_post.py` nor the build can see what it
+   does (a pair of prices written `US$12 ... US$0.04` shipped as one
+   685px-wide formula and broke the English page on phones). Run:
+
+   ```bash
+   node .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug>
+   ```
+
+   It renders both languages at 1280px and 390px and fails on horizontal
+   page overflow, KaTeX errors, or an inline formula wider than the column.
+   Exit code 2 means no browser was available (layout NOT checked): say so in
+   the PR instead of reporting a pass.
 
 8. **Open a PR** whose description covers: which topic directory it came
    from (full bucketed path), **which section you routed it to and why**
@@ -393,6 +409,9 @@ existing wording still matches.
 - A real `hugo build` was attempted (per `references/hugo-build.md`) for
   anything beyond a trivial fix, and its output was actually inspected —
   not just assumed to be fine because the markdown looks right.
+- `scripts/check_layout.js` was run on the built post and passed (or the PR
+  says no browser was available), so client-side rendering problems that a
+  static check cannot see were looked for.
 - The source topic has been moved from `done/unpublished/` to
   `done/published/` in `AI-Research`, its manifest paths rewritten and
   `verify_manifest.py` re-run, on its own PR cross-referenced from this one

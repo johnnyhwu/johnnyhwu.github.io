@@ -23,7 +23,8 @@ SHORTCODE_SRC_RE = re.compile(r'\{\{<\s*image\s+([^>]*?)\s*>\}\}')
 SRC_ATTR_RE = re.compile(r'src="([^"]+)"')
 # A backslash-escaped \$ is a literal dollar sign -- prices ("\$0.001/doc vs
 # \$0.10/doc") are the common case and are not math, so neither delimiter
-# may be escaped.
+# may be escaped. (This only covers Hugo's own pass; the browser-side KaTeX
+# auto-render still pairs literal $ -- see the literal-$ check in check_body.)
 BARE_INLINE_MATH_RE = re.compile(r'(?<![$\\])\$(?!\$)[^$\n]+?(?<![$\\])\$(?!\$)')
 # Even unescaped, most paired $ in these posts are prices ("$5 or $10",
 # "costs $1.90, while Opus costs $9") or shell/nginx variables ("$uri
@@ -288,6 +289,35 @@ def check_body(body_text, label, post_dir, errors, warnings):
         errors.append(
             f"{label}: nested math delimiters ({nested.strip()!r}...) -- a replace pass "
             "fired inside an existing math span. This renders as literal garbage."
+        )
+
+    # Prose "$" is not safe even when escaped: markdown consumes the "\\$", and
+    # the theme's client-side KaTeX auto-render then pairs two literal "$" on
+    # a line and typesets everything between them as one unbreakable formula
+    # (a price pair like "US$12 ... US$0.04" blew out the English page). Write
+    # "USD 12" / "12 dollars" instead.
+    dollar_lines = [
+        line.strip() for line in MATH_SPAN_RE.sub(" ", INLINE_CODE_RE.sub(" ", CODE_FENCE_RE.sub(" ", body_text))).splitlines()
+        if line.count("$") >= 2
+    ]
+    for line in dollar_lines:
+        warnings.append(
+            f"{label}: two or more literal $ on one line -- client-side KaTeX will pair "
+            f"them as inline math even if escaped; spell prices as USD/dollars: {line[:90]!r}"
+        )
+
+    # A hand-typed or translated "\( q )" opens a span that never closes: Hugo
+    # builds without complaint and the page shows the delimiters as literal
+    # text. Posts keep one paragraph (or table row) per line, so a line whose
+    # \( and \) counts differ is the typo.
+    unbalanced = [
+        line.strip() for line in INLINE_CODE_RE.sub(" ", CODE_FENCE_RE.sub(" ", body_text)).splitlines()
+        if line.count("\\(") != line.count("\\)")
+    ]
+    for line in unbalanced:
+        errors.append(
+            f"{label}: unbalanced \\( ... \\) on one line -- a math span is opened or "
+            f"closed without its partner: {line[:90]!r}"
         )
 
     raw_hits = []
