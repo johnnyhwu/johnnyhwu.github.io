@@ -67,6 +67,7 @@ const server = http.createServer((req, res) => {
   }
 
   const problems = [];
+  const notes = new Set();
   const pages = [['zh-tw', `/${slugPath}/`], ['en', `/en/${slugPath}/`]];
   for (const [lang, url] of pages) {
     if (!fs.existsSync(path.join(root, url, 'index.html'))) { problems.push(`${lang}: ${url} was not built under ${root}`); continue; }
@@ -76,9 +77,16 @@ const server = http.createServer((req, res) => {
       await page.goto(base + url, { waitUntil: 'load' });
       await page.waitForTimeout(1500);
       const r = await page.evaluate(() => {
+        // Mermaid is rendered client-side from a CDN, which this run blocks. An unrendered
+        // <pre class="mermaid"> is its raw source on one very long line, so it would read as
+        // a page overflow that does not exist on the live site (a mermaid post measured
+        // 2880px wide here and fit the 358px phone column once mermaid really ran).
+        // Hide those and report them; render-check diagrams per hugo-conventions.md.
+        const unrendered = [...document.querySelectorAll('pre.mermaid')].filter(m => !m.querySelector('svg'));
+        unrendered.forEach(m => { m.style.display = 'none'; });
         const vw = document.documentElement.clientWidth;
         const col = (document.querySelector('.content') || document.querySelector('article')).getBoundingClientRect().width;
-        const out = { vw, scrollW: document.documentElement.scrollWidth, col, katexErrors: document.querySelectorAll('.katex-error').length, wideInline: [], poking: [] };
+        const out = { unrendered: unrendered.length, vw, scrollW: document.documentElement.scrollWidth, col, katexErrors: document.querySelectorAll('.katex-error').length, wideInline: [], poking: [] };
         for (const k of document.querySelectorAll('.content .katex')) {
           if (k.closest('.katex-display, table, pre')) continue;   // tables/code scroll on their own
           const kb = k.getBoundingClientRect();
@@ -95,6 +103,7 @@ const server = http.createServer((req, res) => {
         return out;
       });
       const tag = `${lang} @${width}px`;
+      if (r.unrendered) notes.add(`${r.unrendered} mermaid diagram(s) NOT checked (CDN blocked): verify them in a browser per hugo-conventions.md, "Diagrams"`);
       if (r.scrollW > r.vw + 1) problems.push(`${tag}: page scrolls horizontally (${r.scrollW}px > ${r.vw}px). Elements past the edge: ${JSON.stringify(r.poking)}`);
       if (r.katexErrors) problems.push(`${tag}: ${r.katexErrors} KaTeX render error(s)`);
       for (const w of r.wideInline) problems.push(`${tag}: inline formula wider than the text column or past the viewport edge (${w}) -- promote to a block formula, or check for a stray literal $`);
@@ -102,6 +111,7 @@ const server = http.createServer((req, res) => {
     }
   }
   await browser.close(); server.close();
+  for (const n of notes) console.log('NOTE: ' + n);
   if (problems.length) { console.log('FAILED:\n' + problems.map(p => '  - ' + p).join('\n')); process.exit(1); }
   console.log(`OK: ${slugPath} has no horizontal overflow, KaTeX errors or over-wide inline formulas (zh-tw + en, 1280px + 390px)`);
 })();
