@@ -55,7 +55,7 @@ Judges come in two kinds:
 
 ### Three pain points
 
-**Cost and latency.** The paper measures GPT-6 (low reasoning effort) at about US$12.182 per 1,000 judgments with a median latency of 1.89 seconds; JEV costs about US$0.044 per 1,000 and 0.15 seconds. That is roughly 277 times cheaper and 13 times faster. The bill is paid again for every new model checkpoint and every new batch of responses.
+**Cost and latency.** The paper measures GPT-6 (low reasoning effort) at about USD 12.182 per 1,000 judgments with a median latency of 1.89 seconds; JEV costs about USD 0.044 per 1,000 and 0.15 seconds. That is roughly 277 times cheaper and 13 times faster. The bill is paid again for every new model checkpoint and every new batch of responses.
 
 {{< image src="table1.png" alt="The original Table 1 from the paper, listing the benchmark accuracy of seventeen judge configurations along with fee and median latency from the timing panel." caption="Table 1 — Benchmark accuracy of seventeen judge configurations, plus fee and median latency. (Source: Table 1 of the original paper.)" >}}
 
@@ -664,7 +664,11 @@ $$\text{Brier} = \frac{1}{N}\sum_{i=1}^{N}(q_i - o_i)^2$$
 - \( N \): the number of items
 - In plain words: square each item's "confidence minus outcome" and average; lower is better
 
-Made-up example: reuse the 6 AUROC items. Judge X's \( q \) values are 0.55, 0.60, 0.70, 0.90, 0.95, 0.99 and the outcomes are wrong, right, wrong, wrong, right, right, so Brier \( = (0.55^2 + 0.40^2 + 0.70^2 + 0.90^2 + 0.05^2 + 0.01^2) / 6 \approx 0.294 \). Judge Y's \( q \) values are 0.95, 0.96, 0.97, 0.98, 0.985, 0.99 with the same outcomes, giving Brier \( \approx 0.468 \). The ranking is the same (AUROC 0.78 for both), but Brier differs a lot.
+Made-up example: reuse the 6 AUROC items. Judge X's \( q \) values are 0.55, 0.60, 0.70, 0.90, 0.95, 0.99 and the outcomes are wrong, right, wrong, wrong, right, right, so Judge X's Brier score is:
+
+$$\text{Brier} = (0.55^2 + 0.40^2 + 0.70^2 + 0.90^2 + 0.05^2 + 0.01^2) / 6 \approx 0.294$$
+
+Judge Y's \( q \) values are 0.95, 0.96, 0.97, 0.98, 0.985, 0.99 with the same outcomes, giving Brier \( \approx 0.468 \). The ranking is the same (AUROC 0.78 for both), but Brier differs a lot.
 
 This is a simplified version that looks only at whether \( q \) is right. The paper's Brier is computed over the probabilities of all labels, so the details differ slightly.
 
