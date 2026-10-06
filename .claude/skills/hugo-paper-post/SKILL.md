@@ -189,7 +189,9 @@ prefer what an actual recent post does if the two ever disagree.
    shortcode's `src` resolves to a file actually present in the bundle, no
    pipeline artifacts leaked into the body, no unsupported `$...$` inline
    math slipped in, no nested math delimiters from a scripted replace pass
-   (an error — it renders as literal garbage), no notation still sitting in
+   (an error — it renders as literal garbage), no line with an unbalanced
+   `\(` / `\)` (an error — a typo in a hand-written translation builds
+   fine and shows the delimiters as text), no notation still sitting in
    the body as raw text, plus SEO sanity warnings (title/description length
    outside the usual range, a body `# ` heading duplicating the title's
    H1, skipped heading levels, headings carrying their own manual numbering

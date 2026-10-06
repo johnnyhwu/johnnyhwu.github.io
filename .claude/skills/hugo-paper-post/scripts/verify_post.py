@@ -290,6 +290,20 @@ def check_body(body_text, label, post_dir, errors, warnings):
             "fired inside an existing math span. This renders as literal garbage."
         )
 
+    # A hand-typed or translated "\( q )" opens a span that never closes: Hugo
+    # builds without complaint and the page shows the delimiters as literal
+    # text. Posts keep one paragraph (or table row) per line, so a line whose
+    # \( and \) counts differ is the typo.
+    unbalanced = [
+        line.strip() for line in INLINE_CODE_RE.sub(" ", CODE_FENCE_RE.sub(" ", body_text)).splitlines()
+        if line.count("\\(") != line.count("\\)")
+    ]
+    for line in unbalanced:
+        errors.append(
+            f"{label}: unbalanced \\( ... \\) on one line -- a math span is opened or "
+            f"closed without its partner: {line[:90]!r}"
+        )
+
     raw_hits = []
     for pattern, kind in RAW_NOTATION_RES:
         for m in pattern.finditer(prose):

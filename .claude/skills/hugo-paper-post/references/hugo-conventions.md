@@ -285,6 +285,12 @@ doesn't pile up:
 6. It's fine — and expected — for a post about a genuinely novel topic to
    end up with few or zero such links; don't invent connections.
 
+**Mind the path.** A link to a post in the *same* section is `../<slug>/`;
+a link to a post in another section is `../../<section>/<slug>/` (from a
+`paper-intro` post, `../../ai-concept/jev-overview/`). Writing
+`../jev-overview/` there resolves to `/paper-intro/jev-overview/`, which
+404s, and neither `verify_post.py` nor the build flags it.
+
 ### Linking to posts that don't exist yet
 
 This site deliberately tolerates forward links to posts that don't exist
