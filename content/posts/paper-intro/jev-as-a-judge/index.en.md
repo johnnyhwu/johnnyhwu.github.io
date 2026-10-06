@@ -55,7 +55,7 @@ Judges come in two kinds:
 
 ### Three pain points
 
-**Cost and latency.** The paper measures GPT-6 (low reasoning effort) at about US$12.182 per 1,000 judgments with a median latency of 1.89 seconds; JEV costs about US$0.044 per 1,000 and 0.15 seconds. That is roughly 277 times cheaper and 13 times faster. The bill is paid again for every new model checkpoint and every new batch of responses.
+**Cost and latency.** The paper measures GPT-6 (low reasoning effort) at about USD 12.182 per 1,000 judgments with a median latency of 1.89 seconds; JEV costs about USD 0.044 per 1,000 and 0.15 seconds. That is roughly 277 times cheaper and 13 times faster. The bill is paid again for every new model checkpoint and every new batch of responses.
 
 {{< image src="table1.png" alt="The original Table 1 from the paper, listing the benchmark accuracy of seventeen judge configurations along with fee and median latency from the timing panel." caption="Table 1 — Benchmark accuracy of seventeen judge configurations, plus fee and median latency. (Source: Table 1 of the original paper.)" >}}
 
