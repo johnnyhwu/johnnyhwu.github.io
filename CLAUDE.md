@@ -131,11 +131,12 @@ that manifest pointing at nothing. `AI-Research/CLAUDE.md`'s "Moving a topic
 between buckets" section is the authority on the exact procedure.
 
 That means a publish task normally produces **two** PRs: the post here, and
-a small bucket-move PR in `AI-Research` (open it with `gh pr create` from
-inside the submodule; in a cloud session there is no `gh`, so attach
-`johnnyhwu/AI-Research` with `add_repo` and `access: "push"`, push the branch
-with plain `git` from the submodule, and open the PR with the GitHub MCP
-tools). Say in each PR that the other one exists. If you
+a small bucket-move PR in `AI-Research`. Push the branch with plain `git`
+from inside the submodule, then open the PR the way your environment allows:
+locally, `gh pr create` from the submodule; in a cloud session there is no
+`gh`, so first attach `johnnyhwu/AI-Research` with `add_repo` and
+`access: "push"`, then use the GitHub MCP tools. Say in each PR that the
+other one exists. If you
 genuinely can't open the `AI-Research` PR, say so explicitly rather than
 leaving the topic silently mis-bucketed — a topic stuck in
 `done/unpublished/` after its post ships will be offered up for publishing
