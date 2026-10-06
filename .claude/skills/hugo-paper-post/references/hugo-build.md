@@ -22,6 +22,23 @@ run downloads about 40MB (resumable and retried, since the connection can be slo
 Write the build output under `.tools/` (as above) so it never lands in the repo. The sections below explain the
 problems this solves and what to check in the output; they are the manual route if the wrapper can't be used.
 
+## Check the rendered page in a browser
+
+A build proves the HTML exists, not that it *looks* right: KaTeX typesets in
+the browser after Hugo is done. After building into `.tools/public`:
+
+```bash
+node .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug> [--root .tools/public]
+```
+
+It serves the build locally, opens the zh-tw and en pages in Chromium at
+1280px and 390px, and exits 1 on horizontal page overflow, a KaTeX error, or
+an inline formula wider than the text column. Exit 2 = Playwright or Chromium
+missing (cloud sessions have both; locally `npm i -g playwright` then
+`npx playwright install chromium`). Tables and code blocks scroll on their
+own and are not counted. Calibrated against 20 existing posts (no false
+positives) and against the pre-fix JEV English page (fails on the `$` pair).
+
 ## The two things that will trip you up
 
 1. **`hugo` is not preinstalled in a fresh sandbox**, and the theme

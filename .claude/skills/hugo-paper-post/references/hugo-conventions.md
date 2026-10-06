@@ -408,9 +408,11 @@ never "flip the front-matter flag."
 1,000 ... US$0.044 per 1,000") look harmless, but the theme's client-side
 KaTeX auto-render treats a bare `$...$` as inline math *after* Hugo has
 already consumed any `\$` escape. Two dollar signs on one line therefore
-typeset everything between them as a single unbreakable formula, which ran
-the English JEV page far past the column. Spell the amount as "USD 12.182" or
-"12.182 dollars". `verify_post.py` warns on two or more `$` on a line.
+typeset everything between them as one formula with no spaces and no break
+points (a 691px-wide run on a 358px phone column), which broke the English
+JEV page on mobile. Spell the amount as "USD 12.182" or
+"12.182 dollars". `verify_post.py` warns on two or more `$` on a line, and `check_layout.js`
+(see `hugo-build.md`) catches the rendered result.
 
 ### When to promote inline math to block math
 
@@ -423,11 +425,7 @@ own line, blank line before and after) instead of leaving it embedded
 mid-sentence. Inline mode doesn't shrink `\frac`/`\sum`; a full-size stack
 crammed between two words blows out that line's height and reads as
 visually broken, even though nothing is technically wrong with the LaTeX.
-A long computation also belongs in a block even without a `\frac`: inline math
-never wraps, so a `\( = (0.55^2 + 0.40^2 + ...) / 6 \approx 0.294 \)` that
-lands late in a line overflows the column (it did in the English JEV page,
-while the zh-tw line happened to break earlier). A bare symbol reference
-(`\( C_x \)`, `\( \nabla C \)`) is fine to leave
+A bare symbol reference (`\( C_x \)`, `\( \nabla C \)`) is fine to leave
 inline regardless of length — this is about promoting *definitions*, not
 every piece of math. See `content/posts/ai-concept/gradient-descent/` and
 `stochastic-gradient-descent/` for worked examples of both the promoted
