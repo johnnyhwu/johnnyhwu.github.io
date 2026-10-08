@@ -39,67 +39,65 @@ missing (cloud sessions have both; locally `npm i -g playwright` then
 own and are not counted. Calibrated against 20 existing posts (no false
 positives) and against the pre-fix JEV English page (fails on the `$` pair).
 
-## The two things that will trip you up
-
-1. **`hugo` is not preinstalled in a fresh sandbox**, and the theme
-   (`themes/DoIt`) is a **git submodule that isn't checked out by default**.
-2. **`apt-get install hugo` gives a version too old for this site.** This
-   repo relies on newer Hugo permalink/URL features (e.g. the
-   `url: "paper-intro/:contentbasename"` front-matter pattern used by every
-   post) that a several-versions-old `apt` package doesn't support — you'll
-   get an unrelated-looking error like
-   `error expanding ":contentbasename": permalink attribute not recognised`
-   that has nothing to do with your actual change. Don't debug that error
-   as if it's about your post; it means the local `hugo` binary is too old,
-   full stop.
-
-Check `.github/workflows/hugo.yaml`'s `HUGO_VERSION` env var for the exact
-version this site's CI actually builds with, and match it — don't guess a
-version.
-
-## Getting the right Hugo version without the CI's own install method
-
-CI downloads the official `.deb` straight from a GitHub release URL. That
-exact URL is very likely to 403 from inside a sandboxed session (GitHub
-access here is typically scoped to specific repos this session was granted,
-and a raw release-asset download isn't one of them). Don't waste time
-retrying that path. Instead, build it from source with Go, which this
-environment does have:
+Mermaid diagrams are a separate check, because the theme loads mermaid from
+a CDN that sandboxes block and `check_layout.js` therefore reports them as
+"NOT checked":
 
 ```bash
-# 1. Check out the theme submodule (needed for an accurate build either way)
-git submodule update --init --depth 1 themes/DoIt   # theme only: a bare --init also clones AI-Research and its PDFs
-
-# 2. Get the exact version CI uses
-HUGO_VERSION=$(grep -oP 'HUGO_VERSION:\s*\K\S+' .github/workflows/hugo.yaml)
-
-# 3. If apt's hugo is missing or too old, build the real version with Go
-#    (go install pulls from proxy.golang.org, which is normally reachable
-#    even when raw github.com asset downloads aren't)
-go install -tags extended "github.com/gohugoio/hugo@v${HUGO_VERSION}"
-
-# 4. Use the go-installed binary explicitly -- don't rely on PATH ordering,
-#    apt may have put an older `hugo` earlier on PATH
-HUGO_BIN="$(go env GOPATH)/bin/hugo"
-$HUGO_BIN version   # confirm it reports the CI version, not an apt one
+node .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
 ```
 
-If `apt-get install -y hugo` happens to already give you the right major
-version, you can skip the `go install` step — just confirm with
-`hugo version` first rather than assuming.
+It fetches mermaid@10 once with `npm pack` into `.tools/mermaid/`, renders
+every diagram in both languages at 1280px and 390px, fails on a syntax error
+(mermaid still draws an SVG, an error graphic, so "an svg exists" is not
+proof) or an over-wide diagram, and saves a PNG per diagram. View one
+screenshot per diagram: a clipped subgraph title is a valid SVG.
+
+## Two symptoms you will meet without `hugo.sh`
+
+1. **`hugo` is not preinstalled in a fresh sandbox**, and the theme
+   (`themes/DoIt`) is a git submodule that isn't checked out by default
+   (`hugo.sh` downloads the binary; the theme you init yourself, as above).
+2. **A several-versions-old Hugo (for example from `apt`) fails with an
+   unrelated-looking error** such as
+   `error expanding ":contentbasename": permalink attribute not recognised`.
+   This repo relies on newer permalink/URL features (the
+   `url: "paper-intro/:contentbasename"` front-matter pattern used by every
+   post). It has nothing to do with your change: the local `hugo` is too old.
+   Match the `HUGO_VERSION` in `.github/workflows/hugo.yaml` exactly; don't
+   guess a version.
+
+## Fallback: when `hugo.sh` cannot download Hugo
+
+`hugo.sh` fetches the release named by `HUGO_VERSION` in
+`.github/workflows/hugo.yaml`. If that download is blocked (GitHub release
+assets are not always reachable from a sandbox) and `hugo version` on PATH
+is older than that version, build Hugo from source with Go, which
+usually has access to `proxy.golang.org`:
+
+```bash
+HUGO_VERSION=$(grep -oP 'HUGO_VERSION:\s*\K\S+' .github/workflows/hugo.yaml)
+go install -tags extended "github.com/gohugoio/hugo@v${HUGO_VERSION}"
+"$(go env GOPATH)/bin/hugo" version    # must report the CI version, not an apt one
+```
+
+Then run that binary with the same arguments as `hugo.sh` (including
+`-d .tools/public`). Don't `brew install` / `apt-get install` Hugo: an old
+package fails with the unrelated-looking `:contentbasename` error above.
 
 ## Running the build
 
 ```bash
-$HUGO_BIN --gc --minify --baseURL "https://datasciocean.com/"
+git submodule update --init themes/DoIt
+.claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
 ```
 
-(Match the actual `baseURL`/flags from `.github/workflows/hugo.yaml` if
-they've changed since this was written.) This writes to `./public`. A
-successful run prints a small table with `ZH-TW` / `EN` page counts —
-those two numbers should be equal (or explainably close) after your change;
-a mismatch is itself a signal something's off (e.g. exactly the missing
-zh-tw file bug this skill exists to prevent).
+(Match `baseURL` and flags to `.github/workflows/hugo.yaml` if they have
+changed.) A successful run prints a small table with `ZH - TW` / `EN` page
+counts. The two page counts should be equal after your change; a mismatch is
+itself a signal something is off (for example the missing zh-tw file bug this
+skill exists to prevent). "Non-page files" is counted for the default
+language only, which is expected.
 
 ## What to actually check in the output
 
@@ -107,8 +105,8 @@ Don't just check that the build exits 0 — inspect the rendered HTML for the
 specific post:
 
 ```bash
-grep -o '<img[^>]*src=[^ >]*' public/en/paper-intro/<slug>/index.html
-grep -o '<img[^>]*src=[^ >]*' public/paper-intro/<slug>/index.html   # zh-tw output has no /en/ prefix (it's the default language)
+grep -o '<img[^>]*src=[^ >]*' .tools/public/en/paper-intro/<slug>/index.html
+grep -o '<img[^>]*src=[^ >]*' .tools/public/paper-intro/<slug>/index.html   # zh-tw output has no /en/ prefix (it's the default language)
 ```
 
 Use those commands as written: `--minify` strips attribute quotes, so the
@@ -143,31 +141,30 @@ looks exactly like "my cross-post links didn't render". Grep for the bare
 slug instead:
 
 ```bash
-grep -c 'other-slug' public/ai-concept/<linking-post>/index.html
+grep -c 'other-slug' .tools/public/ai-concept/<linking-post>/index.html
 ```
 
-then confirm `public/<section>/<other-slug>/` exists. Relative body links
+then confirm `.tools/public/<section>/<other-slug>/` exists. Relative body links
 are correct and are what every existing post on this site uses.
 
 Every `src=` should look like a real permalink
 (`/paper-intro/<slug>/figure1.png`) and the file should actually exist
-under `public/` at that path. A literal bare filename in `src=` (e.g.
+under `.tools/public/` at that path. A literal bare filename in `src=` (e.g.
 `src=figure1.png`) is the exact fingerprint of the bug in
 `bilingual-bundle-gotcha.md` — go fix that, don't just note it and move on.
 
 ## Cleaning up after yourself
 
-The build creates `public/` and `resources/` (a Hugo build cache) at the
-repo root. Neither is tracked by this repo (there's no `.gitignore` line
-for them because they've simply never existed in a committed state before
--- CI only uploads `public/` as a Pages deploy artifact, never commits it
-back). Remove both before finishing:
+With `-d .tools/public` there is nothing to clean: `.tools/` (the Hugo binary,
+its cache, the build output, the mermaid copy and screenshots) is gitignored.
+If you ever build without `-d`, Hugo writes `public/` and `resources/` at the
+repo root (both are in `.gitignore` too, but remove them anyway so a stray
+`public/` is not mistaken for the real site).
 
-```bash
-rm -rf public resources
-```
-
-Leave `themes/DoIt`'s submodule checkout alone either way — checking it out
-locally doesn't affect the actual repo state (submodule pointers are just a
-gitlink commit reference, not file content tracked by this repo directly),
-so there's nothing to clean up there.
+Leave `themes/DoIt`'s submodule checkout alone either way: a submodule
+checkout is a gitlink reference, not tracked file content, so there is
+nothing to undo there. The same goes for `AI-Research`: if you ran
+`git submodule update --remote` to read newer content, `git status` shows
+`M AI-Research`; either commit that pointer bump deliberately with the post
+(it must name a commit already on `AI-Research`'s `main`) or reset it with
+`git submodule update --init AI-Research`.

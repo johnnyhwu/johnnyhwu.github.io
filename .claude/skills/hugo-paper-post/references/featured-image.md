@@ -15,8 +15,10 @@ is fixed; the look is not.
 Two worked examples live in `featured-image-example/`: `render.py` (Resource2Skill: dark ink background,
 ember and ice-blue line work, a stream converging on an aperture) and `render-rrsi.py` (RRSI: light paper
 background, flat vermilion and ink, a condensed poster title, a plot). They are deliberately unlike each other.
-Read both for mechanics (supersampling, margins, text helpers, preview), then write a new script. Never reuse
-either one's palette, type pairing or composition for a third post.
+A third, `render-ctx2skill.py` (Ctx2Skill: cobalt blueprint, serif display face with a mono, large type), is the
+reference for **sizes**: the first two draw their annotation labels at 10 to 11.5px, which is below the minimum
+in the table below, so copy their mechanics (supersampling, margins, text helpers, preview) but not their font
+sizes. Write a new script and never reuse any of the three's palette, type pairing or composition for another post.
 
 ## What is fixed (the technical contract)
 
@@ -25,7 +27,8 @@ either one's palette, type pairing or composition for a third post.
 | Canvas | Design on a **1200x630 logical** canvas, draw at **3x** and downsample (LANCZOS) to a **1800x945** PNG. Link previews want about 1.9:1, and 1.5x keeps lines crisp on high-DPI screens. |
 | Output | `featured-image.png` in the post's page bundle. Never put the philosophy `.md` in the bundle: Hugo would treat it as a content file. |
 | Text language | **English only.** One image serves both `index.en.md` and `index.zh-tw.md`, and the bundled fonts have no CJK glyphs. |
-| Legibility | 60px text margin; nothing touches, overlaps or leaves the canvas. The title is readable at list-page thumbnail size, and the leftmost 40% stays calm near the top because list pages crop covers. |
+| Legibility | 60px margin on all four sides (the bottom edge too: text baselines stay above y=570 on the 630px canvas); nothing touches, overlaps or leaves the canvas. The leftmost 40% stays calm near the top because list pages crop covers. |
+| Minimum sizes (logical px, 1200x630) | Title **100px or larger** (wide display faces); every label a reader is meant to read **13px or larger**; at most one line of fine print at 12px. Hairlines 1.5px or thicker, shapes big enough that a node or bar is still recognisable at 300px wide. Small type was the most common complaint about the first Ctx2Skill cover (10.5px labels looked fine on the 1000px preview and were too small in the feed). |
 | Fonts | Only the files in `canvas-design/canvas-fonts/`. |
 | Honesty | Labels use only terms and numbers the article contains. Anything drawn that is not paper data (a schematic scatter, say) says so on the image ("ILLUSTRATIVE"). |
 
@@ -75,7 +78,9 @@ uv run python render.py <scratch dir>    # writes featured-image.png and a 1000p
 2. **View `preview.jpg` only** (1000px wide, about 40KB), never the 1800px original. This is the one place the
    site's "don't load images" rule has an exception; see `SKILL.md` hard rule 2. Check, in this order: no
    overlap, nothing past the margins, the title isn't cramped, the one lit element is obvious, and every
-   label is legible.
+   label is legible. Then **judge it at feed size**: imagine the same picture 300px wide (list pages and link
+   previews show it that small). If a label or shape you care about would not survive that, it is too small:
+   enlarge it or remove it, because fewer, bigger elements beat many small ones.
 3. Refine instead of adding. If it feels unfinished, make what is already there crisper (spacing, opacity,
    alignment) rather than adding shapes. `canvas-design`'s own final step says the same.
 4. Copy the PNG into the bundle as `featured-image.png`, set `featuredImage: "featured-image.png"` in both

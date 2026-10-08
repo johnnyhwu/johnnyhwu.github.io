@@ -33,7 +33,7 @@ That is exactly the situation of Context Learning for an LLM: at inference time 
 
 The paper's method, Ctx2Skill, tries to generate that SOP automatically. Its positioning is clear: no parameter fine-tuning at all, purely at the inference layer. The extraction process needs no human-labeled answers, and has no external feedback (such as a compiler or a ground-truth answer) to lean on. Multiple agents play against each other and condense the text's implicit rules into a human-readable natural-language skill file, which can then be attached in front of any LLM and reused.
 
-{{< image src="figure1.png" alt="Ctx2Skill starts from real-world context documents that contain implicit rules and, with no human annotation and no external feedback, automatically extracts reusable natural-language skills that help an LLM solve tasks it previously could not." caption="Figure 1 — The big picture of Ctx2Skill: from a context document the model cannot yet read to a reusable skill. (Source: Figure 1 of the original paper.)" >}}
+{{< image src="figure1.png" alt="Ctx2Skill starts from real-world context documents that contain implicit rules and, with no human annotation and no external feedback, automatically extracts reusable natural-language skills that help an LLM solve tasks it previously could not." caption="Figure 1 — The big picture of Ctx2Skill: from a context document the model cannot yet read to a reusable skill. (Source: original paper, Figure 1.)" >}}
 
 For AI software engineers, what makes this paper interesting is not only the numbers but the agentic-workflow design pattern it demonstrates: using a strong model offline to "distill" a structured prompt that online inference can reuse. Below we first lay out how hard the problem is and how Ctx2Skill attacks it, then unpack a few easily overlooked but crucial engineering safeguards, and finally check with the experiments whether those designs actually help. Related work on automatically growing agent skills includes [SkillOpt](../skillopt/), which treats a skill file as a trainable weight, [WikiSkill](../wikiskill/), which adds a wiki memory layer that is never rolled back, and [Resource2Skill](../resource2skill/), which distills a skill library from videos and code.
 
@@ -65,7 +65,7 @@ It is a bit like a math teacher who, to stump students, fills the final exam wit
 
 Ctx2Skill's core idea fits in one sentence: let a pair of co-evolving AI agents, the question-setting Challenger and the problem-solving Reasoner, automatically distill reasoning skills for a specific text through self-play and text edits, with no human labels and no external feedback.
 
-{{< image src="figure2.png" alt="The overall architecture of Ctx2Skill. Panel (a) is the self-play loop, where the Challenger sets questions, the Reasoner solves them and the Judge routes the outcomes; panel (b) is the cross-time replay, which re-tests historical skill candidates and picks the most balanced final version." caption="Figure 2 — Ctx2Skill architecture: (a) the self-play loop, (b) the cross-time replay mechanism. (Source: Figure 2 of the original paper.)" >}}
+{{< image src="figure2.png" alt="The overall architecture of Ctx2Skill. Panel (a) is the self-play loop, where the Challenger sets questions, the Reasoner solves them and the Judge routes the outcomes; panel (b) is the cross-time replay, which re-tests historical skill candidates and picks the most balanced final version." caption="Figure 2 — Ctx2Skill architecture: (a) the self-play loop, (b) the cross-time replay mechanism. (Source: original paper, Figure 2.)" >}}
 
 ### Formalizing the Problem
 
@@ -151,9 +151,9 @@ The Proposer/Generator split is really a "doctor examines, pharmacist dispenses"
 
 The next two figures are the actual Proposer and Generator prompts from the appendix. They show what the "JSON diagnosis to Markdown skill file" split looks like at the prompt level (the Reasoner side has a structurally matching pair of prompts, not repeated here).
 
-{{< image src="figure10.png" alt="The prompt for the Challenger Proposer, which analyzes tasks the Reasoner passed easily and outputs a JSON diagnosis with fields such as action, target_skill and analysis." caption="Figure 3 — The Challenger Proposer's prompt: it turns the diagnosis of why the tasks were too easy into structured JSON. (Source: Figure 10 of the original paper.)" >}}
+{{< image src="figure10.png" alt="The prompt for the Challenger Proposer, which analyzes tasks the Reasoner passed easily and outputs a JSON diagnosis with fields such as action, target_skill and analysis." caption="Figure 3 — The Challenger Proposer's prompt: it turns the diagnosis of why the tasks were too easy into structured JSON. (Source: original paper, Figure 10.)" >}}
 
-{{< image src="figure11.png" alt="The prompt for the Challenger Generator, which turns the Proposer's skill specification into a complete SKILL.md that can be used directly." caption="Figure 4 — The Challenger Generator's prompt: it writes the skill into a proper SKILL.md following the diagnosis. (Source: Figure 11 of the original paper.)" >}}
+{{< image src="figure11.png" alt="The prompt for the Challenger Generator, which turns the Proposer's skill specification into a complete SKILL.md that can be used directly." caption="Figure 4 — The Challenger Generator's prompt: it writes the skill into a proper SKILL.md following the diagnosis. (Source: original paper, Figure 11.)" >}}
 
 ### Quietly Collecting the Probe Sets
 
@@ -242,7 +242,7 @@ The reason has to do with how an LLM's context window behaves: information densi
 
 During self-play, the Challenger occasionally fails to produce parseable JSON and emits an invalid task with a rubric count equal to \(0\). When collecting the easy probe set \(Q^e\) (which picks the task with the fewest rubrics), the system explicitly filters out such zero-rubric junk tasks.
 
-{{< image src="table7.png" alt="A table of the minimum, maximum, mean and median number of rubrics per Challenger-generated task at each iteration, for the GPT-4.1, GPT-5.1 and GPT-5.2 backbones." caption="Table 1 — Distribution of rubric counts across iterations. (Source: Table 7 of the original paper.)" >}}
+{{< image src="table7.png" alt="A table of the minimum, maximum, mean and median number of rubrics per Challenger-generated task at each iteration, for the GPT-4.1, GPT-5.1 and GPT-5.2 backbones." caption="Table 1 — Distribution of rubric counts across iterations. (Source: original paper, Table 7.)" >}}
 
 Without this filter, because \(0 < 1 < 2\), the algorithm would automatically store these "broken-format tasks with no grading criteria" in \(Q^e\) as the "easiest tasks". A task with no rubrics gives every skill a perfect score, which would badly contaminate the later big exam of the cross-time replay and throw the whole selection mechanism off. The lesson: when designing a multi-agent self-evolving system, assume any node can emit garbage, and clean defensively at the key points, such as wherever data accumulates.
 
@@ -254,7 +254,7 @@ The authors ran a full evaluation on CL-bench: 500 complex contexts, 1,899 tasks
 
 The experiment compares three settings: a frontier LM with no skill at all (running bare), a Prompting baseline that generates a skill in one shot, and the AutoSkill4Doc baseline from the literature.
 
-{{< image src="table1.png" alt="Main results of Ctx2Skill on the four CL-bench task categories, compared with the no-skill baseline and two other automatic skill-generation baselines. Red and green numbers mark gains and drops relative to the no-skill baseline." caption="Table 2 — CL-bench main results: Ctx2Skill versus the no-skill baseline and other skill-generation methods. (Source: Table 1 of the original paper.)" >}}
+{{< image src="table1.png" alt="Main results of Ctx2Skill on the four CL-bench task categories, compared with the no-skill baseline and two other automatic skill-generation baselines. Red and green numbers mark gains and drops relative to the no-skill baseline." caption="Table 2 — CL-bench main results: Ctx2Skill versus the no-skill baseline and other skill-generation methods. (Source: original paper, Table 1.)" >}}
 
 Ctx2Skill brings clear gains on every backbone model: GPT-4.1 goes from 11.1% to 16.5% (+5.4%), GPT-5.1 from 21.1% to 25.8% (+4.7%), and GPT-5.2 from 18.2% to 21.4% (+3.2%). The largest gain is in "procedural task execution", where GPT-4.1 climbs from 10.4% to 17.6% (+7.2%).
 
@@ -264,7 +264,7 @@ These numbers say one thing: pure-text context learning is still hard for today'
 
 This experiment checks something with real commercial value: can a skill distilled by a strong model's self-play be handed directly to a weaker model, achieving knowledge distillation without touching any code or any model weights? The setup attaches the skill library produced by GPT-5.1 to GPT-4.1, and also tests the reverse.
 
-{{< image src="table3.png" alt="Solve rates for Ctx2Skill under ablations, variant designs, cross-model skill transfer and cross-time replay analyses, with each block reporting an overall rate and four task-category rates." caption="Table 3 — The CL-bench analysis table (ablations, variant designs, skill transfer and replay). The next two experiments cite the same data, so it is not repeated. (Source: Table 3 of the original paper.)" >}}
+{{< image src="table3.png" alt="Solve rates for Ctx2Skill under ablations, variant designs, cross-model skill transfer and cross-time replay analyses, with each block reporting an overall rate and four task-category rates." caption="Table 3 — The CL-bench analysis table (ablations, variant designs, skill transfer and replay). The next two experiments cite the same data, so it is not repeated. (Source: original paper, Table 3.)" >}}
 
 The result is striking: GPT-4.1, which solves only 11.1% running bare, jumps to 16.1% with skills distilled by GPT-5.1, very close to the 16.5% it reaches with its own skills. This means the apprenticeship paradigm of "a large model distills the SOP offline, a small model executes it online" is entirely workable. In practice a large model's inference cost is often high; pay once to run Ctx2Skill on the large model, and then hand all online queries to a cheap small model with that skill, and you get performance close to the large model at a low cost.
 
@@ -274,11 +274,11 @@ This experiment directly tests the earlier hypothesis: do late-round skills real
 
 The data is not encouraging: using the round-1 (Iter-1) skill gives a 15.9% solve rate, but by round 5 (Iter-5) it falls to 14.7% (the Effect of Cross-Time Replay block of Table 3 above). Performance does not rise monotonically; it goes up and then down, confirming that late-round skills really do suffer adversarial collapse.
 
-{{< image src="table10.png" alt="The maximum, mean and median word count of the skill set at each iteration, for the GPT-4.1, GPT-5.1 and GPT-5.2 backbones, with a final row for the skill chosen by cross-time replay." caption="Table 4 — Skill set word counts across iterations. (Source: Table 10 of the original paper.)" >}}
+{{< image src="table10.png" alt="The maximum, mean and median word count of the skill set at each iteration, for the GPT-4.1, GPT-5.1 and GPT-5.2 backbones, with a final row for the skill chosen by cross-time replay." caption="Table 4 — Skill set word counts across iterations. (Source: original paper, Table 10.)" >}}
 
 The word counts explain why: the average skill length is only 313.9 words at Iter-1 but swells to 1704.1 words by Iter-5, confirming that the model keeps stuffing useless, verbose special-case patches into the skill library in the later rounds.
 
-{{< image src="figure4.png" alt="A line chart of how many contexts have their final skill set selected from each iteration by cross-time replay, with one line for each of the GPT-4.1, GPT-5.1 and GPT-5.2 backbones." caption="Figure 5 — The distribution of iterations that cross-time replay actually selects. (Source: Figure 4 of the original paper.)" >}}
+{{< image src="figure4.png" alt="A line chart of how many contexts have their final skill set selected from each iteration by cross-time replay, with one line for each of the GPT-4.1, GPT-5.1 and GPT-5.2 backbones." caption="Figure 5 — The distribution of iterations that cross-time replay actually selects. (Source: original paper, Figure 4.)" >}}
 
 Interestingly, cross-time replay most often picks the early Iter-1 to Iter-3, yet in a few complex contexts it still picks a later version. This shows the mechanism is not blindly choosing the earliest version but judging dynamically for each context.
 

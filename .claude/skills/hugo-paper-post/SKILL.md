@@ -220,7 +220,23 @@ prefer what an actual recent post does if the two ever disagree.
    Exit code 2 means no browser was available (layout NOT checked): say so in
    the PR instead of reporting a pass.
 
-8. **Open a PR** whose description covers: which topic directory it came
+   If the post has a mermaid diagram, `check_layout.js` prints "N mermaid
+   diagram(s) NOT checked" (the theme loads mermaid from a CDN that sandboxes
+   block). Run the companion check, which serves a local copy of mermaid@10
+   (fetched once with `npm pack` into `.tools/mermaid/`):
+
+   ```bash
+   node .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
+   ```
+
+   It fails on a mermaid syntax error (which still draws an SVG, an error
+   graphic) or a diagram wider than its box. Then view one screenshot per
+   diagram from `.tools/shots/`: a clipped subgraph title is a valid SVG that
+   only the picture reveals.
+
+8. **Open a PR** (only if the user asked for one; in a cloud session the
+   harness refuses unrequested PRs, so otherwise push the branch, draft the
+   description below, and offer) whose description covers: which topic directory it came
    from (full bucketed path), **which section you routed it to and why**
    (plus whether the slug was already pinned by existing links), the final
    `en` and `zh-tw` titles with a line on how they pass the title self-test in
@@ -247,7 +263,10 @@ prefer what an actual recent post does if the two ever disagree.
        done/published/<Topic>/assets/image-manifest.json .
    ```
 
-   Push that branch and open the PR from there (`gh pr create`). **Then put
+   Push that branch and open the PR from there (`gh pr create` locally; in a
+   cloud session attach `johnnyhwu/AI-Research` with `add_repo` at
+   `access: "push"` and use the GitHub MCP tools, see this repo's
+   `CLAUDE.md`). **Then put
    the submodule back on `main` before staging anything in this repo** — the
    Hugo PR's submodule pointer must name a commit already on `AI-Research`'s
    `main`, never the unmerged bucket-move commit (`CLAUDE.md`, "Where the
@@ -389,7 +408,8 @@ existing wording still matches.
   real browser, since `hugo build` cannot validate mermaid — and checked
   at real desktop/mobile content-column widths, not just a wide standalone
   test page, since a clipped subgraph title is a valid, error-free SVG
-  that only shows up at the site's actual narrow prose-column width. Every
+  that only shows up at the site's actual narrow prose-column width
+  (`scripts/check_mermaid.js` renders them and saves screenshots). Every
   diagram carries a per-diagram `%%{init}%%` color override matching the
   site's palette rather than shipping mermaid's default yellow/lavender
   theme — see the same section.
@@ -427,10 +447,12 @@ hugo-paper-post/
 │   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
 │   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image order of preference
 │   ├── featured-image.md                 fixed technical contract + 'every cover looks different' rule + workflow for generating a cover with canvas-design
-│   ├── featured-image-example/           render.py (Resource2Skill, dark/line-art) + render-rrsi.py (RRSI, light/flat poster) + design-philosophy.md: two deliberately different covers
+│   ├── featured-image-example/           render.py (Resource2Skill, dark/line-art) + render-rrsi.py (RRSI, light/flat poster) + render-ctx2skill.py (Ctx2Skill, blueprint, large type) + design-philosophy.md: three deliberately different covers
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
 │   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
 └── scripts/
     ├── hugo.sh                           project-local Hugo (version from the CI workflow), cache and output kept under .tools/
-    └── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter / zh-tw full-width-punctuation checks
+    ├── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter / zh-tw full-width-punctuation checks
+    ├── check_layout.js                   real-browser check of the built post: page overflow, KaTeX errors, over-wide inline formulas
+    └── check_mermaid.js                  real-browser check of every mermaid diagram (local mermaid@10), optional screenshots
 ```
