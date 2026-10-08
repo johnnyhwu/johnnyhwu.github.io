@@ -64,6 +64,10 @@ also means every `../<slug>/` relative link aimed at it from its real
 section resolves to nothing. `verify_post.py` does not catch this; check it
 by eye, and confirm the built path in the `hugo build` output.
 
+`date` and `lastmod` are the publish day (today's date) unless the task says
+otherwise; a batch spreads its dates deliberately (see SKILL.md). A touch-up
+to a live post bumps only `lastmod`.
+
 `title`/`description` differ between `index.en.md` and `index.zh-tw.md`
 (each written natively in its own language, not translated word-for-word);
 `date`, `lastmod`, `featuredImage`, `tags`, `categories`, `url` should
@@ -108,6 +112,10 @@ omission. Order of preference:
 2. otherwise **a generated cover made with the `canvas-design` skill**, in
    a style distinct from earlier generated covers, per `featured-image.md` (this is the default),
 3. only if generation is impossible, the old fallback of reusing a figure.
+
+The next three paragraphs are for the old hand-migrated topics (those with
+an `original-post.md`, mostly already under `done/published/`); a topic
+parsed from a PDF normally falls straight through to the generated default.
 
 **Best case — the source directory already ships one.** Check
 `<TopicDir>/assets/images/` for a file named like `feature-image.*` /
@@ -185,6 +193,13 @@ sourcing a stock photo of unclear licence.
   already renders `caption` as a visible `<figcaption>`; duplicating it as
   a markdown italic line looks inconsistent with every other post on the
   site, which only uses the shortcode's own caption rendering.
+- Source attribution: end every `caption` with `(Source: original paper,
+  Figure N.)` in English or `（來源：原始論文 Figure N。）` in zh-tw,
+  using the **paper's** own number (it is in the manifest `caption`). The
+  Writer's visible label (`圖 3 —`) is the article's own sequential
+  numbering and often differs, which is expected (see AI-Research's
+  `figure-map-schema.md`). Name bundle files after the paper's numbers too
+  (`figure10.png`, `table7.png`) so they cannot collide.
 - Preserve the Writer's `alt` text content (translate it if you're
   producing the other language's version) — don't rewrite its meaning.
 
@@ -226,9 +241,11 @@ get wrong:
     Just Memorize the Test? Inside Google's RRSI`.
   - Each language gets its own native title, not a translation of the
     other's. `verify_post.py` only checks length; this test is on you.
-- `description`: 150-160 chars (already stated above) — this is the exact
-  string search engines show, so it must stand alone, not read like a
-  fragment.
+- `description`: aim for 150-160 characters in English; `verify_post.py`
+  warns outside 120-170 (en) and 40-180 (zh-tw), and the zh-tw version is
+  naturally shorter because CJK characters carry more per character. This is
+  the exact string search engines show, so it must stand alone, not read
+  like a fragment.
 - Image `alt` text (from the Writer, preserved per the shortcode rule
   below): sanity-check it reads as a real descriptive sentence of what the
   figure shows, not a keyword list or a bare "Figure 1". If the Writer's
@@ -414,6 +431,17 @@ JEV page on mobile. Spell the amount as "USD 12.182" or
 "12.182 dollars". `verify_post.py` warns on two or more `$` on a line, and `check_layout.js`
 (see `hugo-build.md`) catches the rendered result.
 
+### Display math inside a list item
+
+An older `article.md` may tuck a `$$...$$` formula under a bullet (indented
+to "belong" to it). Don't publish it that way: end the list, then put each
+formula on its own line at the top level with blank lines around it and a
+one-line lead-in ("The two probe sets are updated as follows:"), and fold
+the bullet's trailing sentence back into the bullet. New articles should
+not contain this shape (AI-Research's `writing-style.md` forbids it), but
+check for it; a formula inside a list item is the one that most often fails
+to render as a display block.
+
 ### When to promote inline math to block math
 
 Not every `\( ... \)` should stay inline just because that's how
@@ -547,21 +575,17 @@ Practical notes:
   can't carry into a plain sentence in the prose right before the diagram
   instead of cramming it into the title.
 - **A `hugo build` cannot validate mermaid**, because it renders
-  client-side; a syntax error surfaces only as a "Syntax error in graph"
-  box in the browser. Check it in a real browser (see `hugo-build.md`).
-  In a sandbox the jsDelivr CDN is typically blocked, so `npm pack
-  mermaid@10`, extract it, and route
-  `**/cdn.jsdelivr.net/npm/mermaid@10/dist/**` to the local `dist/` with
-  Playwright's `page.route` — then assert every `pre.mermaid` actually
-  contains an `svg`. **Don't stop at "an svg exists, no console errors"**
-  — that check alone would have missed the title-clipping bug above, since
-  a clipped title is still a perfectly valid, error-free SVG. Set the
-  viewport to a normal desktop width (contrary to intuition, a *wider*
-  viewport doesn't reproduce this — this site's prose column has a fixed
-  max-width, so anything roughly desktop-sized or larger renders the
-  diagram at the same real column width) and actually read the rendered
-  text in the screenshot, including a mobile-width (~390px) pass to
-  confirm the diagram still scales down legibly.
+  client-side; a syntax error surfaces only in the browser (and still draws
+  an SVG, mermaid's error graphic). Run
+  `node .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots`
+  after a build: it serves a local mermaid@10 (the CDN is blocked in
+  sandboxes), fails on any syntax error or over-wide diagram, in both
+  languages at desktop and phone width, and saves a screenshot per diagram.
+  **Then look at the screenshots** (one per diagram is enough): a clipped
+  subgraph title is a valid, error-free SVG that only the picture shows.
+  Check at normal desktop width; this site's prose column has a fixed
+  max-width, so a wider viewport does not reproduce a clipped title, and
+  include the 390px shot to confirm the diagram still scales down legibly.
 - Known theme limitation, not worth "fixing" in a post: mermaid reads
   `window.theme` once at init, so toggling dark/light after page load
   leaves the diagram in its original palette until a refresh. A per-diagram

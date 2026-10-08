@@ -1,15 +1,15 @@
 # johnnyhwu.github.io
 
 This repo is the **Hugo repo** (`HUGO_REPO`) — the published blog — and Step 3
-("Publisher") of a 3-step blog pipeline. Step 1 (Writer) and Step 2 (Parser)
+("Publisher") of a 3-step blog pipeline. Step 1 (Parser) and Step 2 (Writer)
 run in a *separate* repo, `johnnyhwu/AI-Research` (`CONTENT_REPO`), and
 produce the material this repo's step turns into a real post. Nothing in
 `AI-Research` talks to Hugo directly — that wiring only happens here.
 
 | Step | Role | Runs in this repo? | Skill |
 |---|---|---|---|
-| 1 | Writer + Reviewer — turns discussion notes + an image manifest into `article.md` | No (`AI-Research`) | n/a |
-| 2 | Parser — extracts figures/tables from the PDF into an image manifest | No (`AI-Research`) | n/a |
+| 1 | Parser — extracts figures/tables from the PDF into an image manifest | No (`AI-Research`) | n/a |
+| 2 | Writer + Reviewer — turns discussion notes + an image manifest into `article.md` | No (`AI-Research`) | n/a |
 | 3 | Publisher — wires `article.md` + manifest + images into a Hugo post, in **both** languages this site ships, and designs its cover image | **Yes** | `.claude/skills/hugo-paper-post/` (cover: `.claude/skills/canvas-design/`) |
 
 If you're publishing anything in this repo from an `AI-Research` topic
@@ -104,7 +104,7 @@ Topic directories live **two** levels down under `done/`, one under
 
 | Bucket | Means | Step 3's interest |
 |---|---|---|
-| `in-progress/<Topic>/` | Step 1 hasn't written `article.md` yet | **Nothing to publish.** If asked to publish one of these, say so — don't write the article yourself; that's the other repo's job. |
+| `in-progress/<Topic>/` | Step 2 hasn't written `article.md` yet | **Nothing to publish.** If asked to publish one of these, say so — don't write the article yourself; that's the other repo's job. |
 | `done/unpublished/<Topic>/` | `article.md` exists, no Hugo post yet | **This is the publishing queue.** Every normal Step 3 task starts here. |
 | `done/published/<Topic>/` | A Hugo post already exists here in `content/posts/<section>/<slug>/` | Only for touch-ups to an already-published post. |
 
@@ -136,7 +136,10 @@ from inside the submodule, then open the PR the way your environment allows:
 locally, `gh pr create` from the submodule; in a cloud session there is no
 `gh`, so first attach `johnnyhwu/AI-Research` with `add_repo` and
 `access: "push"`, then use the GitHub MCP tools. Say in each PR that the
-other one exists. If you
+other one exists. A cloud session may only open a PR the user has asked
+for: if they haven't, push both branches (the one here and the
+`AI-Research` bucket-move branch), draft the descriptions, and offer to open
+the PRs. If you
 genuinely can't open the `AI-Research` PR, say so explicitly rather than
 leaving the topic silently mis-bucketed — a topic stuck in
 `done/unpublished/` after its post ships will be offered up for publishing

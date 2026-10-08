@@ -37,7 +37,7 @@ function loadPlaywright() {
 const args = process.argv.slice(2);
 const rootIdx = args.indexOf('--root');
 const root = path.resolve(rootIdx >= 0 ? args[rootIdx + 1] : '.tools/public');
-const slugPath = args.find((a, i) => !a.startsWith('--') && i !== rootIdx + 1);
+const slugPath = args.find((a, i) => !a.startsWith('--') && (rootIdx < 0 || i !== rootIdx + 1));
 if (!slugPath) { console.error('usage: check_layout.js <section>/<slug> [--root dir]'); process.exit(2); }
 
 const pw = loadPlaywright();
@@ -103,7 +103,7 @@ const server = http.createServer((req, res) => {
         return out;
       });
       const tag = `${lang} @${width}px`;
-      if (r.unrendered) notes.add(`${r.unrendered} mermaid diagram(s) NOT checked (CDN blocked): verify them in a browser per hugo-conventions.md, "Diagrams"`);
+      if (r.unrendered) notes.add(`${r.unrendered} mermaid diagram(s) NOT checked (CDN blocked): run scripts/check_mermaid.js for this post (see hugo-conventions.md, "Diagrams")`);
       if (r.scrollW > r.vw + 1) problems.push(`${tag}: page scrolls horizontally (${r.scrollW}px > ${r.vw}px). Elements past the edge: ${JSON.stringify(r.poking)}`);
       if (r.katexErrors) problems.push(`${tag}: ${r.katexErrors} KaTeX render error(s)`);
       for (const w of r.wideInline) problems.push(`${tag}: inline formula wider than the text column or past the viewport edge (${w}) -- promote to a block formula, or check for a stray literal $`);
