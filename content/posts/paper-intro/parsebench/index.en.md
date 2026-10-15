@@ -57,7 +57,7 @@ ParseBench splits "semantic correctness" into five dimensions, each matching a f
 
 In total the scale is 2,078 pages, 1,180 documents and 169,011 rules.
 
-{{< image src="table2.png" alt="ParseBench dataset statistics listing pages, documents and rules for the Tables, Charts, Text and Layout datasets" caption="Table 2 — ParseBench dataset statistics. The Tables dimension uses the continuous metric GTRM, so there are no discrete rules to count. (Source: original paper)" >}}
+{{< image src="table2.png" alt="ParseBench dataset statistics listing pages, documents and rules for the Tables, Charts, Text and Layout datasets" caption="Table 2 — ParseBench dataset statistics. The Tables dimension uses the continuous metric GTRM, so there are no discrete rules to count. (Source: original paper)" width="51%" >}}
 
 Two details are easy to gloss over in the marketing language, though. The content faithfulness and formatting dimensions share the same 507 documents and only apply different rule sets, so the "five dimensions" correspond to only four datasets. And 87% of those 169K rules sit in the text dataset: "169K test rules" sounds impressive, but most of that volume is text-matching rules expanded automatically, not 169K independently designed test points.
 
@@ -83,7 +83,7 @@ The two metrics share a blind spot: **they treat header cells and data cells ali
 
 The paper's **TableRecordMatch (TRM)** is meant to plug that hole. It reads a table not as "an arrangement of cells" but as "a bag of records": each row becomes a record, and every value in the record uses the header of its column as its key. "Bag" means unordered: however the rows or columns are arranged, the contents of the bag are the same, which is why it is insensitive to ordering. Conversely, once a header is dropped or misplaced, every value's key changes and the whole bag of records fails to match, which is exactly the penalty it wants. The idea actually comes from relational databases (a row is a record with named fields), and the math is a variant of Jaccard similarity.
 
-{{< image src="figure2.png" alt="Illustration of the TableRecordMatch metric showing how predicted records are matched with ground-truth records and compared cell by cell" caption="Figure 2 — The TableRecordMatch metric: predicted records and columns are first matched to the ground truth, then scored by cell-level agreement. (Source: original paper)" >}}
+{{< image src="figure2.png" alt="Illustration of the TableRecordMatch metric showing how predicted records are matched with ground-truth records and compared cell by cell" caption="Figure 2 — The TableRecordMatch metric: predicted records and columns are first matched to the ground truth, then scored by cell-level agreement. (Source: original paper)" width="51%" >}}
 
 The formula looks like this:
 
@@ -150,7 +150,7 @@ Textract's problem is duplicated content, Haiku 4.5 hallucinates and jumbles col
 
 The data for this dimension is 500 PDFs fetched at random from the web, one page from each, with pages heavy on tables and charts deliberately excluded. Content faithfulness and formatting use the same documents and only apply different rule sets:
 
-{{< image src="table4.png" alt="Shared document category statistics for the content faithfulness and formatting dimensions; the text_formatting category has only 10 documents" caption="Table 4 — Document category statistics shared by the content faithfulness and formatting dimensions. (Source: original paper)" >}}
+{{< image src="table4.png" alt="Shared document category statistics for the content faithfulness and formatting dimensions; the text_formatting category has only 10 documents" caption="Table 4 — Document category statistics shared by the content faithfulness and formatting dimensions. (Source: original paper)" width="51%" >}}
 
 The category distribution is very uneven: heavy typesetting (text_formatting) has only 10 documents, and the same documents are also used to evaluate the formatting dimension, so judging the "heavy formatting" ability from 10 documents is clearly a thin sample.
 
@@ -160,7 +160,7 @@ Incidentally, the `bag_of_digit_percent` rule is dedicated to catching digit mis
 
 This dimension tests only formatting that carries meaning, not pure decoration: strikethrough marks content that has been voided (drop it and the agent treats the old price as the current one), superscripts and subscripts correspond to footnotes or chemical formulas (flatten them and x² becomes x2), and bold marks defined terms or key values.
 
-{{< image src="figure4.png" alt="Examples of formatting loss changing meaning: the source snippet, what a formatting-unaware parser outputs, and the downstream agent's resulting misreading" caption="Figure 4 — Concrete examples where losing formatting changes what a document means. (Source: original paper)" >}}
+{{< image src="figure4.png" alt="Examples of formatting loss changing meaning: the source snippet, what a formatting-unaware parser outputs, and the downstream agent's resulting misreading" caption="Figure 4 — Concrete examples where losing formatting changes what a document means. (Source: original paper)" width="51%" >}}
 
 Every category is designed with a positive and a negative rule in pairs: `is_strikeout` catches "should be marked but isn't", and `is_not_strikeout` catches "shouldn't be marked but was added". Testing only the positive rewards "mark everything", and testing only the negative rewards "mark nothing", so paired testing is the fair way.
 
