@@ -108,9 +108,6 @@ Topic directories live **two** levels down under `done/`, one under
 | `done/unpublished/<Topic>/` | `article.md` exists, no Hugo post yet | **This is the publishing queue.** Every normal Step 3 task starts here. |
 | `done/published/<Topic>/` | A Hugo post already exists here in `content/posts/<section>/<slug>/` | Only for touch-ups to an already-published post. |
 
-Do **not** rely on a bare `done/<Topic>/` path — that layout is gone, and a
-path built that way will simply not exist.
-
 ### Finish the loop: mark the topic published
 
 Publishing a post is only half of Step 3. Once the Hugo post is merged (or
@@ -149,12 +146,16 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
 ## Global rules for anything touching a published post
 
 - **Python tooling goes through `uv`, never `pip`.** Packages this repo needs
-  (Pillow and numpy, for cover rendering and image spot-checks) are declared
+  (Pillow and numpy, for cover rendering and image downscaling) are declared
   in `pyproject.toml`; run `uv sync` once, then `uv run python ...`. Don't run
   `pip` / `pip3` / `python3 -m pip`: on this machine that installs into the
   user-level Python and pollutes it. If a new package is needed, `uv add` it
   so it lands in `pyproject.toml` and `uv.lock`. (`verify_post.py` is
-  stdlib-only and runs fine with plain `python3`.)
+  stdlib-only and runs fine with plain `python3`.) Run `uv` from this repo's
+  root: if the shell has drifted into `AI-Research/` (that repo has its own
+  `.venv`), `uv run` warns that `VIRTUAL_ENV` doesn't match the project
+  environment. `cd` back instead of working around it with `--active`, which
+  would install into the wrong environment.
 - **Hugo is project-local too.** For the real build check, run
   `.claude/skills/hugo-paper-post/scripts/hugo.sh ...` (see its header). It keeps
   the binary, Hugo's cache and the build output under the gitignored `.tools/`;
@@ -164,12 +165,18 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
   to `article.md`, so it is easy to open by accident. Step 3 works
   from `article.md` + `image-manifest.json` + the already-extracted image
   files only.
-- **Never load an image file into context except a bounded, explicitly
-  justified spot-check.** The skill defines exactly when that's allowed
-  (only `parser_confidence: "low"` manifest entries, downscaled first) and
-  when it isn't (everything else — trust direct id matches). The one other
-  exception is the cover you generate yourself: view its ~1000px preview
-  to check layout, never the full-size file.
+- **Looking at images is allowed — the goal is a high-quality post — but
+  delegate it.** Any image may be viewed: extracted figures/tables, the
+  covers of other posts, a rendered page screenshot, your own generated
+  cover. Hand the viewing to a **subagent** (give it the file path and a
+  specific question, get back a short text answer) so image bytes don't pile
+  up in your own context. View an image yourself only when a subagent round
+  trip would cost more than it saves or you need the pixels to make the next
+  decision (judging your own cover, say), and then downscale first (~600px
+  for a figure, ~1000px for a cover). The skill has the detail
+  (`references/image-resolution.md`, `references/featured-image.md`). What
+  stays forbidden is the PDF, and "viewing" never replaces the manifest id
+  join: resolve images by id first, look only to confirm or to judge quality.
 - **Never invent a manifest id or fabricate front-matter metadata the site
   needs but the article doesn't supply.** The cover image is the common
   case: don't leave it out, don't source a stock photo, and don't pass a

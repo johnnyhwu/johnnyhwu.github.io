@@ -3,63 +3,90 @@
 For every image reference in `<Paper>/article.md`'s body — Markdown syntax
 `![alt](img-00N)` where the "src" is a manifest id, not a path — resolve it
 to an actual file in `<Paper>/assets/images/` (or the topic's documented
-exception path) before ever touching pixels.
+exception path), then decide how wide it should display.
 
-## Step 1: direct id match (the default, needs zero vision)
+Images may be looked at (the goal is a high-quality post), but the join
+itself is text: ids and captions first, pixels only to confirm or to judge.
+
+## Step 1: direct id match (the default)
 
 Look up the id in the article's trailing `figure-map` block to get
 `references_manifest_caption` and `agent_match_hint`, then find that same
 id directly in `image-manifest.json`. In practice this is nearly always a
 clean match — the Writer step reuses the manifest's own ids on purpose so
-this join is trivial. If the id and caption line up, you're done; move to
-the next reference. **Do not open the image file just to be extra sure** —
-that defeats the entire point of a separate parsing step.
+this join is trivial. If the id and caption line up, you're done with
+resolution; no image needs opening to confirm it.
 
 ## Step 2: semantic fallback (only if step 1 doesn't cleanly match)
 
 Only if the id has no manifest entry, or the caption in `figure-map`
 clearly doesn't match the manifest entry at that id: compare
 `references_manifest_caption` / `agent_match_hint` against every manifest
-entry's `caption` / `nearby_text` and pick the best textual match. This is
-still text-only — no image bytes involved.
+entry's `caption` / `nearby_text` and pick the best textual match.
 
-## Step 3: bounded visual spot-check (the *only* place vision is allowed)
+## Step 3: look at the images that need it — through a subagent
 
-Load an image file into context, and only at reduced resolution/size, in
-exactly these cases:
-- the manifest entry you matched has `"parser_confidence": "low"`, **or**
+Have an image looked at when:
+- the matched manifest entry has `"parser_confidence": "low"`, **or**
 - step 2's semantic match was ambiguous (two plausible candidates), **or**
-- the id had no confident match at all and you're about to guess.
+- the id had no confident match at all and you're about to guess, **or**
+- you want to judge quality (is the crop cut off? is the text legible at
+  the width it will display?).
 
-Everything else — every high-confidence direct id match — is trusted
-without a look. This keeps vision cost bounded to a small minority of
-images on any given post.
+**Default: delegate.** Image bytes stay in context for the rest of the
+session, so send a subagent (`Agent`, `general-purpose`) with the file
+paths and a precise question, and work from its text answer. Batch every
+image that needs checking into one subagent call. A good prompt:
 
-### How to do the spot-check cheaply
+> Downscale each of these images to 600px wide with `uv run python` (Pillow;
+> save the JPEGs in the scratchpad, never in the repo), look at them, and for
+> each say whether it shows what its caption says, and flag any crop that is
+> cut off, blank, or illegible. Caption per file: ... Answer in one line per
+> image; do not paste image content back.
 
-The source PNGs from the parser are typically large (1000–2000px wide,
-hundreds of KB). Don't load them at full size. Downscale first:
+**View one yourself** only when a round trip costs more than it saves (one
+image, a quick judgement call) or you need the pixels for your next decision.
+Downscale first (below) — don't load a 1500px PNG at full size without a
+reason.
 
 ```python
 from PIL import Image
 im = Image.open(src_path).convert("RGB")
 w, h = im.size
-scale = 600 / w
-im.resize((600, int(h * scale))).save(out_path, "JPEG", quality=65, optimize=True)
+im.resize((600, int(h * 600 / w))).save(out_path, "JPEG", quality=65, optimize=True)
 ```
 
-(Run it with `uv run python`; Pillow is in this repo's `pyproject.toml`. Don't `pip install` it.)
-Then read only the downscaled copy. This typically cuts a spot-check image
-from several hundred KB to under 100 KB with no loss of legibility for the
-purpose of "does this picture match the caption/hint" — you're confirming
-gestalt (a results table vs. a line chart vs. a pipeline diagram), not
-transcribing exact numbers.
+(Run it with `uv run python` from the repo root; Pillow is in this repo's
+`pyproject.toml`. Don't `pip install` it.) 600px is enough to confirm
+"a results table vs. a line chart vs. a pipeline diagram"; it is not enough
+to read exact numbers, so if the check is about specific values, ask for a
+higher resolution or a crop of the relevant region.
 
-For each spot-checked image, confirm the picture's actual content (a
-results matrix, a 3-part transfer table, a line chart with N series, etc.)
-matches what the caption and `agent_match_hint` describe. Note in the PR
-description which ids were spot-checked and why (which of the three
-conditions above triggered it).
+Note in the PR description which ids were checked and why.
+
+## Image display width: normalize text size across crops
+
+The parser crops each figure to its own region, so one post's images come in
+different pixel widths — typically a full-text-width crop (e.g. 1453px) and a
+single-column crop (e.g. 737px). The theme stretches every image to the
+content-column width, so a narrow crop is enlarged and its text renders
+visibly bigger than the text in a wide crop. This shipped once in the
+ParseBench post: four 737px crops looked about twice the size of the 1453px
+ones.
+
+After copying the images into the bundle, read each one's pixel width
+(`Image.open(...).size`, or `file`) and set the shortcode's `width` so the
+text scale matches:
+
+```
+width = round(image_px_width / widest_image_px_width_in_this_post * 100)%
+```
+
+e.g. `{{< image src="table2.png" alt="..." caption="..." width="51%" >}}` for
+a 737px crop beside 1453px ones. The widest image gets no `width`. Images
+within about 10% of the widest need none either. `verify_post.py` warns when
+an image is much narrower than the widest one in the post and has no
+`width`. Do this in both language files.
 
 ## When a reference truly can't be resolved
 
@@ -79,6 +106,4 @@ inline instead of the screenshot — but only if the site renders tables
 cleanly (it does; `goldmark.extensions.table = true` in
 `config/_default/markup.toml`) and the surrounding prose reads naturally
 with a table there instead of an image. When unsure, keep the image — it's
-always the safer default, and every table in the SkillOpt post was kept as
-an image for exactly this reason (no `table_markdown` field was present in
-that manifest at all).
+always the safer default.

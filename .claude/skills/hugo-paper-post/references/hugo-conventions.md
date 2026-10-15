@@ -108,50 +108,19 @@ treats `featuredImage` as a required front-matter field, and every existing
 post on this site has one — so this always needs an answer, never an
 omission. Order of preference:
 
-1. a real original cover the source already ships (next three paragraphs),
+1. a real original cover the source already ships (below),
 2. otherwise **a generated cover made with the `canvas-design` skill**, in
    a style distinct from earlier generated covers, per `featured-image.md` (this is the default),
-3. only if generation is impossible, the old fallback of reusing a figure.
+3. only if generation is impossible, reuse a figure (last resort, below).
 
-The next three paragraphs are for the old hand-migrated topics (those with
-an `original-post.md`, mostly already under `done/published/`); a topic
-parsed from a PDF normally falls straight through to the generated default.
-
-**Best case — the source directory already ships one.** Check
-`<TopicDir>/assets/images/` for a file named like `feature-image.*` /
-`featured-image.*` before doing anything else. Topics migrated by hand from
-the original blog (rather than parsed out of a PDF) often carry the original
-post's real cover image, and it will *not* be listed in
-`image-manifest.json` — so it is easy to miss if you only read the manifest.
-Copy it to `featured-image.<ext>` and you're done; this is the one case that
-needs no substitution and no caveat beyond noting its dimensions.
-
-**Unclaimed image that doesn't match the naming pattern.** The cover image
-isn't always named `feature-image.*`. If `assets/images/` has a file that
-isn't referenced by any manifest entry but also doesn't look like a
-`feature-image.*`/`featured-image.*` filename (e.g. a raw stock-photo
-download like `lightbulb-g62867252e_640.jpg`), don't assume it's *not* the
-cover just because the name doesn't match — and don't assume it *is*,
-either. Corroborate against `original-post.md` when the topic has one
-(hand-migrated topics do): check whether that same filename appears first
-in its own front-matter image list, and whether it's the first image
-embedded in the body, directly under the title (often paired with a
-source/credit line) — that combination is strong evidence it was the
-original post's cover. Use it as `featuredImage` if so; otherwise treat it
-as an ordinary body figure.
-
-**Worst case — no unclaimed image at all.** Every image in
-`assets/images/` may already be claimed by the manifest, with nothing left
-over to be a cover-image candidate. Before falling back to reusing a body
-figure, check `original-post.md` (if the topic has one) the same way as
-above — its front-matter image ordering and which image leads the body —
-since the original cover image may simply have been re-used as a regular
-in-body figure by the parser rather than lost. If that identifies a clear
-original cover image, use it, but **say so explicitly in the PR**: this
-path is inferred from the old post's structure, not a direct file-naming
-signal, so it's a weaker claim than the best case above and a human may
-want to give the post a dedicated cover image later. If `original-post.md`
-gives no signal either (or doesn't exist), fall through to the generated-cover default below.
+**A real cover the source ships.** Check `<TopicDir>/assets/images/` for a
+file named like `feature-image.*` / `featured-image.*` before designing
+anything; such a file is usually not listed in `image-manifest.json`, so it
+is easy to miss if you only read the manifest. Copy it to
+`featured-image.<ext>`; this needs no substitution and no caveat beyond
+noting its dimensions. An unclaimed image with some other name is not
+evidence of a cover: treat it as an ordinary figure unless the topic says
+otherwise.
 
 **Default — generate a cover with `canvas-design`.** When the source ships no
 real cover, design an original 1800x945 cover following
@@ -161,7 +130,7 @@ limited to terms and numbers the article itself contains). This applies
 whether or not the article has figures: don't reuse a paper figure as the
 cover just because one exists. `featured-image-example/` has a worked
 example, and `content/posts/paper-intro/resource2skill/` is the live post it
-produced. Check the result by viewing only the 1000px preview. **Say so
+produced. Check the result by viewing its 1000px preview (see `featured-image.md` for who should look). **Say so
 explicitly in the PR**: it is a generated illustration, not a sourced photo
 and not a paper figure, plus what it depicts and where each number in it
 comes from.
@@ -254,8 +223,8 @@ get wrong:
   factual improvement, unlike the article's prose which you must not
   touch.
 - `featuredImage`: a generated cover is 1800x945 (about 1.9:1), which is
-  already the shape link previews want. A reused figure or a migrated
-  original cover may be smaller or a different crop; if it's noticeably
+  already the shape link previews want. A reused figure or a real source
+  cover may be smaller or a different crop; if it's noticeably
   small, mention the actual dimensions in the PR so a human can judge
   whether to swap it later. Don't fabricate a replacement for a real cover.
 - AI-citation readiness (GEO/AEO) rides on the same readability work this
@@ -275,9 +244,8 @@ others cross-link within the "Test-Time Scaling / Inference Optimization"
 cluster) is to add a small number of **contextual** inline links from a new
 post to existing paper-intro posts covering closely related work — e.g.
 "...the kind of Planner-Executor architecture we've seen in
-[Plan-and-Act](../plan-and-act/) and [HiRA](../hira/)". This has been done
-as a retroactive cleanup pass before; do it at publish time instead so it
-doesn't pile up:
+[Plan-and-Act](../plan-and-act/) and [HiRA](../hira/)". Do it
+at publish time so it doesn't pile up:
 
 1. Find candidates by tag overlap: `grep -l '"<tag>"' content/posts/*/*/index.en.md`
    for each tag on the new post. For an untagged fundamentals post, search

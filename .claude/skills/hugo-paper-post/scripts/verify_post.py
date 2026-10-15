@@ -11,6 +11,7 @@ Not a substitute for a real `hugo build` (see references/hugo-build.md) --
 this only catches mistakes that don't require actually rendering the site.
 """
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -253,6 +254,56 @@ def check_tilde_strikethrough(body_text, label, warnings):
             )
 
 
+WIDTH_ATTR_RE = re.compile(r'(?<![\w-])width\s*=')
+
+
+def image_pixel_width(path):
+    """Pixel width of a PNG or JPEG using only the stdlib; None if unknown."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(26)
+            if head[:8] == b"\x89PNG\r\n\x1a\n":
+                return struct.unpack(">I", head[16:20])[0]
+            if head[:2] == b"\xff\xd8":
+                f.seek(2)
+                while True:
+                    marker = f.read(4)
+                    if len(marker) < 4 or marker[0] != 0xFF:
+                        return None
+                    if marker[1] in range(0xC0, 0xD0) and marker[1] not in (0xC4, 0xC8, 0xCC):
+                        f.read(1)
+                        return struct.unpack(">HH", f.read(4))[1]
+                    f.seek(struct.unpack(">H", marker[2:4])[0] - 2, 1)
+    except (OSError, struct.error):
+        return None
+    return None
+
+
+def check_image_widths(body_text, label, post_dir, warnings):
+    """The theme stretches every image to the column width, so a narrow crop renders with bigger text than a
+    wide one. Warn on images much narrower than the widest one in the post that carry no width= (see
+    references/image-resolution.md, 'Image display width')."""
+    items = []
+    for match in SHORTCODE_SRC_RE.finditer(body_text):
+        attrs = match.group(1)
+        src_match = SRC_ATTR_RE.search(attrs)
+        if not src_match or src_match.group(1).startswith(("http://", "https://", "data:")):
+            continue
+        w = image_pixel_width(post_dir / src_match.group(1))
+        if w:
+            items.append((src_match.group(1), w, bool(WIDTH_ATTR_RE.search(attrs))))
+    if len(items) < 2:
+        return
+    widest = max(w for _, w, _ in items)
+    narrow = [f"{src} ({w}px, suggest width=\"{round(w / widest * 100)}%\")"
+              for src, w, has_width in items if w < 0.9 * widest and not has_width]
+    if narrow:
+        warnings.append(
+            f"{label}: {len(narrow)} image(s) much narrower than the widest ({widest}px) have no width= -- "
+            "they will render with oversized text: " + ", ".join(narrow)
+        )
+
+
 def check_body(body_text, label, post_dir, errors, warnings):
     if "```figure-map" in body_text:
         errors.append(f"{label}: trailing figure-map block was not stripped")
@@ -389,6 +440,7 @@ def main():
         check_heading_structure(body, label, errors, warnings)
         check_internal_links(body, label, warnings)
         check_tilde_strikethrough(body, label, warnings)
+        check_image_widths(body, label, post_dir, warnings)
 
     if warnings:
         print("WARNINGS:")

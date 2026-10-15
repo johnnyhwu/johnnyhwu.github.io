@@ -20,21 +20,23 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
    Step 3 has no business opening it — everything you need is already in
    `article.md` and `image-manifest.json`.
 
-2. **Never load an image file into context except a bounded spot-check.**
-   The common case — a body reference's id matches a manifest id directly —
-   needs zero vision. Only load (and only at low resolution) the images
-   whose manifest entry is `parser_confidence: "low"`, or where id-matching
-   was genuinely ambiguous. See `references/image-resolution.md` for the
-   exact procedure and why every other image must be trusted without a
-   look. The one other exception is the **cover you generate yourself**:
-   view only its ~1000px `preview.jpg` to check layout and legibility (see
-   `references/featured-image.md`). That is your own output, not extracted
-   source material, and the downscaled preview keeps the cost bounded.
+2. **Images may be viewed, but let a subagent do the looking.** The aim is a
+   high-quality post, so nothing is off limits: extracted figures and
+   tables, other posts' covers, your own cover, a screenshot of the rendered
+   page. But image bytes bloat context fast, so by default send a subagent
+   (file path + a specific question: "does this match caption X?", "what
+   palette and fonts does this cover use?") and work from its text answer.
+   View one yourself only when that is genuinely better (judging your own
+   cover's composition, a one-off check where the round trip costs more than
+   the picture), and downscale first. Viewing never replaces the manifest id
+   join: resolve images by id, then look to confirm a doubtful match or to
+   judge quality. Which images to check, and how, is in
+   `references/image-resolution.md` and `references/featured-image.md`.
 
 3. **Always produce both `index.en.md` and `index.zh-tw.md` for a post, in
    the same commit, every time — never just one.** This is not a style
    preference, it's load-bearing: see `references/bilingual-bundle-gotcha.md`
-   for the concrete bug this caused the one time it was skipped (a fully
+   for the concrete bug a missing language causes (a fully
    English-only bundle silently broke *every* image on the page, because of
    how this site's Hugo config resolves page-bundle resources). If the
    content repo's `article.md` is in Chinese, translate it into English
@@ -51,7 +53,7 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
    cover with the `canvas-design` skill, in a style of its own** (see
    `references/featured-image.md`; the conventions doc's "Featured image"
    section has the full order of preference, including keeping a real
-   cover that a hand-migrated topic already ships) and say so in the PR.
+   cover that the source already ships) and say so in the PR.
    The line not to cross isn't "used a generated image" — every existing
    post already has some cover — it's *claiming* a generated image is
    something it isn't (passing it off as a real paper figure or a
@@ -121,8 +123,8 @@ prefer what an actual recent post does if the two ever disagree.
    (`ls done/unpublished/ done/published/ in-progress/`) rather than
    guessing from the name, then read `<TopicDir>/article.md` and
    `<TopicDir>/assets/image-manifest.json` (whichever path is actually
-   correct per the exception check above). Do not read the PDF. Do not open
-   any image file yet.
+   correct per the exception check above). Do not read the PDF. Image
+   viewing comes later, in step 4, and goes through a subagent.
 
 3. **Decide the section and the slug — before writing anything.** Most
    `AI-Research` topics are *not* papers, so `paper-intro` is a choice, not
@@ -148,8 +150,10 @@ prefer what an actual recent post does if the two ever disagree.
 
 4. **Resolve every referenced image id.** Follow
    `references/image-resolution.md` exactly: direct id match is the default
-   and needs no vision; only fall back to semantic matching or a bounded,
-   downscaled spot-check per that doc's rules. If an id genuinely can't be
+   and needs no looking; fall back to semantic matching when it doesn't
+   join cleanly, and have a subagent check any low-confidence or doubtful
+   image (and read each image's pixel width, see "Image display width" in
+   that doc). If an id genuinely can't be
    resolved, leave a visible `<!-- UNRESOLVED IMAGE: ... -->` placeholder
    and flag it in the PR — never guess silently.
 
@@ -171,14 +175,15 @@ prefer what an actual recent post does if the two ever disagree.
    style from `references/featured-image.md` (1800x945, English-only text,
    a metaphor drawn from the article's central mechanism, labels limited to
    terms and numbers the article contains). Run it with `uv run python`
-   (`uv sync` once; Pillow and numpy come from `pyproject.toml`, never from `pip`). This replaces the old "reuse Figure 1" default.
+   (`uv sync` once, from the repo root; Pillow and numpy come from `pyproject.toml`, never from `pip`).
+   Before drawing, look up `references/generated-covers.md` (palettes and
+   fonts already taken) and add a row for the new cover when it is done.
 
 6. **Add contextual internal links to related posts**, per
    `references/hugo-conventions.md`'s "Internal linking to related posts"
    section — find existing posts sharing a tag or topic and
    turn natural mentions into relative links, in both language files. This
-   is an established site convention (previously done as a retroactive
-   cleanup pass); doing it at publish time avoids that cleanup debt. Zero
+   is an established site convention; do it at publish time. Zero
    links is fine for a genuinely novel topic — don't force it.
 
 7. **Verify before opening a PR.** Run:
@@ -242,11 +247,16 @@ prefer what an actual recent post does if the two ever disagree.
    `en` and `zh-tw` titles with a line on how they pass the title self-test in
    `references/hugo-conventions.md` (plain subject, reader-term hook, no jargon),
    the id → filename image mapping, which images (if any)
-   were spot-checked and why, how the cover was made (generated with
+   were checked visually and why (and any width scaling applied), how the cover was made (generated with
    `canvas-design`: what it depicts, where every number or label in it
    comes from, its size; or the real cover/fallback that was used), any unresolved images or missing/fabricated
    front-matter fields, any internal links added (or why none applied), and
    confirmation that both language files were verified to build.
+
+   The two PRs (this one and the AI-Research bucket move in step 9) must
+   reference each other, but each needs the other's URL: open this one
+   first, then the AI-Research one with this PR's link, then
+   `gh pr edit <n> --body-file ...` to add the AI-Research link here.
 
 9. **Move the topic to `done/published/` in `AI-Research` — a second PR.**
    Step 3 isn't finished when the post exists here; the content repo still
@@ -299,9 +309,11 @@ topic. Delegate per topic:
 - read `<TopicDir>/article.md` + the manifest (workflow steps 2, 4) —
   give it the **full bucketed path**, e.g.
   `done/unpublished/<Topic>/`, not a bare `<Topic>/`,
-- resolve images, including any bounded spot-check, and copy them into the
-  bundle, then generate the cover per `references/featured-image.md`
-  (each subagent installs Pillow/numpy itself and views only the preview),
+- resolve images, including any visual check (a subagent may itself spawn
+  a sub-check or look directly; it should report text, not pictures), apply
+  the display-width rule, and copy them into the bundle, then generate the
+  cover per `references/featured-image.md` (each subagent installs
+  Pillow/numpy itself and checks its own preview),
 - write `index.en.md` **and** `index.zh-tw.md` (both — the bilingual rule is
   per post, so it binds each subagent individually),
 - run `verify_post.py` on that one directory and report its warnings back.
@@ -313,7 +325,7 @@ split up:**
 |---|---|
 | Section + slug for every topic | Slugs depend on the whole site's link graph, and two subagents choosing independently can collide or pick different spellings of the same series (`python-function` vs `python-function-1`). |
 | The order of a numbered/sequential batch | Don't assume the order topics were listed or requested in is the series' real order — it may just be alphabetical. An article that's actually part of a numbered series usually self-declares its position ("第 N 篇") and points to its neighbors ("前一篇"/"下一篇"); grep every topic's `article.md` for these before deciding anything else, since front-matter dates and the internal-link chain both depend on getting this right first. |
-| Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. For topics migrated by hand from an old blog (`article.md` + `original-post.md`, manifest's `source_pdf: null`), check whether `original-post.md`'s own front matter carries the real historical publish date before inventing dates from scratch — it's a second, independent signal for the batch's true order, and if the task asks you to backdate the posts, it gives you a real relative cadence to mirror instead of picking arbitrary spacing. |
+| Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. |
 | Cross-post internal links | A link from topic A to topic B is only correct once B's slug is fixed — and both posts in a batch may link to each other. |
 | One final `hugo build` + site-wide link audit | Per-topic builds are slow and redundant, and the bilingual page-bundle bug and dangling-link checks are only meaningful site-wide. |
 | The PR | One PR describes the batch. |
@@ -340,7 +352,7 @@ whole site.)
 ### Require a fixed report back, and re-check titles against inbound prose
 
 Ask each subagent to report: the id → filename map, which images it
-spot-checked and which condition triggered it, what it used for
+looked at and why, which got a `width=` and what value, what it used for
 `featuredImage` and where that came from **plus its pixel dimensions**,
 anything unresolved or guessed, its final `verify_post.py` output, and which
 internal links it added. The orchestrator cannot write the PR description
@@ -350,8 +362,7 @@ subagent.
 One thing to re-check yourself when the reports come back: **a subagent may
 legitimately shorten a title to hit the SEO length range, which can break
 the anchor text an existing post already uses to refer to that article in
-prose.** This is a real failure mode, not a hypothetical — it happened the
-first time this flow was run. When you convert those plain-text mentions
+prose.** This is a real failure mode, not a hypothetical. When you convert those plain-text mentions
 into links, read the anchor text against the title the subagent actually
 chose and reword the anchor if they've drifted, rather than assuming the
 existing wording still matches.
@@ -444,8 +455,9 @@ existing wording still matches.
 hugo-paper-post/
 ├── SKILL.md                              (this file)
 ├── references/
-│   ├── image-resolution.md               manifest id matching + bounded vision spot-check rules
+│   ├── image-resolution.md               manifest id matching, visual checks via subagent, display-width rule
 │   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image order of preference
+│   ├── generated-covers.md               register of palettes/fonts already used by generated covers (check before designing, add a row after)
 │   ├── featured-image.md                 fixed technical contract + 'every cover looks different' rule + workflow for generating a cover with canvas-design
 │   ├── featured-image-example/           render.py (Resource2Skill, dark/line-art) + render-rrsi.py (RRSI, light/flat poster) + render-ctx2skill.py (Ctx2Skill, blueprint, large type) + design-philosophy.md: three deliberately different covers
 │   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
