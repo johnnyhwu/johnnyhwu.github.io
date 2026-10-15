@@ -22,6 +22,20 @@ run downloads about 40MB (resumable and retried, since the connection can be slo
 Write the build output under `.tools/` (as above) so it never lands in the repo. The sections below explain the
 problems this solves and what to check in the output; they are the manual route if the wrapper can't be used.
 
+## Confirm the post was actually built
+
+Exit code 0 and matching page counts do not prove *your* post is in the output. Hugo silently skips a page whose
+front-matter `date` is in the future, and the build machine's clock is UTC: a post dated today (local time) can
+still be "tomorrow" there, and the build succeeds without it. After every build, check the files exist:
+
+```bash
+ls .tools/public/<section>/<slug>/index.html .tools/public/en/<section>/<slug>/index.html
+```
+
+If either is missing, rerun with `--buildFuture` (and expect the page counts to rise by one per language) or
+date the post on or before the UTC date. The deployed CI build runs after the merge, so a date that was "future"
+only during local verification is fine, but say so in the PR.
+
 ## Check the rendered page in a browser
 
 A build proves the HTML exists, not that it *looks* right: KaTeX typesets in

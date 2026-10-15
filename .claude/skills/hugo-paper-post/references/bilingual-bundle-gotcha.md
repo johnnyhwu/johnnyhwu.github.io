@@ -1,7 +1,6 @@
 # Why a post needs BOTH `index.en.md` and `index.zh-tw.md` — always
 
-This is the single most expensive lesson from the first time this skill's
-process was run by hand (publishing the SkillOpt post): shipping only
+This is the single most expensive mistake in this skill's process: shipping only
 `index.en.md` silently broke **every image on the page** — not a missing
 translation, an actively broken English post.
 

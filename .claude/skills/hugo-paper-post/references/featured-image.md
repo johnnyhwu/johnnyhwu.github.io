@@ -8,8 +8,7 @@ the generated case.
 
 `canvas-design` is a generic "make art" skill: it asks for a written design philosophy, then an expression of
 it on a canvas. **Each post's cover gets its own visual style.** Two covers that share a palette, typeface and
-layout read as one template, which is the opposite of what a cover is for (RRSI's first cover reused
-Resource2Skill's look and had to be redone). So only the technical contract
+layout read as one template, which is the opposite of what a cover is for. So only the technical contract
 is fixed; the look is not.
 
 Two worked examples live in `featured-image-example/`: `render.py` (Resource2Skill: dark ink background,
@@ -34,9 +33,10 @@ sizes. Write a new script and never reuse any of the three's palette, type pairi
 
 ## What must differ from existing covers (the part you design)
 
-Before drawing, look at the covers already in `content/posts/*/*/featured-image.png` that were generated
-(start with `paper-intro/resource2skill` and `paper-intro/rrsi`). Then choose, on purpose, a combination none of
-them uses:
+Before drawing, read `generated-covers.md`, the register of palettes, type pairings and compositions already
+used. If the table is not enough, have a subagent look at one or two of the covers it lists (they are
+`content/posts/*/*/featured-image.png`) and describe them; it can also tell you how a new draft compares.
+Then choose, on purpose, a combination none of them uses, and add a row for yours to the register when done:
 
 - **Palette family.** Dark and luminous, light paper with flat spot colour, blueprint, two-colour risograph,
   warm earth tones, monochrome with one accent... Pick a different background tone *and* a different accent hue
@@ -75,8 +75,9 @@ uv run python render.py <scratch dir>    # writes featured-image.png and a 1000p
 
 1. Draw it. Use supersampled `PIL.ImageDraw` as the examples do. It is dependency-light and runs in the
    sandbox.
-2. **View `preview.jpg` only** (1000px wide, about 40KB), never the 1800px original. This is the one place the
-   site's "don't load images" rule has an exception; see `SKILL.md` hard rule 2. Check, in this order: no
+2. **Look at `preview.jpg`** (1000px wide, about 40KB), not the 1800px original. Viewing your own draft yourself
+   is fine here, since you need the pixels for the next edit; for a second opinion on a finished draft, a
+   subagent can review it and report back in text (`SKILL.md` hard rule 2). Check, in this order: no
    overlap, nothing past the margins, the title isn't cramped, the one lit element is obvious, and every
    label is legible. Then **judge it at feed size**: imagine the same picture 300px wide (list pages and link
    previews show it that small). If a label or shape you care about would not survive that, it is too small:
@@ -94,9 +95,9 @@ comes from, and give the output size. A human may swap it later; the PR note mak
 
 ## Fallbacks
 
-- **Source ships a real cover** (hand-migrated topics): use it and skip generation; see `hugo-conventions.md`.
+- **Source ships a real cover**: use it and skip generation; see `hugo-conventions.md`.
 - **Pillow cannot be installed** (no network, blocked index): reuse the article's most representative
-  figure as `featured-image.png`, as the old convention did, and say in the PR that generation was
+  figure as `featured-image.png` and say in the PR that generation was
   skipped and why. Don't hand-edit a figure.
 - **No honest metaphor comes to mind** (a pure how-to with no mechanism): draw the abstract skeleton of the
   steps (a simple pipeline of nodes) rather than decorating. Say so in the PR.
