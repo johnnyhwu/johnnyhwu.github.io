@@ -98,7 +98,7 @@ Almost everything the paper does from here on is an unfolding of this figure. Th
 
 ### Six Types, One Contract
 
-{{< image src="figure2.png" alt="Six color blocks stand for the six components of the contract: Interface, Workflow, Tool protocol, Scoped rules, Output contract and Evidence. Arrows in the middle form the main line of a user question triggering, execution in order, tool calls, rule checks and output checks, with Evidence attached on the side as supporting explanation." caption="Figure 3 — A skill decomposed into six typed contract components, each governing a different aspect of execution. (Source: original paper, Figure 2.)" width="50%" >}}
+{{< image src="figure2.png" alt="Six color blocks stand for the six components of the contract: Interface, Workflow, Tool protocol, Scoped rules, Output contract and Evidence. Arrows in the middle form the main line of a user question triggering, execution in order, tool calls, rule checks and output checks, with Evidence attached on the side as supporting explanation." caption="Figure 3 — A skill decomposed into six typed contract components, each governing a different aspect of execution. (Source: original paper, Figure 2.)" width="75%" >}}
 
 The paper writes the contract as \( C(S) = \langle I, G, T, C, O, E \rangle \) (paper Eq. 1), and the six components divide the work as follows:
 
@@ -422,7 +422,7 @@ Two places deserve particular attention. First, "scope detection" (`RetrieveComp
 
 The earlier subsection "The Symptom: A Notebook That Only Grows" already showed SkillOpt's bloat curve; here are the numbers for another comparison method, Memento-Skills.
 
-{{< image src="figure4.png" alt="Left panel (a) is SkillOpt and right panel (b) is Memento-Skills. Both plot relative change curves for BFCL-v4, LiveMath and SpreadsheetBench plus an average line, with self-evolution rounds on the horizontal axis, and the curves of both methods keep climbing as rounds increase." caption="Figure 4 — The skill bloat trends of two existing self-evolution methods, SkillOpt and Memento-Skills, side by side. (Source: original paper, Figure 4.)" width="50%" >}}
+{{< image src="figure4.png" alt="Left panel (a) is SkillOpt and right panel (b) is Memento-Skills. Both plot relative change curves for BFCL-v4, LiveMath and SpreadsheetBench plus an average line, with self-evolution rounds on the horizontal axis, and the curves of both methods keep climbing as rounds increase." caption="Figure 4 — The skill bloat trends of two existing self-evolution methods, SkillOpt and Memento-Skills, side by side. (Source: original paper, Figure 4.)" width="75%" >}}
 
 With [SkillOpt](../skillopt/) run to round 5, skill length grew to about 5.6 times, 3.1 times and 6.7 times the original on BFCL-V4, LiveMath and SpreadsheetBench, about 5.2 times on average. The figure also draws the bloat curve of the Memento-Skills method for contrast, but the paper's main text gives concrete multiples only for SkillOpt. Overall, both existing self-evolution methods share the same bloat problem; it is not specific to SkillOpt.
 
