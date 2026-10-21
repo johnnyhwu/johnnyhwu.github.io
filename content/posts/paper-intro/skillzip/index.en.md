@@ -38,7 +38,7 @@ Self-evolving agents work in an intuitive way: a tool call fails, so add a warni
 
 The paper quantifies this with a longitudinal experiment.
 
-{{< image src="figure1.png" alt="The orange line on the left is the skill file's total length, climbing steadily over self-evolution rounds; the blue line is the amount of genuinely unique, non-repeated contract content, which flattens out by the middle. The widening gap between the two lines is the repeated bloat." caption="Figure 1 — The gap between a skill's total length and its genuinely unique contract content as self-evolution rounds go by. (Source: original paper, Figure 1.)" width="50%" >}}
+{{< image src="figure1.png" alt="The orange line on the left is the skill file's total length, climbing steadily over self-evolution rounds; the blue line is the amount of genuinely unique, non-repeated contract content, which flattens out by the middle. The widening gap between the two lines is the repeated bloat." caption="Figure 1 — The gap between a skill's total length and its genuinely unique contract content as self-evolution rounds go by. (Source: original paper, Figure 1.)" width="75%" >}}
 
 The chart has two lines, with self-evolution rounds on the horizontal axis. The orange line is the skill file's total length, which keeps climbing; the blue line is the amount of genuinely unique, non-repeated rule content, which flattens out after the middle. The widening gap between the two lines is exactly what this paper targets: the amount of text added far outpaces the amount of genuinely new knowledge added.
 
