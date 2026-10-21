@@ -14,8 +14,9 @@ row for the new cover.** A subagent can also be asked to look at an existing cov
 | `paper-intro/self-index` | terracotta | not recorded | not recorded | none kept |
 | `paper-intro/parsebench` | pine green / cream line work, magenta accent | Bricolage Grotesque Bold + Red Hat Mono | split panels: reordered vs swapped-header table with score bars | none kept |
 | `paper-intro/corpusmap` | warm kraft / ink line work, deep-teal accent | Young Serif + Work Sans | bipartite entity-document graph with one highlighted bridge path, big-number stats at left | none kept |
+| `paper-intro/skillzip` | mustard / aubergine ink, cream accent | Outfit Bold + Tektur | two stacks of rule lines: four identical cream lines funnel into one definition plus short references | none kept |
 
-Cobalt is already used twice; avoid it. Free families as of this table: plum/aubergine,
-slate grey with a single signal colour, mustard ground, ocean teal. Fonts still unused in
-`canvas-design/canvas-fonts/`: Italiana, Poiret One, Jura, Tektur, Outfit, National Park,
+Cobalt is already used twice; avoid it. Free families as of this table: plum/aubergine ground,
+slate grey with a single signal colour, ocean teal ground. Fonts still unused in
+`canvas-design/canvas-fonts/`: Italiana, Poiret One, Jura, National Park,
 Nothing You Could Do, Smooch Sans, Pixelify Sans, Silkscreen, Crimson Pro, Libre Baskerville, Arsenal SC.
