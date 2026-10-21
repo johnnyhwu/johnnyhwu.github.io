@@ -20,18 +20,11 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
    Step 3 has no business opening it — everything you need is already in
    `article.md` and `image-manifest.json`.
 
-2. **Images may be viewed, but let a subagent do the looking.** The aim is a
-   high-quality post, so nothing is off limits: extracted figures and
-   tables, other posts' covers, your own cover, a screenshot of the rendered
-   page. But image bytes bloat context fast, so by default send a subagent
-   (file path + a specific question: "does this match caption X?", "what
-   palette and fonts does this cover use?") and work from its text answer.
-   View one yourself only when that is genuinely better (judging your own
-   cover's composition, a one-off check where the round trip costs more than
-   the picture), and downscale first. Viewing never replaces the manifest id
-   join: resolve images by id, then look to confirm a doubtful match or to
-   judge quality. Which images to check, and how, is in
-   `references/image-resolution.md` and `references/featured-image.md`.
+2. **Images may be viewed, but let a subagent do the looking.** Extracted figures, other posts' covers, your own
+   cover and rendered-page screenshots are all fair game for quality. Image bytes bloat context, so by default
+   send a subagent a file path and a specific question and work from its text answer; view one yourself only when
+   a round trip costs more than it saves, downscaled first. Viewing never replaces the manifest id join (see
+   `references/image-resolution.md`, `references/featured-image.md`).
 
 3. **Always produce both `index.en.md` and `index.zh-tw.md` for a post, in
    the same commit, every time — never just one.** This is not a style
@@ -63,7 +56,11 @@ none will be supplied alongside a future task — this `SKILL.md` plus its
 5. **Preserve the Writer's prose.** Translating is expected (rule 3); adding
    unrelated commentary, restructuring the argument, or "improving" claims
    the article didn't make is not. Touch front matter, image wiring, and
-   platform formatting — not the substance of what the article argues.
+   platform formatting — not the substance of what the article argues. The
+   one exception is a plain mistake in the source (a figure number pointing
+   at the wrong figure, a cross-reference that dangles once heading numbers
+   are stripped): fix it, list it in the PR, and suggest fixing it in
+   `AI-Research` too.
 
 ## Inputs
 
@@ -114,6 +111,13 @@ prefer what an actual recent post does if the two ever disagree.
 
 ## Workflow
 
+0. **Preflight, before any content work.** Fail early on missing tooling instead of at the end:
+   `uv --version`, `git submodule update --init themes/DoIt`, and
+   `.claude/skills/hugo-paper-post/scripts/node.sh --version` (installs Node, Playwright and Chromium into the
+   gitignored `.tools/` on first use; never `brew install` or `npm i -g`). Tools go in this repo's `.tools/`
+   only, so the machine stays clean. Also `git fetch origin main`: other posts publish in parallel, and the
+   cover register and the `AI-Research` pointer are the files they collide on.
+
 1. **Refresh the `AI-Research` submodule** before touching anything:
    `git submodule update --init --remote AI-Research` (per this repo's
    `CLAUDE.md`), so the queue and `article.md` you read are the latest
@@ -152,8 +156,8 @@ prefer what an actual recent post does if the two ever disagree.
    `references/image-resolution.md` exactly: direct id match is the default
    and needs no looking; fall back to semantic matching when it doesn't
    join cleanly, and have a subagent check any low-confidence or doubtful
-   image (and read each image's pixel width, see "Image display width" in
-   that doc). If an id genuinely can't be
+   image, and set each image's `width=` per "Image display width" in that
+   doc (text-size matching, but never below 75%). If an id genuinely can't be
    resolved, leave a visible `<!-- UNRESOLVED IMAGE: ... -->` placeholder
    and flag it in the PR — never guess silently.
 
@@ -169,6 +173,10 @@ prefer what an actual recent post does if the two ever disagree.
    keep them). Strip the trailing
    `figure-map` block and any `NO-MANIFEST`/`UNRESOLVED` pipeline comments
    from both rendered bodies (they may still appear in the PR description).
+   `scripts/article_to_zh.py <TopicDir> <section> <slug>` does the mechanical
+   part of the zh-tw file (heading numbers, `$` math, figure-map, image
+   shortcodes with widths, copying images); front matter, section-number
+   cross-references, admonitions, links and the English file stay manual.
 
    **Then make the cover.** Unless the topic already ships a real one,
    generate `featured-image.png` with the `canvas-design` skill in the house
@@ -176,8 +184,10 @@ prefer what an actual recent post does if the two ever disagree.
    a metaphor drawn from the article's central mechanism, labels limited to
    terms and numbers the article contains). Run it with `uv run python`
    (`uv sync` once, from the repo root; Pillow and numpy come from `pyproject.toml`, never from `pip`).
-   Before drawing, look up `references/generated-covers.md` (palettes and
-   fonts already taken) and add a row for the new cover when it is done.
+   Before drawing, re-read `references/generated-covers.md` **as it is on
+   `origin/main`** (palettes and fonts already taken; a branch's copy goes
+   stale when other posts land) and add a row for the new cover when it is
+   done. `scripts/check_cover.py` checks size and margins.
 
 6. **Add contextual internal links to related posts**, per
    `references/hugo-conventions.md`'s "Internal linking to related posts"
@@ -186,62 +196,29 @@ prefer what an actual recent post does if the two ever disagree.
    is an established site convention; do it at publish time. Zero
    links is fine for a genuinely novel topic — don't force it.
 
-7. **Verify before opening a PR.** Run:
+7. **Verify before opening a PR.**
+
    ```bash
    python3 .claude/skills/hugo-paper-post/scripts/verify_post.py content/posts/<section>/<slug>
-   ```
-   This checks both language files exist, front matter parses, every image
-   shortcode's `src` resolves to a file actually present in the bundle, no
-   pipeline artifacts leaked into the body, no unsupported `$...$` inline
-   math slipped in, no nested math delimiters from a scripted replace pass
-   (an error — it renders as literal garbage), no line with an unbalanced
-   `\(` / `\)` (an error — a typo in a hand-written translation builds
-   fine and shows the delimiters as text), no notation still sitting in
-   the body as raw text, plus SEO sanity warnings (title/description length
-   outside the usual range, a body `# ` heading duplicating the title's
-   H1, skipped heading levels, headings carrying their own manual numbering
-   on top of the theme's, zero internal links to other
-   posts). Warnings aren't failures — use judgement — but investigate each
-   one. It is a fast sanity net, **not** a substitute for an actual Hugo
-   build — run one through `scripts/hugo.sh` (a project-local Hugo, downloaded
-   on first use, nothing installed system-wide; see `references/hugo-build.md`)
-   when the change is non-trivial (new post, not a one-line fix):
-
-   ```bash
    .claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+   .claude/skills/hugo-paper-post/scripts/node.sh .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug>
    ```
 
-   Then look at the *rendered* page in a browser, because KaTeX runs
-   client-side and neither `verify_post.py` nor the build can see what it
-   does (a pair of prices written `US$12 ... US$0.04` shipped as one
-   685px-wide formula and broke the English page on phones). Run:
-
-   ```bash
-   node .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug>
-   ```
-
-   It renders both languages at 1280px and 390px and fails on horizontal
-   page overflow, KaTeX errors, or an inline formula wider than the column.
-   Exit code 2 means no browser was available (layout NOT checked): say so in
-   the PR instead of reporting a pass.
-
-   If the post has a mermaid diagram, `check_layout.js` prints "N mermaid
-   diagram(s) NOT checked" (the theme loads mermaid from a CDN that sandboxes
-   block). Run the companion check, which serves a local copy of mermaid@10
-   (fetched once with `npm pack` into `.tools/mermaid/`):
-
-   ```bash
-   node .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
-   ```
-
-   It fails on a mermaid syntax error (which still draws an SVG, an error
-   graphic) or a diagram wider than its box. Then view one screenshot per
-   diagram from `.tools/shots/`: a clipped subgraph title is a valid SVG that
-   only the picture reveals.
+   `verify_post.py` is the fast net (both files, front matter, image `src`s, pipeline leftovers, math notation,
+   SEO lengths, heading structure, links, image widths, structural parity between the two languages). Investigate
+   every warning. A real build is required for a new post (`references/hugo-build.md`). `check_layout.js` renders
+   both languages at 1280px and 390px, because KaTeX runs client-side and nothing else sees an overflow or a
+   too-wide formula; exit 2 means layout was NOT checked, so say so instead of reporting a pass. A mermaid
+   diagram additionally needs `check_mermaid.js <section>/<slug> --shots .tools/shots` through `node.sh`, then one
+   screenshot viewed per diagram. Finally look at how the figures actually render (a subagent can view
+   downscaled copies at their final width): the numbers pass, yet "too small" only shows in the picture.
 
 8. **Open a PR** (only if the user asked for one; in a cloud session the
    harness refuses unrequested PRs, so otherwise push the branch, draft the
-   description below, and offer) whose description covers: which topic directory it came
+   description below, and offer). Merge `origin/main` first, and before every
+   later push check `gh pr view <n> --json state`: if the user already merged
+   it, a push recreates the branch, so open a new PR instead. The
+   description covers: which topic directory it came
    from (full bucketed path), **which section you routed it to and why**
    (plus whether the slug was already pinned by existing links), the final
    `en` and `zh-tw` titles with a line on how they pass the title self-test in
@@ -268,8 +245,9 @@ prefer what an actual recent post does if the two ever disagree.
    git checkout -b <branch>
    git mv done/unpublished/<Topic> done/published/<Topic>
    # rewrite done/unpublished/ -> done/published/ in that manifest's
-   # source_pdf and every images[].file, then:
-   uv run python .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
+   # source_pdf and every images[].file, then (run inside AI-Research, which has the
+   # pymupdf environment the Hugo repo lacks):
+   env -u VIRTUAL_ENV uv run python .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
        done/published/<Topic>/assets/image-manifest.json .
    ```
 
@@ -369,102 +347,19 @@ existing wording still matches.
 
 ## Definition of done
 
-- The post is in the **right section** per this repo's `CLAUDE.md` routing
-  table, under a slug that matches any relative links existing posts
-  already point at it with.
-- `content/posts/<section>/<slug>/index.en.md` **and** `index.zh-tw.md`
-  both exist, in the same change.
-- Every resolved image renders with the Writer's alt text and caption
-  intact, via this site's `{{< image ... >}}` shortcode convention.
-- `featuredImage` is set in both language files and the file exists: a real
-  cover the source shipped, or (the default) a cover generated with
-  `canvas-design` in a style distinct from the other generated covers, checked via its preview, with every
-  number and label in it traceable to the article, and described honestly
-  in the PR as a generated illustration. Reusing a paper figure is only the
-  documented last resort.
-- No `figure-map` block or internal pipeline comments (`NO-MANIFEST`,
-  `UNRESOLVED`, etc.) leak into either published body.
-- No heading carries `article.md`'s own manual numbering (`一、`, `2.1`,
-  `1.`) — the theme auto-numbers, so those render twice. See
-  `references/hugo-conventions.md`, "Never number headings by hand".
-- A grouped "extension" theme (standalone lessons distinct from the paper
-  walkthrough) renders as one H2 with its sub-topics nested as H3, never as
-  a flat run of sibling H2s — see `references/hugo-conventions.md`, "A
-  grouped 'extension' theme".
-- A fenced code block that's actually a symbol-only formal definition was
-  converted to LaTeX, not published as a plain-text code fence — see
-  `references/hugo-conventions.md`, "A code fence that's actually a
-  formula".
-- **Every** piece of notation in the body is LaTeX, not just the formulas
-  you happened to touch — inline symbol references in prose (`π_{t+1}`,
-  `V^0`, `β1`) and inside table cells and headers (`s_v`, `V_i^m`,
-  `k*=3`, `分數 V`) count, and a symbol left raw beside a converted one
-  is exactly what reads as broken. `verify_post.py` warns on what it can
-  detect; see `references/hugo-conventions.md`, "Convert the whole symbol,
-  and don't double-wrap" — which also covers the nested-delimiter bug a
-  scripted pass causes.
-- No paragraph has two or more unescaped `~` — this site's Goldmark
-  strikethrough extension pairs even single tildes, not just GFM's `~~`,
-  so a Chinese-style numeric range used twice in one sentence (`1~250`,
-  `251~500`) silently strikes through everything between them. See
-  `references/hugo-conventions.md`, "Single-tilde strikethrough gotcha".
-  `verify_post.py` flags this.
-- A code fence that's really *structure or flow* (an ASCII tree, an arrow
-  chain that closes a cycle, a routing/decision split) was considered for
-  a mermaid diagram — the theme supports it with no configuration. This is
-  a judgement call, not a requirement: concrete round-by-round traces and
-  definition lists stay as code fences. See
-  `references/hugo-conventions.md`, "Diagrams: a code fence that's
-  actually a flowchart". If a post ships diagrams, they were checked in a
-  real browser, since `hugo build` cannot validate mermaid — and checked
-  at real desktop/mobile content-column widths, not just a wide standalone
-  test page, since a clipped subgraph title is a valid, error-free SVG
-  that only shows up at the site's actual narrow prose-column width
-  (`scripts/check_mermaid.js` renders them and saves screenshots). Every
-  diagram carries a per-diagram `%%{init}%%` color override matching the
-  site's palette rather than shipping mermaid's default yellow/lavender
-  theme — see the same section.
-- No admonition type is repeated back-to-back enough to read as a template
-  (five `warning`s in a row, every section closing the same way) — see
-  `references/hugo-conventions.md`, "Don't let admonitions become their
-  own repeated pattern".
-- Unresolvable references are visible placeholders, listed in the PR — not
-  silently dropped or guessed.
-- The post carries a small number of contextual internal links to related
-  posts where genuinely applicable (per
-  `references/hugo-conventions.md`), in both language files — or the PR
-  says why none applied.
-- `scripts/verify_post.py` passes for the new/changed post directory, and
-  its warnings (SEO title/description length, heading structure, internal
-  links, raw math notation) were reviewed, not just ignored.
-- A real `hugo build` was attempted (per `references/hugo-build.md`) for
-  anything beyond a trivial fix, and its output was actually inspected —
-  not just assumed to be fine because the markdown looks right.
-- `scripts/check_layout.js` was run on the built post and passed (or the PR
-  says no browser was available), so client-side rendering problems that a
-  static check cannot see were looked for.
-- The source topic has been moved from `done/unpublished/` to
-  `done/published/` in `AI-Research`, its manifest paths rewritten and
-  `verify_manifest.py` re-run, on its own PR cross-referenced from this one
-  (workflow step 9) — or the Hugo PR says explicitly why that couldn't be
-  done. This does not apply to touch-ups of already-published posts.
+Details for each item live in `references/hugo-conventions.md`; this is only the checklist.
 
-## Files in this skill
-
-```
-hugo-paper-post/
-├── SKILL.md                              (this file)
-├── references/
-│   ├── image-resolution.md               manifest id matching, visual checks via subagent, display-width rule
-│   ├── hugo-conventions.md               front matter, image shortcode, math notation, mermaid diagrams, admonitions, heading structure, tags, featured-image order of preference
-│   ├── generated-covers.md               register of palettes/fonts already used by generated covers (check before designing, add a row after)
-│   ├── featured-image.md                 fixed technical contract + 'every cover looks different' rule + workflow for generating a cover with canvas-design
-│   ├── featured-image-example/           render.py (Resource2Skill, dark/line-art) + render-rrsi.py (RRSI, light/flat poster) + render-ctx2skill.py (Ctx2Skill, blueprint, large type) + design-philosophy.md: three deliberately different covers
-│   ├── bilingual-bundle-gotcha.md        why skipping either language breaks images -- read before skipping either file
-│   └── hugo-build.md                     how to get a real local hugo build running to actually verify a post
-└── scripts/
-    ├── hugo.sh                           project-local Hugo (version from the CI workflow), cache and output kept under .tools/
-    ├── verify_post.py                    front-matter / image-reference / pipeline-artifact / math-notation / raw-notation / nested-delimiter / zh-tw full-width-punctuation checks
-    ├── check_layout.js                   real-browser check of the built post: page overflow, KaTeX errors, over-wide inline formulas
-    └── check_mermaid.js                  real-browser check of every mermaid diagram (local mermaid@10), optional screenshots
-```
+- Right section and slug (`CLAUDE.md` routing; slug matches any link already pointing at it).
+- `index.en.md` **and** `index.zh-tw.md` in the same change, with `featuredImage` set and the file present: a real
+  cover the source shipped, or (default) a generated one in a style distinct from `generated-covers.md`, described
+  honestly in the PR.
+- Every image resolved by id, rendered through `{{< image >}}` with the Writer's alt and caption, `width=` per
+  `image-resolution.md` (never below 75%).
+- Body clean: no `figure-map`, no pipeline comments, no hand-numbered headings, no unconverted notation, no `$`
+  in prose, no tight `~` pairs; extension themes nested as H3 under one H2; flow-like code fences considered for
+  mermaid (and, if used, checked in a browser with the site palette override).
+- Related posts linked where genuinely applicable in both languages, or the PR says why none.
+- `verify_post.py` clean (warnings reviewed), a real `hugo.sh` build inspected, and `check_layout.js` passed via
+  `node.sh` (or the PR says why it could not run).
+- Topic moved to `done/published/` in `AI-Research` on its own PR with manifest paths rewritten (step 9), unless
+  this was a touch-up of a live post.

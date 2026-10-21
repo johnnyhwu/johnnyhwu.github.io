@@ -254,9 +254,6 @@ def check_tilde_strikethrough(body_text, label, warnings):
             )
 
 
-WIDTH_ATTR_RE = re.compile(r'(?<![\w-])width\s*=')
-
-
 def image_pixel_width(path):
     """Pixel width of a PNG or JPEG using only the stdlib; None if unknown."""
     try:
@@ -279,10 +276,14 @@ def image_pixel_width(path):
     return None
 
 
+WIDTH_VALUE_RE = re.compile(r'(?<![\w-])width\s*=\s*"?(\d+)%')
+MIN_WIDTH_PCT = 75
+
+
 def check_image_widths(body_text, label, post_dir, warnings):
     """The theme stretches every image to the column width, so a narrow crop renders with bigger text than a
-    wide one. Warn on images much narrower than the widest one in the post that carry no width= (see
-    references/image-resolution.md, 'Image display width')."""
+    wide one. Warn on images much narrower than the widest one that carry no width=, and on any width= below
+    the 75% floor, which is where a figure stops being readable (references/image-resolution.md)."""
     items = []
     for match in SHORTCODE_SRC_RE.finditer(body_text):
         attrs = match.group(1)
@@ -290,18 +291,49 @@ def check_image_widths(body_text, label, post_dir, warnings):
         if not src_match or src_match.group(1).startswith(("http://", "https://", "data:")):
             continue
         w = image_pixel_width(post_dir / src_match.group(1))
+        pct = WIDTH_VALUE_RE.search(attrs)
         if w:
-            items.append((src_match.group(1), w, bool(WIDTH_ATTR_RE.search(attrs))))
+            items.append((src_match.group(1), w, int(pct.group(1)) if pct else None))
     if len(items) < 2:
         return
     widest = max(w for _, w, _ in items)
-    narrow = [f"{src} ({w}px, suggest width=\"{round(w / widest * 100)}%\")"
-              for src, w, has_width in items if w < 0.9 * widest and not has_width]
+    narrow = [f"{src} ({w}px, suggest width=\"{max(MIN_WIDTH_PCT, round(w / widest * 100))}%\")"
+              for src, w, pct in items if w < 0.9 * widest and pct is None]
     if narrow:
         warnings.append(
             f"{label}: {len(narrow)} image(s) much narrower than the widest ({widest}px) have no width= -- "
             "they will render with oversized text: " + ", ".join(narrow)
         )
+    small = [f"{src} (width={pct}%)" for src, _, pct in items if pct is not None and pct < MIN_WIDTH_PCT]
+    if small:
+        warnings.append(
+            f"{label}: width= below the {MIN_WIDTH_PCT}% floor, too small to read comfortably: " + ", ".join(small)
+        )
+
+
+def structure_counts(body_text):
+    """Cheap structural fingerprint of one language file, to compare against the other language's."""
+    body = re.sub(r"```.*?```", "", body_text, flags=re.S)
+    return {
+        "headings": len(re.findall(r"^#{2,6} ", body, flags=re.M)),
+        "images": len(re.findall(r"{{<\s*image\b", body)),
+        "admonitions": len(re.findall(r"{{<\s*admonition\b", body)),
+        "inline math": body.count("\\("),
+        "block math": len(re.findall(r"^\s*(?:\$\$|\\\[)", body, flags=re.M)),
+        "internal links": len(re.findall(r"\]\(\.\./", body)),
+        "code fences": len(re.findall(r"^```", body_text, flags=re.M)) // 2,
+        "table rows": len(re.findall(r"^\|", body, flags=re.M)),
+    }
+
+
+def check_language_parity(bodies, warnings):
+    """A missing paragraph or link in one language is easy to miss in a long hand translation."""
+    if len(bodies) != 2:
+        return
+    (la, a), (lb, b) = ((k, structure_counts(v)) for k, v in bodies.items())
+    diffs = [f"{k}: {a[k]} ({la}) vs {b[k]} ({lb})" for k in a if a[k] != b[k]]
+    if diffs:
+        warnings.append("languages differ structurally -- check nothing was dropped: " + "; ".join(diffs))
 
 
 def check_body(body_text, label, post_dir, errors, warnings):
@@ -423,6 +455,7 @@ def main():
                 "silently breaks images for every language, not just the missing one)"
             )
 
+    bodies = {}
     for label, path in lang_files.items():
         if not path.exists():
             continue
@@ -431,6 +464,7 @@ def main():
         if fm is None:
             errors.append(f"{label}: could not find a '---' delimited front matter block")
             continue
+        bodies[label] = body
         featured = check_front_matter_fields(fm, label, errors)
         if featured and not (post_dir / featured).exists():
             errors.append(f"{label}: featuredImage '{featured}' does not exist in {post_dir}")
@@ -441,6 +475,8 @@ def main():
         check_internal_links(body, label, warnings)
         check_tilde_strikethrough(body, label, warnings)
         check_image_widths(body, label, post_dir, warnings)
+
+    check_language_parity(bodies, warnings)
 
     if warnings:
         print("WARNINGS:")

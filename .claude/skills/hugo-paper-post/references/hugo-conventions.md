@@ -101,52 +101,22 @@ over either forcing a bad-fit LLM tag onto a fundamentals post or minting a
 one-off tag (`"Deep Learning"`) that no other post shares — a tag with a
 single member does nothing for discovery. Say which you chose in the PR.
 
-### Featured image (generate one unless the source already ships a real cover)
+### Featured image (every post needs one; generate it unless the source ships a real cover)
 
-Papers rarely come with a dedicated cover/header photo. `verify_post.py`
-treats `featuredImage` as a required front-matter field, and every existing
-post on this site has one — so this always needs an answer, never an
-omission. Order of preference:
+`featuredImage` is required and every existing post has one. Order of preference:
 
-1. a real original cover the source already ships (below),
-2. otherwise **a generated cover made with the `canvas-design` skill**, in
-   a style distinct from earlier generated covers, per `featured-image.md` (this is the default),
-3. only if generation is impossible, reuse a figure (last resort, below).
-
-**A real cover the source ships.** Check `<TopicDir>/assets/images/` for a
-file named like `feature-image.*` / `featured-image.*` before designing
-anything; such a file is usually not listed in `image-manifest.json`, so it
-is easy to miss if you only read the manifest. Copy it to
-`featured-image.<ext>`; this needs no substitution and no caveat beyond
-noting its dimensions. An unclaimed image with some other name is not
-evidence of a cover: treat it as an ordinary figure unless the topic says
-otherwise.
-
-**Default — generate a cover with `canvas-design`.** When the source ships no
-real cover, design an original 1800x945 cover following
-`references/featured-image.md` (fixed canvas size and legibility rules, but a
-visual style of its own, unlike earlier covers; a per-post metaphor drawn from the article's one central mechanism; labels
-limited to terms and numbers the article itself contains). This applies
-whether or not the article has figures: don't reuse a paper figure as the
-cover just because one exists. `featured-image-example/` has a worked
-example, and `content/posts/paper-intro/resource2skill/` is the live post it
-produced. Check the result by viewing its 1000px preview (see `featured-image.md` for who should look). **Say so
-explicitly in the PR**: it is a generated illustration, not a sourced photo
-and not a paper figure, plus what it depicts and where each number in it
-comes from.
-
-**Last resort — generation is impossible** (Pillow can't be installed, no
-network). Reuse the article's most representative figure as
-`featured-image.png`, copied alongside its normal in-body copy. **Don't
-assume that's Figure 1 without checking**: figure numbering follows the
-paper's own narrative order, so the overview diagram just as often turns
-out to be Figure 2 or later (WikiSkill's Figure 1 was a results bar chart
-and its architecture diagram, Figure 2, was the right pick). Look at what
-each figure's caption/`agent_match_hint` describes and pick the one that
-depicts the core mechanism. Say in the PR that generation was skipped and
-why. For an article with no images at all and no way to generate, this
-fallback doesn't exist; flag the missing cover in the PR rather than
-sourcing a stock photo of unclear licence.
+1. **A real cover the source ships.** Look in `<TopicDir>/assets/images/` for `feature-image.*` /
+   `featured-image.*` (usually not in the manifest, so it is easy to miss). Copy it to `featured-image.<ext>` and
+   note its dimensions. An unclaimed image with another name is just a figure.
+2. **A cover generated with `canvas-design`** (the default, whether or not the article has figures): 1800x945,
+   English-only, one metaphor from the article's central mechanism, labels limited to terms and numbers the
+   article contains, a style distinct from `generated-covers.md`. The full how-to is `featured-image.md`;
+   `content/posts/paper-intro/resource2skill/` is a live example. Say in the PR that it is a generated
+   illustration, what it depicts and where each number comes from.
+3. **Last resort, only if generation is impossible:** reuse the article's most representative figure, chosen by
+   its caption (not "Figure 1" by default: WikiSkill's Figure 1 was a results chart and its architecture diagram,
+   Figure 2, was the right pick), and say why generation was skipped. With no figures and no way to generate,
+   flag the missing cover in the PR; never source a stock photo.
 
 ## Image shortcode
 

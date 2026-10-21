@@ -33,8 +33,8 @@ sizes. Write a new script and never reuse any of the three's palette, type pairi
 
 ## What must differ from existing covers (the part you design)
 
-Before drawing, read `generated-covers.md`, the register of palettes, type pairings and compositions already
-used. If the table is not enough, have a subagent look at one or two of the covers it lists (they are
+Before drawing, read `generated-covers.md` as it is on `origin/main` (a branch's copy is stale once other posts
+land), the register of palettes, type pairings and compositions already used. If the table is not enough, have a subagent look at one or two of the covers it lists (they are
 `content/posts/*/*/featured-image.png`) and describe them; it can also tell you how a new draft compares.
 Then choose, on purpose, a combination none of them uses, and add a row for yours to the register when done:
 
@@ -84,7 +84,8 @@ uv run python render.py <scratch dir>    # writes featured-image.png and a 1000p
    enlarge it or remove it, because fewer, bigger elements beat many small ones.
 3. Refine instead of adding. If it feels unfinished, make what is already there crisper (spacing, opacity,
    alignment) rather than adding shapes. `canvas-design`'s own final step says the same.
-4. Copy the PNG into the bundle as `featured-image.png`, set `featuredImage: "featured-image.png"` in both
+4. Run `uv run python .claude/skills/hugo-paper-post/scripts/check_cover.py <png>` for size and margins.
+5. Copy the PNG into the bundle as `featured-image.png`, set `featuredImage: "featured-image.png"` in both
    language files, and re-run `verify_post.py`.
 
 ## What to say in the PR

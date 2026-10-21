@@ -64,29 +64,23 @@ higher resolution or a crop of the relevant region.
 
 Note in the PR description which ids were checked and why.
 
-## Image display width: normalize text size across crops
+## Image display width: match text size, but never shrink below 75%
 
-The parser crops each figure to its own region, so one post's images come in
-different pixel widths — typically a full-text-width crop (e.g. 1453px) and a
-single-column crop (e.g. 737px). The theme stretches every image to the
-content-column width, so a narrow crop is enlarged and its text renders
-visibly bigger than the text in a wide crop. This shipped once in the
-ParseBench post: four 737px crops looked about twice the size of the 1453px
-ones.
+The parser crops each figure to its own region, so one post's images come in different pixel widths (say a 1592px
+full-text-width crop and 794px single-column crops). The theme stretches every image to the content column
+(about 766px), so a narrow crop is enlarged and its text renders bigger than in a wide crop. A `width=` equalises
+that, but shrinking too far makes the figure unreadable: SkillZip shipped four 794px crops at 50% (about 380px
+rendered, and a 794x258 chart only ~125px tall) and the author had to ask for them to be enlarged.
 
-After copying the images into the bundle, read each one's pixel width
-(`Image.open(...).size`, or `file`) and set the shortcode's `width` so the
-text scale matches:
+Read each image's pixel width (`file`, or `Image.open(...).size`) and set, in both language files:
 
 ```
-width = round(image_px_width / widest_image_px_width_in_this_post * 100)%
+width = max(75%, round(image_px_width / widest_image_px_width_in_this_post * 100)%)
 ```
 
-e.g. `{{< image src="table2.png" alt="..." caption="..." width="51%" >}}` for
-a 737px crop beside 1453px ones. The widest image gets no `width`. Images
-within about 10% of the widest need none either. `verify_post.py` warns when
-an image is much narrower than the widest one in the post and has no
-`width`. Do this in both language files.
+The widest image gets no `width`; neither does any within about 10% of it. Flat figures (aspect ratio above 2.5)
+rarely need shrinking at all. Say each width in the PR so the author can adjust. `verify_post.py` warns on a
+narrow image with no `width=` and on any `width=` below 75%. `scripts/article_to_zh.py` applies this rule.
 
 ## When a reference truly can't be resolved
 

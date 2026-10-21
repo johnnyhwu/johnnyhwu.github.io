@@ -38,48 +38,27 @@ only during local verification is fine, but say so in the PR.
 
 ## Check the rendered page in a browser
 
-A build proves the HTML exists, not that it *looks* right: KaTeX typesets in
-the browser after Hugo is done. After building into `.tools/public`:
+A build proves the HTML exists, not that it *looks* right: KaTeX typesets in the browser after Hugo is done.
+`scripts/node.sh` is the project-local Node (plus Playwright and Chromium, downloaded on first use into the
+gitignored `.tools/`; nothing is installed system-wide). Run the checks through it:
 
 ```bash
-node .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug> [--root .tools/public]
+.claude/skills/hugo-paper-post/scripts/node.sh .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug>
 ```
 
-It serves the build locally, opens the zh-tw and en pages in Chromium at
-1280px and 390px, and exits 1 on horizontal page overflow, a KaTeX error, or
-an inline formula wider than the text column. Exit 2 = Playwright or Chromium
-missing (cloud sessions have both; locally `npm i -g playwright` then
-`npx playwright install chromium`). Tables and code blocks scroll on their
-own and are not counted. Calibrated against 20 existing posts (no false
-positives) and against the pre-fix JEV English page (fails on the `$` pair).
+It serves `.tools/public`, opens the zh-tw and en pages at 1280px and 390px, and exits 1 on horizontal page
+overflow, a KaTeX error, or an inline formula wider than the text column (tables and code blocks scroll on their
+own and are not counted). Exit 2 means Playwright or Chromium was missing, so layout was NOT checked.
 
-Mermaid diagrams are a separate check, because the theme loads mermaid from
-a CDN that sandboxes block and `check_layout.js` therefore reports them as
-"NOT checked":
+Mermaid diagrams are reported as "NOT checked" by that script (the theme loads mermaid from a CDN that sandboxes
+block); use the companion, which serves a local mermaid@10 fetched once with `npm pack` into `.tools/mermaid/`:
 
 ```bash
-node .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
+.claude/skills/hugo-paper-post/scripts/node.sh .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
 ```
 
-It fetches mermaid@10 once with `npm pack` into `.tools/mermaid/`, renders
-every diagram in both languages at 1280px and 390px, fails on a syntax error
-(mermaid still draws an SVG, an error graphic, so "an svg exists" is not
-proof) or an over-wide diagram, and saves a PNG per diagram. View one
-screenshot per diagram: a clipped subgraph title is a valid SVG.
-
-## Two symptoms you will meet without `hugo.sh`
-
-1. **`hugo` is not preinstalled in a fresh sandbox**, and the theme
-   (`themes/DoIt`) is a git submodule that isn't checked out by default
-   (`hugo.sh` downloads the binary; the theme you init yourself, as above).
-2. **A several-versions-old Hugo (for example from `apt`) fails with an
-   unrelated-looking error** such as
-   `error expanding ":contentbasename": permalink attribute not recognised`.
-   This repo relies on newer permalink/URL features (the
-   `url: "paper-intro/:contentbasename"` front-matter pattern used by every
-   post). It has nothing to do with your change: the local `hugo` is too old.
-   Match the `HUGO_VERSION` in `.github/workflows/hugo.yaml` exactly; don't
-   guess a version.
+It fails on a syntax error (mermaid still draws an SVG, an error graphic) or an over-wide diagram and saves a PNG
+per diagram; view one per diagram, since a clipped subgraph title is a valid SVG.
 
 ## Fallback: when `hugo.sh` cannot download Hugo
 

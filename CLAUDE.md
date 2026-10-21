@@ -145,21 +145,14 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
 
 ## Global rules for anything touching a published post
 
-- **Python tooling goes through `uv`, never `pip`.** Packages this repo needs
-  (Pillow and numpy, for cover rendering and image downscaling) are declared
-  in `pyproject.toml`; run `uv sync` once, then `uv run python ...`. Don't run
-  `pip` / `pip3` / `python3 -m pip`: on this machine that installs into the
-  user-level Python and pollutes it. If a new package is needed, `uv add` it
-  so it lands in `pyproject.toml` and `uv.lock`. (`verify_post.py` is
-  stdlib-only and runs fine with plain `python3`.) Run `uv` from this repo's
-  root: if the shell has drifted into `AI-Research/` (that repo has its own
-  `.venv`), `uv run` warns that `VIRTUAL_ENV` doesn't match the project
-  environment. `cd` back instead of working around it with `--active`, which
-  would install into the wrong environment.
-- **Hugo is project-local too.** For the real build check, run
-  `.claude/skills/hugo-paper-post/scripts/hugo.sh ...` (see its header). It keeps
-  the binary, Hugo's cache and the build output under the gitignored `.tools/`;
-  don't `brew install` / `go install` hugo or point the build at the repo root.
+- **Tools live in this repo, never on the machine.** Python goes through `uv`, never `pip`: Pillow and numpy are
+  in `pyproject.toml` (`uv sync`, then `uv run python ...`; `uv add` for anything new; `verify_post.py` is
+  stdlib-only). Hugo and Node (with Playwright and Chromium) are downloaded on first use into the gitignored
+  `.tools/` by `.claude/skills/hugo-paper-post/scripts/hugo.sh` and `node.sh`. Don't `brew install`, `go install`,
+  `npm i -g` or `pip install` anything. If a tool is missing, install it that way (or into `.tools/` by the same
+  pattern) and say so; don't skip the check it was for. Run `uv` from this repo's root; the exception is
+  `verify_manifest.py`, which runs from inside `AI-Research/` with `env -u VIRTUAL_ENV uv run ...` because only
+  that repo's environment has `pymupdf`.
 
 - **Never read the source PDF.** It sits in the `AI-Research` submodule next
   to `article.md`, so it is easy to open by accident. Step 3 works
@@ -190,11 +183,16 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
   post.** See the skill's bundle-resources note for exactly why a
   single-language post actively breaks the *other* language's images too,
   not just its own content.
-- **On-page SEO is part of Step 3, not an afterthought.** Canonical URL,
-  hreflang, Open Graph/Twitter tags, and JSON-LD are already handled
-  site-wide by the theme/layout — nothing to add there. What the skill
-  itself is responsible for (title/description length, image alt-text
-  quality, contextual internal links to related posts, and AI-citation
-  readiness — which rides on the same self-contained-section work, not a
-  separate pass) is in `hugo-paper-post`'s `references/hugo-conventions.md`;
-  do it at publish time rather than leaving it for a later cleanup pass.
+- **On-page SEO is part of Step 3, not an afterthought.** The theme already handles canonical URL, hreflang,
+  Open Graph/Twitter tags and JSON-LD. The skill owns title/description length, image alt text, contextual
+  internal links and self-contained sections (`references/hugo-conventions.md`); do it at publish time.
+
+## Working with PRs
+
+- Merge `origin/main` into the branch before opening the PR: parallel posts collide on
+  `references/generated-covers.md` and on the `AI-Research` pointer. Re-read the cover register from `origin/main`
+  before designing a cover, so two posts don't pick the same fonts and colours.
+- The author merges and deletes branches whenever they like. Before pushing again to an existing PR branch, run
+  `gh pr view <n> --json state`; if it is merged, a push recreates the branch, so open a new PR instead.
+- Edits to `CLAUDE.md` and the skill themselves can go straight to `main` when the author says so; post content
+  still goes through a PR.
