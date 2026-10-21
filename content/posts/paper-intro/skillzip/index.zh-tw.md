@@ -98,7 +98,7 @@ SkillZip 的基本主張是：一份 skill 不是一段平坦的文字，而是�
 
 ### 六個型別，一份合約
 
-{{< image src="figure2.png" alt="六個色塊分別代表合約的六個組成部分：Interface、Workflow、Tool protocol、Scoped rules、Output contract、Evidence，中央用箭頭串出「使用者問題觸發、依序執行、呼叫工具、檢查規則、檢查輸出」的主線，Evidence 則貼在旁邊作為輔助說明。" caption="圖3 — 一份 skill 被拆解成六種型別的合約元件，各自管不同的執行面向。（來源：原始論文 Figure 2。）" width="50%" >}}
+{{< image src="figure2.png" alt="六個色塊分別代表合約的六個組成部分：Interface、Workflow、Tool protocol、Scoped rules、Output contract、Evidence，中央用箭頭串出「使用者問題觸發、依序執行、呼叫工具、檢查規則、檢查輸出」的主線，Evidence 則貼在旁邊作為輔助說明。" caption="圖3 — 一份 skill 被拆解成六種型別的合約元件，各自管不同的執行面向。（來源：原始論文 Figure 2。）" width="75%" >}}
 
 論文把這份合約寫成 \( C(S) = \langle I, G, T, C, O, E \rangle \)（論文 Eq. 1），六個組成部分分工如下：
 
@@ -420,7 +420,7 @@ Algorithm 2 Zip-on-Write Continual Compression
 
 前面「現象：只增不減的筆記本」那一節已經看過 SkillOpt 的膨脹曲線，這裡再補上另一個對照方法 Memento-Skills 的數字。
 
-{{< image src="figure4.png" alt="左圖 (a) 是 SkillOpt、右圖 (b) 是 Memento-Skills，兩張圖都畫出 BFCL-v4、LiveMath、SpreadsheetBench 三條相對變化率曲線加平均線，橫軸是自我演化輪數，兩種方法的曲線都隨輪數持續往上爬。" caption="圖4 — SkillOpt 與 Memento-Skills 兩種既有自我演化方法各自的 skill 膨脹趨勢對照。（來源：原始論文 Figure 4。）" width="50%" >}}
+{{< image src="figure4.png" alt="左圖 (a) 是 SkillOpt、右圖 (b) 是 Memento-Skills，兩張圖都畫出 BFCL-v4、LiveMath、SpreadsheetBench 三條相對變化率曲線加平均線，橫軸是自我演化輪數，兩種方法的曲線都隨輪數持續往上爬。" caption="圖4 — SkillOpt 與 Memento-Skills 兩種既有自我演化方法各自的 skill 膨脹趨勢對照。（來源：原始論文 Figure 4。）" width="75%" >}}
 
 用 [SkillOpt](../skillopt/) 跑到第 5 輪，skill 長度在 BFCL-V4、LiveMath、SpreadsheetBench 上分別膨脹到約 5.6 倍、3.1 倍、6.7 倍，平均約 5.2 倍。圖裡另外畫了 Memento-Skills 這個方法的膨脹曲線做對比，但論文正文只針對 SkillOpt 給出具體倍數。整體來說，兩種既有的自我演化方法都有同樣的膨脹問題，不是 SkillOpt 特有的現象。
 
