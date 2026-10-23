@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "Computer Architecture Explained: The Bridge Between Software and Hardware"
+title: "Computer Architecture vs Computer Organization"
 date: 2023-06-22
-lastmod: 2025-10-16
+lastmod: 2026-10-23
 draft: false
 description: "Understand the crucial role of Computer Architecture as the bridge between software and hardware. This guide clarifies the key differences between Computer Architecture (ISA) and Computer Organization (Microarchitecture) for students and tech enthusiasts."
 featuredImage: "featured-image.png"
