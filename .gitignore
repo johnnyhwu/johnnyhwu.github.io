@@ -9,3 +9,8 @@ __pycache__/
 # project-local tools (Hugo binary + cache, build output) and Hugo's generated resources
 .tools/
 resources/
+
+# personal SEO research/plan (written from Google Search Console data) and the
+# local MCP config that connects Claude Code to it
+seo/
+.mcp.json
