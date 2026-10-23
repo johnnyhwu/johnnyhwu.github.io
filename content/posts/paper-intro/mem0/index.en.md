@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory"
+title: "Mem0: Scalable Long-Term Memory for AI Agents"
 date: 2025-05-13
-lastmod: 2025-05-13
+lastmod: 2026-10-23
 draft: false
 description: "Explore the paper 'Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory.' Learn how Mem0 addresses long-term memory challenges in LLMs, detailing its core architectures (Mem0 & Mem0<sup>g</sup>), memory management techniques, and experimental results on the LOCOMO dataset."
 featuredImage: "featured-image.png"

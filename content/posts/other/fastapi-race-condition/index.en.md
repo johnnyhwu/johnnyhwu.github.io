@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "The Concurrency Trap in FastAPI: From Race Conditions to Deadlocks with Global Variables"
+title: "FastAPI Race Conditions: Thread-Safe vs Async-Safe"
 date: 2025-08-31
-lastmod: 2025-09-04
+lastmod: 2026-10-23
 draft: False
 description: "Avoid race conditions in FastAPI. This guide explains how FastAPI handles multi-threading vs. async, why thread-safe code isn't always async-safe, and the golden rules for writing robust, concurrent Python applications by eliminating shared mutable state."
 featuredImage: "featured-image.jpg"

@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "Beyond Fine-Tuning: How MemRL Enables Self-Evolving AI Agents via Reinforcement Learning"
+title: "MemRL: Self-Evolving AI Agents Without Fine-Tuning"
 date: 2026-03-29
-lastmod: 2026-03-29
+lastmod: 2026-10-23
 draft: false
 description: "Discover MemRL: A framework for self-evolving AI Agents using Runtime Reinforcement Learning. Learn how Agents improve from mistakes without fine-tuning or noisy RAG."
 featuredImage: "featured-image.jpg"
