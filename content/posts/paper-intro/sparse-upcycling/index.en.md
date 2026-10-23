@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "Sparse Upcycling: Training Mixture-of-Experts from Dense Checkpoints"
+title: "Sparse Upcycling: MoE from Dense Checkpoints"
 date: 2024-04-10
-lastmod: 2025-09-15
+lastmod: 2026-10-23
 draft: false
 description: "Learn about Sparse Upcycling, a Google Research technique for converting dense models into efficient Mixture-of-Experts (MoE). Discover how to boost AI performance and reduce training costs by leveraging existing checkpoints instead of training from scratch."
 featuredImage: "featured-image.png"

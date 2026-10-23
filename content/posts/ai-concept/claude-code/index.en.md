@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "Claude Code Concepts: Agentic Loop, Tools, Skills, and Permissions"
+title: "Claude Code Concepts: Agentic Loop, Tools, Skills"
 date: 2026-07-24
-lastmod: 2026-07-24
+lastmod: 2026-10-23
 draft: false
 description: "A concept-level tour of Claude Code's architecture: the read-think-act agentic loop, its tool system, CLAUDE.md project memory, hooks, skills, MCP, and permission model."
 featuredImage: "featured-image.png"
