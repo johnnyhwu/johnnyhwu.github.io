@@ -17,8 +17,10 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 | Due | Kind | Item | How |
 |---|---|---|---|
 | 2026-10-28 | post | `paper-intro/skillzip` (published 2026-10-21): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs |
+| 2026-11-02 | post | `paper-intro/llm-as-a-verifier` (re-published with the new workflow 2026-10-26, PR pending): is it re-crawled with the new title and description? | `batch_url_inspection` on the zh and en URLs; Chrome results-page check was skipped (extension not loaded); the old title had 24 name-only impressions in the 90 days to 2026-10-26 |
 | 2026-11-02 | post | `paper-intro/procedural-graphs` (committed 2026-10-26, PR pending): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs; pre-publish Chrome results-page check was skipped (extension not connected) |
 | 2026-11-11 | post | `paper-intro/skillzip`: impressions, position, CTR | post check |
+| 2026-11-16 | post | `paper-intro/llm-as-a-verifier`: impressions, position, CTR vs the baseline (zh 24 impressions at position 4.7 to 6.4, en 2 at 7.5, 0 clicks, from 2026-07-28 to 2026-10-26) | post check; only name queries so far, so under about 30 impressions means record it and do not tweak the title |
 | 2026-11-16 | post | `paper-intro/procedural-graphs`: impressions, position, CTR | post check; the name had no site demand at publish time, so under about 30 impressions means record it and do not tweak the title |
 | 2026-11-23 | site | Monthly baseline: last 90 days vs the 90 before, against the baseline in `plan.md` | site baseline; save as a new dated report; note new-post count |
 | 2026-11-23 | site | The ten never-crawled posts (see plan B3): last-crawled dates | `batch_url_inspection` on their URLs |

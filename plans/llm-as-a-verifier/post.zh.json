@@ -1,0 +1,5055 @@
+{
+ "schema": "post-plan/1",
+ "source": {
+  "article": "AI-Research/done/published/LLM-as-a-Verifier/article.md",
+  "manifest": "AI-Research/done/published/LLM-as-a-Verifier/assets/image-manifest.json",
+  "root": "AI-Research"
+ },
+ "meta": {
+  "section": "paper-intro",
+  "slug": "llm-as-a-verifier",
+  "tags": [
+   "Large Language Model",
+   "LLM-as-a-Judge",
+   "Evaluation",
+   "Uncertainty Estimation"
+  ],
+  "title": "LLM 打分數老是平手？LLM-as-a-Verifier 改讀機率分佈",
+  "title_alts": [
+   "LLM-as-a-Verifier 解析：不取最高分，改讀整個機率分佈",
+   "LLM-as-a-Judge 的平手問題，LLM-as-a-Verifier 怎麼解"
+  ],
+  "description": "LLM judge 只取分數 token 的最高機率，常讓候選打成平手。LLM-as-a-Verifier 改算整個機率分佈的期望值，平手率降到零，在機器人 benchmark 上贏過專門訓練的 reward model，但主表 SOTA 的功勞要打折。",
+  "reader": {
+   "persona": "剛入門 AI 的讀者：用過 LLM、聽過 LLM-as-a-judge，不熟 reward model、benchmark 與機率分佈的細節",
+   "promise": "讀完能用自己的話說出：verifier 和 judge 差在哪、三個旋鈕各對付什麼、為什麼主表的 SOTA 要打折，以及哪個證據最乾淨",
+   "assumes": [
+    "prompt"
+   ]
+  },
+  "takeaways": [
+   {
+    "id": "T1",
+    "text": "LLM 打分數時，內部的信念是一整個機率分佈；標準做法取 argmax 把它壓成整數，才造成平手。改算期望值，平手就消失，排序能力回來",
+    "memory_hook": "別讀它說了什麼分，讀它每個分數有多大機率"
+   },
+   {
+    "id": "T2",
+    "text": "證據要分開讀：最乾淨的是機器人上同一個模型只改解碼方式，準確率從 70.8% 跳到 87.4%；主表的 SOTA 扣掉 harness 差異，verifier 的貢獻是 +2 到 3 個百分點",
+    "memory_hook": "70.8% → 87.4%"
+   },
+   {
+    "id": "T3",
+    "text": "自己要用的話：先把 argmax 換成期望值，再考慮準則拆解；成本是每條軌跡 C×K 次呼叫，而論文沒驗證的（有 ground truth 的用法、進度追蹤預警、跨領域失效）不要當成已證實",
+    "memory_hook": "先換 argmax，再算帳"
+   }
+  ],
+  "hook": {
+   "kind": "tension",
+   "text": "要從一堆候選答案裡挑最好的，你找 LLM 當裁判打 1 到 5 分，結果在 Terminal-Bench 上有 27% 的比較打成平手，平手就沒辦法排序。論文的答案是：模型其實有分得出高下，是取 argmax 那一步把它丟掉了。"
+  },
+  "running_example": {
+   "id": "g5",
+   "desc": "G=5 的五格分數分佈：離散 judge 得 5，期望值得 4.16；同一組貫穿 argmax、期望值、正規化、勝率"
+  },
+  "cover_brief": {
+   "metaphor": "一排高低不等的機率長條，argmax 只亮最高一根，期望值把整排匯成一個連續刻度上的一個點",
+   "labels": [
+    {
+     "text": "27% → 0%",
+     "ledger": "L115"
+    },
+    {
+     "text": "70.8% → 87.4%",
+     "ledger": "L098"
+    }
+   ]
+  },
+  "seo": {
+   "queries": [
+    "llm-as-a-verifier",
+    "llm as a verifier"
+   ],
+   "notes": "GSC 2026-07-28 至 2026-10-26：只有名稱查詢（中文版 llm-as-a-verifier 21 次曝光、llm as a verifier 3 次，位置 4.7 至 6.4；英文版 2 次，位置 7.5），0 點擊。沒有『llm as a judge』的站內搜尋需求，無同 query 的既有文章。標題保留論文名稱並加白話問題『老是平手』。jev-overview、jev-as-a-judge 已連到本文。Chrome 搜尋結果頁檢查未做。"
+  },
+  "date": "2026-08-26"
+ },
+ "outline": [
+  {
+   "id": "s1",
+   "title": "LLM 打分數老是平手，是 argmax 把資訊丟掉了",
+   "role": "hook",
+   "goal": "讀者知道這篇要解決什麼、結論是什麼、接下來的路線",
+   "serves": [
+    "T1",
+    "T2"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s2",
+   "title": "問題：資訊在 argmax 那一步被壓扁",
+   "role": "context",
+   "goal": "讀者能說出標準 LLM judge 哪裡漏資訊、為什麼值得解決",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s2a",
+     "title": "值得解決嗎？看 oracle 的落差",
+     "role": "evidence",
+     "goal": "讀者知道完美 verifier 的上限有多高，以及兩個容易混淆的上限數字",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "title": "方法：不取最高分，改讀整個機率分佈",
+   "role": "mechanism",
+   "goal": "讀者能自己算出一次期望值，並說出 verifier 與 judge 的差別",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s3a",
+     "title": "judge 與 verifier，以及 scoring prompt 怎麼寫",
+     "role": "mechanism",
+     "goal": "讀者知道 prompt 長什麼樣、為什麼沒有標準答案",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s3b",
+     "title": "核心公式：用期望值取代 argmax",
+     "role": "mechanism",
+     "goal": "讀者能用一個五格的例子算出期望值並看懂平手為何消失",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s3c",
+     "title": "正規化與 Bradley–Terry：把分數差變成勝率",
+     "role": "mechanism",
+     "goal": "讀者知道為什麼要把分數壓到 0 到 1，以及勝率怎麼算",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "三個旋鈕：粒度、重複、準則拆解",
+   "role": "mechanism",
+   "goal": "讀者能說出三個旋鈕各自對付什麼問題、各自的限制",
+   "serves": [
+    "T1",
+    "T3"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s4a",
+     "title": "粒度 G：對付解析度不足",
+     "role": "mechanism",
+     "goal": "讀者知道 G 的效果，以及論文在成本上自相矛盾的地方",
+     "serves": [
+      "T1",
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s4b",
+     "title": "重複 K：對付單次評估的隨機偏差",
+     "role": "mechanism",
+     "goal": "讀者知道平均只降變異數、不降偏誤",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s4c",
+     "title": "準則拆解 C：對付評分標準本身不合理",
+     "role": "mechanism",
+     "goal": "讀者知道三個子準則是什麼，以及證據為什麼只夠說「三個比一個好」",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "title": "一個案例：query-optimize 為什麼 judge 看不出來",
+   "role": "evidence",
+   "goal": "讀者親眼看到 88 次平手如何變成零，以及連續分數的代價",
+   "serves": [
+    "T1",
+    "T2"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s6",
+   "title": "PPT：從 N 條候選裡挑最好的那條",
+   "role": "mechanism",
+   "goal": "讀者能說出 PPT 五個階段，以及它省了多少、前提是什麼",
+   "serves": [
+    "T3"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s6a",
+     "title": "Ring pass：一石二鳥",
+     "role": "mechanism",
+     "goal": "讀者知道環狀比較同時做了哪兩件事",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s6b",
+     "title": "Pivot 選擇與最終選出",
+     "role": "mechanism",
+     "goal": "讀者知道怎麼挑 pivot、為什麼最後要除以場次",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s6c",
+     "title": "預算對準確率",
+     "role": "evidence",
+     "goal": "讀者知道 k 增加的報酬遞減，以及 N=20 是特別策展的設定",
+     "serves": [
+      "T2",
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "title": "實驗結果：怎麼讀比讀到什麼更重要",
+   "role": "evidence",
+   "goal": "讀者能把主結果表分成兩半讀，並知道最乾淨的證據是哪一個",
+   "serves": [
+    "T2"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s7a",
+     "title": "主結果表要分兩半讀",
+     "role": "evidence",
+     "goal": "讀者能算出 verifier 真正的貢獻與兌現比例",
+     "serves": [
+      "T2"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s7b",
+     "title": "最強的結果不在主表，在機器人上",
+     "role": "evidence",
+     "goal": "讀者記住 70.8% 到 87.4% 這個最乾淨的因果證據",
+     "serves": [
+      "T2"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "title": "進度追蹤：論文講過頭的地方",
+   "role": "caveat",
+   "goal": "讀者知道 VOC 的數字不支持「失敗軌跡分數持平」",
+   "serves": [
+    "T2",
+    "T3"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s8a",
+     "title": "附帶產物：TurboAgent",
+     "role": "caveat",
+     "goal": "讀者知道這只是沒有量化評估的概念驗證",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s9",
+   "title": "可以帶走的東西",
+   "role": "takeaway",
+   "goal": "讀者知道先做什麼、後做什麼、哪些得自己驗證",
+   "serves": [
+    "T3"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s10",
+   "title": "結論",
+   "role": "takeaway",
+   "goal": "讀者能用兩句話對同事複述這篇論文",
+   "serves": [
+    "T1",
+    "T2"
+   ],
+   "recap": "",
+   "children": []
+  }
+ ],
+ "glossary": [
+  {
+   "term": "benchmark",
+   "defined_in": "s1.b1"
+  },
+  {
+   "term": "token",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "機率分佈",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "argmax",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "期望值",
+   "defined_in": "s1.b3"
+  },
+  {
+   "term": "ensemble",
+   "defined_in": "s1.b4"
+  },
+  {
+   "term": "ablation",
+   "defined_in": "s1.b4"
+  },
+  {
+   "term": "軌跡",
+   "defined_in": "s2.b2"
+  },
+  {
+   "term": "reward model",
+   "defined_in": "s2.b5"
+  },
+  {
+   "term": "oracle",
+   "defined_in": "s2a.b1"
+  },
+  {
+   "term": "Pass@1",
+   "defined_in": "s2a.b1"
+  },
+  {
+   "term": "logprob",
+   "defined_in": "s3a.b6"
+  },
+  {
+   "term": "ground truth",
+   "defined_in": "s3a.b8"
+  },
+  {
+   "term": "sigmoid",
+   "defined_in": "s3c.b6"
+  },
+  {
+   "term": "Bradley–Terry",
+   "defined_in": "s3c.b9"
+  },
+  {
+   "term": "Monte Carlo",
+   "defined_in": "s4b.b1"
+  },
+  {
+   "term": "harness",
+   "defined_in": "s6c.b3"
+  },
+  {
+   "term": "Spearman 等級相關",
+   "defined_in": "s8.b1"
+  }
+ ],
+ "ledger": [
+  {
+   "id": "L001",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     5,
+     7
+    ]
+   },
+   "gist": "標準做法只取 argmax，丟掉分數 token 位置的完整機率分佈；資訊是被解碼丟掉的",
+   "layer": "main",
+   "section": "s1",
+   "dest": [
+    "s1.b2"
+   ]
+  },
+  {
+   "id": "L002",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     9,
+     9
+    ]
+   },
+   "gist": "改法：期望值取代 argmax，加重複取樣、準則拆解，打包成 LLM-as-a-Verifier，配 PPT 排名演算法，三領域實驗",
+   "layer": "main",
+   "section": "s1",
+   "dest": [
+    "s1.b3"
+   ]
+  },
+  {
+   "id": "L003",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     11,
+     11
+    ]
+   },
+   "gist": "本文兩件事；結論：工程價值高於新穎性，最漂亮的實證不在摘要的 SOTA 數字",
+   "layer": "main",
+   "section": "s1",
+   "dest": [
+    "s1.b4"
+   ]
+  },
+  {
+   "id": "L004",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     15,
+     19
+    ]
+   },
+   "gist": "傳統 LM judge 形式：分數就是生成出來的那個 token",
+   "layer": "main",
+   "section": "s2",
+   "dest": [
+    "s2.b2",
+    "s2.b3"
+   ]
+  },
+  {
+   "id": "L005",
+   "kind": "number",
+   "src": {
+    "lines": [
+     21,
+     21
+    ]
+   },
+   "gist": "argmax 塌縮成整數，Terminal-Bench 上 27% 比較結果平手，平手就不能排序",
+   "layer": "main",
+   "section": "s2",
+   "dest": [
+    "s2.b4"
+   ]
+  },
+  {
+   "id": "L006",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     23,
+     23
+    ]
+   },
+   "gist": "訓練式 reward model（ORM、PRM、RoboReward-8B、Robometer-4B）會被訓練資料綁死；但這只是背景假設，沒有跨域失效的實驗數據",
+   "layer": "main",
+   "section": "s2",
+   "dest": [
+    "s2.b5"
+   ]
+  },
+  {
+   "id": "L007",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     27,
+     28
+    ]
+   },
+   "gist": "圖一：Oracle Pass@K 曲線，Terminal-Bench V2 98.9%",
+   "layer": "main",
+   "section": "s2a",
+   "dest": [
+    "s2a.b2"
+   ]
+  },
+  {
+   "id": "L008",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     30,
+     30
+    ]
+   },
+   "gist": "完美 oracle verifier 可到 98.9%，實際 Pass@1 只有 83.1%",
+   "layer": "main",
+   "section": "s2a",
+   "dest": [
+    "s2a.b3"
+   ]
+  },
+  {
+   "id": "L009",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     32,
+     35
+    ]
+   },
+   "gist": "Pass@1 83.1% 到 Oracle 98.9% 的落差約 16pp，要靠 verifier 兌現",
+   "layer": "support",
+   "section": "s2a",
+   "dest": [
+    "s2a.b4"
+   ]
+  },
+  {
+   "id": "L010",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     37,
+     37
+    ]
+   },
+   "gist": "oracle 圖的功能是「值得解決」的量化證據，不是獨立的第三個挑戰",
+   "layer": "fold",
+   "section": "s2a",
+   "dest": [
+    "s2a.b6"
+   ]
+  },
+  {
+   "id": "L011",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     39,
+     39
+    ]
+   },
+   "gist": "98.9% 是 K 放大的理論天花板；主表 92.1% 是 N=5 候選池的 oracle Pass@N，後者才是真正爭取的空間",
+   "layer": "main",
+   "section": "s2a",
+   "dest": [
+    "s2a.b7"
+   ]
+  },
+  {
+   "id": "L012",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     43,
+     44
+    ]
+   },
+   "gist": "圖二：框架全貌，輸入模態、驗證核心、三種下游應用",
+   "layer": "main",
+   "section": "s3",
+   "dest": [
+    "s3.b2"
+   ]
+  },
+  {
+   "id": "L013",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     46,
+     46
+    ]
+   },
+   "gist": "judge 形成整體意見給一個決定；verifier 確認真偽需更細緻評估（比喻）",
+   "layer": "support",
+   "section": "s3a",
+   "dest": [
+    "s3a.b1"
+   ]
+  },
+  {
+   "id": "L014",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     48,
+     48
+    ]
+   },
+   "gist": "這個區分是修辭鋪墊，不是技術論證；當記憶比喻可以，當論證不行",
+   "layer": "fold",
+   "section": "s3a",
+   "dest": [
+    "s3a.b10"
+   ]
+  },
+  {
+   "id": "L015",
+   "kind": "example",
+   "src": {
+    "lines": [
+     50,
+     67
+    ]
+   },
+   "gist": "scoring prompt 完整範本（兩條軌跡、score 標籤、1–20 量表）",
+   "layer": "fold",
+   "section": "s3a",
+   "dest": [
+    "s3a.b4"
+   ]
+  },
+  {
+   "id": "L016",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     69,
+     73
+    ]
+   },
+   "gist": "三個設計要點：一次塞兩個候選對照評；score 標籤是為了定位 token 撈 logprob",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b5",
+    "s3a.b6"
+   ]
+  },
+  {
+   "id": "L017",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     75,
+     75
+    ]
+   },
+   "gist": "1–20 量表只給三個錨點，中間靠模型內插，論文沒說",
+   "layer": "support",
+   "section": "s3a",
+   "dest": [
+    "s3a.b7"
+   ]
+  },
+  {
+   "id": "L018",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     77,
+     77
+    ]
+   },
+   "gist": "prompt 裡沒有 ground truth：reference-free 設計；ground-truth 解只用於事後評估 verifier",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b8"
+   ]
+  },
+  {
+   "id": "L019",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     79,
+     79
+    ]
+   },
+   "gist": "為何兩條軌跡一起放：數學上不需要，論文沒解釋；合理猜測（我們的推測）",
+   "layer": "fold",
+   "section": "s3a",
+   "dest": [
+    "s3a.b11"
+   ]
+  },
+  {
+   "id": "L020",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     81,
+     81
+    ]
+   },
+   "gist": "prompt 寫 INTEGER_1_TO_20 卻說用字母以利抽 logprob，論文沒澄清；可能解釋是 tokenization",
+   "layer": "fold",
+   "section": "s3a",
+   "dest": [
+    "s3a.b12"
+   ]
+  },
+  {
+   "id": "L021",
+   "kind": "formula",
+   "src": {
+    "lines": [
+     85,
+     85
+    ]
+   },
+   "gist": "核心公式 R(x,τ) 對 c、k、g 加總",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b3"
+   ]
+  },
+  {
+   "id": "L022",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     87,
+     94
+    ]
+   },
+   "gist": "符號表：x、τ、c、C=3、k、K=8、v_g、G=20、p_θ、φ",
+   "layer": "support",
+   "section": "s3b",
+   "dest": [
+    "s3b.b4"
+   ]
+  },
+  {
+   "id": "L023",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     96,
+     110
+    ]
+   },
+   "gist": "三層拆解：最內層 granularity、中層 repetition、外層 criteria，最後除以 C×K",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b5",
+    "s3b.b6"
+   ]
+  },
+  {
+   "id": "L024",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     112,
+     112
+    ]
+   },
+   "gist": "分母不除以 G（機率加權已是加權平均）；LLM 呼叫次數 C×K，主實驗每條 24 次，G 不影響（稍後被打問號）",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b7"
+   ]
+  },
+  {
+   "id": "L025",
+   "kind": "example",
+   "src": {
+    "lines": [
+     114,
+     123
+    ]
+   },
+   "gist": "G=5 的五格計算：期望值 4.16，argmax 得 5",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b8",
+    "s3b.b9"
+   ]
+  },
+  {
+   "id": "L026",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     125,
+     125
+    ]
+   },
+   "gist": "另一條軌跡 p(v5)=0.52、p(v4)=0.30：argmax 平手，期望值約 4.3 不平手；平手率歸零的機制",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b10"
+   ]
+  },
+  {
+   "id": "L027",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     127,
+     127
+    ]
+   },
+   "gist": "上例機率是示意值，論文從未公布任何一次評分的實際機率分佈",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b11"
+   ]
+  },
+  {
+   "id": "L028",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     129,
+     129
+    ]
+   },
+   "gist": "公式兩個瑕疵：被加總項有 c 沒有 k；Eq. 3.1 與後面稱 Eq. 1 標號沒對齊",
+   "layer": "fold",
+   "section": "s3b",
+   "dest": [
+    "s3b.b13"
+   ]
+  },
+  {
+   "id": "L029",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     133,
+     137
+    ]
+   },
+   "gist": "分數正規化到 [0,1]；上例 (4.16−1)/(5−1)=0.79",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b2",
+    "s3c.b4",
+    "s3c.b5"
+   ]
+  },
+  {
+   "id": "L030",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     139,
+     139
+    ]
+   },
+   "gist": "論文沒解釋為何正規化；從機制推敲：不改排序，影響 sigmoid 是否飽和",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b6"
+   ]
+  },
+  {
+   "id": "L031",
+   "kind": "table",
+   "src": {
+    "lines": [
+     141,
+     144
+    ]
+   },
+   "gist": "原始量表差 8 分 sigmoid 0.9997；正規化後差 0.42 為 0.60",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b7"
+   ]
+  },
+  {
+   "id": "L032",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     146,
+     146
+    ]
+   },
+   "gist": "不正規化會把好一點與好很多都壓成 1.0；PPT 累加機率，飽和則只反映有沒有碰到弱對手",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b8"
+   ]
+  },
+  {
+   "id": "L033",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     148,
+     154
+    ]
+   },
+   "gist": "Bradley–Terry 公式；R=0.79 與 0.62 差 0.17 得 P=0.542",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b9",
+    "s3c.b11",
+    "s3c.b12"
+   ]
+  },
+  {
+   "id": "L034",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     156,
+     162
+    ]
+   },
+   "gist": "O(N²) 不是 BT 造成，是循環賽排程造成；排程與 BT 是不同層次",
+   "layer": "fold",
+   "section": "s3c",
+   "dest": [
+    "s3c.b14",
+    "s3c.b15"
+   ]
+  },
+  {
+   "id": "L035",
+   "kind": "table",
+   "src": {
+    "lines": [
+     164,
+     170
+    ]
+   },
+   "gist": "本篇用法與經典 BT 相反：已知分數、求偏好機率，跳過參數估計",
+   "layer": "fold",
+   "section": "s3c",
+   "dest": [
+    "s3c.b16",
+    "s3c.b17"
+   ]
+  },
+  {
+   "id": "L036",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     172,
+     172
+    ]
+   },
+   "gist": "PPT 要省的是取得每個 R 的 LLM 呼叫成本，每一對 C×K=24 次",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b18",
+    "s3c.b19"
+   ]
+  },
+  {
+   "id": "L037",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     174,
+     174
+    ]
+   },
+   "gist": "不直接比大小，因為只得 0 或 1，資訊又被壓扁；PPT 累加機率",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b20"
+   ]
+  },
+  {
+   "id": "L038",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     178,
+     179
+    ]
+   },
+   "gist": "圖三：驗證準確率沿粒度、重複、準則拆解三個維度上升",
+   "layer": "main",
+   "section": "s4",
+   "dest": [
+    "s4.b2"
+   ]
+  },
+  {
+   "id": "L039",
+   "kind": "table",
+   "src": {
+    "lines": [
+     183,
+     185
+    ]
+   },
+   "gist": "G=1 到 20 的準確率 73.1% 到 77.5%",
+   "layer": "main",
+   "section": "s4a",
+   "dest": [
+    "s4a.b1",
+    "s4a.b2"
+   ]
+  },
+  {
+   "id": "L040",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     187,
+     187
+    ]
+   },
+   "gist": "擴大量表沒給 verifier 新資訊，給 decoder 更細的空間投射內部信念",
+   "layer": "main",
+   "section": "s4a",
+   "dest": [
+    "s4a.b3"
+   ]
+  },
+  {
+   "id": "L041",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     189,
+     196
+    ]
+   },
+   "gist": "G 要不要重跑 LLM：兩處講法打架；若要重跑，「G 不影響呼叫次數」不成立",
+   "layer": "main",
+   "section": "s4a",
+   "dest": [
+    "s4a.b4",
+    "s4a.b6"
+   ]
+  },
+  {
+   "id": "L042",
+   "kind": "formula",
+   "src": {
+    "lines": [
+     198,
+     203
+    ]
+   },
+   "gist": "SNR(G) = E[s_c−s_i]/sqrt(Var(s_c−s_i))",
+   "layer": "fold",
+   "section": "s4a",
+   "dest": [
+    "s4a.b9",
+    "s4a.b10"
+   ]
+  },
+  {
+   "id": "L043",
+   "kind": "table",
+   "src": {
+    "lines": [
+     205,
+     207
+    ]
+   },
+   "gist": "SNR 0.775、0.786、0.797、0.799（G=1、4、16、20）",
+   "layer": "fold",
+   "section": "s4a",
+   "dest": [
+    "s4a.b11"
+   ]
+  },
+  {
+   "id": "L044",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     209,
+     209
+    ]
+   },
+   "gist": "SNR 與 Cohen's d 同形式；定位是連接分得開與更準的橋樑指標",
+   "layer": "fold",
+   "section": "s4a",
+   "dest": [
+    "s4a.b12"
+   ]
+  },
+  {
+   "id": "L045",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     211,
+     211
+    ]
+   },
+   "gist": "橋是斷言的：只說準確率是 SNR 的單調函數，SNR 漲 0.024 如何對應 4.4pp 沒解釋，無誤差範圍",
+   "layer": "fold",
+   "section": "s4a",
+   "dest": [
+    "s4a.b13"
+   ]
+  },
+  {
+   "id": "L046",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     215,
+     217
+    ]
+   },
+   "gist": "重複 K 次平均就是 Monte Carlo estimator",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b1",
+    "s4b.b2"
+   ]
+  },
+  {
+   "id": "L047",
+   "kind": "table",
+   "src": {
+    "lines": [
+     219,
+     221
+    ]
+   },
+   "gist": "K=1 到 16 的準確率 74.7% 到 77.5%",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b3"
+   ]
+  },
+  {
+   "id": "L048",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     223,
+     223
+    ]
+   },
+   "gist": "平均只降變異數（O(1/K)），不降偏誤；系統性誤判跑一百次還是錯；論文承認報酬遞減",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b4"
+   ]
+  },
+  {
+   "id": "L049",
+   "kind": "example",
+   "src": {
+    "lines": [
+     225,
+     225
+    ]
+   },
+   "gist": "量測類比：樣本多縮小標準誤，秤本身多 2 公斤修不掉",
+   "layer": "support",
+   "section": "s4b",
+   "dest": [
+    "s4b.b5"
+   ]
+  },
+  {
+   "id": "L050",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     227,
+     232
+    ]
+   },
+   "gist": "前兩維度分工：granularity 讓估計更銳利，repetition 平均掉殘餘雜訊",
+   "layer": "support",
+   "section": "s4b",
+   "dest": [
+    "s4b.b6",
+    "s4b.b7"
+   ]
+  },
+  {
+   "id": "L051",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     236,
+     236
+    ]
+   },
+   "gist": "前兩維度假設 rubric 是好的；長時序任務的「正確嗎」混了多個獨立因素",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b1"
+   ]
+  },
+  {
+   "id": "L052",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     238,
+     244
+    ]
+   },
+   "gist": "三個子準則：Specification、Output、Errors",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b2",
+    "s4c.b3"
+   ]
+  },
+  {
+   "id": "L053",
+   "kind": "table",
+   "src": {
+    "lines": [
+     246,
+     251
+    ]
+   },
+   "gist": "單獨 75.2、76.0、76.4；三者 ensemble 78.3",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b4"
+   ]
+  },
+  {
+   "id": "L054",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     253,
+     253
+    ]
+   },
+   "gist": "這就是 ML 的 ensemble：錯誤不完全相關，平均優於最強單一者",
+   "layer": "support",
+   "section": "s4c",
+   "dest": [
+    "s4c.b5"
+   ]
+  },
+  {
+   "id": "L055",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     255,
+     255
+    ]
+   },
+   "gist": "三準則來源沒說；C 沒有 scaling 曲線，只證明 3 比 1 好；誤差棒重疊，1.9pp 未做顯著性檢定",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b6",
+    "s4c.b7"
+   ]
+  },
+  {
+   "id": "L056",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     257,
+     257
+    ]
+   },
+   "gist": "三準則為 code-agent 設計，機器人與醫療也宣稱用同一組，論文沒回答「輸出格式」對影片的意義",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b7"
+   ]
+  },
+  {
+   "id": "L057",
+   "kind": "example",
+   "src": {
+    "lines": [
+     261,
+     265
+    ]
+   },
+   "gist": "query-optimize：Terminal-Bench V2 任務；兩條軌跡都由 Claude Opus 4.5 產生",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b2"
+   ]
+  },
+  {
+   "id": "L058",
+   "kind": "example",
+   "src": {
+    "lines": [
+     267,
+     276
+    ]
+   },
+   "gist": "正確：等 5 分 03 秒直接 diff；失敗：兩次超時、複製資料庫到 /tmp 加索引、比對、刪驗證產物",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b3"
+   ]
+  },
+  {
+   "id": "L059",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     278,
+     278
+    ]
+   },
+   "gist": "失敗關鍵：在兩個不同物理存取路徑上比較；LIMIT 500 邊界可能不同，卻回報 diff 通過",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b5"
+   ]
+  },
+  {
+   "id": "L060",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     280,
+     282
+    ]
+   },
+   "gist": "verifier 看出來了（Gemini 2.5 Flash 推理），但用保留措辭，在 argmax 被壓扁",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b6",
+    "s5.b7"
+   ]
+  },
+  {
+   "id": "L061",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     284,
+     285
+    ]
+   },
+   "gist": "圖四：離散 judge 88 次平手，連續 verifier 零平手",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b8"
+   ]
+  },
+  {
+   "id": "L062",
+   "kind": "table",
+   "src": {
+    "lines": [
+     287,
+     291
+    ]
+   },
+   "gist": "Judge G=5：12/88/0；Verifier G=5：69/0/31；G=20：77/0/23",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b10"
+   ]
+  },
+  {
+   "id": "L063",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     293,
+     296
+    ]
+   },
+   "gist": "對照設計一次動一個變因：解碼方式 12 到 69；量表 69 到 77",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b11",
+    "s5.b12"
+   ]
+  },
+  {
+   "id": "L064",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     298,
+     298
+    ]
+   },
+   "gist": "離散 judge 排錯次數是 0/100，只是不表態；連續 verifier 被迫每次表態，二三成錯",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b13"
+   ]
+  },
+  {
+   "id": "L065",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     300,
+     300
+    ]
+   },
+   "gist": "平手算半分：Judge 56、G=5 69、G=20 77，結論站得住；但下游若平手交人審，judge 更安全，論文沒提",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b13"
+   ]
+  },
+  {
+   "id": "L066",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     302,
+     303
+    ]
+   },
+   "gist": "圖五：重複次數下 judge 平手率 26.7% 到 5.5%，verifier 零平手",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b15"
+   ]
+  },
+  {
+   "id": "L067",
+   "kind": "table",
+   "src": {
+    "lines": [
+     305,
+     309
+    ]
+   },
+   "gist": "K=1、4、16 的 judge／verifier 準確率與平手率",
+   "layer": "support",
+   "section": "s5",
+   "dest": [
+    "s5.b16"
+   ]
+  },
+  {
+   "id": "L068",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     311,
+     311
+    ]
+   },
+   "gist": "對角線：verifier 1 次 74.7% 等於 judge 16 次；judge 靠重複主要是打破平手",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b17"
+   ]
+  },
+  {
+   "id": "L069",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     313,
+     313
+    ]
+   },
+   "gist": "「16 倍運算」誇大：差距在 2.7 到 2.9pp；實質差別是天花板：judge K=16 飽和 74.7，verifier 77.5",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b18"
+   ]
+  },
+  {
+   "id": "L070",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     317,
+     321
+    ]
+   },
+   "gist": "完整循環賽 O(N²)：N=20 要 190 對、4,560 次呼叫",
+   "layer": "main",
+   "section": "s6",
+   "dest": [
+    "s6.b2"
+   ]
+  },
+  {
+   "id": "L071",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     323,
+     323
+    ]
+   },
+   "gist": "PPT 是全篇唯一算得上演算法新貢獻；每條只跟小群 pivot 比，O(Nk)；設計重點是怎麼找 pivot",
+   "layer": "main",
+   "section": "s6",
+   "dest": [
+    "s6.b3"
+   ]
+  },
+  {
+   "id": "L072",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     325,
+     326
+    ]
+   },
+   "gist": "圖六：PPT 五階段流程圖",
+   "layer": "main",
+   "section": "s6",
+   "dest": [
+    "s6.b4"
+   ]
+  },
+  {
+   "id": "L073",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     328,
+     338
+    ]
+   },
+   "gist": "五階段：Candidates、Ring pass、Pivot select、Pivot rounds、Selection",
+   "layer": "main",
+   "section": "s6",
+   "dest": [
+    "s6.b5"
+   ]
+  },
+  {
+   "id": "L074",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     342,
+     353
+    ]
+   },
+   "gist": "Ring pass：N 條隨機排成環，只比相鄰 N 對（6 條 6 對，非 15 對）",
+   "layer": "main",
+   "section": "s6a",
+   "dest": [
+    "s6a.b1",
+    "s6a.b2",
+    "s6a.b3"
+   ]
+  },
+  {
+   "id": "L075",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     355,
+     355
+    ]
+   },
+   "gist": "環狀同時：便宜的粗略排名、消除位置偏誤（每條當一次 A、一次 B；平衡設計）",
+   "layer": "main",
+   "section": "s6a",
+   "dest": [
+    "s6a.b4"
+   ]
+  },
+  {
+   "id": "L076",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     357,
+     357
+    ]
+   },
+   "gist": "Hamiltonian cycle 是圖論術語；這裡是完全圖，隨機排列即可，用詞偏華麗",
+   "layer": "fold",
+   "section": "s6a",
+   "dest": [
+    "s6a.b6"
+   ]
+  },
+  {
+   "id": "L077",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     359,
+     359
+    ]
+   },
+   "gist": "「期望值上抵消」只在偏誤是加性常數時成立；論文沒討論前提，也沒有有／無 ring pass 的對照",
+   "layer": "support",
+   "section": "s6a",
+   "dest": [
+    "s6a.b7"
+   ]
+  },
+  {
+   "id": "L078",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     363,
+     369
+    ]
+   },
+   "gist": "每場兩邊都更新：p=σ(R_i−R_j)，w_i+=p，w_j+=1−p，c 各加 1",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b1",
+    "s6b.b2"
+   ]
+  },
+  {
+   "id": "L079",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     371,
+     371
+    ]
+   },
+   "gist": "跑完每條 c_i=2，按 w_i/c_i 取前 k 名為 pivot，純 top-k",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b3"
+   ]
+  },
+  {
+   "id": "L080",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     373,
+     373
+    ]
+   },
+   "gist": "為何挑好的當 pivot：要細分頂端；pivot 太差只得「大家都比它好」；類比 quickselect",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b4"
+   ]
+  },
+  {
+   "id": "L081",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     375,
+     375
+    ]
+   },
+   "gist": "pivot 只由 ring pass 兩場比較選出，好候選運氣差可能落榜；論文沒分析",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b5"
+   ]
+  },
+  {
+   "id": "L082",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     377,
+     384
+    ]
+   },
+   "gist": "後續比較：非 pivot 對 pivot、pivot 互比；總數 N+k(N−k)+C(k,2)，N=20,k=5 為 105 對，省約 45%",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b6",
+    "s6b.b7",
+    "s6b.b8"
+   ]
+  },
+  {
+   "id": "L083",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     386,
+     386
+    ]
+   },
+   "gist": "最終 i*=argmax w_i/c_i；除以 c_i 因為 pivot 場次多，換成平均每場贏多少才公平",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b9"
+   ]
+  },
+  {
+   "id": "L084",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     390,
+     391
+    ]
+   },
+   "gist": "圖七：PPT 預算與準確率權衡",
+   "layer": "main",
+   "section": "s6c",
+   "dest": [
+    "s6c.b2"
+   ]
+  },
+  {
+   "id": "L085",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     393,
+     395
+    ]
+   },
+   "gist": "設定 N=20、89 題、Terminus-2 harness；harness 的解釋；V1 是前一代方法，論文沒解釋",
+   "layer": "support",
+   "section": "s6c",
+   "dest": [
+    "s6c.b3"
+   ]
+  },
+  {
+   "id": "L086",
+   "kind": "table",
+   "src": {
+    "lines": [
+     397,
+     407
+    ]
+   },
+   "gist": "pass@1 52.64% 到 Full Round-Robin 67.42% 的查詢配對數與準確率",
+   "layer": "main",
+   "section": "s6c",
+   "dest": [
+    "s6c.b4"
+   ]
+  },
+  {
+   "id": "L087",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     409,
+     409
+    ]
+   },
+   "gist": "k 愈大愈準但報酬遞減；k=9 逼近循環賽省 27%；V1 在 5N 後下降，PPT 單調上升",
+   "layer": "main",
+   "section": "s6c",
+   "dest": [
+    "s6c.b5"
+   ]
+  },
+  {
+   "id": "L088",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     411,
+     415
+    ]
+   },
+   "gist": "三保留：沒給選 k 的方法；省下幅度有限；N=20 是策展設定，主實驗 N 只有 3 到 5，PPT 貢獻有限",
+   "layer": "main",
+   "section": "s6c",
+   "dest": [
+    "s6c.b6",
+    "s6c.b7"
+   ]
+  },
+  {
+   "id": "L089",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     419,
+     424
+    ]
+   },
+   "gist": "四個 benchmark 同一流程；超參數固定 G=20、K=8、C=3；完全 training-free（最重要的實務主張）",
+   "layer": "main",
+   "section": "s7",
+   "dest": [
+    "s7.b2",
+    "s7.b3",
+    "s7.b4"
+   ]
+  },
+  {
+   "id": "L090",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     428,
+     429
+    ]
+   },
+   "gist": "圖八：主結果表",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b1"
+   ]
+  },
+  {
+   "id": "L091",
+   "kind": "table",
+   "src": {
+    "lines": [
+     431,
+     435
+    ]
+   },
+   "gist": "三個 benchmark 的三個基準、Pass@1、Oracle、Ours",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b2"
+   ]
+  },
+  {
+   "id": "L092",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     437,
+     437
+    ]
+   },
+   "gist": "模型名稱縮寫：Opus 是 Claude Opus，G 開頭是 Gemini",
+   "layer": "support",
+   "section": "s7a",
+   "dest": [
+    "s7a.b3"
+   ]
+  },
+  {
+   "id": "L093",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     439,
+     447
+    ]
+   },
+   "gist": "左半是不同 harness、不同抽樣的蘋果比橘子；右半同一候選池才是 verifier 的功勞",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b4",
+    "s7a.b5"
+   ]
+  },
+  {
+   "id": "L094",
+   "kind": "table",
+   "src": {
+    "lines": [
+     449,
+     453
+    ]
+   },
+   "gist": "+3.4pp、+2.1pp、+3.1pp；兌現比例 38%、25%、65%",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b6"
+   ]
+  },
+  {
+   "id": "L095",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     455,
+     455
+    ]
+   },
+   "gist": "N=5 候選池 oracle 92.1%，可搶 9.0pp 兌現 38%；三個 benchmark 兌現 25% 到 65%；98.9% 與 9.0pp 不同尺度",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b7"
+   ]
+  },
+  {
+   "id": "L096",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     457,
+     461
+    ]
+   },
+   "gist": "三問題：SOTA 混 harness 差異；RoboRewardBench 整列消失；SWE-Bench 候選池異質",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b8",
+    "s7a.b9"
+   ]
+  },
+  {
+   "id": "L097",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     465,
+     466
+    ]
+   },
+   "gist": "圖九：同一模型 70.8% 跳到 87.4%",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b2"
+   ]
+  },
+  {
+   "id": "L098",
+   "kind": "table",
+   "src": {
+    "lines": [
+     468,
+     474
+    ]
+   },
+   "gist": "五種方法在 RoboRewardBench 的準確率，本方法 87.4%",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b3"
+   ]
+  },
+  {
+   "id": "L099",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     476,
+     480
+    ]
+   },
+   "gist": "比主表有說服力的三個理由：同一模型乾淨對照 16.6pp；驗證第二個問題；跨模態",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b4",
+    "s7b.b5"
+   ]
+  },
+  {
+   "id": "L100",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     482,
+     482
+    ]
+   },
+   "gist": "RoboReward-8B 改連續解碼，MAE 從 1.11 降到 0.72，可疊加在既有 reward model",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b6"
+   ]
+  },
+  {
+   "id": "L101",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     484,
+     484
+    ]
+   },
+   "gist": "論文沒解釋專門訓練的 reward model 為何輸；利益關係：RoboRewardBench 與 RoboReward-8B 來自共同作者掛名的論文，論文沒揭露",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b7"
+   ]
+  },
+  {
+   "id": "L102",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     488,
+     490
+    ]
+   },
+   "gist": "VOC：步驟時間順序與前綴分數的 Spearman 等級相關；概念等同 RL 的 value function",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b1",
+    "s8.b2"
+   ]
+  },
+  {
+   "id": "L103",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     492,
+     493
+    ]
+   },
+   "gist": "圖十：成功軌跡分數爬升，失敗軌跡一路低迷",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b3"
+   ]
+  },
+  {
+   "id": "L104",
+   "kind": "example",
+   "src": {
+    "lines": [
+     495,
+     501
+    ]
+   },
+   "gist": "成功與失敗軌跡的事件序列",
+   "layer": "support",
+   "section": "s8",
+   "dest": [
+    "s8.b4"
+   ]
+  },
+  {
+   "id": "L105",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     502,
+     504
+    ]
+   },
+   "gist": "論文主張停滯或失敗軌跡分數大致持平、兼作早期預警；但自己的統計（500 條 Terminal-Bench V2）不支持",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b5",
+    "s8.b6"
+   ]
+  },
+  {
+   "id": "L106",
+   "kind": "table",
+   "src": {
+    "lines": [
+     506,
+     510
+    ]
+   },
+   "gist": "VOC 成功 0.848±0.012、失敗 0.769±0.016、落差 +0.079",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b7"
+   ]
+  },
+  {
+   "id": "L107",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     512,
+     519
+    ]
+   },
+   "gist": "失敗軌跡的分數也在穩定上升；論文用單一案例當敘事主軸卻沒討論 0.079；用它做即時預警鑑別力很弱",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b7",
+    "s8.b8"
+   ]
+  },
+  {
+   "id": "L108",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     521,
+     521
+    ]
+   },
+   "gist": "機器人 VOC：本方法 0.966、RoboReward-8B 0.877、Robometer-4B 0.780、TOPReward 0.565；是方法間比較，不是區分成敗",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b9"
+   ]
+  },
+  {
+   "id": "L109",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     525,
+     525
+    ]
+   },
+   "gist": "TurboAgent：代理層，平行送 N 條用 PPT 選最好；論文沒有任何量化評估，只是概念驗證",
+   "layer": "support",
+   "section": "s8a",
+   "dest": [
+    "s8a.b1"
+   ]
+  },
+  {
+   "id": "L110",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     529,
+     529
+    ]
+   },
+   "gist": "投報率最高：把 argmax 換成 top-k logprobs 期望值；前提是 G 屬於同一次呼叫即可取得",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b2"
+   ]
+  },
+  {
+   "id": "L111",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     531,
+     531
+    ]
+   },
+   "gist": "次一步 criteria decomposition：輕量，但子準則要自己設計，論文提供不了方法論",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b2"
+   ]
+  },
+  {
+   "id": "L112",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     533,
+     533
+    ]
+   },
+   "gist": "Repeated evaluation 最簡單但成本線性增加，只降變異數不降偏誤",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b2"
+   ]
+  },
+  {
+   "id": "L113",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     535,
+     542
+    ]
+   },
+   "gist": "成本：每條軌跡 C×K=24 次，乘上 PPT 比較對數；論文從未討論延遲與成本",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b3"
+   ]
+  },
+  {
+   "id": "L114",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     544,
+     544
+    ]
+   },
+   "gist": "有 ground truth 時可只用單條評分公式放進 prompt；論文從未驗證，73.1% 到 77.5% 不能假設重現；連續分數要提前決定閾值",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b4",
+    "s9.b5",
+    "s9.b6"
+   ]
+  },
+  {
+   "id": "L115",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     548,
+     548
+    ]
+   },
+   "gist": "核心洞見：LLM 內部信念是連續的，是 argmax 壓扁；換期望值平手率從 27% 降到 0%",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b1"
+   ]
+  },
+  {
+   "id": "L116",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     550,
+     550
+    ]
+   },
+   "gist": "最值得記的兩個數字：70.8% 到 87.4%（最乾淨因果證據）；MAE 1.11 到 0.72（可疊加）",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b2"
+   ]
+  },
+  {
+   "id": "L117",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     552,
+     552
+    ]
+   },
+   "gist": "SOTA 扣掉 harness 差異，verifier 貢獻 +2 到 3pp；oracle 空間 5 到 9pp，兌現四分之一到三分之二",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b3"
+   ]
+  }
+ ],
+ "blocks": [
+  {
+   "id": "s1.b1",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "要從一堆候選答案裡挑出最好的那個，常見做法是請 LLM 當裁判，替每個答案打 1 到 5 分。問題出在平手：在 Terminal-Bench（一個考 agent 做任務的 benchmark，也就是拿來比較模型的標準測試題組）上，論文量到有 27% 的比較結果是平手。平手就分不出高下，也就沒辦法從 N 條候選裡挑出一條。這篇論文的看法是：模型其實分得出高下，是「取最高分」這個動作把資訊丟掉了。",
+   "purpose": "hook"
+  },
+  {
+   "id": "s1.b2",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L001"
+   ],
+   "text": "這篇整理 *LLM-as-a-Verifier*（arXiv 2607.05391v2，Stanford / UC Berkeley / NVIDIA）。用 LLM 幫另一個 LLM 的輸出打分數，現在幾乎是標配：叫模型輸出一個 1 到 5 的整數，然後拿那個整數去排序、篩選、當 reward（訓練時給模型的獎勵訊號）。論文指出這個流程有個很少人注意的漏洞：模型在輸出分數的那個 token（模型處理文字的最小單位）位置，內部產生的是一個**完整的機率分佈**，也就是「每個分數各有多大機率」，但標準做法只取機率最高的那一個（這個動作叫 argmax），其餘全丟。資訊不是模型沒產生，是解碼策略把它丟掉的。"
+  },
+  {
+   "id": "s1.b3",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L002"
+   ],
+   "text": "改法很單純：不取 argmax，改算**期望值**（把每個分數乘上它的機率再加總），分數從離散整數變成連續實數。作者把這個改動加上重複取樣、準則拆解，包成一個叫 LLM-as-a-Verifier 的框架，再配一個新的排名演算法 PPT（用成對比較，從 N 條候選裡挑出最好的一條），橫跨程式、機器人、醫療三個領域做了實驗。"
+  },
+  {
+   "id": "s1.b4",
+   "section": "s1",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L003"
+   ],
+   "tone": "abstract",
+   "title": "先講結論",
+   "text": "這篇文章要做兩件事：把這套機制講清楚到你可以自己實作，以及誠實標出論文哪些地方的證據沒有它宣稱的那麼強。\n\n**這是一篇工程價值高於研究新穎性的論文。** 期望值解碼、重複取樣、ensemble（把多個評分者的結果平均）都不是新發明，真正的貢獻在於系統化打包、扎實的 ablation（逐一改變單一因素、看結果如何變化的對照實驗），以及那個排名演算法。而它最漂亮的實證，其實不是摘要裡那些 SOTA（目前最佳成績）數字。"
+  },
+  {
+   "id": "s1.b5",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "路線是這樣：先看標準做法在哪裡漏掉資訊，再看 verifier 怎麼算分數，接著是三個讓分數更準的旋鈕和一個案例，然後是從 N 條裡挑最好的 PPT，最後逐項檢查實驗結果該怎麼讀。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s2.b1",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "第一步，先看標準 judge 到底在哪裡漏掉資訊。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s2.b2",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L004"
+   ],
+   "text": "傳統的 LM judge（用語言模型當裁判）長這樣：分數就是模型「生成出來的那個 token」。下式裡 $x$ 是任務描述，$\\tau$（讀作 tau）是被評分的軌跡（agent 做事的完整紀錄），$G$ 是量表有幾級。"
+  },
+  {
+   "id": "s2.b3",
+   "section": "s2",
+   "type": "code",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L004"
+   ],
+   "lang": "text",
+   "code": "R_LM(x, τ) ∈ {1, ..., G}     ← 分數就是「生成出來的那個 token」"
+  },
+  {
+   "id": "s2.b4",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L005"
+   ],
+   "text": "模型在分數 token 的位置有一個涵蓋整個 vocabulary（模型認得的所有 token）的機率分佈，argmax 把它塌縮成一個整數。粗粒度的量表配上這種解碼方式，後果很直接：**大量候選解會打成平手**。在 Terminal-Bench 上，論文量到 27% 的比較結果是平手。平手就是不能排序，不能排序就沒辦法從 N 條候選裡挑一條。"
+  },
+  {
+   "id": "s2.b5",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L006"
+   ],
+   "text": "論文另外主張了第二個問題：訓練式的 reward model（專門訓練來打分數的模型。ORM 只看最終結果打分，PRM 逐步驟打分，機器人領域則有 RoboReward-8B、Robometer-4B）會被訓練資料綁死，跨領域就失靈。這裡先標一個保留：**這只是 Section 1 的一句背景假設，論文沒有提供任何跨域失效的實驗數據**。"
+  },
+  {
+   "id": "s2a.b1",
+   "section": "s2a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "這個問題值得解嗎？先看一個理想的挑選者能帶來多少：oracle（理想的挑選者）每次都能從候選裡挑中對的那條，對照組是 Pass@1（每題只交一次答案的成功率）。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s2a.b2",
+   "section": "s2a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L007"
+   ],
+   "manifest_id": "img-005",
+   "alt": "Terminal-Bench V2 上的 Oracle Pass@K 曲線，隨著每題抽樣的軌跡數增加，覆蓋率從約六成一路爬升到 98.9%，遠高於單一模型的 Pass@1。",
+   "caption": "圖 1 — 如果有一個完美的 verifier，光靠重複抽樣就能把 Terminal-Bench V2 解到 98.9%。",
+   "paper_label": "Figure 5",
+   "role": "evidence"
+  },
+  {
+   "id": "s2a.b3",
+   "section": "s2a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L008"
+   ],
+   "text": "這張圖是整篇論文的動機基礎。它說的是：如果存在一個完美的 oracle verifier（每次都能從抽樣出來的候選裡挑中對的那條的理想挑選者），Terminal-Bench V2 的解出率可以到 **98.9%**。而實際的 Pass@1（每題只交一次答案的成功率）只有 83.1%。"
+  },
+  {
+   "id": "s2a.b4",
+   "section": "s2a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L009"
+   ],
+   "text": "Pass@1 的 83.1% 與 oracle 的 98.9% 之間，有約 16pp（百分點）的落差，這段全靠 verifier 去兌現。"
+  },
+  {
+   "id": "s2a.b5",
+   "section": "s2a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "這張圖在論文裡的角色",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s2a.b6",
+     "section": "s2a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L010"
+     ],
+     "text": "要提醒的是這張圖的功能：它不是一個獨立的第三個挑戰，而是「上面那個挑戰值得解決」的量化證據。論文的行文順序是先給 oracle 落差，再說要拿到這段潛力得有夠準的 verifier，然後繞回標準 judge 不夠細緻。"
+    }
+   ]
+  },
+  {
+   "id": "s2a.b7",
+   "section": "s2a",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L011"
+   ],
+   "tone": "warning",
+   "title": "兩個上限數字不是同一件事",
+   "text": "這裡的 98.9% 是**放任 K 一路增大**時的 oracle 覆蓋率上限，後面主實驗表格裡那個 92.1% 則是**實際候選池只有 N=5** 時的 oracle Pass@N。兩個數字量的不是同一件事：前者是理論天花板，後者才是這套系統真正在爭取的空間。後面對照兌現比例時用的是後者。"
+  },
+  {
+   "id": "s2a.b8",
+   "section": "s2a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "小結：標準 judge 會把大量候選打成平手，而挑對的空間又很大。下一節看 verifier 怎麼把平手拆開。",
+   "purpose": "recap"
+  },
+  {
+   "id": "s3.b1",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "接下來是整篇的核心：怎麼從分數 token 的機率分佈，算出一個連續的分數。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s3.b2",
+   "section": "s3",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L012"
+   ],
+   "manifest_id": "img-002",
+   "alt": "LLM-as-a-Verifier 的整體框架圖，左側是文字、影像、影片三種輸入模態，中間是由 Uncertainty、Granularity、Repetition、Decomposition 四塊組成的驗證核心與獎勵公式，右側是測試時擴展、進度追蹤、強化學習三種下游應用。",
+   "caption": "圖 2 — 框架全貌：任何模態進來，讀分數 token 的完整分佈出去，接三種下游用途。",
+   "paper_label": "Figure 2",
+   "role": "concept"
+  },
+  {
+   "id": "s3a.b1",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L013"
+   ],
+   "text": "論文在方法一開頭先做了一個字典式的區分：**judge** 是形成整體意見、給出一個決定（像老師打總分）；**verifier** 是確認真偽與正確性，需要更細緻的評估（像審計，逐項核對）。"
+  },
+  {
+   "id": "s3a.b2",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "接著看 verifier 實際收到的 prompt。完整範本收在下面的折疊裡，正文只講三個設計要點。"
+  },
+  {
+   "id": "s3a.b3",
+   "section": "s3a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "完整的 scoring prompt 範本",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s3a.b4",
+     "section": "s3a",
+     "type": "code",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L015"
+     ],
+     "lang": "text",
+     "code": "You are an expert [domain] reviewer. You will see a\ntask description and two trajectories.\n\nEvaluation Criteria: [domain specific criteria]\nTask: {task prompt}\nTrajectory A: {A}   Trajectory B: {B}\n\nCarefully analyze each trajectory, then provide your\nfinal scores:\n<score_A> INTEGER_1_TO_20 </score_A>\n<score_B> INTEGER_1_TO_20 </score_B>\n\nRating Rules: Rate correctness on a 1–20 scale\n(1 = incorrect, 10 = borderline, 20 = correct)"
+    }
+   ]
+  },
+  {
+   "id": "s3a.b5",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L016"
+   ],
+   "text": "三個設計要點值得單獨拿出來講。前兩個是："
+  },
+  {
+   "id": "s3a.b6",
+   "section": "s3a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L016"
+   ],
+   "items": [
+    "**一次 prompt 塞兩個候選解，對照著評。** 不是各自單獨評分再比大小。",
+    "**`<score_A>` / `<score_B>` 這兩個標籤是整個機制的關鍵。** 真正要的不是標籤裡輸出的那串文字，而是該 token 位置上整個 vocabulary 的機率分佈。標籤存在的意義是讓你能精準定位「分數在第幾個 token」，才有辦法去撈 logprob（模型替每個候選 token 算出的對數機率）。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s3a.b7",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L017"
+   ],
+   "text": "第三個要點：**1–20 分制只給了三個錨點**（1 = 錯、10 = 邊緣、20 = 對），中間的 2 到 9、11 到 19 怎麼判斷，論文沒說，靠模型自己內插。"
+  },
+  {
+   "id": "s3a.b8",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L018"
+   ],
+   "text": "這裡有個容易被忽略的設計：**prompt 裡沒有 ground truth**（標準答案）。verifier 只拿到任務描述和軌跡內容，必須自己從 log、工具呼叫結果、輸出格式這些證據判斷對錯，不是拿去跟標準答案比對。這是刻意的 reference-free 設計，後面三個子準則（Specification / Output / Errors）全都是「拿軌跡對照任務要求」也印證了這點。論文其他地方提到的 \"ground-truth successful solution\" 是研究者事後拿來評估 verifier 準不準的標籤，永遠不會進到 verifier 的 prompt 裡。"
+  },
+  {
+   "id": "s3a.b9",
+   "section": "s3a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "論文的鋪墊與兩個沒解釋的地方",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s3a.b10",
+     "section": "s3a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L014"
+     ],
+     "text": "**judge 與 verifier 的區分，是修辭鋪墊。** 老實說，這段不是技術論證。論文並沒有從「verifier 的角色定義」推導出「所以必須用機率分佈的期望值」，它是先斷言了這個區分，再用來合理化接下來要推出的三個維度。當成一個記憶用的比喻可以，當成論證就不行。"
+    },
+    {
+     "id": "s3a.b11",
+     "section": "s3a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L019"
+     ],
+     "text": "**為什麼兩條軌跡要放在同一個 prompt？** 數學上不需要：公式只要兩個獨立算出的純量相減，分兩次 prompt 各自評分完全可行。但論文明講是同一個 prompt 一次拿兩個分數，而且**沒有解釋原因**。合理的猜測是相對比較比絕對評分校準更穩，或是後面的 PPT 本來就要成對比較、一次呼叫拿兩個分數更省，但這些都是我們的推測，不是論文的論述。"
+    },
+    {
+     "id": "s3a.b12",
+     "section": "s3a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L020"
+     ],
+     "text": "**`INTEGER_1_TO_20` 與「用字母」對不上。** 範本裡寫的是 `INTEGER_1_TO_20`（要模型輸出 1 到 20 的整數），但論文旁邊的註解卻說「我們用字母而非數字，以利抽取 logprob」。兩處對不上，論文沒澄清。可能的解釋是 tokenization：兩位數在 tokenizer 裡常被切成兩個 token，改用單一字母（A=1 … T=20）才能保證每個分數恰好一個 token，撈 logprob 才有意義。但論文沒有這樣說明。"
+    }
+   ]
+  },
+  {
+   "id": "s3b.b1",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "有了 prompt，下一步是把分數 token 的機率分佈變成一個數字。"
+  },
+  {
+   "id": "s3b.b2",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "公式的意思，用一句話說：對同一條軌跡，每個準則各問 $K$ 次，每次把「每個可能的分數乘上它的機率」加起來，最後全部平均。下面的符號表在公式之後。"
+  },
+  {
+   "id": "s3b.b3",
+   "section": "s3b",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L021"
+   ],
+   "latex": "R(x,\\tau) = \\frac{1}{CK} \\sum_{c=1}^{C} \\sum_{k=1}^{K} \\sum_{g=1}^{G} p_\\theta(v_g \\mid x,c,\\tau) \\cdot \\varphi(v_g)",
+   "intuition": "s3b.b2"
+  },
+  {
+   "id": "s3b.b4",
+   "section": "s3b",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L022"
+   ],
+   "headers": [
+    "符號",
+    "意義"
+   ],
+   "rows": [
+    [
+     "$x$ / $\\tau$",
+     "任務描述 / 被評分的軌跡"
+    ],
+    [
+     "$c$ / $C$",
+     "第 c 個評分準則 / 準則總數（主實驗 C=3）"
+    ],
+    [
+     "$k$ / $K$",
+     "第 k 次重複評估 / 重複次數（主實驗 K=8）"
+    ],
+    [
+     "$v_g$ / $G$",
+     "第 g 個分數 token / 取用的分數 token 數（下面的例子用 5，主實驗 G=20）"
+    ],
+    [
+     "$p_\\theta(v_g \\mid \\ldots)$",
+     "模型在該位置給 $v_g$ 的機率"
+    ],
+    [
+     "$\\varphi(v_g)$",
+     "把分數 token 對應回實際數值（代表 3 分的 token → 3.0）"
+    ]
+   ]
+  },
+  {
+   "id": "s3b.b5",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L023"
+   ],
+   "text": "拆成三層，再加上最後一步除法來看比較好懂："
+  },
+  {
+   "id": "s3b.b6",
+   "section": "s3b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L023"
+   ],
+   "items": [
+    "**最內層（對 g 加總）：granularity。** 一次 LLM 呼叫，取得分數 token 位置的機率分佈，把 G 個候選分數做機率加權，得到 1 個期望值。",
+    "**中層（對 k 加總）：repetition。** 同一準則重複 K 次，得到 K 個期望值，加總。",
+    "**外層（對 c 加總）：criteria。** 每個準則各自跑完中層，全部加總。",
+    "**最後**除以 $C \\times K$。"
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s3b.b7",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L024"
+   ],
+   "text": "注意分母沒有除以 G。因為最內層是機率加權，$\\sum_g p_\\theta = 1$，那一層本身已經是加權平均了。順帶一提，**總 LLM 呼叫次數是 $C \\times K$**，主實驗每條軌跡 24 次；G 不影響呼叫次數（論文對這點的說法有矛盾，講 G 的那一節會看到）。"
+  },
+  {
+   "id": "s3b.b8",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L025"
+   ],
+   "text": "實際算一遍最有感。假設 G=5，某條軌跡的分數分佈是："
+  },
+  {
+   "id": "s3b.b9",
+   "section": "s3b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L025"
+   ],
+   "headers": [
+    "$v_g$",
+    "$\\varphi(v_g)$",
+    "$p_\\theta(v_g)$",
+    "乘積"
+   ],
+   "rows": [
+    [
+     "$v_1$",
+     "1",
+     "0.02",
+     "0.02"
+    ],
+    [
+     "$v_2$",
+     "2",
+     "0.05",
+     "0.10"
+    ],
+    [
+     "$v_3$",
+     "3",
+     "0.13",
+     "0.39"
+    ],
+    [
+     "$v_4$",
+     "4",
+     "0.35",
+     "1.40"
+    ],
+    [
+     "$v_5$",
+     "5",
+     "0.45",
+     "2.25"
+    ],
+    [
+     "",
+     "",
+     "**合計**",
+     "**4.16**"
+    ]
+   ]
+  },
+  {
+   "id": "s3b.b10",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L026"
+   ],
+   "text": "離散 judge 走 argmax 拿到 **5**；verifier 算期望值拿到 **4.16**。現在關鍵來了：另一條軌跡如果分佈是 $p(v_5)=0.52$、$p(v_4)=0.30$（其餘機率分給更低的分數），argmax 一樣是 5（**平手**），但期望值會落在 4.3 附近（**不平手**）。平手率歸零的機制就是這麼來的。"
+  },
+  {
+   "id": "s3b.b11",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027"
+   ],
+   "text": "上面那組機率是示意值，因為**論文從未公布任何一次評分的實際機率分佈**。"
+  },
+  {
+   "id": "s3b.b12",
+   "section": "s3b",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "公式記號的兩個瑕疵",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s3b.b13",
+     "section": "s3b",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L028"
+     ],
+     "text": "公式本身有兩個瑕疵值得記一下。被加總項 $p_\\theta(v_g \\mid x, c, \\tau)$ 裡有 c 卻**沒有 k**。既然外面在對 k 加總，被加總的東西理應隨 k 變化，否則就是把同一個數字加 K 次再除以 K。內文另一處寫成 $R^{(k)}(x,\\tau)$（有標 k）才是對的，公式本身寫得不嚴謹。另外這條公式編號是 Eq. 3.1，但論文後面兩個地方又改稱它為 Eq. 1，標號沒對齊。"
+    }
+   ]
+  },
+  {
+   "id": "s3c.b1",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "分數算出來之後還有兩步：先壓到 0 到 1，再轉成「誰贏的機率」。"
+  },
+  {
+   "id": "s3c.b2",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L029"
+   ],
+   "text": "分數算完之後會壓到 [0,1]："
+  },
+  {
+   "id": "s3c.b3",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "白話說，就是把分數換算成「落在量表的哪個位置」：最低分是 0，最高分是 1。"
+  },
+  {
+   "id": "s3c.b4",
+   "section": "s3c",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L029"
+   ],
+   "latex": "R \\leftarrow \\frac{R - \\varphi_{\\min}}{\\varphi_{\\max} - \\varphi_{\\min}}",
+   "intuition": "s3c.b3"
+  },
+  {
+   "id": "s3c.b5",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L029"
+   ],
+   "text": "上例是 (4.16 − 1) / (5 − 1) = **0.79**。"
+  },
+  {
+   "id": "s3c.b6",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L030"
+   ],
+   "text": "論文沒解釋為什麼要正規化，但從機制推敲得出來：正規化不改變單次比較的排序（它是線性單調變換），真正影響的是下一步 sigmoid（把任意大小的數字壓到 0 到 1 之間的函數）會不會飽和。"
+  },
+  {
+   "id": "s3c.b7",
+   "section": "s3c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L031"
+   ],
+   "headers": [
+    "情境",
+    "差值",
+    "σ(差值)"
+   ],
+   "rows": [
+    [
+     "1–20 原始量表，兩條差 8 分",
+     "8.0",
+     "0.9997"
+    ],
+    [
+     "正規化後同樣差距",
+     "0.42",
+     "0.60"
+    ]
+   ]
+  },
+  {
+   "id": "s3c.b8",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L032"
+   ],
+   "text": "沒有正規化的話，「好一點」和「好很多」都會被壓成 1.0，等於把剛剛辛苦保留下來的細緻度又丟掉一次。這在後面會細講的排名演算法 PPT 裡才真正出問題，因為 PPT 是把多場比較的機率**累加**起來當排名依據；一旦飽和，累加值就幾乎只反映「你有沒有碰到弱對手」，而不是「你到底多強」。"
+  },
+  {
+   "id": "s3c.b9",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L033"
+   ],
+   "text": "接著把分數差轉成偏好機率，用的是 Bradley–Terry（一個把實力差距轉成勝率的模型）。"
+  },
+  {
+   "id": "s3c.b10",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "白話說：分數差越大，前者贏的機率越接近 1；兩者一樣，就是對半。"
+  },
+  {
+   "id": "s3c.b11",
+   "section": "s3c",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L033"
+   ],
+   "latex": "P(\\tau_i \\succ \\tau_j \\mid x) = \\frac{1}{1 + \\exp\\left(-\\left(R(x,\\tau_i) - R(x,\\tau_j)\\right)\\right)}",
+   "intuition": "s3c.b10"
+  },
+  {
+   "id": "s3c.b12",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L033"
+   ],
+   "text": "R(τi)=0.79、R(τj)=0.62 → 差值 0.17 → P = 0.542，忠實反映「差不多但略勝」。"
+  },
+  {
+   "id": "s3c.b13",
+   "section": "s3c",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "常見誤解：O(N²) 是誰造成的？以及這篇的 BT 用法哪裡不同",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s3c.b14",
+     "section": "s3c",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L034"
+     ],
+     "text": "有個常見的誤解要澄清：**O(N²) 不是 Bradley–Terry 造成的，是「循環賽這個比較排程」造成的**（O(N²) 指 N 條候選兩兩都比，次數大約是 N×N 的量級，後面 PPT 一節會細講）。兩者是不同層次的東西："
+    },
+    {
+     "id": "s3c.b15",
+     "section": "s3c",
+     "type": "list",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L034"
+     ],
+     "items": [
+      "**比較排程**（要比哪些配對）：O(N²) 出在這裡，它產生比較結果。",
+      "**Bradley–Terry**（結果 → 機率）：只是一個數學模型。"
+     ],
+     "ordered": false
+    },
+    {
+     "id": "s3c.b16",
+     "section": "s3c",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L035"
+     ],
+     "text": "而且這篇的用法跟經典 BT 是反過來的："
+    },
+    {
+     "id": "s3c.b17",
+     "section": "s3c",
+     "type": "table",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L035"
+     ],
+     "headers": [
+      "",
+      "經典 BT",
+      "本篇"
+     ],
+     "rows": [
+      [
+       "已知",
+       "勝負紀錄",
+       "分數 $R(x,\\tau)$"
+      ],
+      [
+       "求",
+       "潛在實力值",
+       "偏好機率 $P(\\tau_i \\succ \\tau_j)$"
+      ],
+      [
+       "方向",
+       "觀測 → 反推",
+       "實力 → 正推"
+      ]
+     ]
+    },
+    {
+     "id": "s3c.b18",
+     "section": "s3c",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L036"
+     ],
+     "text": "論文直接把 R 當成 latent strength（潛在實力值，經典 BT 要從勝負紀錄反推的那個東西），等於跳過了 BT 最麻煩的參數估計。"
+    }
+   ]
+  },
+  {
+   "id": "s3c.b19",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L036"
+   ],
+   "text": "PPT 要省的從來不是 Bradley–Terry 這一步的計算成本（sigmoid 幾乎免費），而是**取得每個 R 所需的 LLM 呼叫成本**，每一對就是 $C \\times K$ = 24 次。"
+  },
+  {
+   "id": "s3c.b20",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L037"
+   ],
+   "text": "那為什麼不乾脆直接比大小就好？因為那只會得到 0 或 1，資訊又被壓扁一次。轉成機率能保留「贏多少」，而 PPT 累加的正是機率而不是勝負。"
+  },
+  {
+   "id": "s3c.b21",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "小結：不取最高分，改把每個分數乘上它的機率再加總，得到連續分數；兩條軌跡的分數差，再轉成勝率。",
+   "purpose": "recap"
+  },
+  {
+   "id": "s4.b1",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "有了連續分數，論文接著問：怎麼讓它更準？答案是三個可以調的旋鈕。先說清楚「準」是怎麼量的：下面的準確率指配對驗證準確率（pairwise accuracy），也就是把兩條軌跡配成一對，verifier 判對的比例。先看全貌。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s4.b2",
+   "section": "s4",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L038"
+   ],
+   "manifest_id": "img-004",
+   "alt": "三張並排的折線與長條圖，分別顯示驗證準確率隨分數 token 粒度、重複評估次數、評分準則拆解而提升，其中三準則 ensemble 的準確率高於任一單一準則。",
+   "caption": "圖 3 — 驗證準確率沿著三個維度都會上升：分數粒度、重複次數、準則拆解。",
+   "paper_label": "Figure 4",
+   "role": "evidence"
+  },
+  {
+   "id": "s4a.b1",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L039"
+   ],
+   "text": "第一個旋鈕是 **Score Token Granularity（G，分數 token 的粒度）**，對付的是「解析度不足」。把 G 拉大，準確率一路上升："
+  },
+  {
+   "id": "s4a.b2",
+   "section": "s4a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L039"
+   ],
+   "headers": [
+    "G",
+    "1",
+    "2",
+    "4",
+    "8",
+    "16",
+    "20"
+   ],
+   "rows": [
+    [
+     "準確率",
+     "73.1%",
+     "73.3%",
+     "75.1%",
+     "75.9%",
+     "77.2%",
+     "77.5%"
+    ]
+   ]
+  },
+  {
+   "id": "s4a.b3",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L040"
+   ],
+   "text": "反直覺的地方在於：擴大量表**並沒有給 verifier 任何新資訊**。論文的說法是，它給了 decoder（把機率轉成輸出的那一步）一個更細的空間，去投射模型內部本來就有的信念：原本會被四捨五入到同一格的相近信念，現在落到不同的連續值上。"
+  },
+  {
+   "id": "s4a.b4",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L041"
+   ],
+   "text": "這裡有個實務上很要緊、但論文自相矛盾的點：**G 到底要不要重跑 LLM？** 論文沒有澄清，兩處講法直接打架。這件事影響很大：如果要重跑，前面「G 不影響呼叫次數」那句就不成立，整個成本評估要重算。兩種讀法各自的論文依據收在下面的折疊裡。"
+  },
+  {
+   "id": "s4a.b5",
+   "section": "s4a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "兩種讀法各自的論文依據",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s4a.b6",
+     "section": "s4a",
+     "type": "table",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L041"
+     ],
+     "headers": [
+      "讀法",
+      "論文依據",
+      "成本後果"
+     ],
+     "rows": [
+      [
+       "不用重跑",
+       "Section 1 說 \"scaling the number of extracted token logits\"；Section 4 說 Gemini 2.5 Flash「可以每個 scoring token 抽到 20 個 top logprob」",
+       "G 只是事後從 API 回傳的候選清單多取幾個，**免費**"
+      ],
+      [
+       "要重跑",
+       "Section 3.2 把 $V_{\\text{score}} = \\{v_1,\\ldots,v_G\\}$ 定義成分數等級的 token 集合；Table 2 把 G=5 標為「同一個 1–5 量表上的期望值」，而 1–5 和 1–20 是兩個不同的 prompt",
+       "換 G 就要換 prompt 重跑，**不免費**"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "s4a.b7",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "論文還用一個叫 SNR 的指標來佐證 granularity 的效果。它只是輔助，細節和一個保留意見收在下面的折疊裡。"
+  },
+  {
+   "id": "s4a.b8",
+   "section": "s4a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "SNR：把「分得更開」和「更準」連起來的指標",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s4a.b9",
+     "section": "s4a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L042"
+     ],
+     "text": "SNR（訊噪比）的分子是「正確軌跡平均比錯誤軌跡高多少分」（訊號），分母是「這個差距有多不穩定」（雜訊）。"
+    },
+    {
+     "id": "s4a.b10",
+     "section": "s4a",
+     "type": "formula",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L042"
+     ],
+     "latex": "\\mathrm{SNR}(G) = \\frac{\\mathbb{E}[s_c - s_i]}{\\sqrt{\\mathrm{Var}(s_c - s_i)}}",
+     "intuition": "s4a.b9"
+    },
+    {
+     "id": "s4a.b11",
+     "section": "s4a",
+     "type": "table",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L043"
+     ],
+     "headers": [
+      "G",
+      "1",
+      "4",
+      "16",
+      "20"
+     ],
+     "rows": [
+      [
+       "SNR (k=16)",
+       "0.775",
+       "0.786",
+       "0.797",
+       "0.799"
+      ]
+     ]
+    },
+    {
+     "id": "s4a.b12",
+     "section": "s4a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L044"
+     ],
+     "text": "這個式子跟統計上的 effect size（Cohen's d）同形式：平均差距除以標準差，標準化之後才能跨情境比較。SNR 在論述裡的定位不是解釋 granularity 的作用機制（那是「更細的投射空間」在做的事），而是把「分得更開」和「最終更準」連起來的橋樑指標。"
+    },
+    {
+     "id": "s4a.b13",
+     "section": "s4a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L045"
+     ],
+     "text": "但這座橋是斷言出來的。論文只說準確率是 SNR 的單調函數，沒給函數形式，也沒解釋 SNR 僅漲 0.024（約 3%）為什麼能對應到準確率漲 4.4pp。四個裸數字，沒有誤差範圍，論述強度撐不太住。"
+    }
+   ]
+  },
+  {
+   "id": "s4a.b14",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "小結：G 讓同樣的內部信念落在更細的刻度上，而不是給 verifier 新資訊。",
+   "purpose": "recap"
+  },
+  {
+   "id": "s4b.b1",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L046"
+   ],
+   "text": "第二個旋鈕是 **Repeated Evaluation（K，重複評估）**，對付的是單次評估的隨機偏差。做法就是同一個問題問 K 次再取平均，數學上就是個 Monte Carlo estimator（用多次隨機取樣的平均去逼近真值的估計方法）："
+  },
+  {
+   "id": "s4b.b2",
+   "section": "s4b",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L046"
+   ],
+   "latex": "\\frac{1}{K} \\sum_{k=1}^{K} R^{(k)}(x,\\tau)",
+   "intuition": "s4b.b1"
+  },
+  {
+   "id": "s4b.b3",
+   "section": "s4b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L047"
+   ],
+   "headers": [
+    "K",
+    "1",
+    "2",
+    "4",
+    "8",
+    "16"
+   ],
+   "rows": [
+    [
+     "準確率",
+     "74.7%",
+     "76.1%",
+     "77.1%",
+     "77.3%",
+     "77.5%"
+    ]
+   ]
+  },
+  {
+   "id": "s4b.b4",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L048"
+   ],
+   "text": "這裡的眉角是：**平均只降變異數，不降偏誤**（偏誤是指模型系統性地往同一個方向誤判）。變異數以 O(1/K) 縮小，偏誤完全不變。如果 verifier 對某類軌跡有系統性誤判、每次都往同一個方向錯，跑一百次還是錯。論文自己也承認 K 變大時報酬遞減，因為困難樣本上的偏誤是相關的。"
+  },
+  {
+   "id": "s4b.b5",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L049"
+   ],
+   "text": "拿量測來類比就很清楚：增加樣本數可以縮小標準誤，但如果秤本身永遠多 2 公斤，量再多次也修不掉那 2 公斤。"
+  },
+  {
+   "id": "s4b.b6",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L050"
+   ],
+   "text": "所以前兩個旋鈕的分工是："
+  },
+  {
+   "id": "s4b.b7",
+   "section": "s4b",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L050"
+   ],
+   "items": [
+    "**Granularity**：讓每一個估計值本身更銳利。",
+    "**Repetition**：把 granularity 消不掉的雜訊平均掉。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s4c.b1",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L051"
+   ],
+   "text": "第三個旋鈕是 **Criteria Decomposition（C，準則拆解）**，對付的是評分標準本身不合理。前兩個旋鈕都假設 rubric（評分標準）本身是好的。但在長時序的 agent 任務裡，「這條軌跡正確嗎？」這個問題把好幾個邏輯上獨立的因素混在一起，verifier 往往只抓住 prompt 裡最顯眼的那一個。"
+  },
+  {
+   "id": "s4c.b2",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L052"
+   ],
+   "text": "論文對 code agent 拆出三個子準則："
+  },
+  {
+   "id": "s4c.b3",
+   "section": "s4c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L052"
+   ],
+   "headers": [
+    "子準則",
+    "要問的問題",
+    "檢查什麼"
+   ],
+   "rows": [
+    [
+     "Specification",
+     "有沒有滿足任務的所有要求？",
+     "完整性"
+    ],
+    [
+     "Output",
+     "最終輸出格式是否符合預期？",
+     "結果"
+    ],
+    [
+     "Errors",
+     "log／工具輸出有無失敗訊號？",
+     "證據"
+    ]
+   ]
+  },
+  {
+   "id": "s4c.b4",
+   "section": "s4c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L053"
+   ],
+   "headers": [
+    "準則",
+    "準確率"
+   ],
+   "rows": [
+    [
+     "Specification 單獨",
+     "75.2%"
+    ],
+    [
+     "Errors 單獨",
+     "76.0%"
+    ],
+    [
+     "Output 單獨",
+     "76.4%"
+    ],
+    [
+     "**三者 ensemble**",
+     "**78.3%**"
+    ]
+   ]
+  },
+  {
+   "id": "s4c.b5",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L054"
+   ],
+   "text": "說白了這就是 ML 的 ensemble：多個各有不同偏誤的弱分類器，只要錯誤不完全相關，平均起來就會優於單一最強者。"
+  },
+  {
+   "id": "s4c.b6",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L055"
+   ],
+   "text": "這一個旋鈕的證據比前兩個薄，有四個缺口："
+  },
+  {
+   "id": "s4c.b7",
+   "section": "s4c",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L055",
+    "L056"
+   ],
+   "items": [
+    "**三個準則怎麼來的，論文沒說**，沒有交代選擇過程，也沒有「試過 4 個、5 個」的 ablation，論文自己在附錄裡承認未來應該改成學習或動態生成。",
+    "**C 根本沒有 scaling 曲線。** G 和 K 都有完整曲線，C 只有四根柱子，沒有 C=2 的資料，也不知道 C=5、C=10 會怎樣。嚴格講，論文只證明了「3 個比 1 個好」，沒證明 C 是一個可 scaling 的軸，但摘要就把它跟另外兩個並列。",
+    "**差距有多可靠沒交代。** 圖裡誤差棒重疊得很明顯，1.9pp 的改善沒做顯著性檢定，也沒說明誤差棒代表什麼。",
+    "**換到別的領域怎麼套用，也沒回答。** 這三個準則明說是為 code-agent 軌跡設計的，但機器人和醫療的實驗也宣稱用同一組。「輸出格式是否符合預期」對一段機器手臂的影片來說是什麼意思？論文從頭到尾沒給答案。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s4c.b8",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "三個旋鈕各對付一個問題，也各有限制：",
+   "purpose": "recap"
+  },
+  {
+   "id": "s4c.b9",
+   "section": "s4c",
+   "type": "list",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "items": [
+    "**G**：解析度不足；效果明確，但成本論述自相矛盾。",
+    "**K**：單次評估的隨機偏差；只降變異數，不降偏誤。",
+    "**C**：評分標準本身不合理；只證明了三個比一個好。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s5.b1",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "理論講完，來看一個案例。這是全篇最能建立直覺的地方。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s5.b2",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L057"
+   ],
+   "text": "這個案例來自 Terminal-Bench V2。**任務**：給定一個 SQLite 資料庫（一種常見的資料庫）和一段沒優化過的 SQL 查詢（向資料庫要資料的指令），寫出效能更好、而且**輸出結果完全相同**的版本。兩條軌跡都由 Claude Opus 4.5 產生，差別在這裡："
+  },
+  {
+   "id": "s5.b3",
+   "section": "s5",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L058"
+   ],
+   "headers": [
+    "軌跡",
+    "做法",
+    "結果"
+   ],
+   "rows": [
+    [
+     "✅ 正確",
+     "等原始查詢在未動過的原始資料庫上跑完（等了 5 分 03 秒），直接 diff 比對（逐行比對兩份輸出有沒有差別）",
+     "通過"
+    ],
+    [
+     "❌ 失敗",
+     "嘗試跑原始查詢，兩次都超時中斷（60 秒、5 分 02 秒）→ 把資料庫複製到 /tmp → 在複製品上加索引，讓原始查詢跑得動 → 拿「有索引副本上的原查詢」對比「未加索引的原始庫上的優化查詢」→ 刪掉所有驗證產物",
+     "失敗"
+    ]
+   ]
+  },
+  {
+   "id": "s5.b4",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "先用一個比喻抓住重點：失敗的 agent 先複製了資料庫、在複製品上動手腳，再拿那份的輸出當標準答案來對，所以「兩邊一致」證明不了什麼；正確的那條是跟沒動過的原始版本比。"
+  },
+  {
+   "id": "s5.b5",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L059"
+   ],
+   "text": "失敗的關鍵在於它是在**兩個不同的物理存取路徑**（資料庫實際取資料的路線，加了索引前後不同）上比較結果。加了索引之後，ORDER BY（排序）碰到相同鍵值的排序可能不一樣，在 LIMIT 500（只取前 500 筆）的邊界上就可能切出不同的資料。所以它從來沒有真正驗證等價性，但它自己回報「內部 diff 檢查通過」。"
+  },
+  {
+   "id": "s5.b6",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L060"
+   ],
+   "text": "verifier 有看出來嗎？有。論文附錄引用的 Gemini 2.5 Flash 推理過程明確指出：agent 修改了資料庫來取得參考輸出，違反了任務的隱含限制，因此並未正確驗證等價性。"
+  },
+  {
+   "id": "s5.b7",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L060"
+   ],
+   "text": "那問題出在哪？**verifier 抓到了，卻用帶保留、程度性的措辭表達**（像是「稍微乾淨一些」「略為直接一點」），講得像無關緊要。模型內部有正確判斷，但這個判斷在 argmax 那一步被壓扁了。"
+  },
+  {
+   "id": "s5.b8",
+   "section": "s5",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L061"
+   ],
+   "manifest_id": "img-008",
+   "alt": "一張三列的表格，比較離散 judge 與連續 verifier 在同一個任務上重複一百次的排序結果，離散 judge 有 88 次平手，連續 verifier 平手次數為零。",
+   "caption": "圖 4 — 同一個任務跑一百次：離散 judge 有 88 次無法區分，連續 verifier 一次都沒有。",
+   "paper_label": "Table 2",
+   "role": "evidence"
+  },
+  {
+   "id": "s5.b9",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "表中 $s_c$ 是正確軌跡的分數，$s_i$ 是錯誤軌跡的分數，每種方法各評分一百次。"
+  },
+  {
+   "id": "s5.b10",
+   "section": "s5",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L062"
+   ],
+   "headers": [
+    "方法",
+    "$s_c > s_i$ ✓",
+    "平手",
+    "$s_c < s_i$ ✗"
+   ],
+   "rows": [
+    [
+     "Judge（離散，G=5）",
+     "12/100",
+     "**88/100**",
+     "0/100"
+    ],
+    [
+     "Verifier（連續，G=5）",
+     "69/100",
+     "0/100",
+     "31/100"
+    ],
+    [
+     "Verifier（連續，G=20）",
+     "**77/100**",
+     "0/100",
+     "23/100"
+    ]
+   ]
+  },
+  {
+   "id": "s5.b11",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L063"
+   ],
+   "text": "這個對照設計很乾淨，因為它一次只動一個變因："
+  },
+  {
+   "id": "s5.b12",
+   "section": "s5",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L063"
+   ],
+   "items": [
+    "**第 1 列 → 第 2 列**：同一個 1–5 量表，只換解碼方式（argmax → 期望值）。88 次平手歸零，正確排序從 12 上升到 69。",
+    "**第 2 列 → 第 3 列**：同樣是期望值，只換量表（1–5 → 1–20）。正確排序從 69 上升到 77。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s5.b13",
+   "section": "s5",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L064",
+    "L065"
+   ],
+   "tone": "warning",
+   "title": "連續分數的代價：被迫表態",
+   "text": "不過最右欄有個論文沒討論的 trade-off：**離散 judge 的排錯次數是 0/100**。它從不把錯的排在對的前面，它只是不表態。連續 verifier 消除平手的代價，是被迫每次都表態，其中二三成表錯了。\n\n用「平手算半分」計分的話，Judge = 12 + 88×0.5 = 56，Verifier G=5 = 69，G=20 = 77，verifier 確實還是勝出，結論站得住腳。但如果你的下游流程是「平手就交給人審」，judge 的行為反而更安全。論文沒有提這一層。"
+  },
+  {
+   "id": "s5.b14",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "再看拉高重複次數會怎樣。"
+  },
+  {
+   "id": "s5.b15",
+   "section": "s5",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L066"
+   ],
+   "manifest_id": "img-009",
+   "alt": "兩張並排的長條圖，左圖是不同重複次數下 judge 與 verifier 的配對驗證準確率，右圖是兩者的平手率，verifier 的平手率在所有設定下都是零。",
+   "caption": "圖 5 — 拉高重複次數，judge 的平手率從 26.7% 掉到 5.5%，但準確率幾乎沒動；verifier 從頭到尾零平手。",
+   "paper_label": "Figure 7",
+   "role": "evidence"
+  },
+  {
+   "id": "s5.b16",
+   "section": "s5",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L067"
+   ],
+   "headers": [
+    "K",
+    "Judge 準確率",
+    "Verifier 準確率",
+    "Judge 平手率",
+    "Verifier 平手率"
+   ],
+   "rows": [
+    [
+     "1",
+     "71.8%",
+     "74.7%",
+     "26.7%",
+     "0.0%"
+    ],
+    [
+     "4",
+     "74.4%",
+     "77.1%",
+     "11.7%",
+     "0.0%"
+    ],
+    [
+     "16",
+     "74.7%",
+     "77.5%",
+     "5.5%",
+     "0.0%"
+    ]
+   ]
+  },
+  {
+   "id": "s5.b17",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L068"
+   ],
+   "text": "論文想讓你看的是對角線：**verifier 只跑 1 次（74.7%）就等於 judge 跑 16 次（74.7%）**。judge 靠重複評估得到的改善，主要機制是用平均打破平手（26.7% → 5.5%），而不是真的變會判斷。就像用重複測量去彌補一把刻度太粗的尺，而 verifier 是直接換一把刻度細的。"
+  },
+  {
+   "id": "s5.b18",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L069"
+   ],
+   "text": "「16 倍運算」這個對比其實有點誇大：judge 和 verifier 在每個 K 下的差距都落在 2.7 到 2.9pp 之間，那個對比只在你剛好只在乎「追平 74.7%」這個門檻時才成立。更實質的差別是天花板不同：judge 在 K=16 已經飽和（74.4 → 74.7），verifier 還停在 77.5%。"
+  },
+  {
+   "id": "s5.b19",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "小結：連續分數把平手拆開、拉大差距，但代價是每次都得表態；光靠重複評估救不了刻度太粗的 judge。",
+   "purpose": "recap"
+  },
+  {
+   "id": "s6.b1",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "verifier 一次只能比兩條，但實際任務是從 N 條裡選最好的。這一節是 PPT。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s6.b2",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L070"
+   ],
+   "text": "完整循環賽（每條候選都和其他每一條各比一次）的比較次數大約是 N×N 的量級，記作 O(N²)。以 N = 20 為例：C(20,2)（20 條裡挑 2 條的配法）= 190 對，190 × 24 = 4,560 次 LLM 呼叫。"
+  },
+  {
+   "id": "s6.b3",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L071"
+   ],
+   "text": "Probabilistic Pivot Tournament（PPT）是全篇唯一算得上演算法新貢獻的部分。核心想法是每條候選只跟一小群 pivot（當作比較基準的候選）比，成本降到 O(Nk)（大約 N×k 次；這裡的 k 是 pivot 的數量，跟前面重複評估的 K 不是同一個東西）。但真正的設計重點不是「用 pivot 省錢」，那很直觀，而是**怎麼用一個便宜的前置步驟，找出值得當 pivot 的候選**。"
+  },
+  {
+   "id": "s6.b4",
+   "section": "s6",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L072"
+   ],
+   "manifest_id": "img-006",
+   "alt": "PPT 的五階段流程圖：候選池、環狀比較、選出 pivot、pivot 錦標賽、最終依正規化勝分選出優勝者。",
+   "caption": "圖 6 — PPT 的五個階段，重點在第二階段那圈環狀比較。",
+   "paper_label": "Figure 6",
+   "role": "mechanism"
+  },
+  {
+   "id": "s6.b5",
+   "section": "s6",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L073"
+   ],
+   "items": [
+    "**Candidates**：N 條候選。",
+    "**Ring pass**：隨機環狀比較 N 場，得到粗略排名，並消除位置偏誤。",
+    "**Pivot select**：取前 k 名為 pivot 集合 P。",
+    "**Pivot rounds**：非 pivot 對 pivot，加上 pivot 彼此互比。",
+    "**Selection**：累積 $w_i / c_i$，取最高者。"
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s6a.b1",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L074"
+   ],
+   "text": "Ring pass 把 N 條候選隨機排成一個環，只比較環上相鄰的 N 對。"
+  },
+  {
+   "id": "s6a.b2",
+   "section": "s6a",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L074"
+   ],
+   "kind": "flow",
+   "direction": "LR",
+   "nodes": [
+    {
+     "id": "t4",
+     "label": "τ4"
+    },
+    {
+     "id": "t1",
+     "label": "τ1"
+    },
+    {
+     "id": "t5",
+     "label": "τ5"
+    },
+    {
+     "id": "t3",
+     "label": "τ3"
+    },
+    {
+     "id": "t6",
+     "label": "τ6"
+    },
+    {
+     "id": "t2",
+     "label": "τ2"
+    }
+   ],
+   "edges": [
+    {
+     "from": "t4",
+     "to": "t1"
+    },
+    {
+     "from": "t1",
+     "to": "t5"
+    },
+    {
+     "from": "t5",
+     "to": "t3"
+    },
+    {
+     "from": "t3",
+     "to": "t6"
+    },
+    {
+     "from": "t6",
+     "to": "t2"
+    },
+    {
+     "from": "t2",
+     "to": "t4"
+    }
+   ]
+  },
+  {
+   "id": "s6a.b3",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L074"
+   ],
+   "text": "比較：$(\\tau_4,\\tau_1)(\\tau_1,\\tau_5)(\\tau_5,\\tau_3)(\\tau_3,\\tau_6)(\\tau_6,\\tau_2)(\\tau_2,\\tau_4)$，共 6 對 = N 對，而非 C(6,2) = 15 對。"
+  },
+  {
+   "id": "s6a.b4",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L075"
+   ],
+   "text": "這個結構同時做到兩件事。第一是**便宜取得粗略排名**，只花 N 場就能大致看出誰強誰弱。第二是**消除位置偏誤**：LLM 對 prompt 裡「Trajectory A」和「Trajectory B」這兩個位置常有系統性偏好，這是已知問題。環狀結構讓每條候選恰好當一次 A、當一次 B，偏好在期望值上互相抵消。這其實就是實驗設計裡的平衡設計（counterbalancing）：讓每個條件在每個位置出現一樣多次，順序效應就會在整體平均中抵銷。"
+  },
+  {
+   "id": "s6a.b5",
+   "section": "s6a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "論文說的「Hamiltonian cycle」是什麼意思",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s6a.b6",
+     "section": "s6a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L076"
+     ],
+     "text": "論文用了「Hamiltonian cycle」這個詞。這是圖論術語（每個節點恰好經過一次並回到起點），因為「判斷任意圖是否存在 Hamiltonian cycle」是 NP-complete 而有名。但這篇完全沒碰到那個難點：這裡是完全圖，任兩條都可以比較，隨便打亂順序就是一個合法的環，論文自己的偽代碼寫的其實就是「取一個隨機排列」。用詞偏華麗，實質是隨機排列成環。"
+    }
+   ]
+  },
+  {
+   "id": "s6a.b7",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L077"
+   ],
+   "text": "另外，「在期望值上抵消」只在**偏誤是加性常數**的時候嚴格成立。如果偏誤跟內容有關（例如只在兩條差不多時才偏好 A），環狀結構不保證能抵消。論文沒討論這個前提，也沒有做「有 ring pass vs 無 ring pass」的對照實驗。"
+  },
+  {
+   "id": "s6b.b1",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L078"
+   ],
+   "text": "每場比較兩邊都更新（$p$ 是 $i$ 贏 $j$ 的機率）："
+  },
+  {
+   "id": "s6b.b2",
+   "section": "s6b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L078"
+   ],
+   "items": [
+    "`p = σ(R_i − R_j)`",
+    "`w_i += p`、`c_i += 1`（$w_i$ 是 win mass，累積的勝分；$c_i$ 是第 i 條累計比過的場次，跟前面的準則數 C 不是同一個東西）",
+    "`w_j += (1 − p)`、`c_j += 1`（兩者相加恰為 1）"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s6b.b3",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L079"
+   ],
+   "text": "環狀結構讓跑完之後每條的 $c_i$ 都是 2，然後按 $w_i/c_i$ 排序取前 k 名當 pivot，沒有額外規則，純粹 top-k。"
+  },
+  {
+   "id": "s6b.b4",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L080"
+   ],
+   "text": "為什麼挑表現好的當 pivot？因為目標是選出最好的那條，需要細分的是頂端誰最好，不是墊底誰比較不爛。如果 pivot 挑到明顯很差的候選，所有比較都只會得到「大家都比它好」這種沒有鑑別力的結果。這跟 quickselect 選 pivot 的思路一樣：不需要完全排序，只要找最大者，資源就該集中在可能是答案的那一區。"
+  },
+  {
+   "id": "s6b.b5",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L081"
+   ],
+   "text": "一個論文完全沒分析的疑慮：**pivot 是根據 ring pass 裡僅僅兩場比較選出來的，樣本量極小。** 如果某條真正最好的候選在 ring pass 中運氣不好、兩場都碰到強對手，它的 $w_i/c_i$ 就會偏低，可能直接落榜、進不了 pivot 集合。論文沒有分析這個「好候選被誤篩掉」的機率。"
+  },
+  {
+   "id": "s6b.b6",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L082"
+   ],
+   "text": "接著比兩類配對：非 pivot 對每個 pivot（$(N-k)\\times k$ 對），以及 pivot 彼此互比（$C(k,2)$ 對）。後者是必要的，因為最後還得在 pivot 之間分高下。三項加起來，就是總比較次數："
+  },
+  {
+   "id": "s6b.b7",
+   "section": "s6b",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L082"
+   ],
+   "latex": "N + k(N-k) + \\binom{k}{2}",
+   "intuition": "s6b.b6"
+  },
+  {
+   "id": "s6b.b8",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L082"
+   ],
+   "text": "N=20, k=5 → 20 + 75 + 10 = 105 對，對照循環賽 190 對，省約 45%。"
+  },
+  {
+   "id": "s6b.b9",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L083"
+   ],
+   "text": "最終選出是 $i^* = \\arg\\max_i w_i / c_i$。為什麼要除以 $c_i$？因為 pivot 參與的場次遠多於非 pivot（pivot 跟所有人比，非 pivot 只跟 k 個比），只看 $w_i$ 的話，pivot 光靠場次多就會累積出比較大的數字。除以 $c_i$ 換算成「平均每場贏多少」才公平。"
+  },
+  {
+   "id": "s6c.b1",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "PPT 到底省多少、準多少？先講結論：它的優勢要在 N 夠大時才看得到，而論文主實驗的 N 只有 3 到 5。證據在這張表。"
+  },
+  {
+   "id": "s6c.b2",
+   "section": "s6c",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L084"
+   ],
+   "manifest_id": "img-018",
+   "alt": "一張表格，列出 pass@1、V1 在四種預算下、PPT 在 k=1 到 k=9、以及完整循環賽的查詢配對數與準確率。",
+   "caption": "圖 7 — PPT 的預算與準確率權衡：k 愈大愈準，但報酬遞減得很快。",
+   "paper_label": "Table 9",
+   "role": "evidence"
+  },
+  {
+   "id": "s6c.b3",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L085"
+   ],
+   "text": "設定是 N=20 候選、89 題、Terminus-2 harness，候選數跟主結果表不同（主實驗的 N 只有 3 到 5），所以這裡的 pass@1 跟主結果表的 Pass@1 不是同一個設定，不要直接拿來比。harness 指的是驅動 agent 的那層腳手架：工具介面、互動迴圈、終止條件。表裡的 V1 是論文拿來對照的前一代排名方法，`1N` 到 `7N` 指的是它花掉的比較預算倍率。要先說清楚的是，**論文全文沒有解釋 V1 怎麼運作**，只把它當基準線用。"
+  },
+  {
+   "id": "s6c.b4",
+   "section": "s6c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L086"
+   ],
+   "headers": [
+    "方法",
+    "查詢配對數",
+    "準確率"
+   ],
+   "rows": [
+    [
+     "pass@1",
+     "—",
+     "52.64%"
+    ],
+    [
+     "V1 (1N)",
+     "1,400",
+     "64.64%"
+    ],
+    [
+     "V1 (3N)",
+     "4,200",
+     "65.62%"
+    ],
+    [
+     "V1 (5N)",
+     "7,000",
+     "65.85%"
+    ],
+    [
+     "V1 (7N)",
+     "9,800",
+     "65.53%"
+    ],
+    [
+     "PPT k=1",
+     "2,570",
+     "65.83%"
+    ],
+    [
+     "PPT k=5",
+     "6,609",
+     "66.27%"
+    ],
+    [
+     "PPT k=9",
+     "9,630",
+     "67.13%"
+    ],
+    [
+     "Full Round-Robin",
+     "13,111",
+     "67.42%"
+    ]
+   ]
+  },
+  {
+   "id": "s6c.b5",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L087"
+   ],
+   "text": "k 愈大愈準但報酬遞減得很快（k=1 到 k=9 只漲 1.3pp，預算卻變成將近 4 倍）；k=9 已經逼近完整循環賽（67.13% vs 67.42%），預算省 27%。基準線 V1 在 5N 之後不升反降，PPT 則是單調上升，這點是站得住的。"
+  },
+  {
+   "id": "s6c.b6",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L088"
+   ],
+   "text": "但有三個保留意見："
+  },
+  {
+   "id": "s6c.b7",
+   "section": "s6c",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L088"
+   ],
+   "items": [
+    "**論文沒給選 k 的方法論**，只說 k 愈大愈好，但那樣就退化回循環賽了。",
+    "**省下的幅度沒有想像中大**：k=9 相對循環賽只省 27%。O(N²) → O(Nk) 的漸進優勢要 N 夠大才明顯，N=20 還不到那個區間。",
+    "**這張表的 N=20 是特別策展的設定**，這點最重要。主實驗的 N 只有 3 到 5，C(5,2)=10 對，PPT 幾乎省不了什麼。換句話說，那些 SOTA 數字裡，PPT 的貢獻其實很有限。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s6c.b8",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "小結：PPT 用環狀比較便宜地挑出 pivot，再集中預算在頂端；但它的省錢效果要 N 夠大才明顯，主實驗的 N 其實很小。",
+   "purpose": "recap"
+  },
+  {
+   "id": "s7.b1",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "最後逐項檢查實驗結果。重點不是數字多大，而是每個數字是怎麼比出來的。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s7.b2",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L089"
+   ],
+   "text": "四個 benchmark 用完全相同的流程：生成策略對每題產生 N 條候選 → verifier 用 PPT 兩兩評分 → 選出正規化分數最高者提交。這套流程有兩個關鍵性質："
+  },
+  {
+   "id": "s7.b3",
+   "section": "s7",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L089"
+   ],
+   "items": [
+    "**超參數全程固定**在 G=20、K=8、C=3，沒有針對個別 benchmark 調過。",
+    "**完全 training-free**，四個 benchmark 共用同一個框架，沒有任何領域 fine-tuning（針對特定領域再訓練）。"
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s7.b4",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L089"
+   ],
+   "text": "第二點是最重要的實務主張。如果成立，代表你可以直接套到自己的領域，不需要準備訓練資料。"
+  },
+  {
+   "id": "s7a.b1",
+   "section": "s7a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L090"
+   ],
+   "manifest_id": "img-010",
+   "alt": "一張表格，左半是三個 benchmark 上各三個基準模型的準確率，右半是同一候選池上的 Pass@1、Oracle 上限與本方法的準確率。",
+   "caption": "圖 8 — 主結果表。左半和右半是完全不同性質的比較，混著讀會得到錯誤結論。",
+   "paper_label": "Table 3",
+   "role": "evidence"
+  },
+  {
+   "id": "s7a.b2",
+   "section": "s7a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L091"
+   ],
+   "headers": [
+    "Benchmark",
+    "Baseline #1",
+    "#2",
+    "#3",
+    "Pass@1",
+    "Oracle",
+    "Ours"
+   ],
+   "rows": [
+    [
+     "Terminal-Bench V2",
+     "GPT-5.5 (84.7%)",
+     "Opus 4.7 (80.2%)",
+     "G3.1 Pro (80.2%)",
+     "83.1%",
+     "92.1%",
+     "86.5%"
+    ],
+    [
+     "SWE-Bench Verified",
+     "Opus 4.5 (76.8%)",
+     "G3 Flash (75.8%)",
+     "M2.5 (75.8%)",
+     "76.1%",
+     "84.4%",
+     "78.2%"
+    ],
+    [
+     "MedAgentBench",
+     "Opus 4.8 (70.2%)",
+     "G3.5 Flash (66.3%)",
+     "GPT-5.5 (65.1%)",
+     "70.2%",
+     "75.0%",
+     "73.3%"
+    ]
+   ]
+  },
+  {
+   "id": "s7a.b3",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L092"
+   ],
+   "text": "模型名稱沿用論文的縮寫寫法：Opus 是 Claude Opus 系列，G 開頭的是 Gemini 系列。"
+  },
+  {
+   "id": "s7a.b4",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L093"
+   ],
+   "text": "這張表要分兩半讀。左半是其他模型的成績，用的是不同的 harness、不同的抽樣設定，是蘋果比橘子；右半是同一個候選池上的 Pass@1 → Oracle → Ours，是完全可控的對照，這才是 verifier 的功勞。"
+  },
+  {
+   "id": "s7a.b5",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L093"
+   ],
+   "text": "右半才是誠實的證據，因為同一批候選、同一個生成器，唯一變因是「怎麼挑」："
+  },
+  {
+   "id": "s7a.b6",
+   "section": "s7a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L094"
+   ],
+   "headers": [
+    "Benchmark",
+    "Pass@1 → Ours",
+    "verifier 真正貢獻",
+    "Oracle 落差",
+    "兌現比例"
+   ],
+   "rows": [
+    [
+     "Terminal-Bench V2",
+     "83.1% → 86.5%",
+     "**+3.4pp**",
+     "9.0pp",
+     "38%"
+    ],
+    [
+     "SWE-Bench Verified",
+     "76.1% → 78.2%",
+     "**+2.1pp**",
+     "8.3pp",
+     "25%"
+    ],
+    [
+     "MedAgentBench",
+     "70.2% → 73.3%",
+     "**+3.1pp**",
+     "4.8pp",
+     "65%"
+    ]
+   ]
+  },
+  {
+   "id": "s7a.b7",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L095"
+   ],
+   "text": "回頭對照一開始的動機。在這個 N=5 的候選池上，oracle 只到 92.1%，可搶的空間是 9.0pp，而 verifier 兌現了其中的 38%；三個 benchmark 加起來，兌現比例落在 25% 到 65% 之間。至於圖 1 那個 98.9%，那是把 K 放大到很大時的理論天花板，跟這裡的 9.0pp 不是同一個尺度，真正拿來評分的應該是後者。"
+  },
+  {
+   "id": "s7a.b8",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L096"
+   ],
+   "text": "三個問題要標出來："
+  },
+  {
+   "id": "s7a.b9",
+   "section": "s7a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L096"
+   ],
+   "items": [
+    "**「SOTA」宣稱混雜了 harness 差異。** 86.5% 是 GPT-5.5 加上 Capy harness 加上 N=5 抽樣加上 verifier，而 84.7% 是 GPT-5.5 加上另一個 harness。三個變因不同，把差距全歸給 verifier 不成立，乾淨的比較是 83.1% → 86.5%。",
+    "**RoboRewardBench 整列消失了。** caption 說涵蓋四個 benchmark，表格只有三列。它因為衡量的是 preference accuracy 而被移到另一張表，但 caption 沒說明。",
+    "**SWE-Bench 的候選池是異質的。** N=3 是從三個不同模型各抽一條，Pass@1 是三模型平均，verifier 的任務其實變成「跨模型家族挑最好」。這是更有價值的應用場景（模型路由），但也讓它跟其他列不可直接比較。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s7b.b1",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "那乾淨的證據在哪？在機器人的 benchmark RoboRewardBench 上，量的是 preference accuracy（偏好準確率）。下表的 VLM 指能看影像的語言模型。"
+  },
+  {
+   "id": "s7b.b2",
+   "section": "s7b",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L097"
+   ],
+   "manifest_id": "img-011",
+   "alt": "一張表格，比較五種方法在 RoboRewardBench 上的偏好準確率，本方法 87.4% 排名最高，同一個模型的離散 judge 版本只有 70.8%。",
+   "caption": "圖 9 — 同一個模型，只改解碼方式，準確率從 70.8% 跳到 87.4%，還贏過兩個專門訓練的機器人 reward model。",
+   "paper_label": "Table 4",
+   "role": "evidence"
+  },
+  {
+   "id": "s7b.b3",
+   "section": "s7b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L098"
+   ],
+   "headers": [
+    "方法",
+    "準確率"
+   ],
+   "rows": [
+    [
+     "**LLM-as-a-Verifier（本方法）**",
+     "**87.4%**"
+    ],
+    [
+     "RoboReward-8B（訓練過，約 4.5 萬 episode）",
+     "81.4%"
+    ],
+    [
+     "Robometer-4B（訓練過，約 100 萬筆比較）",
+     "78.8%"
+    ],
+    [
+     "TOPReward",
+     "74.7%"
+    ],
+    [
+     "LLM-as-a-Judge（同一個 VLM，離散）",
+     "70.8%"
+    ]
+   ]
+  },
+  {
+   "id": "s7b.b4",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L099"
+   ],
+   "text": "這比主表有說服力得多，理由有三個："
+  },
+  {
+   "id": "s7b.b5",
+   "section": "s7b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L099"
+   ],
+   "items": [
+    "**同一個模型的乾淨對照。** 87.4% 和 70.8% 是同一個 Qwen 3.6 35B，唯一差別是離散 argmax 對上連續期望值。這 16.6pp 是全篇最大、也最能歸因給方法本身的數字，完全沒有 harness 混雜。",
+    "**直接驗證了第二個問題。** 一個零訓練的框架打贏兩個專門訓練的機器人 reward model。",
+    "**跨模態。** 輸入從文字換成多幀影片，方法完全不用改。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s7b.b6",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L100"
+   ],
+   "text": "還有一個附帶結果同樣值得記住：把 RoboReward-8B 的輸出改用連續公式解碼，與人類標註的 MAE（平均絕對誤差，越小越接近人類）從 **1.11 降到 0.72**。也就是說，這套解碼方式可以直接加在既有的 reward model 上，不是非得從頭換掉。"
+  },
+  {
+   "id": "s7b.b7",
+   "section": "s7b",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L101"
+   ],
+   "tone": "warning",
+   "title": "兩個保留",
+   "text": "論文完全沒有解釋，為什麼專門訓練的機器人 reward model 會在自己的領域輸掉。相關那節只列數字，沒有任何分析。另外有一層利益關係論文自己沒揭露：RoboRewardBench 是共同作者也掛名的 RoboReward 論文提出的，被比較的 RoboReward-8B 正是那篇的模型。"
+  },
+  {
+   "id": "s7b.b8",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "小結：主表只有「同一候選池」那一半能歸功給 verifier，而機器人這一列是同一個模型只改解碼方式，是最乾淨的因果證據。",
+   "purpose": "recap"
+  },
+  {
+   "id": "s8.b1",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L102"
+   ],
+   "text": "連續分數還有第二種用法：不只能挑最好的，還能反映「agent 做到哪了」。論文定義了 Value-Order Correlation（VOC），把「步驟的時間順序」跟「verifier 對該步驟**前綴**的分數」算 Spearman 等級相關（衡量兩組排序有多一致，1 代表完全同向）。分數完美隨步驟遞增，VOC 就趨近 1。"
+  },
+  {
+   "id": "s8.b2",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L102"
+   ],
+   "text": "概念上這等同 RL 的 value function：V(s) 估「從此狀態出發的預期回報」，在往目標推進的軌跡上應該隨著接近目標而上升。"
+  },
+  {
+   "id": "s8.b3",
+   "section": "s8",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L103"
+   ],
+   "manifest_id": "img-013",
+   "alt": "一張折線圖，成功軌跡的 verifier 分數隨步驟穩定上升到接近 1.0，失敗軌跡的分數一路偏低，圖上標註了兩條軌跡各自的關鍵事件。",
+   "caption": "圖 10 — 單一任務上的對照：成功軌跡分數穩定爬升，失敗軌跡在裝錯套件、磁碟爆掉之後一路低迷。",
+   "paper_label": "Figure 8",
+   "role": "evidence"
+  },
+  {
+   "id": "s8.b4",
+   "section": "s8",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L104"
+   ],
+   "headers": [
+    "軌跡",
+    "關鍵事件",
+    "分數走向"
+   ],
+   "rows": [
+    [
+     "成功",
+     "Read model.py → Install g++ → Install CPU-only torch → Update hidden_dim → DONE",
+     "持續上升 → ~1.0"
+    ],
+    [
+     "失敗",
+     "不必要地裝 torchvision → 磁碟空間耗盡 → 編譯錯誤",
+     "一路偏低"
+    ]
+   ]
+  },
+  {
+   "id": "s8.b5",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L105"
+   ],
+   "text": "這張圖很有說服力。問題是**論文在這裡講得過頭了**。"
+  },
+  {
+   "id": "s8.b6",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L105"
+   ],
+   "text": "論文主張 verifier 在停滯或走向失敗的軌跡上分數**大致持平**，因此同一個分數可以兼作進度量測與早期預警。但它自己的統計數字不支持這個說法。在 500 條 Terminal-Bench V2 軌跡上："
+  },
+  {
+   "id": "s8.b7",
+   "section": "s8",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L106",
+    "L107"
+   ],
+   "headers": [
+    "軌跡結果",
+    "論文的敘事",
+    "Spearman VOC"
+   ],
+   "rows": [
+    [
+     "成功",
+     "上升 ↗",
+     "0.848 ± 0.012"
+    ],
+    [
+     "失敗",
+     "持平 →",
+     "0.769 ± 0.016（幾乎一樣在升）"
+    ],
+    [
+     "**落差**",
+     "",
+     "**+0.079**"
+    ]
+   ]
+  },
+  {
+   "id": "s8.b8",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L107"
+   ],
+   "text": "0.769 是相當高的正相關，代表**失敗軌跡的分數也在隨時間穩定上升**，離「持平」（VOC ≈ 0）差得很遠。圖 10 是單一任務的單一案例，上表是 500 條軌跡的統計，論文選擇用前者當敘事主軸，卻沒討論後者為什麼落差這麼小。用 0.079 的落差做執行中的即時預警，鑑別力其實很弱。"
+  },
+  {
+   "id": "s8.b9",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L108"
+   ],
+   "text": "機器人那邊的 VOC 數字倒是很漂亮（本方法 0.966，RoboReward-8B 0.877，Robometer-4B 0.780，TOPReward 0.565），但那是不同方法之間的比較，跟「成功 vs 失敗能不能區分」是兩回事。"
+  },
+  {
+   "id": "s8a.b1",
+   "section": "s8a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L109"
+   ],
+   "text": "論文最後還附了一個工程產物 TurboAgent，給 Claude Code 及 OpenAI-API 相容客戶端用的擴充，以推論時的代理層（proxy）形式夾在客戶端與 LLM 供應商之間，兩邊都不用改：每個請求平行送出 N 條候選，用 PPT 選最好的回傳。想法不錯，但論文對它**沒有任何量化評估**：沒有延遲數字、沒有成本分析、沒有使用者研究，就是個概念驗證。"
+  },
+  {
+   "id": "s8a.b2",
+   "section": "s8a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "小結：進度追蹤的圖很漂亮，但統計數字顯示成功與失敗軌跡的分數都在上升，只差 0.079，拿來做早期預警證據不足。",
+   "purpose": "recap"
+  },
+  {
+   "id": "s9.b1",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "如果你想自己用，順序是這樣：",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s9.b2",
+   "section": "s9",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L110",
+    "L111",
+    "L112"
+   ],
+   "items": [
+    "**投資報酬率最高的一步：把現有 LLM-as-judge 的 argmax 換成讀 top-k logprobs 算期望值。** 二元或離散判斷變成連續分數，直接獲得排序能力與信心度。前提是看你的 G 怎麼取得：如果多取的分數都來自同一次呼叫回傳的候選清單，就是零成本；如果換 G 就得換 prompt（例如從 1–5 量表換成 1–20），就要重跑，成本不是零。論文兩種講法都有，所以第一件事是在自己的環境確認是哪一種。",
+    "**次一步是 criteria decomposition。** 輕量、可以直接套進任何 prompt-based judge。但子準則要自己設計：論文那組 Specification / Output / Errors 是為 reference-free 的 terminal 任務設計的，不見得適用其他情境，而論文也提供不了設計方法論。",
+    "**Repeated evaluation 概念最簡單，但成本線性增加**，而且記得它只降變異數、不降偏誤。"
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s9.b3",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L113"
+   ],
+   "text": "成本要自己算清楚：每條軌跡的 LLM 呼叫次數 = $C \\times K$，主實驗設定 C=3, K=8，所以每條軌跡 24 次。再乘上 PPT 的比較對數，總量會很可觀。論文從未討論延遲與成本，這是套用前必須自己算的一筆帳。"
+  },
+  {
+   "id": "s9.b4",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L114"
+   ],
+   "text": "最後一個實務提醒：如果你的情境**有 ground truth**，核心公式本來就是單條評分的形式，成對比較是外加的，只在「從 N 條選最好」時才需要。你可以只用單條評分那條公式，把 ground truth 放進 prompt。理論上會更好校準（判斷任務比 reference-free 簡單）。"
+  },
+  {
+   "id": "s9.b5",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L114"
+   ],
+   "text": "但**論文從未驗證過這個用法**：所有實驗都是「選最好」或「兩兩比較」，沒有任何「單條對照 ground truth 判對錯」的實驗。不能假設 73.1% → 77.5% 那條曲線會重現，得自己跑 ablation。"
+  },
+  {
+   "id": "s9.b6",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L114"
+   ],
+   "text": "另外要注意，改成連續分數之後，你會被迫提前決定「多少分算對」的閾值。"
+  },
+  {
+   "id": "s10.b1",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L115"
+   ],
+   "text": "這篇論文的核心洞見很小、也很實在：**LLM 打分數時內部的信念是連續的，是 argmax 把它壓扁的**。把 argmax 換成期望值，平手率從 27% 降到 0%，排序能力就回來了。"
+  },
+  {
+   "id": "s10.b2",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L116"
+   ],
+   "text": "技術上沒有一項是全新的，價值在於系統化打包和扎實的 ablation。而最值得記住的兩個數字都不在摘要裡：機器人 benchmark 上同一個模型只改解碼方式，準確率從 70.8% 跳到 87.4%；把這套解碼加在既有的 reward model 上，與人類標註的 MAE 從 1.11 降到 0.72。前者是全篇最乾淨的因果證據，後者說明這是個可以疊加的改動，不是非得整套換掉。"
+  },
+  {
+   "id": "s10.b3",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L117"
+   ],
+   "text": "至於摘要裡那些 SOTA 數字，扣掉 harness 差異之後，verifier 真正的貢獻是 +2 到 3 個百分點。這個幅度不難看，但實際候選池上可搶的 oracle 空間也就 5 到 9pp，兌現了四分之一到三分之二，跟「把 oracle 的巨大潛力兌現」的敘事還有距離。"
+  },
+  {
+   "id": "s10.b4",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "下次看到有人用 LLM 打分數，可以問一個問題：他讀的是模型說出來的分數，還是模型說出這個分數時，每個分數各有多大機率？如果是前者，先檢查有多少候選被打成了平手。另外，論文說這個分數可以兼作進度預警，但它自己的統計（成功與失敗軌跡只差 0.079）並不支持，用的時候要打折扣。"
+  }
+ ],
+ "decisions": [
+  {
+   "id": "D01",
+   "kind": "folded",
+   "ledger": "L028",
+   "why": "公式記號的兩個瑕疵（缺 k、Eq. 編號）是對論文寫法的挑剔，不影響結果的解讀，收進公式旁的折疊；全文保留",
+   "needs_human": true
+  },
+  {
+   "id": "D03",
+   "kind": "folded",
+   "ledger": "L010",
+   "why": "『oracle 圖在論文裡的角色』是對論文行文順序的說明，不影響數字怎麼讀，收進折疊；全文保留",
+   "needs_human": true
+  },
+  {
+   "id": "D04",
+   "kind": "folded",
+   "ledger": "L014",
+   "why": "『judge 與 verifier 的區分是修辭鋪墊』的批評跟著另外兩個『論文沒解釋』的地方收進同一個折疊，讓核心公式更早出現；全文保留",
+   "needs_human": true
+  },
+  {
+   "id": "D05",
+   "kind": "folded",
+   "ledger": "L019",
+   "why": "『為什麼兩條軌跡放同一個 prompt』是 Writer 的推測（標明為我們的推測），語氣不變，收進折疊；全文保留",
+   "needs_human": true
+  },
+  {
+   "id": "D06",
+   "kind": "folded",
+   "ledger": "L020",
+   "why": "『INTEGER_1_TO_20 與用字母對不上』是論文沒澄清的小矛盾，附 Writer 的可能解釋，收進折疊；全文保留",
+   "needs_human": true
+  },
+  {
+   "id": "D02",
+   "kind": "folded",
+   "ledger": "L045",
+   "why": "『SNR 這座橋是斷言出來的』的批評跟著 SNR 的整段推導一起收進折疊（SNR 本身是輔助指標，不是準確率證據）；全文保留",
+   "needs_human": true
+  }
+ ]
+}
