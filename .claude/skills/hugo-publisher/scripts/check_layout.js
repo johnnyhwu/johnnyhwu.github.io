@@ -13,8 +13,8 @@
  *     "$ ... $" pair turns a sentence into one unbroken run)
  *
  * Usage (after a build into .tools/public, see hugo-build.md):
- *   node .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug> [--root .tools/public]
- * e.g. node .claude/skills/hugo-paper-post/scripts/check_layout.js paper-intro/jev-as-a-judge
+ *   node .claude/skills/hugo-publisher/scripts/check_layout.js <section>/<slug> [--root .tools/public]
+ * e.g. node .claude/skills/hugo-publisher/scripts/check_layout.js paper-intro/jev-as-a-judge
  *
  * Needs Playwright + a Chromium. It is NOT a project dependency: it is looked
  * up from the global node_modules (cloud sessions ship both, with

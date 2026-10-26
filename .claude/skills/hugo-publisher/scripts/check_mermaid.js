@@ -12,7 +12,7 @@
  * the page in place of the CDN, then checks every <pre class="mermaid">.
  *
  * Usage (after a build into .tools/public, see hugo-build.md):
- *   node .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> [--root .tools/public] [--shots dir]
+ *   node .claude/skills/hugo-publisher/scripts/check_mermaid.js <section>/<slug> [--root .tools/public] [--shots dir]
  *
  * --shots <dir> also saves one PNG per diagram per language/width, so a human
  * (or you, viewing one at a time) can read the rendered labels: a clipped

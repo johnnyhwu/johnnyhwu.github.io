@@ -49,8 +49,9 @@ Then choose, on purpose, a combination none of them uses, and add a row for your
 
 ## How to find the idea
 
-1. **Find the one mechanism.** Read the finished `article.md`, not the PDF, and pick the single idea the post
-   spends most of its length on. Express it as a *flow* or a *structure*: a stream converging on a point, a
+1. **Find the one mechanism.** Start from the plan's `meta.cover_brief` (the Planner already named the central
+   mechanism and the labels it allows, each tied to a ledger item); read the plan or `article.md`, never the PDF,
+   if you need more. Pick the single idea the post spends most of its length on. Express it as a *flow* or a *structure*: a stream converging on a point, a
    tree branching, layers stacking, a loop closing, a gate splitting traffic. Resource2Skill is "a dense
    stream of video distilled through one aperture into a hierarchical skill tree".
 2. **Write the design philosophy** (4 to 6 paragraphs, per `canvas-design`) and keep it in the scratchpad.
@@ -84,7 +85,7 @@ uv run python render.py <scratch dir>    # writes featured-image.png and a 1000p
    enlarge it or remove it, because fewer, bigger elements beat many small ones.
 3. Refine instead of adding. If it feels unfinished, make what is already there crisper (spacing, opacity,
    alignment) rather than adding shapes. `canvas-design`'s own final step says the same.
-4. Run `uv run python .claude/skills/hugo-paper-post/scripts/check_cover.py <png>` for size and margins.
+4. Run `uv run python .claude/skills/hugo-publisher/scripts/check_cover.py <png>` for size and margins.
 5. Copy the PNG into the bundle as `featured-image.png`, set `featuredImage: "featured-image.png"` in both
    language files, and re-run `verify_post.py`.
 

@@ -1,35 +1,26 @@
-# Resolving article.md image references to real files
+# Resolving figure blocks to real files
 
-For every image reference in `<Paper>/article.md`'s body — Markdown syntax
-`![alt](img-00N)` where the "src" is a manifest id, not a path — resolve it
-to an actual file in `<Paper>/assets/images/` (or the topic's documented
-exception path), then decide how wide it should display.
+Every figure in the post is a `figure` block in the plan JSON (`plans/<slug>/post.*.json`) with a `manifest_id`
+(`img-00N`). The Planner (Step 3) decided which figure goes where and wrote its alt and caption;
+`validate_plan.py` has already checked that every `manifest_id` exists in `image-manifest.json` and that every
+image `article.md` references is used. `render_post.py` then resolves each id to its file (paths in the
+manifest are relative to `source.root`, i.e. `AI-Research/`), names it after the paper's own number
+(`figure5.png`, `table11.png`), copies it into the bundle and sets `width=` (below).
 
-Images may be looked at (the goal is a high-quality post), but the join
-itself is text: ids and captions first, pixels only to confirm or to judge.
+Images may be looked at (the goal is a high-quality post), but the join itself is text: ids and captions first,
+pixels only to confirm or to judge.
 
-## Step 1: direct id match (the default)
+## What can still go wrong, and who fixes it
 
-Look up the id in the article's trailing `figure-map` block to get
-`references_manifest_caption` and `agent_match_hint`, then find that same
-id directly in `image-manifest.json`. In practice this is nearly always a
-clean match — the Writer step reuses the manifest's own ids on purpose so
-this join is trivial. If the id and caption line up, you're done with
-resolution; no image needs opening to confirm it.
+- **An id that does not exist or does not match its caption**: `validate_plan.py` fails. That is a Step 3 fix
+  (edit the figure block), never a guess here.
+- **A crop that is cut off, blank or illegible**: found by looking (next section). Report it in the PR; a re-crop
+  is a Step 1 job in `AI-Research`.
 
-## Step 2: semantic fallback (only if step 1 doesn't cleanly match)
-
-Only if the id has no manifest entry, or the caption in `figure-map`
-clearly doesn't match the manifest entry at that id: compare
-`references_manifest_caption` / `agent_match_hint` against every manifest
-entry's `caption` / `nearby_text` and pick the best textual match.
-
-## Step 3: look at the images that need it — through a subagent
+## Look at the images that need it — through a subagent
 
 Have an image looked at when:
 - the matched manifest entry has `"parser_confidence": "low"`, **or**
-- step 2's semantic match was ambiguous (two plausible candidates), **or**
-- the id had no confident match at all and you're about to guess, **or**
 - you want to judge quality (is the crop cut off? is the text legible at
   the width it will display?).
 

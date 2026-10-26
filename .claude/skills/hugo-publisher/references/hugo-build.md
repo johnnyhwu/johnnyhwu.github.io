@@ -11,7 +11,7 @@ source Markdown.
 
 ```bash
 git submodule update --init themes/DoIt     # theme only; a bare --init also clones AI-Research
-.claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+.claude/skills/hugo-publisher/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
 ```
 
 `scripts/hugo.sh` reads `HUGO_VERSION` from `.github/workflows/hugo.yaml`, downloads exactly that release into
@@ -43,7 +43,7 @@ A build proves the HTML exists, not that it *looks* right: KaTeX typesets in the
 gitignored `.tools/`; nothing is installed system-wide). Run the checks through it:
 
 ```bash
-.claude/skills/hugo-paper-post/scripts/node.sh .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug>
+.claude/skills/hugo-publisher/scripts/node.sh .claude/skills/hugo-publisher/scripts/check_layout.js <section>/<slug>
 ```
 
 It serves `.tools/public`, opens the zh-tw and en pages at 1280px and 390px, and exits 1 on horizontal page
@@ -54,7 +54,7 @@ Mermaid diagrams are reported as "NOT checked" by that script (the theme loads m
 block); use the companion, which serves a local mermaid@10 fetched once with `npm pack` into `.tools/mermaid/`:
 
 ```bash
-.claude/skills/hugo-paper-post/scripts/node.sh .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
+.claude/skills/hugo-publisher/scripts/node.sh .claude/skills/hugo-publisher/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
 ```
 
 It fails on a syntax error (mermaid still draws an SVG, an error graphic) or an over-wide diagram and saves a PNG
@@ -82,7 +82,7 @@ package fails with the unrelated-looking `:contentbasename` error above.
 
 ```bash
 git submodule update --init themes/DoIt
-.claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+.claude/skills/hugo-publisher/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
 ```
 
 (Match `baseURL` and flags to `.github/workflows/hugo.yaml` if they have
