@@ -178,6 +178,13 @@ class TestValidate(Base):
         self.assertIn("numbers differ", out)
 
 
+class TestNumberTokens(unittest.TestCase):
+    def test_figure_label_does_not_swallow_the_next_table_cell(self):
+        import plan_lib
+        self.assertEqual(plan_lib.num_tokens("無圖\n58.8\n-"), ["58.8"])
+        self.assertEqual(plan_lib.num_tokens("看圖 2 和表 3"), [])
+
+
 class TestViews(Base):
     def test_reader_view_hides_source(self):
         code, out = self.run_cli(PLANNER / "views.py", "reader", self.base / "post.zh.json")
