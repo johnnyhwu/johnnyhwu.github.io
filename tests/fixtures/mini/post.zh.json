@@ -1,0 +1,63 @@
+{
+  "schema": "post-plan/1",
+  "source": {"article": "article.md", "manifest": "image-manifest.json", "root": "."},
+  "meta": {
+    "section": "paper-intro",
+    "slug": "mini-post",
+    "tags": ["Large Language Model", "Agent Memory"],
+    "title": "Mini：一個示範用的測試文章標題",
+    "description": "這是測試用的描述，說明方法 A 如何把流程存成圖，並用驗證閘門決定改動要不要採用，長度足夠通過檢查。",
+    "title_alts": ["另一個標題候選"],
+    "reader": {"persona": "剛入門 AI 的讀者", "promise": "讀完能說出流程圖與驗證閘門各自做什麼", "assumes": ["LLM"]},
+    "takeaways": [
+      {"id": "T1", "text": "把流程存成圖，agent 就不必每一步自己摸索", "memory_hook": "流程圖"},
+      {"id": "T2", "text": "驗證閘門擋掉只在訓練批有效的改動", "memory_hook": "閘門"}
+    ],
+    "hook": {"kind": "tension", "text": "agent 為什麼總在重複同一個無效動作？"},
+    "cover_brief": {"metaphor": "一個節點被點亮，周圍兩跳的子圖發光", "labels": [{"text": "23 / 24", "ledger": "L1"}]}
+  },
+  "outline": [
+    {"id": "s1", "title": "前言", "role": "hook", "goal": "讀者知道這篇要解決什麼", "serves": ["T1"], "children": []},
+    {"id": "s2", "title": "問題", "role": "context", "goal": "讀者理解 ReAct 的痛點", "serves": ["T1"], "children": []},
+    {"id": "s3", "title": "方法", "role": "mechanism", "goal": "讀者能說出圖與閘門的作用", "serves": ["T1", "T2"], "children": []}
+  ],
+  "glossary": [
+    {"term": "ReAct", "defined_in": "s2.b1"},
+    {"term": "閘門", "defined_in": "s3.b2"}
+  ],
+  "ledger": [
+    {"id": "L1", "kind": "claim", "src": {"lines": [5, 5]}, "gist": "方法 A 在 24 格中有 23 格為正", "layer": "main", "section": "s1", "dest": ["s1.b2"]},
+    {"id": "L2", "kind": "claim", "src": {"lines": [9, 9]}, "gist": "ReAct 每步摸索，容易重複無效動作", "layer": "main", "section": "s2", "dest": ["s2.b1"]},
+    {"id": "L3", "kind": "definition", "src": {"lines": [16, 16]}, "gist": "圖的形式 G=(V,E)", "layer": "main", "section": "s3", "dest": ["s3.b1"]},
+    {"id": "L4", "kind": "formula", "src": {"lines": [18, 22]}, "gist": "閘門規則 S(G) >= S(G')", "layer": "main", "section": "s3", "dest": ["s3.b3"]},
+    {"id": "L5", "kind": "caveat", "src": {"lines": [24, 24]}, "gist": "驗證器不檢查工具名稱", "layer": "fold", "section": "s3", "dest": ["s3.b5"]},
+    {"id": "L6", "kind": "nav", "src": {"lines": [26, 26]}, "gist": "接下來看實驗（導覽句）", "layer": "none", "section": "s3", "dest": []},
+    {"id": "L7", "kind": "figure", "src": {"lines": [11, 12]}, "gist": "圖 1：知識與流程", "layer": "main", "section": "s2", "dest": ["s2.b2"]}
+  ],
+  "blocks": [
+    {"id": "s1.b1", "section": "s1", "type": "paragraph", "layer": "main", "origin": "editorial", "ledger": [],
+     "text": "你有沒有看過 agent 一直重複同一個無效的動作？"},
+    {"id": "s1.b2", "section": "s1", "type": "paragraph", "layer": "main", "origin": "source", "ledger": ["L1"],
+     "text": "先給結論：方法 A 在 24 格中有 23 格為正。"},
+    {"id": "s2.b1", "section": "s2", "type": "paragraph", "layer": "main", "origin": "source", "ledger": ["L2"],
+     "text": "ReAct 每一步都在摸索，容易重複無效的動作。"},
+    {"id": "s2.b2", "section": "s2", "type": "figure", "layer": "main", "origin": "source", "ledger": ["L7"],
+     "manifest_id": "img-001", "role": "evidence", "paper_label": "Figure 1",
+     "alt": "左邊是知識圖譜，右邊是流程圖。", "caption": "圖 1 — 知識與流程。"},
+    {"id": "s3.b1", "section": "s3", "type": "paragraph", "layer": "main", "origin": "source", "ledger": ["L3"],
+     "text": "圖的形式是 $G = (V, E)$，其中 $V$ 是節點集合。"},
+    {"id": "s3.b2", "section": "s3", "type": "paragraph", "layer": "main", "origin": "editorial", "ledger": [],
+     "text": "可以把閘門想成一道檢查站：新版本要證明自己不比舊版本差，才放行。"},
+    {"id": "s3.b3", "section": "s3", "type": "formula", "layer": "main", "origin": "source", "ledger": ["L4"],
+     "latex": "S(G) \\ge S(G')", "intuition": "s3.b2"},
+    {"id": "s3.f1", "section": "s3", "type": "fold", "layer": "main", "origin": "editorial", "ledger": [],
+     "title": "閘門的一個漏洞", "tone": "warning",
+     "children": [
+       {"id": "s3.b5", "section": "s3", "type": "paragraph", "layer": "fold", "origin": "source", "ledger": ["L5"],
+        "text": "驗證器不檢查工具名稱，只靠 prompt 約束。"}
+     ]}
+  ],
+  "decisions": [
+    {"id": "D1", "kind": "folded", "ledger": "L5", "why": "與主線無關的實作漏洞，收進折疊區但保留全文", "needs_human": true}
+  ]
+}

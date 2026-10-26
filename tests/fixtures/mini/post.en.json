@@ -1,0 +1,50 @@
+{
+  "schema": "post-plan/1",
+  "source": {"article": "article.md", "manifest": "image-manifest.json", "root": "."},
+  "meta": {
+    "section": "paper-intro",
+    "slug": "mini-post",
+    "tags": ["Large Language Model", "Agent Memory"],
+    "title": "Why Agents Repeat Themselves: A Mini Example",
+    "description": "A fixture post: Method A stores an agent's workflow as a graph and uses a validation gate to decide which edits to keep, so it beat plain ReAct in 23 of 24 cells.",
+    "reader": {"persona": "a newcomer to AI", "promise": "after reading you can say what the graph and the gate each do", "assumes": ["LLM"]},
+    "takeaways": [
+      {"id": "T1", "text": "Store the workflow as a graph so the agent does not rediscover it at every step", "memory_hook": "workflow graph"},
+      {"id": "T2", "text": "A validation gate blocks edits that only help on the training batch", "memory_hook": "gate"}
+    ],
+    "hook": {"kind": "tension", "text": "Why does an agent keep repeating the same useless action?"},
+    "cover_brief": {"metaphor": "one lit node and its two-hop neighbourhood", "labels": [{"text": "23 / 24", "ledger": "L1"}]}
+  },
+  "outline": [
+    {"id": "s1", "title": "Introduction", "role": "hook", "goal": "the reader knows what this post solves", "serves": ["T1"], "children": []},
+    {"id": "s2", "title": "The Problem", "role": "context", "goal": "the reader understands the ReAct pain point", "serves": ["T1"], "children": []},
+    {"id": "s3", "title": "The Method", "role": "mechanism", "goal": "the reader can say what the graph and the gate do", "serves": ["T1", "T2"], "children": []}
+  ],
+  "glossary": [
+    {"term": "ReAct", "defined_in": "s2.b1"},
+    {"term": "gate", "defined_in": "s3.b2"}
+  ],
+  "blocks": [
+    {"id": "s1.b1", "section": "s1", "type": "paragraph", "layer": "main", "origin": "editorial", "ledger": [],
+     "text": "Have you ever watched an agent repeat the same useless action again and again?"},
+    {"id": "s1.b2", "section": "s1", "type": "paragraph", "layer": "main", "origin": "source", "ledger": ["L1"],
+     "text": "The verdict first: Method A is positive in 23 of 24 cells."},
+    {"id": "s2.b1", "section": "s2", "type": "paragraph", "layer": "main", "origin": "source", "ledger": ["L2"],
+     "text": "ReAct figures out every step on its own, so it easily repeats actions that do not work."},
+    {"id": "s2.b2", "section": "s2", "type": "figure", "layer": "main", "origin": "source", "ledger": ["L7"],
+     "manifest_id": "img-001", "role": "evidence", "paper_label": "Figure 1",
+     "alt": "Left: a knowledge graph; right: a procedure graph.", "caption": "Figure 1 — Knowledge versus procedure."},
+    {"id": "s3.b1", "section": "s3", "type": "paragraph", "layer": "main", "origin": "source", "ledger": ["L3"],
+     "text": "The graph has the form $G = (V, E)$, where $V$ is the set of nodes."},
+    {"id": "s3.b2", "section": "s3", "type": "paragraph", "layer": "main", "origin": "editorial", "ledger": [],
+     "text": "Think of the gate as a checkpoint: a new version must prove it is no worse than the old one before it passes."},
+    {"id": "s3.b3", "section": "s3", "type": "formula", "layer": "main", "origin": "source", "ledger": ["L4"],
+     "latex": "S(G) \\ge S(G')", "intuition": "s3.b2"},
+    {"id": "s3.f1", "section": "s3", "type": "fold", "layer": "main", "origin": "editorial", "ledger": [],
+     "title": "A loophole in the gate", "tone": "warning",
+     "children": [
+       {"id": "s3.b5", "section": "s3", "type": "paragraph", "layer": "fold", "origin": "source", "ledger": ["L5"],
+        "text": "The validator does not check tool names; only the prompt constrains them."}
+     ]}
+  ]
+}

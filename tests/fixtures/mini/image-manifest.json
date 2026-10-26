@@ -1,0 +1,8 @@
+{
+  "source_pdf": null,
+  "generated_by": "fixture",
+  "images": [
+    {"id": "img-001", "file": "img-001.png", "type": "figure", "page": 1, "parser_confidence": "high",
+     "caption": "Figure 1 | From knowledge to procedure.", "nearby_text": ""}
+  ]
+}

@@ -15,3 +15,6 @@ resources/
 client_secrets*.json
 token.json
 seo/raw/
+
+# Planner scratch (skeleton briefs, reviewer views, review rounds). The final plans/<slug>/post.*.json are committed.
+plans/*/work/

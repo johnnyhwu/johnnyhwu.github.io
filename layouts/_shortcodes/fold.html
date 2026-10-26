@@ -1,0 +1,29 @@
+{{- /*
+  A collapsed-by-default details block. The theme's admonition shortcode cannot do this:
+  admonitionPre.html computes `.Open | default true`, and `default` turns false back into true,
+  so `open=false` still renders open. This one reuses the same markup and classes (so the theme's
+  initDetails() toggles it on click and expands it for print) but never adds the `open` class.
+
+  Usage: {{< fold "Title" >}}markdown{{< /fold >}}   or   {{< fold title="Title" tone="warning" >}}...{{< /fold >}}
+  tone: any admonition type; defaults to "info".
+*/ -}}
+{{- $title := cond .IsNamedParams (.Get "title") (.Get 0) | default "More details" -}}
+{{- $tone := cond .IsNamedParams (.Get "tone") (.Get 1) | default "info" -}}
+{{- $icons := dict "note" "pencil-alt" "abstract" "list-ul" "info" "info-circle" "tip" "lightbulb" "success" "check-circle" "question" "question-circle" "warning" "exclamation-triangle" "example" "list-ol" "quote" "quote-right" -}}
+{{- $icon := index $icons $tone | default "info-circle" -}}
+<div class="details admonition {{ $tone }}">
+    <div class="details-summary admonition-title">
+        <span class="icon">
+            {{- partial "plugin/fontawesome.html" (dict "Style" "solid" "Icon" $icon) -}}
+        </span>
+        {{- $title -}}
+        <span class="details-icon">
+            {{- partial "plugin/fontawesome.html" (dict "Style" "solid" "Icon" "angle-right") -}}
+        </span>
+    </div>
+    <div class="details-content">
+        <div class="admonition-content">
+            {{- .Inner | .Page.RenderString -}}
+        </div>
+    </div>
+</div>
