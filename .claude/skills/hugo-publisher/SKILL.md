@@ -150,6 +150,9 @@ For a topic `<Topic>` with slug `<slug>`:
    submodule back on `main` before staging anything here**: this repo's pointer must name a commit already on
    `AI-Research`'s `main`, never the unmerged bucket-move commit. The manifest rewrite is not optional (`git mv`
    does not touch contents); `AI-Research/CLAUDE.md`'s "Moving a topic between buckets" is the authority.
+   **Also rewrite `source.article`, `source.manifest` and `source.root` in both plan files** from
+   `done/unpublished/...` to `done/published/...` (same prefix swap), or a later re-render looks for images where
+   they no longer are; commit that with this PR.
    Cross-reference the two PRs in each other's description. Skip this step only for a touch-up of an
    already-published post (the topic is already in `done/published/`), and if you cannot push to `AI-Research` at
    all, say so in the Hugo PR instead of quietly leaving the buckets wrong.
