@@ -186,7 +186,7 @@ confidence: 0.45
 value: 0.92   <- 代表「是」的機率是 0.92
 ```
 
-Noul 沒有獨立的 confidence 欄位，因為對二元判斷來說，機率值本身就已經直接反映信心程度。這跟 Choice 或 Score 需要額外一個 confidence 欄位是不同的設計邏輯：Choice、Score 的「選中值」和「信心程度」是兩件事——選中「技術問題」不代表信心一定高；但 Noul 的「機率值」和「信心」在數學上是同一個數字。這種「用機率值直接當信心分數」的做法，跟 [LLM-as-a-Verifier](../llm-as-a-verifier/) 讀取完整 token 機率分布、而不只取單一 argmax 答案的精神是相通的。
+Noul 沒有獨立的 confidence 欄位，因為對二元判斷來說，機率值本身就已經直接反映信心程度。這跟 Choice 或 Score 需要額外一個 confidence 欄位是不同的設計邏輯：Choice、Score 的「選中值」和「信心程度」是兩件事——選中「技術問題」不代表信心一定高；但 Noul 的「機率值」和「信心」在數學上是同一個數字。這種「用機率值直接當信心分數」的做法，跟 [LLM-as-a-Verifier](../../paper-intro/llm-as-a-verifier/) 讀取完整 token 機率分布、而不只取單一 argmax 答案的精神是相通的。
 
 ## 訓練方法：從 RLHF 到 RLCD 的演化
 

@@ -81,7 +81,7 @@ This paper argues that to judge whether a path is reliable, we cannot just look 
 The core philosophy of CER (Confidence Enhanced Reasoning) is:
 > **Don't look at the whole sentence, look at the key points; don't just count heads, check confidence.**
 
-This is a completely **Training-free** framework; it does not require modifying model weights or using an external Reward Model. It purely utilizes the Logits (probability distribution) output by existing LLMs during reasoning for refined post-processing.
+This is a completely **Training-free** framework; it does not require modifying model weights or using an external Reward Model. It purely utilizes the Logits (probability distribution) output by existing LLMs during reasoning for refined post-processing. [LLM-as-a-Verifier](../llm-as-a-verifier/) also reads the model's output probabilities, but it reads the probabilities over the scores an LLM judge assigns and takes their expected value instead of the single most likely score, to fix judges that keep giving tied scores.
 
 We can break down the CER operation process into four rigorous steps, which interlock to transform unstructured natural language into computable mathematical scores.
 
