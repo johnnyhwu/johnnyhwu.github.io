@@ -187,6 +187,16 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
   Open Graph/Twitter tags and JSON-LD. The skill owns title/description length, image alt text, contextual
   internal links and self-contained sections (`references/hugo-conventions.md`); do it at publish time.
 
+## SEO is part of publishing, without being asked
+
+Any session that publishes, retitles or fixes a post runs the **`seo`** skill (`.claude/skills/seo/`):
+checks before publishing, follow-up rows after. Its state lives in `seo/` (committed; start at
+`seo/followups.md`). A `SessionStart` hook prints follow-ups that are due; tell the user about them.
+
+The GSC checks need the owner's local `gsc` MCP server (`.mcp.json`, OAuth client in
+`~/.config/gsc/`). The skill's preflight says how to tell whether it is there. In a cloud VM it is not:
+skip those steps, still do the tool-free ones, and tell the user at the end what you skipped.
+
 ## Working with PRs
 
 - Merge `origin/main` into the branch before opening the PR: parallel posts collide on

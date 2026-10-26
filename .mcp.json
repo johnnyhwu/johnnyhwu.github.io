@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "gsc": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-search-console"
+      ],
+      "env": {
+        "GSC_OAUTH_CLIENT_SECRETS_FILE": "${HOME}/.config/gsc/client_secrets.json"
+      }
+    }
+  }
+}
