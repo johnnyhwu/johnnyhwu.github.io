@@ -16,9 +16,10 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 
 | Due | Kind | Item | How |
 |---|---|---|---|
-| 2026-10-26 | post | `paper-intro/many-shot-cot-icl` (published 2026-09-16): first performance check, never done | post check; impressions >100 and position <=10 with low CTR means adjust the title once |
 | 2026-10-28 | post | `paper-intro/skillzip` (published 2026-10-21): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs |
+| 2026-11-02 | post | `paper-intro/procedural-graphs` (committed 2026-10-26, PR pending): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs; pre-publish Chrome results-page check was skipped (extension not connected) |
 | 2026-11-11 | post | `paper-intro/skillzip`: impressions, position, CTR | post check |
+| 2026-11-16 | post | `paper-intro/procedural-graphs`: impressions, position, CTR | post check; the name had no site demand at publish time, so under about 30 impressions means record it and do not tweak the title |
 | 2026-11-23 | site | Monthly baseline: last 90 days vs the 90 before, against the baseline in `plan.md` | site baseline; save as a new dated report; note new-post count |
 | 2026-11-23 | site | The ten never-crawled posts (see plan B3): last-crawled dates | `batch_url_inspection` on their URLs |
 | 2026-11-27 | experiment | A6 English-title batch (6 pages): first readout, 28 days after 2026-10-30 | `reports/2026-10-23-title-batch-baseline.md` explains how to read it; if the six pages have under about 60 clicks, wait for the next row |
@@ -28,3 +29,4 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 
 | Done | Kind | Item | Result |
 |---|---|---|---|
+| 2026-10-26 | post | `paper-intro/many-shot-cot-icl` first performance check (2026-09-16 to 2026-10-26) | zh 65 impressions, position 9.1; en 40 impressions, position 8.4; 0 clicks. Each page is under 100 impressions and clicks are far under 60, so no title change; recheck with the next `site` baseline row |

@@ -1,0 +1,6720 @@
+{
+  "schema": "post-plan/1",
+  "source": {
+    "article": "AI-Research/done/published/Procedural-Graphs/article.md",
+    "manifest": "AI-Research/done/published/Procedural-Graphs/assets/image-manifest.json",
+    "root": "AI-Research"
+  },
+  "meta": {
+    "section": "paper-intro",
+    "slug": "procedural-graphs",
+    "tags": [
+      "Large Language Model",
+      "Agent Memory",
+      "Single-Agent"
+    ],
+    "title": "把流程畫成圖，AI Agent 就不會迷路？Procedural Graphs 解析",
+    "title_alts": [
+      "Agent 做事流程圖有用嗎？Procedural Graphs 論文解析",
+      "Agent 的做事流程能自己演化嗎？Procedural Graphs 解析"
+    ],
+    "description": "AI Agent 做長任務常重複無效動作。Procedural Graphs 把做事流程存成可編輯的圖，24 格中 23 格勝過無記憶 ReAct，但 HotpotQA 幾乎沒進步，手寫專家圖在 MultiChallenge 上還可能讓成績崩盤。",
+    "reader": {
+      "persona": "剛入門 AI 的讀者：懂 LLM 與機器學習的大意，不熟 agent、benchmark 與論文的實驗設計",
+      "promise": "讀完能用自己的話說出：Procedural Graph 是什麼、為什麼每次只取附近兩跳、為什麼要用獨立驗證集把關，以及這些結果有多可信",
+      "assumes": [
+        "prompt"
+      ]
+    },
+    "takeaways": [
+      {
+        "id": "T1",
+        "text": "把「接下來做什麼」存成一張圖，每一步只取目前位置附近兩跳、轉成一段提醒給 agent，而不是把整張圖都交出去",
+        "memory_hook": "導航只報下一兩個路口，不給整張地圖"
+      },
+      {
+        "id": "T2",
+        "text": "圖好不好不能靠直覺：改動要在沒拿去訓練的驗證集上不比舊圖差才採用，被拒的記下來回灌給提案者",
+        "memory_hook": "提案、把關、被拒回灌"
+      },
+      {
+        "id": "T3",
+        "text": "有用但不是萬靈丹：24 格中 23 格為正，但 HotpotQA 幾乎沒增益，每步多一次 LLM 呼叫，手寫專家圖在 MultiChallenge 上還可能讓成績崩盤",
+        "memory_hook": "23 / 24，但有代價"
+      }
+    ],
+    "hook": {
+      "kind": "scenario",
+      "text": "請 agent 做一個要走很多步的任務，到了後半段它又去查前面已經查過的東西，或把工具呼叫的順序弄反。能不能把「接下來該做什麼」畫成流程圖，每一步只挑出腳邊那一小段，轉成一句提醒交給它？"
+    },
+    "running_example": {
+      "id": "cfo",
+      "desc": "EnterpriseArena 的 CFO 任務：agent 扮演財務長管理公司現金；現金流預測之後要不要提出募資申請，貫穿圖的定義、推論與十輪演化"
+    },
+    "cover_brief": {
+      "metaphor": "一個被點亮的節點，往外兩跳的子圖發光；一條被叉掉的虛線邊代表被驗證閘門拒絕的修改",
+      "labels": [
+        {
+          "text": "23 / 24",
+          "ledger": "L002"
+        },
+        {
+          "text": "1.33–1.85×",
+          "ledger": "L002"
+        }
+      ]
+    },
+    "seo": {
+      "queries": [],
+      "notes": "GSC 2026-07-28 至 2026-10-26：沒有人用 procedural graphs、react、workflow 搜尋進站，無同 query 的既有文章，標題以白話主題（agent 迷路／流程圖）開頭。站內可連：pre-act、skillopt、agentic-context-engineering、mem-rl、mem0。Chrome 搜尋結果頁檢查未做（擴充功能未連線）。"
+    }
+  },
+  "outline": [
+    {
+      "id": "s1",
+      "title": "agent 做長任務，為什麼會迷路？",
+      "role": "hook",
+      "goal": "讀者知道這篇要解決什麼、結論是什麼、接下來的路線",
+      "serves": [
+        "T1",
+        "T3"
+      ],
+      "children": []
+    },
+    {
+      "id": "s2",
+      "title": "ReAct 的痛點：每一步都在自己摸索",
+      "role": "context",
+      "goal": "讀者理解 ReAct 是什麼、為什麼長任務會出問題、現有補救各缺什麼",
+      "serves": [
+        "T1"
+      ],
+      "children": []
+    },
+    {
+      "id": "s3",
+      "title": "核心想法：把做事流程存成一張圖",
+      "role": "mechanism",
+      "goal": "讀者能說出圖的節點、邊與邊上三段文字各是什麼",
+      "serves": [
+        "T1"
+      ],
+      "children": [
+        {
+          "id": "s3a",
+          "title": "圖由什麼組成",
+          "role": "mechanism",
+          "goal": "讀者看得懂一條邊在說什麼",
+          "serves": [
+            "T1"
+          ],
+          "children": []
+        },
+        {
+          "id": "s3b",
+          "title": "實際用的圖很小",
+          "role": "evidence",
+          "goal": "讀者知道這些圖多大、拿來做什麼",
+          "serves": [
+            "T1"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "推論時：每一步只看腳邊兩跳",
+      "role": "mechanism",
+      "goal": "讀者能說出一步裡兩個 LLM 各做什麼，以及為什麼只取附近的小圖",
+      "serves": [
+        "T1"
+      ],
+      "children": [
+        {
+          "id": "s4a",
+          "title": "定位：agent 現在在圖上的哪裡",
+          "role": "mechanism",
+          "goal": "讀者知道怎麼從上一步動作找到目前節點並取子圖",
+          "serves": [
+            "T1"
+          ],
+          "children": []
+        },
+        {
+          "id": "s4b",
+          "title": "生成提示並選動作",
+          "role": "mechanism",
+          "goal": "讀者知道 solver 看不到圖，只看到翻譯後的提示",
+          "serves": [
+            "T1"
+          ],
+          "children": []
+        },
+        {
+          "id": "s4c",
+          "title": "四個要記得的性質",
+          "role": "caveat",
+          "goal": "讀者知道這套做法只是偏向、有成本、有退路與盲點",
+          "serves": [
+            "T3"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "離線演化：讓 LLM 改圖，驗證集把關",
+      "role": "mechanism",
+      "goal": "讀者能說出改圖的一輪怎麼走，以及為什麼需要驗證閘門與拒絕記憶",
+      "serves": [
+        "T2"
+      ],
+      "children": [
+        {
+          "id": "s5a",
+          "title": "refiner 怎麼提出修改",
+          "role": "mechanism",
+          "goal": "讀者知道修改只有增與刪，並看過 CFO 圖的演化",
+          "serves": [
+            "T2"
+          ],
+          "children": []
+        },
+        {
+          "id": "s5b",
+          "title": "驗證閘門：決定改圖會不會越改越糟",
+          "role": "mechanism",
+          "goal": "讀者能照規則走完十輪，並知道閘門的限制",
+          "serves": [
+            "T2",
+            "T3"
+          ],
+          "children": []
+        },
+        {
+          "id": "s5c",
+          "title": "拒絕記憶：記下被丟的修改",
+          "role": "mechanism",
+          "goal": "讀者知道被拒的修改怎麼回到下一輪",
+          "serves": [
+            "T2"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "title": "整套方法，一張表看完",
+      "role": "mechanism",
+      "goal": "讀者能把七個零件放回線上與離線兩個階段",
+      "serves": [
+        "T1",
+        "T2"
+      ],
+      "children": []
+    },
+    {
+      "id": "s7",
+      "title": "實驗一：23 / 24 有進步，但要打折來看",
+      "role": "evidence",
+      "goal": "讀者知道對誰比、贏多少、哪裡沒贏、哪些對手本來就差",
+      "serves": [
+        "T3"
+      ],
+      "children": []
+    },
+    {
+      "id": "s8",
+      "title": "實驗二：整張圖會傷害，只取附近才有效",
+      "role": "evidence",
+      "goal": "讀者知道局部子圖加生成式提示最好，整張圖反而更差",
+      "serves": [
+        "T1",
+        "T3"
+      ],
+      "children": []
+    },
+    {
+      "id": "s9",
+      "title": "實驗三：手寫專家圖可能崩盤，演化救得回來",
+      "role": "evidence",
+      "goal": "讀者知道哪些結論站得住、哪些資料分不出來",
+      "serves": [
+        "T2",
+        "T3"
+      ],
+      "children": []
+    },
+    {
+      "id": "s10",
+      "title": "帶走什麼",
+      "role": "takeaway",
+      "goal": "讀者帶著三個收穫離開，並知道把改進迴圈用到自己的資產時先檢查什麼",
+      "serves": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "children": [
+        {
+          "id": "s10a",
+          "title": "改進迴圈：提案、獨立驗證、被拒回灌",
+          "role": "takeaway",
+          "goal": "讀者能把迴圈套到自己的 prompt 或規則",
+          "serves": [
+            "T2"
+          ],
+          "children": []
+        },
+        {
+          "id": "s10b",
+          "title": "使用時要記得的限制",
+          "role": "caveat",
+          "goal": "讀者知道先檢查驗證集夠不夠大、約束有沒有被程式檢查",
+          "serves": [
+            "T2",
+            "T3"
+          ],
+          "children": []
+        },
+        {
+          "id": "s10c",
+          "title": "怎麼選閘門",
+          "role": "takeaway",
+          "goal": "讀者知道什麼時候才需要比貪心閘門更複雜的做法",
+          "serves": [
+            "T2"
+          ],
+          "children": []
+        },
+        {
+          "id": "s10d",
+          "title": "結論",
+          "role": "takeaway",
+          "goal": "讀者看到三個收穫的最後一次提醒",
+          "serves": [
+            "T1",
+            "T2",
+            "T3"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "title": "延伸閱讀：五個獨立的概念補充",
+      "role": "deep-dive",
+      "goal": "想追細節的讀者能在不打斷主線的情況下查到",
+      "serves": [
+        "T1",
+        "T2"
+      ],
+      "children": [
+        {
+          "id": "s11a",
+          "title": "定位與子圖：上一步動作怎麼對到節點",
+          "role": "deep-dive",
+          "goal": "想追細節的讀者能看懂比對與展開的每一步，並知道哪些是論文沒說的",
+          "serves": [
+            "T1"
+          ],
+          "children": []
+        },
+        {
+          "id": "s11b",
+          "title": "Ψ 與 solver：各看到什麼、輸出什麼",
+          "role": "deep-dive",
+          "goal": "讀者能分辨兩個 LLM 各自的輸入輸出，並知道三個容易誤會的點",
+          "serves": [
+            "T1"
+          ],
+          "children": []
+        },
+        {
+          "id": "s11c",
+          "title": "一個 benchmark 一張圖",
+          "role": "deep-dive",
+          "goal": "讀者知道論文的做法、沒處理的情況，以及哪些是推測",
+          "serves": [
+            "T1"
+          ],
+          "children": []
+        },
+        {
+          "id": "s11d",
+          "title": "refiner 的輸入與被拒絕的歷史",
+          "role": "deep-dive",
+          "goal": "讀者知道 refiner 每輪看到什麼、被拒的記錄放什麼、會不會越記越多",
+          "serves": [
+            "T2"
+          ],
+          "children": []
+        },
+        {
+          "id": "s11e",
+          "title": "七個 baseline：各自存什麼",
+          "role": "deep-dive",
+          "goal": "讀者能分辨各對照做法存什麼、怎麼用，以及哪兩個最接近 PG",
+          "serves": [
+            "T3"
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "ReAct",
+      "defined_in": "s1.b4"
+    },
+    {
+      "term": "benchmark",
+      "defined_in": "s1.b4"
+    },
+    {
+      "term": "solver",
+      "defined_in": "s1.b4"
+    },
+    {
+      "term": "驗證集",
+      "defined_in": "s1.b3"
+    },
+    {
+      "term": "PG",
+      "defined_in": "s3a.b1"
+    },
+    {
+      "term": "子圖",
+      "defined_in": "s4.b3"
+    },
+    {
+      "term": "guidance model",
+      "defined_in": "s4.b4"
+    },
+    {
+      "term": "軌跡",
+      "defined_in": "s4.b5"
+    },
+    {
+      "term": "refiner",
+      "defined_in": "s5.b2"
+    },
+    {
+      "term": "拒絕記憶",
+      "defined_in": "s5.b2"
+    },
+    {
+      "term": "驗證閘門",
+      "defined_in": "s5b.b1"
+    },
+    {
+      "term": "存活率",
+      "defined_in": "s5b.b8"
+    },
+    {
+      "term": "episode",
+      "defined_in": "s5b.b8"
+    },
+    {
+      "term": "信賴區間",
+      "defined_in": "s7.b9"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "L001",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          5,
+          5
+        ]
+      },
+      "gist": "核心做法：流程存成可編輯有向圖；推論取附近一小段、LLM翻成提示；離線LLM改圖、驗證集決定",
+      "layer": "main",
+      "section": "s1",
+      "dest": [
+        "s1.b2",
+        "s1.b3"
+      ]
+    },
+    {
+      "id": "L002",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          7,
+          7
+        ]
+      },
+      "gist": "先給結論：23/24為正、HotpotQA幾乎無增益、token約1.33到1.85倍、專家圖少16題後演化回多3題",
+      "layer": "main",
+      "section": "s1",
+      "dest": [
+        "s1.b4"
+      ]
+    },
+    {
+      "id": "L003",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          9,
+          9
+        ]
+      },
+      "gist": "最值得帶走的是改進迴圈，可套在任何文字資產",
+      "layer": "main",
+      "section": "s1",
+      "dest": [
+        "s1.b5"
+      ]
+    },
+    {
+      "id": "L004",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          11,
+          11
+        ]
+      },
+      "gist": "文章結構導覽",
+      "layer": "none",
+      "section": "s1",
+      "dest": [
+        "s1.b6"
+      ]
+    },
+    {
+      "id": "L005",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          15,
+          15
+        ]
+      },
+      "gist": "ReAct是什麼與它的問題（長任務忘目標、亂序、重複）",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b1",
+        "s2.b3"
+      ]
+    },
+    {
+      "id": "L006",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          17,
+          22
+        ]
+      },
+      "gist": "現有四種補救辦法各缺一塊",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b4",
+        "s2.b5"
+      ]
+    },
+    {
+      "id": "L007",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          24,
+          24
+        ]
+      },
+      "gist": "論文想同時做到的四件事",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b6",
+        "s2.b7"
+      ]
+    },
+    {
+      "id": "L008",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          26,
+          26
+        ]
+      },
+      "gist": "核心類比：知識圖譜回答是什麼，PG回答接下來做什麼",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b9"
+      ]
+    },
+    {
+      "id": "L009",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          28,
+          29
+        ]
+      },
+      "gist": "圖1 知識圖譜對照PG",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b10"
+      ]
+    },
+    {
+      "id": "L010",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          33,
+          33
+        ]
+      },
+      "gist": "PG是有向帶屬性圖：節點步驟、邊可接哪步、邊附三段文字",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b1"
+      ]
+    },
+    {
+      "id": "L011",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          35,
+          37
+        ]
+      },
+      "gist": "G=(V,R,E,Φ)形式定義",
+      "layer": "support",
+      "section": "s3a",
+      "dest": [
+        "s3a.b7"
+      ]
+    },
+    {
+      "id": "L012",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          39,
+          42
+        ]
+      },
+      "gist": "V R E Φ符號說明與四種關係類型",
+      "layer": "fold",
+      "section": "s3a",
+      "dest": [
+        "s3a.b9"
+      ]
+    },
+    {
+      "id": "L013",
+      "kind": "example",
+      "src": {
+        "lines": [
+          44,
+          44
+        ]
+      },
+      "gist": "論文例子邊 cash_flow_forecast→fund_raising_request",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b3"
+      ]
+    },
+    {
+      "id": "L014",
+      "kind": "table",
+      "src": {
+        "lines": [
+          46,
+          50
+        ]
+      },
+      "gist": "這條邊的 condition/guidance/pitfalls",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b4"
+      ]
+    },
+    {
+      "id": "L015",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          52,
+          52
+        ]
+      },
+      "gist": "三句話是翻譯給solver的原料",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b5"
+      ]
+    },
+    {
+      "id": "L016",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          54,
+          54
+        ]
+      },
+      "gist": "實際用的圖很小(BFCL 131/265，其餘7-17節點)；EnterpriseArena說明",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3a.b2",
+        "s3b.b1"
+      ]
+    },
+    {
+      "id": "L017",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          56,
+          57
+        ]
+      },
+      "gist": "表1 各benchmark的圖規模",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b2"
+      ]
+    },
+    {
+      "id": "L018",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          59,
+          59
+        ]
+      },
+      "gist": "圖可從專家手寫或空圖起步，比較在實驗三",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b3"
+      ]
+    },
+    {
+      "id": "L019",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          63,
+          63
+        ]
+      },
+      "gist": "推論做法概述：定位、取2跳、LLM轉提示、圖凍結",
+      "layer": "main",
+      "section": "s4",
+      "dest": [
+        "s4.b1"
+      ]
+    },
+    {
+      "id": "L020",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          65,
+          68
+        ]
+      },
+      "gist": "solver與guidance model(Ψ)的定義",
+      "layer": "main",
+      "section": "s4",
+      "dest": [
+        "s4.b3",
+        "s4.b4"
+      ]
+    },
+    {
+      "id": "L021",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          70,
+          78
+        ]
+      },
+      "gist": "一步的七個流程",
+      "layer": "main",
+      "section": "s4",
+      "dest": [
+        "s4.b5",
+        "s4.b6"
+      ]
+    },
+    {
+      "id": "L022",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          80,
+          80
+        ]
+      },
+      "gist": "圖2總覽導讀",
+      "layer": "none",
+      "section": "s4",
+      "dest": [
+        "s4.b8"
+      ]
+    },
+    {
+      "id": "L023",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          82,
+          83
+        ]
+      },
+      "gist": "圖2 框架總覽",
+      "layer": "main",
+      "section": "s4",
+      "dest": [
+        "s4.b9"
+      ]
+    },
+    {
+      "id": "L024",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          87,
+          87
+        ]
+      },
+      "gist": "第一部分導語",
+      "layer": "none",
+      "section": "s4a",
+      "dest": [
+        "s4a.b1"
+      ]
+    },
+    {
+      "id": "L025",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          89,
+          91
+        ]
+      },
+      "gist": "u_t=Match, G_t=N_h(u_t)或整張圖",
+      "layer": "support",
+      "section": "s4a",
+      "dest": [
+        "s4a.b3"
+      ]
+    },
+    {
+      "id": "L026",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          93,
+          98
+        ]
+      },
+      "gist": "t、a_{t-1}、Match、u_t、N_h、G_t符號說明",
+      "layer": "fold",
+      "section": "s4a",
+      "dest": [
+        "s4a.b5"
+      ]
+    },
+    {
+      "id": "L027",
+      "kind": "example",
+      "src": {
+        "lines": [
+          100,
+          100
+        ]
+      },
+      "gist": "HotpotQA序列化局部圖範例(Appendix B.5)",
+      "layer": "support",
+      "section": "s4a",
+      "dest": [
+        "s4a.b6"
+      ]
+    },
+    {
+      "id": "L028",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          104,
+          104
+        ]
+      },
+      "gist": "第二部分導語",
+      "layer": "none",
+      "section": "s4b",
+      "dest": [
+        "s4b.b1"
+      ]
+    },
+    {
+      "id": "L029",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          106,
+          108
+        ]
+      },
+      "gist": "g_t=Ψ(...), a_t~P_solver",
+      "layer": "support",
+      "section": "s4b",
+      "dest": [
+        "s4b.b3"
+      ]
+    },
+    {
+      "id": "L030",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          110,
+          115
+        ]
+      },
+      "gist": "g_t q T w a_t符號說明與greedy decoding",
+      "layer": "fold",
+      "section": "s4b",
+      "dest": [
+        "s4b.b5"
+      ]
+    },
+    {
+      "id": "L031",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          117,
+          117
+        ]
+      },
+      "gist": "Ψ的指令內容",
+      "layer": "support",
+      "section": "s4b",
+      "dest": [
+        "s4b.b6"
+      ]
+    },
+    {
+      "id": "L032",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          121,
+          121
+        ]
+      },
+      "gist": "只是偏向不是強制，沒有檢查機制",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b2"
+      ]
+    },
+    {
+      "id": "L033",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          122,
+          122
+        ]
+      },
+      "gist": "每步多一次LLM呼叫，成本一定較高",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b2"
+      ]
+    },
+    {
+      "id": "L034",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          123,
+          123
+        ]
+      },
+      "gist": "比對失敗退回整張圖代價高，頻率未知",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b2"
+      ]
+    },
+    {
+      "id": "L035",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          124,
+          124
+        ]
+      },
+      "gist": "四種關係種類推論時不起作用",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b2"
+      ]
+    },
+    {
+      "id": "L036",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          128,
+          128
+        ]
+      },
+      "gist": "離線演化概述",
+      "layer": "main",
+      "section": "s5",
+      "dest": [
+        "s5.b2"
+      ]
+    },
+    {
+      "id": "L037",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          130,
+          138
+        ]
+      },
+      "gist": "第k輪的七個步驟",
+      "layer": "main",
+      "section": "s5",
+      "dest": [
+        "s5.b4",
+        "s5.b5"
+      ]
+    },
+    {
+      "id": "L038",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          142,
+          144
+        ]
+      },
+      "gist": "候選圖=上輪圖⊕修改",
+      "layer": "support",
+      "section": "s5a",
+      "dest": [
+        "s5a.b2"
+      ]
+    },
+    {
+      "id": "L039",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          146,
+          149
+        ]
+      },
+      "gist": "G_{k-1}、ΔG_k、⊕、G_cand符號說明",
+      "layer": "fold",
+      "section": "s5a",
+      "dest": [
+        "s5a.b4"
+      ]
+    },
+    {
+      "id": "L040",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          151,
+          151
+        ]
+      },
+      "gist": "修改只有Add與Delete兩種",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b5"
+      ]
+    },
+    {
+      "id": "L041",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          153,
+          153
+        ]
+      },
+      "gist": "refiner輸出JSON四個陣列、先刪後加、delete_edges眉角",
+      "layer": "fold",
+      "section": "s5a",
+      "dest": [
+        "s5a.b7"
+      ]
+    },
+    {
+      "id": "L042",
+      "kind": "example",
+      "src": {
+        "lines": [
+          155,
+          155
+        ]
+      },
+      "gist": "Appendix E.3 CFO任務的R1/R7/R8修改",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b8"
+      ]
+    },
+    {
+      "id": "L043",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          157,
+          158
+        ]
+      },
+      "gist": "圖3 CFO圖的拓樸演化",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b9"
+      ]
+    },
+    {
+      "id": "L044",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          160,
+          160
+        ]
+      },
+      "gist": "結構檢查只看三件事",
+      "layer": "support",
+      "section": "s5a",
+      "dest": [
+        "s5a.b10"
+      ]
+    },
+    {
+      "id": "L045",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          162,
+          162
+        ]
+      },
+      "gist": "漏洞：ACTION節點是否真實工具名沒人檢查",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b11"
+      ]
+    },
+    {
+      "id": "L046",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          166,
+          166
+        ]
+      },
+      "gist": "驗證閘門導語",
+      "layer": "none",
+      "section": "s5b",
+      "dest": [
+        "s5b.b1"
+      ]
+    },
+    {
+      "id": "L047",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          168,
+          174
+        ]
+      },
+      "gist": "S_val平均分與採用規則(>=)",
+      "layer": "support",
+      "section": "s5b",
+      "dest": [
+        "s5b.b2",
+        "s5b.b4"
+      ]
+    },
+    {
+      "id": "L048",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          176,
+          179
+        ]
+      },
+      "gist": "D_val、(q,y)、f_solver、持平也收、舊分數快取",
+      "layer": "fold",
+      "section": "s5b",
+      "dest": [
+        "s5b.b6"
+      ]
+    },
+    {
+      "id": "L049",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          181,
+          181
+        ]
+      },
+      "gist": "為什麼要獨立驗證集",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b7"
+      ]
+    },
+    {
+      "id": "L050",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          183,
+          183
+        ]
+      },
+      "gist": "十輪走法說明：表2、閘門規則、20個episode、存活率",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b8"
+      ]
+    },
+    {
+      "id": "L051",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          185,
+          186
+        ]
+      },
+      "gist": "表2 十輪自我演化逐輪指標",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b9"
+      ]
+    },
+    {
+      "id": "L052",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          188,
+          188
+        ]
+      },
+      "gist": "整理決策過程導語",
+      "layer": "none",
+      "section": "s5b",
+      "dest": [
+        "s5b.b10"
+      ]
+    },
+    {
+      "id": "L053",
+      "kind": "table",
+      "src": {
+        "lines": [
+          190,
+          201
+        ]
+      },
+      "gist": "十輪決策表R1-R10",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b11"
+      ]
+    },
+    {
+      "id": "L054",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          203,
+          203
+        ]
+      },
+      "gist": "保留的圖只往前走；R3到R6丟棄；R10擋下只在訓練批有效的改動",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b12"
+      ]
+    },
+    {
+      "id": "L055",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          205,
+          205
+        ]
+      },
+      "gist": "兩點提醒導語",
+      "layer": "none",
+      "section": "s5b",
+      "dest": [
+        "s5b.b13"
+      ]
+    },
+    {
+      "id": "L056",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          207,
+          207
+        ]
+      },
+      "gist": "論文沒寫S_val指標；推測是存活率",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b13",
+        "s5b.b15"
+      ]
+    },
+    {
+      "id": "L057",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          208,
+          208
+        ]
+      },
+      "gist": "驗證集太小時接受與拒絕多是雜訊",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b13"
+      ]
+    },
+    {
+      "id": "L058",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          210,
+          210
+        ]
+      },
+      "gist": "一般知識類比：這是爬山法",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b16"
+      ]
+    },
+    {
+      "id": "L059",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          212,
+          212
+        ]
+      },
+      "gist": "拒絕記憶導語",
+      "layer": "none",
+      "section": "s5c",
+      "dest": [
+        "s5c.b1"
+      ]
+    },
+    {
+      "id": "L060",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          214,
+          216
+        ]
+      },
+      "gist": "下一輪修改取決於圖、軌跡、被拒歷史",
+      "layer": "support",
+      "section": "s5c",
+      "dest": [
+        "s5c.b3"
+      ]
+    },
+    {
+      "id": "L061",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          218,
+          220
+        ]
+      },
+      "gist": "G_k、C_{k+1}、H_rejected符號說明",
+      "layer": "fold",
+      "section": "s5c",
+      "dest": [
+        "s5c.b5"
+      ]
+    },
+    {
+      "id": "L062",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          222,
+          222
+        ]
+      },
+      "gist": "被拒之後的處理：圖不變、記一筆、重跑、固定K輪",
+      "layer": "main",
+      "section": "s5c",
+      "dest": [
+        "s5c.b6"
+      ]
+    },
+    {
+      "id": "L063",
+      "kind": "example",
+      "src": {
+        "lines": [
+          224,
+          224
+        ]
+      },
+      "gist": "Appendix E.2 R3被拒的例子",
+      "layer": "main",
+      "section": "s5c",
+      "dest": [
+        "s5c.b7"
+      ]
+    },
+    {
+      "id": "L064",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          228,
+          228
+        ]
+      },
+      "gist": "整套方法七個零件",
+      "layer": "main",
+      "section": "s6",
+      "dest": [
+        "s6.b2"
+      ]
+    },
+    {
+      "id": "L065",
+      "kind": "table",
+      "src": {
+        "lines": [
+          230,
+          238
+        ]
+      },
+      "gist": "方法整合總表",
+      "layer": "main",
+      "section": "s6",
+      "dest": [
+        "s6.b3"
+      ]
+    },
+    {
+      "id": "L066",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          242,
+          242
+        ]
+      },
+      "gist": "論文宣稱21格第一；對無記憶ReAct 23/24為正",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b2"
+      ]
+    },
+    {
+      "id": "L067",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          244,
+          244
+        ]
+      },
+      "gist": "實驗設定：4個LLM、6個benchmark、7個對照、greedy",
+      "layer": "support",
+      "section": "s7",
+      "dest": [
+        "s7.b3"
+      ]
+    },
+    {
+      "id": "L068",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          246,
+          246
+        ]
+      },
+      "gist": "七個對照做法大致分類",
+      "layer": "support",
+      "section": "s7",
+      "dest": [
+        "s7.b4"
+      ]
+    },
+    {
+      "id": "L069",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          248,
+          248
+        ]
+      },
+      "gist": "題數決定一題值幾分；GDPval只有44題",
+      "layer": "support",
+      "section": "s7",
+      "dest": [
+        "s7.b5"
+      ]
+    },
+    {
+      "id": "L070",
+      "kind": "table",
+      "src": {
+        "lines": [
+          250,
+          257
+        ]
+      },
+      "gist": "六個指標、測什麼、測試題數",
+      "layer": "support",
+      "section": "s7",
+      "dest": [
+        "s7.b6"
+      ]
+    },
+    {
+      "id": "L071",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          259,
+          259
+        ]
+      },
+      "gist": "論文宣稱19勝2平3敗與領先最大三格",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b8"
+      ]
+    },
+    {
+      "id": "L072",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          261,
+          262
+        ]
+      },
+      "gist": "表3 主結果與信賴區間",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b10"
+      ]
+    },
+    {
+      "id": "L073",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          264,
+          264
+        ]
+      },
+      "gist": "乾淨對照的定義：PG減無記憶ReAct，單位是分",
+      "layer": "support",
+      "section": "s7",
+      "dest": [
+        "s7.b11"
+      ]
+    },
+    {
+      "id": "L074",
+      "kind": "table",
+      "src": {
+        "lines": [
+          266,
+          271
+        ]
+      },
+      "gist": "乾淨對照表",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b12"
+      ]
+    },
+    {
+      "id": "L075",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          273,
+          273
+        ]
+      },
+      "gist": "讀表導語",
+      "layer": "none",
+      "section": "s7",
+      "dest": [
+        "s7.b13"
+      ]
+    },
+    {
+      "id": "L076",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          275,
+          275
+        ]
+      },
+      "gist": "24格中23格為正，唯一為負Claude HotpotQA -0.10",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b14"
+      ]
+    },
+    {
+      "id": "L077",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          276,
+          276
+        ]
+      },
+      "gist": "HotpotQA幾乎沒增益，最大+1.7小於信賴區間",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b14"
+      ]
+    },
+    {
+      "id": "L078",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          277,
+          277
+        ]
+      },
+      "gist": "贏baseline要打折：不少baseline比無記憶還差",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b14"
+      ]
+    },
+    {
+      "id": "L079",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          279,
+          279
+        ]
+      },
+      "gist": "潛在混淆(推測)：PG的閘門額外用了驗證集",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b15"
+      ]
+    },
+    {
+      "id": "L080",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          283,
+          283
+        ]
+      },
+      "gist": "局部子圖加生成式提示三個benchmark都最高；整張圖會傷害",
+      "layer": "main",
+      "section": "s8",
+      "dest": [
+        "s8.b1"
+      ]
+    },
+    {
+      "id": "L081",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          285,
+          285
+        ]
+      },
+      "gist": "實驗設定：同圖同模型，改整張/局部與原文/生成式",
+      "layer": "support",
+      "section": "s8",
+      "dest": [
+        "s8.b2"
+      ]
+    },
+    {
+      "id": "L082",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          287,
+          290
+        ]
+      },
+      "gist": "四種組合的定義",
+      "layer": "support",
+      "section": "s8",
+      "dest": [
+        "s8.b3"
+      ]
+    },
+    {
+      "id": "L083",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          292,
+          292
+        ]
+      },
+      "gist": "Avg.Tok與Avg.Step定義，越低越好",
+      "layer": "support",
+      "section": "s8",
+      "dest": [
+        "s8.b4"
+      ]
+    },
+    {
+      "id": "L084",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          294,
+          295
+        ]
+      },
+      "gist": "表4 使用方式消融",
+      "layer": "main",
+      "section": "s8",
+      "dest": [
+        "s8.b5"
+      ]
+    },
+    {
+      "id": "L085",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          297,
+          297
+        ]
+      },
+      "gist": "準確率表導語",
+      "layer": "none",
+      "section": "s8",
+      "dest": [
+        "s8.b6"
+      ]
+    },
+    {
+      "id": "L086",
+      "kind": "table",
+      "src": {
+        "lines": [
+          299,
+          304
+        ]
+      },
+      "gist": "四種設定的準確率",
+      "layer": "main",
+      "section": "s8",
+      "dest": [
+        "s8.b7"
+      ]
+    },
+    {
+      "id": "L087",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          306,
+          306
+        ]
+      },
+      "gist": "成本表導語（token相對無圖倍數）",
+      "layer": "none",
+      "section": "s8",
+      "dest": [
+        "s8.b8"
+      ]
+    },
+    {
+      "id": "L088",
+      "kind": "table",
+      "src": {
+        "lines": [
+          308,
+          312
+        ]
+      },
+      "gist": "token相對無圖的倍數",
+      "layer": "main",
+      "section": "s8",
+      "dest": [
+        "s8.b9"
+      ]
+    },
+    {
+      "id": "L089",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          314,
+          314
+        ]
+      },
+      "gist": "三件事導語",
+      "layer": "none",
+      "section": "s8",
+      "dest": [
+        "s8.b10"
+      ]
+    },
+    {
+      "id": "L090",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          316,
+          316
+        ]
+      },
+      "gist": "局部子圖三個都最高，領先1.96/6.82/8.95分",
+      "layer": "main",
+      "section": "s8",
+      "dest": [
+        "s8.b11"
+      ]
+    },
+    {
+      "id": "L091",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          317,
+          317
+        ]
+      },
+      "gist": "整張圖會傷害：ALFWorld掉到54.48、5.34倍；機制是推測",
+      "layer": "main",
+      "section": "s8",
+      "dest": [
+        "s8.b11"
+      ]
+    },
+    {
+      "id": "L092",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          318,
+          318
+        ]
+      },
+      "gist": "局部子圖成本一直高於無圖；步數在GDPval/ALFWorld下降",
+      "layer": "main",
+      "section": "s8",
+      "dest": [
+        "s8.b11"
+      ]
+    },
+    {
+      "id": "L093",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          322,
+          322
+        ]
+      },
+      "gist": "實驗三檢驗兩件事；穩的訊號只有一個",
+      "layer": "main",
+      "section": "s9",
+      "dest": [
+        "s9.b1"
+      ]
+    },
+    {
+      "id": "L094",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          324,
+          324
+        ]
+      },
+      "gist": "設定：同模型，比較五種組合",
+      "layer": "support",
+      "section": "s9",
+      "dest": [
+        "s9.b2"
+      ]
+    },
+    {
+      "id": "L095",
+      "kind": "table",
+      "src": {
+        "lines": [
+          326,
+          332
+        ]
+      },
+      "gist": "五種建構模式",
+      "layer": "support",
+      "section": "s9",
+      "dest": [
+        "s9.b3"
+      ]
+    },
+    {
+      "id": "L096",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          334,
+          334
+        ]
+      },
+      "gist": "一次大改vs分批導語",
+      "layer": "none",
+      "section": "s9",
+      "dest": [
+        "s9.b4"
+      ]
+    },
+    {
+      "id": "L097",
+      "kind": "table",
+      "src": {
+        "lines": [
+          336,
+          340
+        ]
+      },
+      "gist": "一次大改與分批演化的差別",
+      "layer": "support",
+      "section": "s9",
+      "dest": [
+        "s9.b5"
+      ]
+    },
+    {
+      "id": "L098",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          342,
+          342
+        ]
+      },
+      "gist": "指標與分母導語",
+      "layer": "none",
+      "section": "s9",
+      "dest": [
+        "s9.b6"
+      ]
+    },
+    {
+      "id": "L099",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          344,
+          346
+        ]
+      },
+      "gist": "Ans EM、MultiChallenge Overall、分母(1,000題/56題)",
+      "layer": "support",
+      "section": "s9",
+      "dest": [
+        "s9.b6",
+        "s9.b8"
+      ]
+    },
+    {
+      "id": "L100",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          348,
+          349
+        ]
+      },
+      "gist": "表5 五種建構模式",
+      "layer": "main",
+      "section": "s9",
+      "dest": [
+        "s9.b9"
+      ]
+    },
+    {
+      "id": "L101",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          351,
+          351
+        ]
+      },
+      "gist": "結果導語",
+      "layer": "none",
+      "section": "s9",
+      "dest": [
+        "s9.b10"
+      ]
+    },
+    {
+      "id": "L102",
+      "kind": "table",
+      "src": {
+        "lines": [
+          353,
+          360
+        ]
+      },
+      "gist": "五種模式結果表",
+      "layer": "main",
+      "section": "s9",
+      "dest": [
+        "s9.b11"
+      ]
+    },
+    {
+      "id": "L103",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          362,
+          362
+        ]
+      },
+      "gist": "與實驗二基準不同的原因：題目子集不同",
+      "layer": "support",
+      "section": "s9",
+      "dest": [
+        "s9.b13"
+      ]
+    },
+    {
+      "id": "L104",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          364,
+          364
+        ]
+      },
+      "gist": "三個結論導語",
+      "layer": "none",
+      "section": "s9",
+      "dest": [
+        "s9.b14"
+      ]
+    },
+    {
+      "id": "L105",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          366,
+          366
+        ]
+      },
+      "gist": "HotpotQA只有模式5明顯最好",
+      "layer": "main",
+      "section": "s9",
+      "dest": [
+        "s9.b15"
+      ]
+    },
+    {
+      "id": "L106",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          367,
+          367
+        ]
+      },
+      "gist": "專家圖起點時演化沒有額外加分",
+      "layer": "main",
+      "section": "s9",
+      "dest": [
+        "s9.b15"
+      ]
+    },
+    {
+      "id": "L107",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          368,
+          368
+        ]
+      },
+      "gist": "MultiChallenge穩的訊號：專家圖崩盤、演化救得回來",
+      "layer": "main",
+      "section": "s9",
+      "dest": [
+        "s9.b15"
+      ]
+    },
+    {
+      "id": "L108",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          370,
+          370
+        ]
+      },
+      "gist": "乾淨對照的定義：起點相同只比加演化與閘門",
+      "layer": "support",
+      "section": "s9",
+      "dest": [
+        "s9.b17"
+      ]
+    },
+    {
+      "id": "L109",
+      "kind": "table",
+      "src": {
+        "lines": [
+          372,
+          375
+        ]
+      },
+      "gist": "起點相同的乾淨對照表",
+      "layer": "main",
+      "section": "s9",
+      "dest": [
+        "s9.b18"
+      ]
+    },
+    {
+      "id": "L110",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          381,
+          381
+        ]
+      },
+      "gist": "改進迴圈：提案、獨立驗證、被拒回灌，可套任何文字資產",
+      "layer": "main",
+      "section": "s10a",
+      "dest": [
+        "s10a.b1"
+      ]
+    },
+    {
+      "id": "L111",
+      "kind": "example",
+      "src": {
+        "lines": [
+          383,
+          394
+        ]
+      },
+      "gist": "改進迴圈偽程式",
+      "layer": "main",
+      "section": "s10a",
+      "dest": [
+        "s10a.b4"
+      ]
+    },
+    {
+      "id": "L112",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          398,
+          398
+        ]
+      },
+      "gist": "使用時的限制：爬山法、小驗證集、只寫在prompt的約束",
+      "layer": "main",
+      "section": "s10b",
+      "dest": [
+        "s10b.b1"
+      ]
+    },
+    {
+      "id": "L113",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          402,
+          402
+        ]
+      },
+      "gist": "怎麼選閘門(一般知識)",
+      "layer": "main",
+      "section": "s10c",
+      "dest": [
+        "s10c.b1"
+      ]
+    },
+    {
+      "id": "L114",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          406,
+          406
+        ]
+      },
+      "gist": "延伸閱讀導語",
+      "layer": "none",
+      "section": "s11",
+      "dest": [
+        "s11.b1"
+      ]
+    },
+    {
+      "id": "L115",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          410,
+          410
+        ]
+      },
+      "gist": "定位與子圖一句話",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b1"
+      ]
+    },
+    {
+      "id": "L116",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          412,
+          412
+        ]
+      },
+      "gist": "上一步動作a_{t-1}從哪來",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b2"
+      ]
+    },
+    {
+      "id": "L117",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          414,
+          414
+        ]
+      },
+      "gist": "exactly matching比什麼：論文沒交代",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b3"
+      ]
+    },
+    {
+      "id": "L118",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          416,
+          417
+        ]
+      },
+      "gist": "比整行或工具名、節點可為推理步驟：沒說",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b4"
+      ]
+    },
+    {
+      "id": "L119",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          418,
+          418
+        ]
+      },
+      "gist": "推測比的是工具名（經正規化）",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b4"
+      ]
+    },
+    {
+      "id": "L120",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          420,
+          420
+        ]
+      },
+      "gist": "論文只展示比對後結果",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b5"
+      ]
+    },
+    {
+      "id": "L121",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          422,
+          422
+        ]
+      },
+      "gist": "對照表導語",
+      "layer": "none",
+      "section": "s11a",
+      "dest": [
+        "s11a.b6"
+      ]
+    },
+    {
+      "id": "L122",
+      "kind": "table",
+      "src": {
+        "lines": [
+          424,
+          428
+        ]
+      },
+      "gist": "論文有寫/沒寫對照",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b7"
+      ]
+    },
+    {
+      "id": "L123",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          430,
+          430
+        ]
+      },
+      "gist": "字典查表與BFS不是論文內容",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b8"
+      ]
+    },
+    {
+      "id": "L124",
+      "kind": "example",
+      "src": {
+        "lines": [
+          432,
+          432
+        ]
+      },
+      "gist": "手動走一遍導語（邊清單前兩條來自B.5）",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b9"
+      ]
+    },
+    {
+      "id": "L125",
+      "kind": "example",
+      "src": {
+        "lines": [
+          434,
+          437
+        ]
+      },
+      "gist": "四條邊的清單（兩條自編）",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b10"
+      ]
+    },
+    {
+      "id": "L126",
+      "kind": "example",
+      "src": {
+        "lines": [
+          439,
+          439
+        ]
+      },
+      "gist": "假設上一步動作是first_hop_retrieve，h=2",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b11"
+      ]
+    },
+    {
+      "id": "L127",
+      "kind": "example",
+      "src": {
+        "lines": [
+          441,
+          445
+        ]
+      },
+      "gist": "走訪五步",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b12"
+      ]
+    },
+    {
+      "id": "L128",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          447,
+          447
+        ]
+      },
+      "gist": "比對失敗時G_t是整張圖",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b13"
+      ]
+    },
+    {
+      "id": "L129",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          449,
+          449
+        ]
+      },
+      "gist": "三個細節導語",
+      "layer": "none",
+      "section": "s11a",
+      "dest": [
+        "s11a.b14"
+      ]
+    },
+    {
+      "id": "L130",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          451,
+          453
+        ]
+      },
+      "gist": "展開三細節：只沿出邊、分岔全收、CFO例",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b15"
+      ]
+    },
+    {
+      "id": "L131",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          455,
+          455
+        ]
+      },
+      "gist": "為什麼沿結構取而不是相似度檢索",
+      "layer": "appendix",
+      "section": "s11a",
+      "dest": [
+        "s11a.b16"
+      ]
+    },
+    {
+      "id": "L132",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          459,
+          459
+        ]
+      },
+      "gist": "Ψ與solver各司其職",
+      "layer": "appendix",
+      "section": "s11b",
+      "dest": [
+        "s11b.b1"
+      ]
+    },
+    {
+      "id": "L133",
+      "kind": "table",
+      "src": {
+        "lines": [
+          461,
+          469
+        ]
+      },
+      "gist": "Ψ與solver輸入輸出對照",
+      "layer": "appendix",
+      "section": "s11b",
+      "dest": [
+        "s11b.b2"
+      ]
+    },
+    {
+      "id": "L134",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          471,
+          471
+        ]
+      },
+      "gist": "資料流與方法二相同",
+      "layer": "none",
+      "section": "s11b",
+      "dest": [
+        "s11b.b3"
+      ]
+    },
+    {
+      "id": "L135",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          473,
+          473
+        ]
+      },
+      "gist": "三個誤會導語",
+      "layer": "none",
+      "section": "s11b",
+      "dest": [
+        "s11b.b4"
+      ]
+    },
+    {
+      "id": "L136",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          475,
+          475
+        ]
+      },
+      "gist": "solver完全看不到圖",
+      "layer": "appendix",
+      "section": "s11b",
+      "dest": [
+        "s11b.b5"
+      ]
+    },
+    {
+      "id": "L137",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          476,
+          476
+        ]
+      },
+      "gist": "Ψ的query欄兩種讀法；推測",
+      "layer": "appendix",
+      "section": "s11b",
+      "dest": [
+        "s11b.b5"
+      ]
+    },
+    {
+      "id": "L138",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          477,
+          477
+        ]
+      },
+      "gist": "Ψ實際輸出全文論文沒展示",
+      "layer": "appendix",
+      "section": "s11b",
+      "dest": [
+        "s11b.b5"
+      ]
+    },
+    {
+      "id": "L139",
+      "kind": "example",
+      "src": {
+        "lines": [
+          479,
+          479
+        ]
+      },
+      "gist": "自編g_t例子導語",
+      "layer": "appendix",
+      "section": "s11b",
+      "dest": [
+        "s11b.b6"
+      ]
+    },
+    {
+      "id": "L140",
+      "kind": "example",
+      "src": {
+        "lines": [
+          481,
+          481
+        ]
+      },
+      "gist": "自編g_t例子",
+      "layer": "appendix",
+      "section": "s11b",
+      "dest": [
+        "s11b.b7"
+      ]
+    },
+    {
+      "id": "L141",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          485,
+          485
+        ]
+      },
+      "gist": "一個benchmark一張圖的問題與論文做法",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b1"
+      ]
+    },
+    {
+      "id": "L142",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          487,
+          487
+        ]
+      },
+      "gist": "為什麼說只有一張圖",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b2"
+      ]
+    },
+    {
+      "id": "L143",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          489,
+          489
+        ]
+      },
+      "gist": "從零開始其實也是修改既有圖",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b3"
+      ]
+    },
+    {
+      "id": "L144",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          491,
+          491
+        ]
+      },
+      "gist": "任務多樣時仍用同一張圖；未驗證多圖",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b4"
+      ]
+    },
+    {
+      "id": "L145",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          493,
+          493
+        ]
+      },
+      "gist": "不相關子圖的情況論文沒討論；下表推測",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b5"
+      ]
+    },
+    {
+      "id": "L146",
+      "kind": "table",
+      "src": {
+        "lines": [
+          495,
+          500
+        ]
+      },
+      "gist": "論文有寫/推測對照",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b6"
+      ]
+    },
+    {
+      "id": "L147",
+      "kind": "example",
+      "src": {
+        "lines": [
+          502,
+          502
+        ]
+      },
+      "gist": "共用節點的自編例子",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b7"
+      ]
+    },
+    {
+      "id": "L148",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          504,
+          504
+        ]
+      },
+      "gist": "論文顯示無關圖內容有害(表4)",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b8"
+      ]
+    },
+    {
+      "id": "L149",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          506,
+          506
+        ]
+      },
+      "gist": "結論與推測：流程相近任務最說得通",
+      "layer": "appendix",
+      "section": "s11c",
+      "dest": [
+        "s11c.b9"
+      ]
+    },
+    {
+      "id": "L150",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          510,
+          510
+        ]
+      },
+      "gist": "refiner每輪看到什麼；H_rejected每筆記什麼",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b1"
+      ]
+    },
+    {
+      "id": "L151",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          512,
+          512
+        ]
+      },
+      "gist": "訓練軌跡是什麼",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b2"
+      ]
+    },
+    {
+      "id": "L152",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          514,
+          516
+        ]
+      },
+      "gist": "X_k定義",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b3"
+      ]
+    },
+    {
+      "id": "L153",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          518,
+          521
+        ]
+      },
+      "gist": "B_k、q_i、T_i、S_i符號",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b4"
+      ]
+    },
+    {
+      "id": "L154",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          523,
+          523
+        ]
+      },
+      "gist": "C_k是X_k軌跡串接後截斷",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b5"
+      ]
+    },
+    {
+      "id": "L155",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          525,
+          525
+        ]
+      },
+      "gist": "白話說明；推測T含Thought",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b6"
+      ]
+    },
+    {
+      "id": "L156",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          527,
+          527
+        ]
+      },
+      "gist": "refiner輸入導語",
+      "layer": "none",
+      "section": "s11d",
+      "dest": [
+        "s11d.b7"
+      ]
+    },
+    {
+      "id": "L157",
+      "kind": "table",
+      "src": {
+        "lines": [
+          529,
+          537
+        ]
+      },
+      "gist": "refiner的七項輸入",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b8"
+      ]
+    },
+    {
+      "id": "L158",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          539,
+          539
+        ]
+      },
+      "gist": "正文公式只寫1,2,4項",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b9"
+      ]
+    },
+    {
+      "id": "L159",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          541,
+          541
+        ]
+      },
+      "gist": "H_rejected每筆導語",
+      "layer": "none",
+      "section": "s11d",
+      "dest": [
+        "s11d.b10"
+      ]
+    },
+    {
+      "id": "L160",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          543,
+          543
+        ]
+      },
+      "gist": "每筆記一次被丟的候選，分兩種情況",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b11"
+      ]
+    },
+    {
+      "id": "L161",
+      "kind": "table",
+      "src": {
+        "lines": [
+          545,
+          550
+        ]
+      },
+      "gist": "驗證沒過/結構檢查沒過的欄位",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b12"
+      ]
+    },
+    {
+      "id": "L162",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          552,
+          552
+        ]
+      },
+      "gist": "H_rejected只增不減；存的軌跡來自被拒之前的圖",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b13"
+      ]
+    },
+    {
+      "id": "L163",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          554,
+          554
+        ]
+      },
+      "gist": "真正餵給refiner的是哪部分：兩種說法",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b14"
+      ]
+    },
+    {
+      "id": "L164",
+      "kind": "table",
+      "src": {
+        "lines": [
+          556,
+          559
+        ]
+      },
+      "gist": "兩種說法對照",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b15"
+      ]
+    },
+    {
+      "id": "L165",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          561,
+          561
+        ]
+      },
+      "gist": "推測：實際餵的是B.6版本",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b16"
+      ]
+    },
+    {
+      "id": "L166",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          563,
+          563
+        ]
+      },
+      "gist": "會不會context爆炸：論文沒處理",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b17"
+      ]
+    },
+    {
+      "id": "L167",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          565,
+          565
+        ]
+      },
+      "gist": "增長速度與推測：線性、需自加上限",
+      "layer": "appendix",
+      "section": "s11d",
+      "dest": [
+        "s11d.b18"
+      ]
+    },
+    {
+      "id": "L168",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          569,
+          569
+        ]
+      },
+      "gist": "七個baseline：1個無記憶、6個學習型",
+      "layer": "appendix",
+      "section": "s11e",
+      "dest": [
+        "s11e.b1"
+      ]
+    },
+    {
+      "id": "L169",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          571,
+          572
+        ]
+      },
+      "gist": "表6 記憶機制比較",
+      "layer": "appendix",
+      "section": "s11e",
+      "dest": [
+        "s11e.b2"
+      ]
+    },
+    {
+      "id": "L170",
+      "kind": "table",
+      "src": {
+        "lines": [
+          574,
+          582
+        ]
+      },
+      "gist": "七個baseline存什麼怎麼用",
+      "layer": "appendix",
+      "section": "s11e",
+      "dest": [
+        "s11e.b3"
+      ]
+    },
+    {
+      "id": "L171",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          584,
+          584
+        ]
+      },
+      "gist": "和PG最近的兩個",
+      "layer": "none",
+      "section": "s11e",
+      "dest": [
+        "s11e.b4"
+      ]
+    },
+    {
+      "id": "L172",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          586,
+          587
+        ]
+      },
+      "gist": "AutoGuide與KnowAgent與PG的差別",
+      "layer": "appendix",
+      "section": "s11e",
+      "dest": [
+        "s11e.b5"
+      ]
+    },
+    {
+      "id": "L173",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          589,
+          589
+        ]
+      },
+      "gist": "這兩個如果贏過PG最值得細看",
+      "layer": "appendix",
+      "section": "s11e",
+      "dest": [
+        "s11e.b6"
+      ]
+    },
+    {
+      "id": "L174",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          593,
+          593
+        ]
+      },
+      "gist": "結論：PG做法與23/24、HotpotQA、1.33-1.85倍",
+      "layer": "main",
+      "section": "s10d",
+      "dest": [
+        "s10d.b1"
+      ]
+    },
+    {
+      "id": "L175",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          595,
+          595
+        ]
+      },
+      "gist": "重點導語",
+      "layer": "none",
+      "section": "s10d",
+      "dest": [
+        "s10d.b2"
+      ]
+    },
+    {
+      "id": "L176",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          597,
+          600
+        ]
+      },
+      "gist": "四個帶走重點",
+      "layer": "main",
+      "section": "s10d",
+      "dest": [
+        "s10d.b3"
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "id": "s1.b1",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "請 AI agent 幫你處理一個要走很多步的任務。前半段它做得好好的，到了後半段，卻又去查一遍前面已經查過的資料，或是把兩個工具的呼叫順序弄反。如果事先把「接下來該做什麼」畫成一張流程圖，每一步只挑出腳邊那一小段，轉成一句提醒交給它，它還會迷路嗎？Google 的這篇論文就是這樣做的，答案是：多半有幫助，但有代價，也有幾個地方沒幫上忙。",
+      "purpose": "hook",
+      "origin": "editorial"
+    },
+    {
+      "id": "s1.b2",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L001"
+      ],
+      "text": "這篇整理 Google 的論文 *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents*（arXiv 2609.09153v1，2026 年九月）。它的做法分兩半："
+    },
+    {
+      "id": "s1.b3",
+      "section": "s1",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L001"
+      ],
+      "items": [
+        "**推論時**（agent 實際在做事）：把 agent 的「做事流程」存成一張可編輯的有向圖（節點是步驟，箭頭指向下一步）。每一步只取 agent 目前所在位置附近的一小段，由另一個 LLM 翻成提示。",
+        "**離線時**（事先準備、改進這張圖）：讓一個 LLM 負責修改這張圖；改得有沒有用，交給獨立的驗證集（一組沒拿去訓練的題目）決定。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s1.b4",
+      "section": "s1",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L002"
+      ],
+      "tone": "abstract",
+      "title": "先給結論",
+      "text": "同一個模型、同一個 solver（負責選動作的那個 LLM），拿來對比沒有記憶的 ReAct（先想一步、呼叫一個工具、看結果、再想的 agent 迴圈，下一節細講）：\n\n- **多數有進步**：24 個「模型 × benchmark（標準測試任務）」格子中，有 23 格為正；但 HotpotQA（需要跨多篇資料推理的問答）幾乎沒有增益（最大 +1.7）。\n- **有代價**：每一步多一次 LLM 呼叫，token（模型處理文字的計量單位）大約是不用圖的 1.33 到 1.85 倍。\n- **手寫的專家圖（人工設計的流程圖）不一定可靠**：在 MultiChallenge（多輪對話中，要記得並遵守先前指令的測試）上，它比不用圖少答對 16 題（共 56 題），演化之後才回到比不用圖多 3 題。"
+    },
+    {
+      "id": "s1.b5",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L003"
+      ],
+      "text": "我自己覺得最值得帶走的不是圖，而是它的改進迴圈：提案、用獨立驗證集把關、把被拒的記錄回灌給提案者。這個迴圈可以套在任何可編輯的文字資產上，文章後半會專門談。"
+    },
+    {
+      "id": "s1.b6",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L004"
+      ],
+      "text": "路線是這樣：先看 ReAct 為什麼會迷路，再看論文的三段方法（圖長什麼樣、推論時怎麼用、離線時怎麼改），接著看三個實驗，最後回到值得帶走的東西。文末另有五個可以獨立閱讀的概念補充，主線提到時會指過去。",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s1.b7",
+      "section": "s1",
+      "type": "diagram",
+      "layer": "main",
+      "ledger": [],
+      "kind": "mindmap",
+      "tree": {
+        "label": "Procedural Graph",
+        "children": [
+          {
+            "label": "圖：步驟是節點，邊說明怎麼接"
+          },
+          {
+            "label": "推論時",
+            "children": [
+              {
+                "label": "只取目前位置附近一小段"
+              },
+              {
+                "label": "另一個 LLM 翻成提示"
+              }
+            ]
+          },
+          {
+            "label": "離線時",
+            "children": [
+              {
+                "label": "LLM 提出修改"
+              },
+              {
+                "label": "驗證集把關"
+              },
+              {
+                "label": "被拒的回灌"
+              }
+            ]
+          },
+          {
+            "label": "結果",
+            "children": [
+              {
+                "label": "24 格中 23 格為正"
+              },
+              {
+                "label": "但有代價"
+              }
+            ]
+          }
+        ]
+      },
+      "purpose": "signpost",
+      "origin": "editorial"
+    },
+    {
+      "id": "s2.b1",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L005"
+      ],
+      "text": "ReAct 是 agent 常見的迴圈：想一步、呼叫一個工具、看結果、再想。"
+    },
+    {
+      "id": "s2.b2",
+      "section": "s2",
+      "type": "diagram",
+      "layer": "main",
+      "ledger": [],
+      "kind": "flow",
+      "direction": "LR",
+      "nodes": [
+        {
+          "id": "t",
+          "label": "想一步"
+        },
+        {
+          "id": "a",
+          "label": "呼叫一個工具"
+        },
+        {
+          "id": "o",
+          "label": "看結果"
+        }
+      ],
+      "edges": [
+        {
+          "from": "t",
+          "to": "a"
+        },
+        {
+          "from": "a",
+          "to": "o"
+        },
+        {
+          "from": "o",
+          "to": "t",
+          "label": "再想"
+        }
+      ],
+      "origin": "editorial"
+    },
+    {
+      "id": "s2.b3",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L005"
+      ],
+      "text": "問題是每一步都得從一份越來越長的「動作＋觀察」流水帳裡，自己推出下一步。長任務裡就容易忘記目標、亂序呼叫工具、重複無效的動作。"
+    },
+    {
+      "id": "s2.b4",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L006"
+      ],
+      "text": "現有的補救辦法不少，各缺一塊："
+    },
+    {
+      "id": "s2.b5",
+      "section": "s2",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L006"
+      ],
+      "items": [
+        "**文字記憶與反思**（Reflexion、ExpeL）：內容是自由文字，solver 還得自己判斷這段話如何限制後面的步驟。",
+        "**條件式指引**（AutoGuide）：每條指引彼此獨立，沒有連在一起。",
+        "**手寫工作流與狀態機**：要靠人工設計。",
+        "**自動搜尋工作流**（AFlow）：只在離線優化結構，推論時不隨進度調整。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s2.b6",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L007"
+      ],
+      "text": "論文想同時做到四件事："
+    },
+    {
+      "id": "s2.b7",
+      "section": "s2",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L007"
+      ],
+      "items": [
+        "結構夠強，能擋掉無效行為",
+        "保留推理的彈性",
+        "隨目前進度調整",
+        "能從經驗改進"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s2.b8",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "論文的出發點是一個類比，它靠的是三元組：「起點、關係、終點」三個一組的記法。知識圖譜裡可能是（巴黎、是首都、法國）；換成流程，就變成（做完 A、可以接、B）。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s2.b9",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L008"
+      ],
+      "text": "核心類比看圖 1。知識圖譜把事實組織成三元組，回答「這是什麼」；Procedural Graph 把任務流程組織成三元組，回答「接下來做什麼」。"
+    },
+    {
+      "id": "s2.b10",
+      "section": "s2",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L009"
+      ],
+      "manifest_id": "img-001",
+      "alt": "左邊是知識圖譜，把事實組織成三元組來回答 what-is 問題；右邊是 Procedural Graph，把任務流程組織成三元組來回答 what-to-do 問題。",
+      "caption": "圖 1 — 從知識到流程：知識圖譜回答「是什麼」，Procedural Graph 回答「要做什麼」。",
+      "paper_label": "Figure 1",
+      "role": "concept"
+    },
+    {
+      "id": "s2.b11",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "小結：ReAct 的問題是每一步都得自己從長長的流水帳裡推下一步。這篇的解法，是把「接下來該做什麼」事先存成一張圖。",
+      "purpose": "recap",
+      "origin": "editorial"
+    },
+    {
+      "id": "s3.b1",
+      "section": "s3",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "接下來三節是論文的方法：圖長什麼樣（這一節）、推論時怎麼用、離線時怎麼改。先看圖本身。",
+      "purpose": "signpost",
+      "origin": "editorial"
+    },
+    {
+      "id": "s3a.b1",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L010"
+      ],
+      "text": "Procedural Graph（以下簡稱 PG）是一張有向、帶屬性的圖：節點是步驟，邊（有方向的箭頭）是「這步之後可以接哪一步」，每條邊再附三段文字，說明怎麼接（論文 Section 3.1）。"
+    },
+    {
+      "id": "s3a.b2",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L016"
+      ],
+      "text": "這篇接下來會一直用論文裡的一個例子：EnterpriseArena，一個財務模擬環境，agent 扮演 CFO（財務長）管理公司現金，目標是撐滿 132 個月不破產。"
+    },
+    {
+      "id": "s3a.b3",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L013"
+      ],
+      "text": "這個任務的圖上有這樣一條邊（論文 Section 3.1 的例子）：`(cash_flow_forecast, LEADS_TO, fund_raising_request)`，意思是做完現金流預測之後，可以接提出募資申請。它附的三段文字叫 condition（什麼時候該走這條邊）、guidance（怎麼做）、pitfalls（要避開什麼），內容如下。"
+    },
+    {
+      "id": "s3a.b4",
+      "section": "s3a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L014"
+      ],
+      "headers": [
+        "欄位",
+        "內容"
+      ],
+      "rows": [
+        [
+          "condition",
+          "預估的資金跑道低於安全緩衝時"
+        ],
+        [
+          "guidance",
+          "要提早送出申請，因為資金到位有延遲"
+        ],
+        [
+          "pitfalls",
+          "已有一筆申請還在等待時，不要再疊一筆"
+        ]
+      ]
+    },
+    {
+      "id": "s3a.b5",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L015"
+      ],
+      "text": "這三句話，就是推論時要翻譯給 solver 的原料。"
+    },
+    {
+      "id": "s3a.b6",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "把剛才的例子一般化：一張 PG 由四樣東西組成，也就是節點、關係種類、邊，以及每條邊上的文字。邊是「起點、關係、終點」三個一組。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s3a.b7",
+      "section": "s3a",
+      "type": "formula",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L011"
+      ],
+      "latex": "G = (V,\\, R,\\, E,\\, \\Phi), \\qquad E \\subseteq V \\times R \\times V",
+      "intuition": "s3a.b6"
+    },
+    {
+      "id": "s3a.b8",
+      "section": "s3a",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "符號對照：V、R、E、Φ 各是什麼",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s3a.b9",
+          "section": "s3a",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L012"
+          ],
+          "items": [
+            "$V$：節點集合。每個節點代表一個工具函式、一個技能、一個內部推理步驟，或一個任務狀態。",
+            "$R$：關係種類的詞彙表。實際只有四種：`LEADS_TO`、`TRIGGERS`、`PROVIDES_INPUT_FOR`、`CONVERGES_TO`（Appendix B.4）。這四種只是標籤，後面會看到推論時它們其實派不上用場。",
+            "$E$：邊的集合。每條邊是 $(u, r, v)$，意思是「在 $u$ 之後，可以依關係 $r$ 接 $v$」。",
+            "$\\Phi$：把每條邊對應到一組文字欄位。論文用三個：condition（什麼時候該走這條邊）、guidance（怎麼做）、pitfalls（要避開什麼）。"
+          ],
+          "ordered": false
+        }
+      ]
+    },
+    {
+      "id": "s3b.b1",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L016"
+      ],
+      "text": "實際用的圖很小。除了 BFCL v3 因為要對應龐大的函式目錄，有 131 個節點、265 條邊，其餘每張圖都只有 7 到 17 個節點、7 到 27 條邊，數字見表 1。表 1 的七欄是六個 benchmark 加上 EnterpriseArena：它不在實驗一的六個 benchmark 主比較裡，主要用於自我演化的案例。"
+    },
+    {
+      "id": "s3b.b2",
+      "section": "s3b",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L017"
+      ],
+      "manifest_id": "img-011",
+      "alt": "七個評測環境（六個 benchmark 加上 EnterpriseArena）各自使用的 Procedural Graph 的節點數與邊（三元組）數。",
+      "caption": "表 1 — 主實驗中各 benchmark 的 Procedural Graph 規模。",
+      "paper_label": "Table 7",
+      "role": "evidence"
+    },
+    {
+      "id": "s3b.b3",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L018"
+      ],
+      "text": "圖可以從專家手寫的版本起步，也可以從只有 Start → End 兩個節點的空圖起步，兩種起點的比較放在實驗三。"
+    },
+    {
+      "id": "s3b.b4",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "小結：PG 是一張小圖。節點是步驟，邊上寫著「什麼時候該走、怎麼做、要避開什麼」。接下來看 agent 做事時，怎麼用這張圖。",
+      "purpose": "recap",
+      "origin": "editorial"
+    },
+    {
+      "id": "s4.b1",
+      "section": "s4",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L019"
+      ],
+      "text": "推論時的做法是：每一步決策前，先判斷 agent 剛做完圖上的哪個節點，只取那個節點往後 2 跳（沿著箭頭走兩步）的小圖，由另一個 LLM 轉成一小段「現在該做什麼、要避開什麼」的文字，附加到 solver 的 prompt。推論時圖是凍結的，不會更新（Section 3.2）。"
+    },
+    {
+      "id": "s4.b2",
+      "section": "s4",
+      "type": "callout",
+      "layer": "main",
+      "ledger": [],
+      "tone": "tip",
+      "title": "一個比喻",
+      "text": "這像是導航：它只報下一兩個路口該怎麼走，不會把整張地圖唸給你聽。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s4.b3",
+      "section": "s4",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L020"
+      ],
+      "text": "取出來的那一小塊圖，叫子圖。先把兩個角色定義清楚："
+    },
+    {
+      "id": "s4.b4",
+      "section": "s4",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L020"
+      ],
+      "items": [
+        "**solver**：實際選下一步動作的 LLM，也就是 ReAct 迴圈裡的 agent 本人。",
+        "**guidance model（$\\Psi$）**：另一個 LLM，負責把子圖翻成提示。論文說它和 solver 用同一個底層模型（Section 4）。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s4.b5",
+      "section": "s4",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L021"
+      ],
+      "text": "一步的完整流程如下（軌跡，就是到目前為止的動作與觀察記錄；括號裡是後面公式用的符號）："
+    },
+    {
+      "id": "s4.b6",
+      "section": "s4",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L021"
+      ],
+      "items": [
+        "取得上一步的動作（$a_{t-1}$）。",
+        "把它比對到圖上的節點（$u_t$），取 2 跳子圖（$G_t$）。",
+        "guidance model（$\\Psi$）讀子圖、問題（$q$）、最近 3 步軌跡，寫出提示（$g_t$）。",
+        "提示填進 solver prompt 的 `Procedural Graph Guidance:` 欄位。",
+        "solver 輸出 Thought 與 Action。",
+        "環境執行動作並回傳觀察。",
+        "新的動作與觀察接進軌跡，進入下一步。"
+      ],
+      "ordered": true
+    },
+    {
+      "id": "s4.b7",
+      "section": "s4",
+      "type": "callout",
+      "layer": "main",
+      "ledger": [],
+      "tone": "example",
+      "title": "用 CFO 任務走一步（示意，不是論文輸出）",
+      "text": "假設 agent 剛做完現金流預測（`cash_flow_forecast`）。系統在圖上找到這個節點，取出它往後兩跳的邊，其中一條寫著「預估的資金跑道低於安全緩衝時，要提早送出申請，因為資金到位有延遲」。guidance model 把這幾條邊寫成一段提醒，solver 讀了提醒，再決定下一個動作要不要提出募資申請。",
+      "illustrative": true,
+      "origin": "editorial"
+    },
+    {
+      "id": "s4.b8",
+      "section": "s4",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L022"
+      ],
+      "text": "圖 2 是整個框架的總覽，重點看中間那一欄（線上推論）；右邊那一欄是離線演化，下一節才講。"
+    },
+    {
+      "id": "s4.b9",
+      "section": "s4",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L023"
+      ],
+      "manifest_id": "img-002",
+      "alt": "Procedural Graph 框架總覽：左邊由三元組定義圖，中間定位目前節點並取 2 跳子圖、交給 guidance model 產出提示，右邊是離線演化：專門改圖的 LLM 根據軌跡提出修改，並經驗證與被拒記錄把關。",
+      "caption": "圖 2 — Procedural Graph 框架總覽。中間是線上推論，右邊是離線演化。",
+      "paper_label": "Figure 2",
+      "role": "overview"
+    },
+    {
+      "id": "s4a.b1",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L024"
+      ],
+      "text": "第一部分負責回答「agent 現在在圖上的哪裡」。"
+    },
+    {
+      "id": "s4a.b2",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "做法像先確認自己站在哪個路口：拿上一步的動作去圖上找對應的節點，找到了，就以它為中心往外取兩跳；找不到，退回整張圖。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s4a.b3",
+      "section": "s4a",
+      "type": "formula",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L025"
+      ],
+      "latex": "u_t = \\mathrm{Match}(a_{t-1},\\, V), \\qquad G_t = \\begin{cases} N_h(u_t), & u_t \\neq \\emptyset \\\\ G, & \\text{otherwise} \\end{cases}",
+      "intuition": "s4a.b2"
+    },
+    {
+      "id": "s4a.b4",
+      "section": "s4a",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "符號對照：t、Match、N_h 各是什麼",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s4a.b5",
+          "section": "s4a",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L026"
+          ],
+          "items": [
+            "$t$：目前是第幾個決策步。起點約定 $a_0 = \\text{Start}$，所以第一步一定定位在 Start 節點。",
+            "$a_{t-1}$：agent 上一步的動作，例如一次工具呼叫。",
+            "$\\mathrm{Match}$：把 $a_{t-1}$ 和節點集合 $V$ 比對，論文寫的是 exactly matching。",
+            "$u_t$：比對到的節點，也就是 agent 現在在圖上的位置；比對不到就是空集合。",
+            "$N_h(u_t)$：從 $u_t$ 出發，沿著往外的邊最多展開 $h$ 步所得的子圖。實驗用 $h = 2$。",
+            "$G_t$：這一步交給 $\\Psi$ 的圖。比對失敗時，退回整張圖 $G$。"
+          ],
+          "ordered": false
+        }
+      ]
+    },
+    {
+      "id": "s4a.b6",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L027"
+      ],
+      "text": "Appendix B.5 有一段 HotpotQA 的序列化（轉成文字）局部圖（節錄），可以拿來當例子。上一步動作是 `first_hop_retrieve`，定位到 `First_Hop_Retrieve`；第 1 跳是 `First_Hop_Retrieve → Scan_Index`，第 2 跳是 `Scan_Index → Bridge_Extract`。兩條邊連同各自的 condition、guidance、pitfalls 一起交給 $\\Psi$。比對機制的細節放在文末的概念補充。"
+    },
+    {
+      "id": "s4b.b1",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L028"
+      ],
+      "text": "第二部分是生成提示與選動作。"
+    },
+    {
+      "id": "s4b.b2",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "guidance model 看著子圖、問題和最近 3 步的軌跡，寫出一段提示；solver 再看著問題、完整軌跡和這段提示，選出下一個動作。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s4b.b3",
+      "section": "s4b",
+      "type": "formula",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L029"
+      ],
+      "latex": "g_t = \\Psi\\big(G_t,\\, q,\\, T_{t-w:t}\\big), \\qquad a_t \\sim P_{\\text{solver}}\\big(\\cdot \\mid q,\\, T_t,\\, g_t\\big)",
+      "intuition": "s4b.b2"
+    },
+    {
+      "id": "s4b.b4",
+      "section": "s4b",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "符號對照：g、q、T、a 各是什麼",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s4b.b5",
+          "section": "s4b",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L030"
+          ],
+          "items": [
+            "$g_t$：第 $t$ 步的情境化提示，一段自然語言。",
+            "$\\Psi$：guidance model。",
+            "$q$：使用者的原始問題。",
+            "$T_{t-w:t}$：最近 $w$ 步的軌跡，實驗用 $w = 3$。",
+            "$T_t$：到目前為止完整的軌跡，是動作與觀察交錯的序列。",
+            "$a_t$：solver 這一步要做的動作。實驗全部用 greedy decoding（每次取機率最高者），所以實際上是確定的。"
+          ],
+          "ordered": false
+        }
+      ]
+    },
+    {
+      "id": "s4b.b6",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L031"
+      ],
+      "text": "$\\Psi$ 的指令（Appendix B.5 的 Guidance Generation Prompt）要求它依邊上的 condition、guidance、pitfalls，說清楚下一步做什麼、要避開什麼、最近失敗後怎麼補救，並帶上圖裡寫到的具體指令格式、工具與參數。兩個 LLM 各自看到什麼、輸出什麼，整理在文末的概念補充。"
+    },
+    {
+      "id": "s4c.b1",
+      "section": "s4c",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "這套做法有四個容易忽略的性質，都是限制或成本：",
+      "origin": "editorial"
+    },
+    {
+      "id": "s4c.b2",
+      "section": "s4c",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L032",
+        "L033",
+        "L034",
+        "L035"
+      ],
+      "items": [
+        "**只是偏向，不是強制。** 論文摘要說提示會 bias solver 的下一步動作，但不會 dictate 它。論文沒有任何機制檢查 solver 的動作是不是真的走在圖上。",
+        "**每一步多一次 LLM 呼叫（$\\Psi$ 本身），成本一定比不用圖高。** 數字見實驗二。",
+        "**比對失敗退回整張圖，代價很高。** 實驗二顯示整張圖加生成式提示是最差的設定（主要是在 ALFWorld，也就是虛擬家庭任務上），但論文沒給比對失敗的頻率，所以不知道這條路徑實際被走到多少次。",
+        "**四種關係種類在推論時不起作用。** Appendix B.5 說 serializer 不會把關係標籤印給 $\\Psi$，所以至少在這個序列化下，$\\Psi$ 只看到節點、箭頭方向和三段文字。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s4c.b3",
+      "section": "s4c",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "小結：推論時，每走一步，只有 guidance model 看到腳邊兩跳的子圖，並把它寫成一段提醒；solver 完全看不到圖，只讀這段提醒。圖在這個階段是凍結的；它怎麼變得更好，是下一節的事。",
+      "purpose": "recap",
+      "origin": "editorial"
+    },
+    {
+      "id": "s5.b1",
+      "section": "s5",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "線上那一半假設圖已經存在。圖怎麼來、怎麼變好，是離線這一半的事。",
+      "purpose": "signpost",
+      "origin": "editorial"
+    },
+    {
+      "id": "s5.b2",
+      "section": "s5",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L036"
+      ],
+      "text": "離線的部分是這樣：先讓 solver 在訓練題上跑一批，留下成功與失敗的軌跡；refiner（專門改圖的 LLM，與 solver 同一個底層模型）讀軌跡，輸出一份修改清單，套用到圖的副本得到候選圖；候選圖在獨立驗證集上不比目前的圖差才採用，被拒的記下來（這份記錄叫拒絕記憶），下一輪給 refiner 看（Section 3.3、Algorithm 1）。"
+    },
+    {
+      "id": "s5.b3",
+      "section": "s5",
+      "type": "diagram",
+      "layer": "main",
+      "ledger": [],
+      "kind": "flow",
+      "direction": "TB",
+      "nodes": [
+        {
+          "id": "g",
+          "label": "目前保留的圖"
+        },
+        {
+          "id": "r",
+          "label": "在訓練題上跑 solver，留下軌跡與分數"
+        },
+        {
+          "id": "p",
+          "label": "refiner 提出修改清單"
+        },
+        {
+          "id": "c",
+          "label": "套用到圖的副本，得到候選圖"
+        },
+        {
+          "id": "s",
+          "label": "結構檢查"
+        },
+        {
+          "id": "v",
+          "label": "在驗證集上算分"
+        },
+        {
+          "id": "ok",
+          "label": "採用候選圖"
+        },
+        {
+          "id": "no",
+          "label": "退回舊圖，記進拒絕記憶"
+        }
+      ],
+      "edges": [
+        {
+          "from": "g",
+          "to": "r"
+        },
+        {
+          "from": "r",
+          "to": "p"
+        },
+        {
+          "from": "p",
+          "to": "c"
+        },
+        {
+          "from": "c",
+          "to": "s"
+        },
+        {
+          "from": "s",
+          "to": "v",
+          "label": "通過"
+        },
+        {
+          "from": "s",
+          "to": "no",
+          "label": "沒過"
+        },
+        {
+          "from": "v",
+          "to": "ok",
+          "label": "不比舊圖差"
+        },
+        {
+          "from": "v",
+          "to": "no",
+          "label": "比舊圖差"
+        },
+        {
+          "from": "ok",
+          "to": "g",
+          "label": "下一輪"
+        },
+        {
+          "from": "no",
+          "to": "g",
+          "label": "下一輪"
+        }
+      ],
+      "origin": "editorial"
+    },
+    {
+      "id": "s5.b4",
+      "section": "s5",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L037"
+      ],
+      "text": "第 $k$ 輪的流程："
+    },
+    {
+      "id": "s5.b5",
+      "section": "s5",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L037"
+      ],
+      "items": [
+        "用目前保留的圖 $G_{k-1}$，在一批訓練題上跑 solver，記錄軌跡與分數（0 到 1）。",
+        "refiner 比對高分與低分的軌跡：在失敗軌跡找反覆出現的錯誤迴圈，在成功軌跡找可借用的捷徑。",
+        "refiner 輸出修改清單 $\\Delta G_k$。",
+        "把修改套用到圖的副本，得到候選圖。",
+        "做結構檢查，沒過就丟，不跑驗證。",
+        "在驗證集上算分，與舊圖比較。",
+        "不比舊圖差就採用；否則退回舊圖，並把這次的候選記進拒絕記憶。"
+      ],
+      "ordered": true
+    },
+    {
+      "id": "s5a.b1",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "refiner 不是重畫一張新圖，而是開一張修改清單，套用到圖的副本上，得到候選圖。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s5a.b2",
+      "section": "s5a",
+      "type": "formula",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L038"
+      ],
+      "latex": "G_k^{cand} = G_{k-1} \\oplus \\Delta G_k",
+      "intuition": "s5a.b1"
+    },
+    {
+      "id": "s5a.b3",
+      "section": "s5a",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "符號對照：G、ΔG、⊕ 各是什麼",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s5a.b4",
+          "section": "s5a",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L039"
+          ],
+          "items": [
+            "$G_{k-1}$：上一輪保留下來的圖。被拒絕的候選不會成為下一輪的起點。",
+            "$\\Delta G_k$：refiner 提出的修改清單。",
+            "$\\oplus$：把修改套用到圖的副本；若設定要求，還會自動修掉環。",
+            "$G_k^{cand}$：候選圖。"
+          ],
+          "ordered": false
+        }
+      ]
+    },
+    {
+      "id": "s5a.b5",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L040"
+      ],
+      "text": "修改只有兩種：**Add**（補節點或邊，例如補一個驗證步驟）與 **Delete**（刪掉老是把軌跡帶進失敗的節點或邊）。要改邊的屬性，就是刪掉再用新屬性加回去。"
+    },
+    {
+      "id": "s5a.b6",
+      "section": "s5a",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "進階：refiner 輸出的 JSON 長什麼樣",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s5a.b7",
+          "section": "s5a",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L041"
+          ],
+          "text": "refiner 的實際輸出是一個 JSON，裡面有四個陣列：`add_nodes`、`delete_nodes`、`add_edges`、`delete_edges`（Appendix B.5 的 Refiner Prompt）。套用時先刪後加。這裡有個眉角：`delete_edges` 會刪掉該起點到終點之間的所有邊，不分關係種類，想留其中幾條，得在 `add_edges` 重加。"
+        }
+      ]
+    },
+    {
+      "id": "s5a.b8",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L042"
+      ],
+      "text": "Appendix E.3 有一個實例，用的是前面那個 EnterpriseArena 的 CFO 任務。Round 1 從只有 Start → End 的空圖，一次長出整條主線；Round 7 刪掉 `pass_action`（什麼都不做）節點及其邊；Round 8 把 `fund_raising_request → book_closing` 換成直接連到 End。拓樸（節點與邊的連接方式）怎麼一步步改，看圖 3。"
+    },
+    {
+      "id": "s5a.b9",
+      "section": "s5a",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L043"
+      ],
+      "manifest_id": "img-016",
+      "alt": "CFO 任務的 Procedural Graph 在各輪演化中的拓樸變化，綠色節點與邊代表新增，紅色虛線節點與邊代表刪除或修剪。",
+      "caption": "圖 3 — CFO Procedural Graph 的拓樸演化。綠色為新增，紅色虛線為刪除。",
+      "paper_label": "Figure 5",
+      "role": "evidence"
+    },
+    {
+      "id": "s5a.b10",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L044"
+      ],
+      "text": "結構檢查（Appendix B.6）只看三件事：邊的端點必須存在、節點與關係型別合法、每個節點都有路徑走得到終點節點（沒有往外邊的節點才算終點）。沒通過的候選直接丟掉。"
+    },
+    {
+      "id": "s5a.b11",
+      "section": "s5a",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L045"
+      ],
+      "tone": "warning",
+      "title": "結構檢查的一個漏洞",
+      "text": "refiner prompt 要求 ACTION 節點必須是真實的工具名，但驗證器不檢查這點，只靠 prompt 約束。refiner 若編出不存在的工具節點，結構檢查擋不住，只能靠下一步的驗證分數擋。"
+    },
+    {
+      "id": "s5b.b1",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L046"
+      ],
+      "text": "驗證集上的分數，以及採用與否的規則（合起來叫驗證閘門），分兩步。第一步是算分：新圖在驗證集的每一題上都跑一遍 solver，把每題得分取平均。"
+    },
+    {
+      "id": "s5b.b2",
+      "section": "s5b",
+      "type": "formula",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L047"
+      ],
+      "latex": "S_{val}(G) = \\frac{1}{|D_{val}|} \\sum_{(q,y) \\in D_{val}} S\\big(f_{solver}(q \\mid G),\\, y\\big)",
+      "intuition": "s5b.b1"
+    },
+    {
+      "id": "s5b.b3",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "第二步是比較：新圖的平均分不低於舊圖，就換上新圖，否則留著舊的。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s5b.b4",
+      "section": "s5b",
+      "type": "formula",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L047"
+      ],
+      "latex": "G_k = \\begin{cases} G_k^{cand}, & S_{val}(G_k^{cand}) \\ge S_{val}(G_{k-1}) \\\\ G_{k-1}, & \\text{otherwise} \\end{cases}",
+      "intuition": "s5b.b3"
+    },
+    {
+      "id": "s5b.b5",
+      "section": "s5b",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "符號對照：D_val、S_val 各是什麼",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s5b.b6",
+          "section": "s5b",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L048"
+          ],
+          "items": [
+            "$D_{val}$：驗證集，和訓練批、測試集都分開。",
+            "$(q, y)$：一題問題和它的標準答案。",
+            "$f_{solver}(q \\mid G)$：用圖 $G$ 時 solver 的輸出；$S$ 是單題分數，所以 $S_{val}(G)$ 就是驗證集上的平均分。",
+            "比較用的是 $\\ge$，持平也收。舊圖的分數是快取的，不重跑。"
+          ],
+          "ordered": false
+        }
+      ]
+    },
+    {
+      "id": "s5b.b7",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L049"
+      ],
+      "text": "為什麼要獨立的驗證集？因為 refiner 是看過訓練軌跡才提出修改的，在訓練批上有效，不代表真的有效。這就像背過考古題的人，在考古題上拿高分，不代表真的學會；要換一份沒看過的題目，才知道有沒有效。"
+    },
+    {
+      "id": "s5b.b8",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L050"
+      ],
+      "text": "**十輪的走法。** 表 2 是 Appendix E 的 Table 11，在 EnterpriseArena 上用 Gemini 3.5 Flash 做的自我演化。閘門的規則（論文沒寫指標，下面說明為什麼我推測是存活率）是：新圖的驗證存活率不低於目前保留圖的存活率就收，否則丟。分母是驗證集的 20 個 episode（一次完整的模擬），1 個 episode 等於 5 個百分點；存活率指撐滿 132 個月沒破產的比例。"
+    },
+    {
+      "id": "s5b.b9",
+      "section": "s5b",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L051"
+      ],
+      "manifest_id": "img-015",
+      "alt": "PG 在十輪自我演化中的訓練、驗證與測試指標，Δ 列標示相對前一個最佳驗證檢查點的變化，灰底列代表該輪沒有採用新圖。",
+      "caption": "表 2 — 十輪自我演化的逐輪指標（Gemini 3.5 Flash，EnterpriseArena）。",
+      "paper_label": "Table 11",
+      "role": "evidence"
+    },
+    {
+      "id": "s5b.b10",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L052"
+      ],
+      "text": "把這張表的決策過程整理一下："
+    },
+    {
+      "id": "s5b.b11",
+      "section": "s5b",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L053"
+      ],
+      "headers": [
+        "輪次",
+        "新圖存活率",
+        "要比的對象（目前保留圖）",
+        "結果",
+        "這輪之後保留的圖"
+      ],
+      "rows": [
+        [
+          "R1",
+          "45.0%（9/20）",
+          "0.0%（起始空圖）",
+          "收",
+          "R1"
+        ],
+        [
+          "R2",
+          "80.0%（16/20）",
+          "45.0%",
+          "收",
+          "R2"
+        ],
+        [
+          "R3",
+          "65.0%（13/20）",
+          "80.0%",
+          "丟",
+          "R2"
+        ],
+        [
+          "R4",
+          "75.0%（15/20）",
+          "80.0%",
+          "丟",
+          "R2"
+        ],
+        [
+          "R5",
+          "結構檢查沒過，沒跑驗證",
+          "80.0%",
+          "丟",
+          "R2"
+        ],
+        [
+          "R6",
+          "65.0%（13/20）",
+          "80.0%",
+          "丟",
+          "R2"
+        ],
+        [
+          "R7",
+          "80.0%（16/20）",
+          "80.0%",
+          "持平，收",
+          "R7"
+        ],
+        [
+          "R8",
+          "90.0%（18/20）",
+          "80.0%",
+          "收",
+          "R8"
+        ],
+        [
+          "R9",
+          "90.0%（18/20）",
+          "90.0%",
+          "持平，收",
+          "R9"
+        ],
+        [
+          "R10",
+          "85.0%（17/20）",
+          "90.0%",
+          "丟",
+          "R9"
+        ]
+      ]
+    },
+    {
+      "id": "s5b.b12",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L054"
+      ],
+      "text": "最右欄是重點：保留的圖只會往前走，不會倒退。R3 到 R6 全被丟，所以那四輪結束時手上的圖都還是 R2。R10 的訓練存活率是 90.0%，驗證只有 85.0%，被擋下的就是只在訓練批上有效的改動（Appendix E.2）。"
+    },
+    {
+      "id": "s5b.b13",
+      "section": "s5b",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L055",
+        "L056",
+        "L057"
+      ],
+      "tone": "warning",
+      "title": "兩點提醒：指標是推測的，驗證集很小",
+      "text": "- **論文沒寫這個實驗的 $S_{val}$ 用哪個指標。** 但表 2 的決策只對得上存活率。**這是我的推測：閘門實際看的是存活率。**（推論的依據收在下面的摺疊區塊。）\n- **驗證集太小時，接受與拒絕大半是雜訊。** 20 個 episode 差 1 個就是 5 個百分點。論文自己也說，一次接受或拒絕只差一兩個 episode，只能當作搜尋過程的記錄，不能當作統計上的顯著性檢定（Section 5.4）。持平也收，所以雜訊也可能把圖往前推。"
+    },
+    {
+      "id": "s5b.b14",
+      "section": "s5b",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "為什麼我推測閘門看的是存活率",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s5b.b15",
+          "section": "s5b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L056"
+          ],
+          "text": "R4 的平均分比 R2 高，存活率卻較低，被丟；R9 的平均分比 R8 低，存活率持平，卻被收。Appendix E.2 解釋 R10 被拒時提到平均分下降，可是 R9 平均分也下降仍被採用，所以不會是平均分。"
+        }
+      ]
+    },
+    {
+      "id": "s5b.b16",
+      "section": "s5b",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L058"
+      ],
+      "tone": "note",
+      "title": "一個一般知識的類比（不是論文內容）",
+      "text": "這整套機制就是爬山法（每一步只往更高處走，不回頭下坡）：只接受不比現在差的改動，所以分數只升不降，但也走不出需要先變差才能到達的更好設計。"
+    },
+    {
+      "id": "s5c.b1",
+      "section": "s5c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L059"
+      ],
+      "text": "最後一個零件是拒絕記憶：記下被丟的修改。"
+    },
+    {
+      "id": "s5c.b2",
+      "section": "s5c",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "被拒的修改不會憑空消失。下一輪 refiner 提修改時，除了目前的圖和新一批軌跡，還會看到被拒過的候選，當作「別再提這種」的提醒。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s5c.b3",
+      "section": "s5c",
+      "type": "formula",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L060"
+      ],
+      "latex": "\\Delta G_{k+1} \\sim P_{refiner}\\big(\\cdot \\mid G_k,\\, C_{k+1},\\, H_{rejected}\\big)",
+      "intuition": "s5c.b2"
+    },
+    {
+      "id": "s5c.b4",
+      "section": "s5c",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "符號對照：C、H_rejected 各是什麼",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s5c.b5",
+          "section": "s5c",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L061"
+          ],
+          "items": [
+            "$G_k$：目前保留的圖。",
+            "$C_{k+1}$：下一輪的訓練軌跡，超過長度上限 $L_{max}$ 就砍掉開頭、保留結尾。",
+            "$H_{rejected}$：被拒絕過的候選的歷史，當作「別再提這種」的負面證據。"
+          ],
+          "ordered": false
+        }
+      ]
+    },
+    {
+      "id": "s5c.b6",
+      "section": "s5c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L062"
+      ],
+      "text": "被拒之後的處理很單純：圖不變，記一筆，下一輪用同一張圖在下一批訓練題上重跑，再讓 refiner 重新提修改。迴圈固定跑 $K$ 輪，不會因為被拒而提早停止。每筆記錄放什麼、refiner 實際看到哪些，在文末的概念補充裡細講。"
+    },
+    {
+      "id": "s5c.b7",
+      "section": "s5c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L063"
+      ],
+      "text": "再看 Appendix E.2 的一輪：R3 把觸發募資的現金門檻調低，在訓練種子（可以理解成模擬的隨機起點）上有效，在驗證集上卻造成過早稀釋與現金不足，驗證存活率從 80.0% 掉到 65.0%，被丟。"
+    },
+    {
+      "id": "s5c.b8",
+      "section": "s5c",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "小結：離線這一半可以記成三個動作：提案（refiner 改圖）、把關（獨立驗證集）、被拒回灌（拒絕記憶）。",
+      "purpose": "recap",
+      "origin": "editorial"
+    },
+    {
+      "id": "s6.b1",
+      "section": "s6",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "把前面的零件放在一起，再看一次全貌。",
+      "purpose": "signpost",
+      "origin": "editorial"
+    },
+    {
+      "id": "s6.b2",
+      "section": "s6",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L064"
+      ],
+      "text": "整套方法有七個零件：線上階段三個、離線階段三個，加上兩階段共用的圖本身。"
+    },
+    {
+      "id": "s6.b3",
+      "section": "s6",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L065"
+      ],
+      "headers": [
+        "零件",
+        "一句話",
+        "輸入",
+        "輸出",
+        "時機"
+      ],
+      "rows": [
+        [
+          "圖 $G$",
+          "步驟與可接關係，邊上附 condition / guidance / pitfalls",
+          "-",
+          "-",
+          "兩階段共用"
+        ],
+        [
+          "定位＋取子圖",
+          "找出目前節點，取 $h=2$ 跳子圖",
+          "上一步動作、$G$",
+          "子圖 $G_t$",
+          "線上"
+        ],
+        [
+          "$\\Psi$（guidance model）",
+          "把子圖翻成當下提示",
+          "$G_t$、$q$、最近 3 步",
+          "$g_t$（文字）",
+          "線上"
+        ],
+        [
+          "solver",
+          "選下一步動作",
+          "$q$、完整軌跡、$g_t$",
+          "Thought＋Action",
+          "線上"
+        ],
+        [
+          "refiner",
+          "看軌跡提出改圖清單",
+          "目前圖、訓練軌跡、分數、$H_{rejected}$",
+          "修改清單 $\\Delta G$（JSON）",
+          "離線"
+        ],
+        [
+          "驗證閘門",
+          "候選圖在驗證集分數不低於舊圖才收",
+          "候選圖、驗證集",
+          "收或丟",
+          "離線"
+        ],
+        [
+          "拒絕記憶",
+          "記下被丟的修改",
+          "被丟的候選與其證據",
+          "供下一輪 refiner 參考",
+          "離線"
+        ]
+      ]
+    },
+    {
+      "id": "s7.b1",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "三個實驗各回答一個問題：整體有沒有用（實驗一）、核心設計是不是真的有貢獻（實驗二）、圖從哪裡來比較好（實驗三）。先看實驗一。",
+      "purpose": "signpost",
+      "origin": "editorial"
+    },
+    {
+      "id": "s7.b2",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L066"
+      ],
+      "text": "這一節有兩種比法。和無記憶的 ReAct 比（同模型、同 solver）：24 格中有 23 格為正，但 HotpotQA 幾乎沒有增益。和每格最強的對照做法比，是論文自己的宣稱：PG 在 24 個「模型 × benchmark」格子中，有 21 格排第一或並列第一，細節收在下面的摺疊區塊。"
+    },
+    {
+      "id": "s7.b3",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L067"
+      ],
+      "text": "**設定（Section 4）：** 4 個 LLM（Claude Sonnet 4.6、Gemini 3.1 Pro、Gemini 3.5 Flash、Grok 4.1 Fast），6 個 benchmark，7 個對照做法（baseline）。所有方法共用同一個 ReAct solver，只差經驗怎麼存、怎麼用。guidance model 與 refiner 和 solver 用同一個 LLM，全部用 greedy decoding。"
+    },
+    {
+      "id": "s7.b4",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L068"
+      ],
+      "text": "七個對照做法大致可以這樣分：Vanilla ReAct 什麼都不存；MemoryBank、RAP、ExpeL、AWM 存的是經驗摘要、歷史軌跡、歸納出的心得或工作流這類文字；AutoGuide 存「在狀態 X 做 Y」的條件式指引；KnowAgent 存「哪個動作後可接哪個」的規則。逐一的對照放在文末的 baseline 概念補充。"
+    },
+    {
+      "id": "s7.b5",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L069"
+      ],
+      "text": "**六個指標與測試題數：** 題數決定一題值幾分。GDPval 只有 44 題，一題約 2.3 分，小差距很容易只是雜訊。"
+    },
+    {
+      "id": "s7.b6",
+      "section": "s7",
+      "type": "table",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L070"
+      ],
+      "headers": [
+        "Benchmark 與指標",
+        "測什麼",
+        "測試題數"
+      ],
+      "rows": [
+        [
+          "HotpotQA Acc.",
+          "多跳問答的答案是否正確（LLM 評審判斷與標準答案等價）",
+          "1,000"
+        ],
+        [
+          "MultiChallenge Acc.",
+          "多輪對話中，是否記得並遵守先前的指令（LLM 評審的整體成功率）",
+          "166"
+        ],
+        [
+          "GDPval Rubric Score",
+          "專業交付物按每題評分表打分的平均",
+          "44"
+        ],
+        [
+          "ALFWorld Success",
+          "虛擬家庭任務的成功率，動作順序要求嚴格",
+          "134"
+        ],
+        [
+          "$\\tau$-bench Pass@1",
+          "客服情境，最後資料庫狀態是否等於標準答案的比例",
+          "115"
+        ],
+        [
+          "BFCL v3 Acc.",
+          "多輪函式呼叫的準確率",
+          "100"
+        ]
+      ]
+    },
+    {
+      "id": "s7.b7",
+      "section": "s7",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "論文自己的宣稱：19 勝 2 平 3 敗與領先最大的三格",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s7.b8",
+          "section": "s7",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L071"
+          ],
+          "text": "**論文的宣稱（Section 5.1）：** 對每格最強的 baseline，PG 是 19 勝、2 平、3 敗。3 敗是 Claude 的 HotpotQA、Grok 的 ALFWorld 與 $\\tau$-bench；2 平是 Claude 與 Gemini 3.5 Flash 的 MultiChallenge。領先幅度最大的三格是 BFCL v3 配 Gemini 3.5 Flash（67.00 對 58.00）、GDPval 配 Gemini 3.1 Pro（78.78 對 71.37）、$\\tau$-bench 配 Gemini 3.1 Pro（80.00 對 73.04）。完整數字看表 3。"
+        }
+      ]
+    },
+    {
+      "id": "s7.b9",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "表 3 括號裡的是信賴區間：可以粗略讀成「這個分數大概落在哪個範圍」，範圍越寬，越不確定。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s7.b10",
+      "section": "s7",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L072"
+      ],
+      "manifest_id": "img-003",
+      "alt": "四個 LLM 在六個 benchmark 上，PG 與七個對照做法的準確率與 95% 信賴區間。",
+      "caption": "表 3 — 各 LLM 與 benchmark 的主結果，括號內為 95% 信賴區間。",
+      "paper_label": "Table 1",
+      "role": "evidence"
+    },
+    {
+      "id": "s7.b11",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L073"
+      ],
+      "text": "**乾淨對照：** 用 PG 減去無記憶 ReAct，同一個模型、同一個 solver，單位是分。"
+    },
+    {
+      "id": "s7.b12",
+      "section": "s7",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L074"
+      ],
+      "headers": [
+        "模型",
+        "HotpotQA",
+        "MultiChallenge",
+        "GDPval",
+        "ALFWorld",
+        "$\\tau$-bench",
+        "BFCL"
+      ],
+      "rows": [
+        [
+          "Claude Sonnet 4.6",
+          "-0.10",
+          "+6.03",
+          "+5.26",
+          "+6.71",
+          "+7.82",
+          "+6.00"
+        ],
+        [
+          "Gemini 3.1 Pro",
+          "+1.40",
+          "+7.83",
+          "+22.39",
+          "+5.22",
+          "+7.83",
+          "+7.00"
+        ],
+        [
+          "Gemini 3.5 Flash",
+          "+1.40",
+          "+10.24",
+          "+5.09",
+          "+11.19",
+          "+13.05",
+          "+11.00"
+        ],
+        [
+          "Grok 4.1 Fast",
+          "+1.70",
+          "+18.68",
+          "+13.96",
+          "+13.43",
+          "+3.48",
+          "+8.00"
+        ]
+      ]
+    },
+    {
+      "id": "s7.b13",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L075"
+      ],
+      "text": "從這張表可以讀出幾件事："
+    },
+    {
+      "id": "s7.b14",
+      "section": "s7",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L076",
+        "L077",
+        "L078"
+      ],
+      "items": [
+        "24 格中 23 格為正，唯一為負的是 Claude 的 HotpotQA（-0.10）。",
+        "HotpotQA 幾乎沒有增益，最大只有 +1.7，小於該列的信賴區間寬度。其餘五個 benchmark 是 +3.48 到 +22.39。",
+        "「贏 baseline」要打折，因為不少 baseline 本身比無記憶還差。例如 Gemini 3.1 Pro 的 ALFWorld，無記憶是 94.78，MemoryBank 是 85.07，RAP 是 80.60。所以對每格最強 baseline 的 19 勝，有一部分是對手退步，和無記憶對照才看得出 PG 本身的貢獻。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s7.b15",
+      "section": "s7",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L079"
+      ],
+      "tone": "info",
+      "title": "一個潛在的混淆（我的推測，論文沒有承認）",
+      "text": "論文說所有學習型 baseline 吃同樣的訓練軌跡，但 PG 的驗證閘門額外用了驗證集（HotpotQA 1,000 題、MultiChallenge 100 題，Appendix B.1），論文沒說 baseline 能不能用驗證集。"
+    },
+    {
+      "id": "s7.b16",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "小結：整體有用，但要打三個折扣：HotpotQA 幾乎沒進步；有些勝利是對手退步造成的；比較是否公平，還有一個我懷疑的潛在混淆（這是我的推測，論文沒有承認）。",
+      "purpose": "recap",
+      "origin": "editorial"
+    },
+    {
+      "id": "s8.b1",
+      "section": "s8",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L080"
+      ],
+      "text": "局部子圖加生成式提示，在三個 benchmark 上都是最高；整張圖會傷害，尤其是需要嚴格動作順序的 ALFWorld。這是唯一直接檢驗核心設計（局部取子圖、再由 $\\Psi$ 翻成提示）的實驗（Section 5.5）。"
+    },
+    {
+      "id": "s8.b2",
+      "section": "s8",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L081"
+      ],
+      "text": "**設定：** 同一張圖、同一個模型（Gemini 3.5 Flash），只改兩件事：給 agent 看整張圖還是局部子圖，以及圖是原文塞進去，還是先讓 $\\Psi$ 翻成提示。比較四種組合："
+    },
+    {
+      "id": "s8.b3",
+      "section": "s8",
+      "type": "list",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L082"
+      ],
+      "items": [
+        "無圖：不用 PG。",
+        "整張圖＋原文塞入：整張圖序列化後直接放進 prompt，不經 $\\Psi$。",
+        "整張圖＋生成式：整張圖交給 $\\Psi$ 翻成提示。",
+        "局部子圖＋生成式：論文的完整做法。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s8.b4",
+      "section": "s8",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L083"
+      ],
+      "text": "兩個成本指標都是越低越好：Avg. Tok 是每題平均用掉的 token 數（包含 $\\Psi$ 的呼叫），Avg. Step 是每題 solver 平均走幾步。"
+    },
+    {
+      "id": "s8.b5",
+      "section": "s8",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L084"
+      ],
+      "manifest_id": "img-007",
+      "alt": "PG 使用方式消融：在 MultiChallenge、GDPval、ALFWorld 上比較無圖、整張圖原文塞入、整張圖生成式與局部子圖生成式的準確率、平均 token 數與平均步數。",
+      "caption": "表 4 — 使用方式消融（Gemini 3.5 Flash）。",
+      "paper_label": "Table 3",
+      "role": "evidence"
+    },
+    {
+      "id": "s8.b6",
+      "section": "s8",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L085"
+      ],
+      "text": "**準確率（單位：分，越高越好）：**"
+    },
+    {
+      "id": "s8.b7",
+      "section": "s8",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L086"
+      ],
+      "headers": [
+        "設定",
+        "MultiChallenge",
+        "GDPval",
+        "ALFWorld"
+      ],
+      "rows": [
+        [
+          "無圖",
+          "80.27",
+          "54.80",
+          "72.58"
+        ],
+        [
+          "整張圖＋原文塞入",
+          "86.60",
+          "57.17",
+          "70.34"
+        ],
+        [
+          "整張圖＋生成式",
+          "87.35",
+          "56.75",
+          "54.48"
+        ],
+        [
+          "局部子圖＋生成式",
+          "89.31",
+          "63.99",
+          "81.53"
+        ]
+      ]
+    },
+    {
+      "id": "s8.b8",
+      "section": "s8",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L087"
+      ],
+      "text": "**成本：token 相對無圖的倍數**（由表 4 的原始 token 數計算）："
+    },
+    {
+      "id": "s8.b9",
+      "section": "s8",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L088"
+      ],
+      "headers": [
+        "設定",
+        "MultiChallenge",
+        "GDPval",
+        "ALFWorld"
+      ],
+      "rows": [
+        [
+          "整張圖＋原文塞入",
+          "1.53 倍",
+          "0.96 倍",
+          "1.17 倍"
+        ],
+        [
+          "整張圖＋生成式",
+          "2.18 倍",
+          "1.63 倍",
+          "5.34 倍"
+        ],
+        [
+          "局部子圖＋生成式",
+          "1.85 倍",
+          "1.33 倍",
+          "1.55 倍"
+        ]
+      ]
+    },
+    {
+      "id": "s8.b10",
+      "section": "s8",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L089"
+      ],
+      "text": "從這兩張表可以得到三件事："
+    },
+    {
+      "id": "s8.b11",
+      "section": "s8",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L090",
+        "L091",
+        "L092"
+      ],
+      "items": [
+        "**局部子圖在三個 benchmark 都最高**，比各自的第二名高 1.96、6.82、8.95 分。",
+        "**整張圖會傷害。** ALFWorld 從 72.58 掉到 54.48，同時 token 是無圖的 5.34 倍。我的推測是：ALFWorld 要求嚴格的動作順序，整張圖裡不相干的分支，$\\Psi$ 還是會把它們寫進提示。論文只給結果，沒給機制。",
+        "**局部子圖的成本一直比無圖高。** 它的 token 是無圖的 1.33 到 1.85 倍。步數則在 GDPval（28.20 降到 18.57）與 ALFWorld（21.84 降到 18.80）下降，MultiChallenge 反而從 3.87 升到 4.22。"
+      ],
+      "ordered": true
+    },
+    {
+      "id": "s8.b12",
+      "section": "s8",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "小結：這就是「導航只報下一兩個路口」的證據：只取附近的子圖，比把整張圖唸給 agent 聽更好。不過就算只取附近，成本還是比不用圖高。",
+      "purpose": "recap",
+      "origin": "editorial"
+    },
+    {
+      "id": "s9.b1",
+      "section": "s9",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L093"
+      ],
+      "text": "這個實驗檢驗兩件事：自我演化有沒有用，以及能不能修好壞掉的專家圖。穩的訊號只有一個：在 MultiChallenge 上，專家圖會讓成績崩掉，而演化救得回來。至於空圖起步能不能追平專家圖，MultiChallenge 的資料分不出來（Section 5.3）。"
+    },
+    {
+      "id": "s9.b2",
+      "section": "s9",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L094"
+      ],
+      "text": "**設定：** 同一個模型（Gemini 3.5 Flash，Appendix D.3），改變「圖從哪來、怎麼更新」，比較五種組合（Appendix D.2）："
+    },
+    {
+      "id": "s9.b3",
+      "section": "s9",
+      "type": "table",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L095"
+      ],
+      "headers": [
+        "模式",
+        "起點",
+        "更新方式",
+        "驗證閘門"
+      ],
+      "rows": [
+        [
+          "1",
+          "手寫專家圖",
+          "不更新",
+          "無"
+        ],
+        [
+          "2",
+          "手寫專家圖",
+          "跑完整個訓練集後一次大改",
+          "無"
+        ],
+        [
+          "3",
+          "手寫專家圖",
+          "分批演化",
+          "有"
+        ],
+        [
+          "4",
+          "空圖（Start → End）",
+          "一次大改",
+          "無"
+        ],
+        [
+          "5",
+          "空圖",
+          "分批演化",
+          "有"
+        ]
+      ]
+    },
+    {
+      "id": "s9.b4",
+      "section": "s9",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L096"
+      ],
+      "text": "「分批演化」與「一次大改」的差別如下："
+    },
+    {
+      "id": "s9.b5",
+      "section": "s9",
+      "type": "table",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L097"
+      ],
+      "headers": [
+        "",
+        "一次大改",
+        "分批演化"
+      ],
+      "rows": [
+        [
+          "流程",
+          "用起點圖跑完整個訓練集，refiner 讀全部軌跡，一次輸出大幅修改，直接採用，結束",
+          "訓練集切成多批，每批依序：用目前的圖跑、refiner 提修改、驗證集把關（收或丟），再用（可能已更新的）圖跑下一批，重複到最後一批"
+        ],
+        [
+          "迭代",
+          "一輪",
+          "多輪"
+        ],
+        [
+          "驗證閘門",
+          "無",
+          "有"
+        ]
+      ]
+    },
+    {
+      "id": "s9.b6",
+      "section": "s9",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L098",
+        "L099"
+      ],
+      "text": "表裡有兩個指標：HotpotQA 看答案是否和標準答案完全相同（EM），MultiChallenge 看整段對話的指令是否都遵守（Overall）。HotpotQA 測試 1,000 題，1 題等於 0.1 分；MultiChallenge 在這張表只用其中 56 題（實驗一用 166 題，論文沒說為什麼這裡只用 56 題），1 題等於 1.79 分，所以 MultiChallenge 上每一題的差距都不小。指標與分母的完整說明收在下面。"
+    },
+    {
+      "id": "s9.b7",
+      "section": "s9",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "指標與分母的完整說明",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s9.b8",
+          "section": "s9",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L099"
+          ],
+          "items": [
+            "**Ans EM（Exact Match）：** 答案字串和標準答案完全相同才算對，只測最終答案。論文同時報 Ans F1（答案與標準答案的字詞重疊程度，比 EM 寬鬆），趨勢相同，這裡只看 EM。",
+            "**MultiChallenge Overall：** LLM 評審判斷整段對話的指令是否都遵守的成功率。MultiChallenge 另有四個子指標（Inference Memory、Instruction Retention、Reliable Versioned Editing、Self Coherence），這裡只看 Overall。",
+            "**分母：** HotpotQA 測試 1,000 題，1 題等於 0.1 分。MultiChallenge 在這張表只用 56 題（Appendix B.1；實驗一的測試集是 166 題，論文沒說為什麼這裡只用 56 題），1 題等於 1.79 分。"
+          ],
+          "ordered": false
+        }
+      ]
+    },
+    {
+      "id": "s9.b9",
+      "section": "s9",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L100"
+      ],
+      "manifest_id": "img-005",
+      "alt": "五種 PG 建構模式與無圖基準，在 HotpotQA 與 MultiChallenge 上的各項指標比較。",
+      "caption": "表 5 — 五種建構模式在 HotpotQA 與 MultiChallenge 上的表現。",
+      "paper_label": "Table 2",
+      "role": "evidence"
+    },
+    {
+      "id": "s9.b10",
+      "section": "s9",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L101"
+      ],
+      "text": "**結果：**"
+    },
+    {
+      "id": "s9.b11",
+      "section": "s9",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L102"
+      ],
+      "headers": [
+        "模式",
+        "HotpotQA EM",
+        "和無圖差",
+        "MultiChallenge Overall",
+        "和無圖差"
+      ],
+      "rows": [
+        [
+          "無圖",
+          "58.8",
+          "-",
+          "87.50（49/56）",
+          "-"
+        ],
+        [
+          "1 手寫專家圖",
+          "62.8",
+          "+4.0",
+          "58.93（33/56）",
+          "-16 題"
+        ],
+        [
+          "2 專家圖＋一次大改",
+          "63.8",
+          "+5.0",
+          "53.57（30/56）",
+          "-19 題"
+        ],
+        [
+          "3 專家圖＋分批演化",
+          "63.1",
+          "+4.3",
+          "92.86（52/56）",
+          "+3 題"
+        ],
+        [
+          "4 空圖＋一次大改",
+          "55.4",
+          "-3.4",
+          "89.29（50/56）",
+          "+1 題"
+        ],
+        [
+          "5 空圖＋分批演化",
+          "66.3",
+          "+7.5",
+          "91.07（51/56）",
+          "+2 題"
+        ]
+      ]
+    },
+    {
+      "id": "s9.b12",
+      "section": "s9",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "和實驗二的基準為什麼不同",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s9.b13",
+          "section": "s9",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L103"
+          ],
+          "text": "同樣用 Gemini 3.5 Flash、同樣不用圖，MultiChallenge 的基準在實驗二是 80.27、在這裡是 87.50，原因是兩個實驗用的題目子集不同（表 4 的 caption 寫明是 fixed subsets），數字不能跨實驗比較。"
+        }
+      ]
+    },
+    {
+      "id": "s9.b14",
+      "section": "s9",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L104"
+      ],
+      "text": "三個結論："
+    },
+    {
+      "id": "s9.b15",
+      "section": "s9",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L105",
+        "L106",
+        "L107"
+      ],
+      "items": [
+        "**HotpotQA 只有模式 5（空圖＋分批演化）明顯最好。** 它比無圖多答對 75 題。模式 4 和 5 都從空圖出發，EM 差 10.9；比無圖還差的模式 4（空圖＋一次大改），則少答對 34 題。",
+        "**在 HotpotQA 上，專家圖起點時演化沒有額外加分。** 模式 3（專家圖＋分批演化，63.1）只比不更新的模式 1（62.8）高 0.3，還低於模式 2（專家圖＋一次大改，63.8）。三個專家圖模式都落在 62.8 到 63.8 之間，空圖起步的模式 5 則是 66.3。",
+        "**MultiChallenge 穩的訊號是「專家圖會讓成績崩掉，而且演化救得回來」。** 模式 1、2 比無圖少 16、19 題，模式 3 從模式 1 的 33 題回到 52 題，差距為 92.86 − 58.93 = +33.93，和論文報的數字一致。但模式 3、4、5 彼此只差 1 題、和無圖只差 1 到 3 題，不能據此說誰比誰好，也不能說「空圖起步追平專家圖」。"
+      ],
+      "ordered": true
+    },
+    {
+      "id": "s9.b16",
+      "section": "s9",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "乾淨對照：起點相同，加上演化與閘門多了多少",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s9.b17",
+          "section": "s9",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L108"
+          ],
+          "text": "**乾淨對照（方法本身的貢獻）：** 起點相同，只比較「加上演化與閘門」之後多了多少。"
+        },
+        {
+          "id": "s9.b18",
+          "section": "s9",
+          "type": "table",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L109"
+          ],
+          "headers": [
+            "起點",
+            "比較的模式",
+            "HotpotQA EM",
+            "MultiChallenge"
+          ],
+          "rows": [
+            [
+              "專家圖",
+              "模式 3 對模式 1",
+              "+0.3",
+              "多 19 題"
+            ],
+            [
+              "空圖",
+              "模式 5 對模式 4",
+              "+10.9",
+              "多 1 題"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s9.b19",
+      "section": "s9",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "小結：這個實驗最站得住的一句話，是手寫的專家圖在 MultiChallenge 上可能讓成績崩掉，有驗證閘門的分批演化可以救回來（這份資料只看得到結果，看不出原因）。至於空圖起步能不能追平專家圖，MultiChallenge 的資料分不出來。",
+      "purpose": "recap",
+      "origin": "editorial"
+    },
+    {
+      "id": "s10.b1",
+      "section": "s10",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "前面是這篇論文做了什麼。這一節講怎麼把它用在自己的事情上，並收尾。最值得帶走的，其實不是圖。",
+      "purpose": "signpost",
+      "origin": "editorial"
+    },
+    {
+      "id": "s10a.b1",
+      "section": "s10a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L110"
+      ],
+      "text": "讓 LLM 提出對某份文字資產（prompt、規則、skill、圖）的修改，用一組它沒看過的資料量化新舊版本，沒變差才採用，被拒的記下來，下一次提案時一併給它看。這個做法與圖無關，任何可編輯的文字資產都能套。"
+    },
+    {
+      "id": "s10a.b2",
+      "section": "s10a",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "比如你有一份常用的 system prompt：讓 LLM 根據幾次失敗的對話提出修改，用一批它沒看過的對話打分，沒變差才換上新版，被拒的修改留著，下次提案時一起給它看。",
+      "origin": "editorial"
+    },
+    {
+      "id": "s10a.b3",
+      "section": "s10a",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "骨架：改進迴圈的偽程式碼",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s10a.b4",
+          "section": "s10a",
+          "type": "code",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L111"
+          ],
+          "lang": "text",
+          "code": "asset = 初始版本;  rejected = []\nscore_asset = evaluate(asset, VAL)            # 初始版本只算一次，快取\nfor round in 1..K:\n    traces   = run(asset, TRAIN_BATCH[round]) # 用目前版本跑新一批訓練資料\n    proposal = LLM_propose(asset, traces, rejected)\n    cand     = apply(asset, proposal)\n    if not valid(cand): rejected.append(proposal); continue\n    score_cand = evaluate(cand, VAL)\n    if score_cand >= score_asset: asset, score_asset = cand, score_cand\n    else: rejected.append((proposal, cand, score_cand))"
+        }
+      ]
+    },
+    {
+      "id": "s10b.b1",
+      "section": "s10b",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L112"
+      ],
+      "tone": "warning",
+      "title": "使用時要記得的限制",
+      "text": "這個迴圈的限制前面都出現過：\n\n- 爬山法走不出需要先變差才能到達的設計。\n- 驗證集太小時，閘門收的多半是雜訊。\n- 只寫在 prompt、驗證器不檢查的約束等於沒有約束（refiner 編出不存在的工具節點，就是例子）。\n\n套用到自己的資產時，最先該檢查的是驗證集夠不夠大，以及約束有沒有被程式檢查。"
+    },
+    {
+      "id": "s10c.b1",
+      "section": "s10c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L113"
+      ],
+      "text": "這是一般知識，不是論文內容：先用這種貪心（只接受不比現在差的版本）閘門；只有驗證分數連續多輪不動、而且驗證資料夠大時，才考慮能接受較差版本、或同時保留多個候選的做法。"
+    },
+    {
+      "id": "s10d.b1",
+      "section": "s10d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L174"
+      ],
+      "text": "PG 把 agent 的做事流程存成帶屬性的圖，推論時只取目前位置往後 2 跳的子圖、由另一個 LLM 翻成提示，離線則靠 refiner 改圖、獨立驗證集把關。對比無記憶的 ReAct，它在 24 格中贏了 23 格，但 HotpotQA 幾乎沒有增益，成本是 token 約 1.33 到 1.85 倍。"
+    },
+    {
+      "id": "s10d.b2",
+      "section": "s10d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L175"
+      ],
+      "text": "幾個要帶走的重點："
+    },
+    {
+      "id": "s10d.b3",
+      "section": "s10d",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L176"
+      ],
+      "items": [
+        "局部子圖加生成式提示是最好的使用方式，整張圖會傷害，尤其是在需要嚴格動作順序的 ALFWorld。",
+        "專家圖在 MultiChallenge 上可能讓成績崩掉，演化加驗證閘門可以救回來；但在 HotpotQA 上，專家圖起點時演化沒有額外加分；至於空圖起步能否追平專家圖，MultiChallenge 的資料分不出來。",
+        "驗證集太小、閘門持平就收、約束只靠 prompt，是這套機制實際使用時最需要留意的地方。",
+        "最值得帶走的是改進迴圈本身：提案、獨立驗證集把關、被拒記錄回灌。它不依賴圖，可以套在任何可編輯的文字資產上。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s10d.b4",
+      "section": "s10d",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "如果只記三句話：",
+      "origin": "editorial"
+    },
+    {
+      "id": "s10d.b5",
+      "section": "s10d",
+      "type": "list",
+      "layer": "main",
+      "ledger": [],
+      "items": [
+        "**導航只報下一兩個路口。** 把「接下來做什麼」存成圖，每一步只取腳邊兩跳，由另一個 LLM 轉成一段提醒給 agent；提醒只是偏向，不是強制。",
+        "**提案、把關、被拒回灌。** 改動要在沒看過的驗證集上不比舊的差才採用，被拒的記下來。",
+        "**23 / 24，但有代價。** 多數情況有進步，但 HotpotQA 幾乎沒增益，每步多一次 LLM 呼叫，手寫專家圖在 MultiChallenge 上還可能讓成績崩盤。"
+      ],
+      "ordered": false,
+      "origin": "editorial"
+    },
+    {
+      "id": "s10d.b6",
+      "section": "s10d",
+      "type": "paragraph",
+      "layer": "main",
+      "ledger": [],
+      "text": "下次看到有人說「我們幫 agent 加了記憶」，可以問三個問題：它存的是自由文字，還是有結構的東西？推論時是整份塞進去，還是只取目前需要的？改動有沒有被沒看過的資料把關？",
+      "origin": "editorial"
+    },
+    {
+      "id": "s11.b1",
+      "section": "s11",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L114"
+      ],
+      "text": "以下五段各自獨立，脫離論文主線也讀得懂。它們解釋的是上面主線裡一筆帶過、但最容易再忘的環節。"
+    },
+    {
+      "id": "s11a.b1",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L115"
+      ],
+      "text": "一句話：每一步先用「agent 上一步的動作」在圖上找出目前位置，再沿著往外的邊展開固定步數，只把這一小段圖交給後面使用。這一段解釋方法二第一部分裡的 $\\mathrm{Match}$ 與 $N_h$ 實際在做什麼。"
+    },
+    {
+      "id": "s11a.b2",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L116"
+      ],
+      "text": "**上一步動作 $a_{t-1}$ 從哪來？** 它不是另外算出來的，就是 solver 上一步自己寫出的那行 Action。solver prompt 規定每一步只輸出一個 Thought 和一個 Action，格式是 `Action: <tool_name>(arg1=val1, ...)`（Appendix B.5），這行會原樣記進軌跡。所以 $a_{t-1}$ 就是軌跡裡最後一個動作，例如 `fund_raising_request(type='equity', amount=50000000)`。"
+    },
+    {
+      "id": "s11a.b3",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L117"
+      ],
+      "text": "**「exactly matching」到底比什麼？** 論文只寫 exactly match，細節沒有交代："
+    },
+    {
+      "id": "s11a.b4",
+      "section": "s11a",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L118",
+        "L119"
+      ],
+      "items": [
+        "比整行（含參數），還是只比工具名？沒說。",
+        "節點也可以是推理步驟或任務狀態（Section 3.1），例如 `Decide_Capital`、`Month_Start`，它們不對應任何工具呼叫，怎麼比對？沒說。",
+        "**推測：** 比的應該是工具名，因為 refiner prompt 規定 ACTION 節點必須和可用工具名一致（Appendix B.5 的 Rule 1）。但 Appendix B.5 的範例裡，節點叫 `First_Hop_Retrieve`、工具叫 `first_hop_retrieve`，大小寫不同，所以「exact」大概先做過正規化。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s11a.b5",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L120"
+      ],
+      "text": "論文也只展示了比對後的結果（序列化範例裡的 Active Cognitive Node），沒有展示比對這一步。"
+    },
+    {
+      "id": "s11a.b6",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L121"
+      ],
+      "text": "**論文實際寫了什麼，與一般實作的名稱**"
+    },
+    {
+      "id": "s11a.b7",
+      "section": "s11a",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L122"
+      ],
+      "headers": [
+        "論文原文有寫",
+        "論文沒寫（一般知識或推測）"
+      ],
+      "rows": [
+        [
+          "把最近一個動作 exactly match 到圖上的一個節點，得到 $u_t$",
+          "用什麼資料結構比對。常見做法是字典查表：節點名稱對到節點，查得到就是 $u_t$，查不到就是空"
+        ],
+        [
+          "從 $u_t$ 沿著往外的邊，最多展開 $h$ 步，收集走到的節點和邊",
+          "這個展開常稱為廣度優先走訪（BFS）：先收完同一層，再往下一層"
+        ],
+        [
+          "比對不到就用整張圖；實驗 $h=2$",
+          "比對失敗的頻率"
+        ]
+      ]
+    },
+    {
+      "id": "s11a.b8",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L123"
+      ],
+      "text": "字典查表與 BFS 只是常用的程式名稱，不是論文內容。比對只看字串吻合，不用 embedding（把文字轉成一串數字，好用來算相似度）、不算相似度，所以結果是確定的。"
+    },
+    {
+      "id": "s11a.b9",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L124"
+      ],
+      "text": "**手動走一遍。** 邊清單如下，前兩條來自 Appendix B.5 的 HotpotQA 節錄，後兩條是自編的例子："
+    },
+    {
+      "id": "s11a.b10",
+      "section": "s11a",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L125"
+      ],
+      "items": [
+        "`First_Hop_Retrieve → Scan_Index`",
+        "`Scan_Index → Bridge_Extract`",
+        "`Bridge_Extract → Second_Hop_Retrieve`（自編）",
+        "`Second_Hop_Retrieve → Answer`（自編）"
+      ],
+      "ordered": true
+    },
+    {
+      "id": "s11a.b11",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L126"
+      ],
+      "text": "假設 agent 上一步的動作是 `first_hop_retrieve`，$h = 2$："
+    },
+    {
+      "id": "s11a.b12",
+      "section": "s11a",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L127"
+      ],
+      "items": [
+        "找節點：清單裡名字對得上的是 `First_Hop_Retrieve`，這就是 $u_t$。",
+        "第 1 步：找「起點是 $u_t$」的邊，得到第 1 條，收進 `Scan_Index`。",
+        "第 2 步：找「起點是 `Scan_Index`」的邊，得到第 2 條，收進 `Bridge_Extract`。",
+        "$h = 2$，停止，第 3 條和第 4 條不收。",
+        "$G_t$ 就是第 1 條和第 2 條邊，連同各自的 condition、guidance、pitfalls。"
+      ],
+      "ordered": true
+    },
+    {
+      "id": "s11a.b13",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L128"
+      ],
+      "text": "比對失敗時（上一步的動作在圖上找不到），$G_t$ 就是這四條邊全部。Appendix B.5 的序列化範例按「Hop 1」「Hop 2」分組列出邊，和這個做法一致。"
+    },
+    {
+      "id": "s11a.b14",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L129"
+      ],
+      "text": "**展開的三個細節：**"
+    },
+    {
+      "id": "s11a.b15",
+      "section": "s11a",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L130"
+      ],
+      "items": [
+        "**只沿出邊走，也就是順著箭頭方向。** 走過來的節點不在子圖裡，那段歷史由最近 $w = 3$ 步的軌跡視窗補上。",
+        "**遇到分岔，同一層的所有出邊一起收。** 例如 EnterpriseArena 後期的圖，`Decide_Capital` 後面接 `fund_raising_request` 和 `book_closing`，兩條都在第 1 跳。",
+        "**自編例子：** EnterpriseArena 的主線是 `Month_Start → check_cash_in_bank → cash_flow_forecast_calculation → save_note → check_market_data → Decide_Capital`。若 $u_t$ 是 `check_cash_in_bank`、$h = 2$，就收進 `cash_flow_forecast_calculation`（第 1 跳）與 `save_note`（第 2 跳），到此停；`check_market_data` 是第 3 跳，不收。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s11a.b16",
+      "section": "s11a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L131"
+      ],
+      "text": "**為什麼要沿結構取，而不是依相似度取？** 這是 Section 3.2 的論點：獨立做 top-k 相似度檢索（挑出最相似的前 k 筆），可能漏掉步驟之間的連接。例如檢索到 submit 的指引，卻沒有前面 check_answer 的轉移，就可能漏掉讓提交變得合理的驗證步驟。沿結構取出鄰域，可以同時帶出動作和它的程序前提。"
+    },
+    {
+      "id": "s11b.b1",
+      "section": "s11b",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L132"
+      ],
+      "text": "推論時有兩個 LLM 各司其職。$\\Psi$（guidance model）讀圖，寫出一小段提示；solver 看不到圖，只讀 $\\Psi$ 寫的提示，然後選動作。下表只列論文實際給出的內容（Appendix B.5 的兩個 prompt 模板），沒寫清楚的另外標示。"
+    },
+    {
+      "id": "s11b.b2",
+      "section": "s11b",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L133"
+      ],
+      "headers": [
+        "項目",
+        "$\\Psi$（guidance model）",
+        "solver"
+      ],
+      "rows": [
+        [
+          "角色",
+          "把子圖翻成當下的提示 $g_t$",
+          "選下一步動作 $a_t$"
+        ],
+        [
+          "看到的圖",
+          "序列化後的局部子圖：節點 ID、類型、描述，加上每條邊的 condition / guidance / pitfalls，按 Hop 1、Hop 2 分組",
+          "看不到圖，只看到 $\\Psi$ 寫的 $g_t$"
+        ],
+        [
+          "看到的軌跡",
+          "最近 $w=3$ 步",
+          "完整軌跡 $T_t$"
+        ],
+        [
+          "任務描述",
+          "有（模板的 task_description 欄位）",
+          "在 system_prompt 裡（推測）"
+        ],
+        [
+          "使用者問題 $q$",
+          "有（模板的 query 欄位，見下方第 2 點）",
+          "模板沒有獨立欄位，推測在 system prompt 或軌跡裡"
+        ],
+        [
+          "指令",
+          "依邊上三個屬性，寫出清楚可執行的建議：下一步做什麼、要避開什麼、失敗後怎麼補救，並帶上圖裡寫到的具體指令格式、工具、參數",
+          "固定格式：每次只輸出一個 Thought 和一個 Action，不准自己寫 Observation"
+        ],
+        [
+          "輸出",
+          "$g_t$：自由文字，論文沒規定格式",
+          "`Thought: ...` 加 `Action: tool_name(arg=val, ...)`"
+        ]
+      ]
+    },
+    {
+      "id": "s11b.b3",
+      "section": "s11b",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L134"
+      ],
+      "text": "整體資料流和方法二的七步流程相同，這裡不重複。"
+    },
+    {
+      "id": "s11b.b4",
+      "section": "s11b",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L135"
+      ],
+      "text": "有三個容易誤會的點："
+    },
+    {
+      "id": "s11b.b5",
+      "section": "s11b",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L136",
+        "L137",
+        "L138"
+      ],
+      "items": [
+        "**solver 完全看不到圖本身。** 圖的資訊只透過 $\\Psi$ 的文字進來，所以 $\\Psi$ 寫得好不好，直接決定圖有沒有用。",
+        "**$\\Psi$ 的 query 欄有兩種讀法，論文沒有釐清。** Appendix B.5 的 prompt 把它描述成 current active query / observation，論文的公式卻寫成使用者問題 $q$。如果是原始問題，$\\Psi$ 每一步看到的都是同一句話；如果是最新的觀察，$\\Psi$ 就會針對剛發生的結果反應。後者比較能解釋圖 2 裡「avoid: repeating search」這類提示，但這是推測。",
+        "**$\\Psi$ 的實際輸出全文，論文沒有完整展示。** 圖 2 中間欄的 $g_t$ 只是示意。"
+      ],
+      "ordered": true
+    },
+    {
+      "id": "s11b.b6",
+      "section": "s11b",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L139"
+      ],
+      "text": "下面是一個自編的 $g_t$ 例子，根據 Appendix B.5 那兩條邊的 guidance 與 pitfalls 想像的輸出，不是論文原文："
+    },
+    {
+      "id": "s11b.b7",
+      "section": "s11b",
+      "type": "callout",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L140"
+      ],
+      "tone": "example",
+      "title": "自編的提示範例（不是論文原文）",
+      "text": "你剛取回第一批證據。下一步請掃描這些段落，找出連接到問題目標的橋接實體，例如出生日期或地點。不要略過細節，漏掉橋接實體的名稱會讓第二跳搜尋失敗。",
+      "illustrative": true
+    },
+    {
+      "id": "s11c.b1",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L141"
+      ],
+      "text": "這一段想回答的是：如果一個 benchmark 裡有很多種任務，一張圖要怎麼服務它們？先講論文的做法：每個 benchmark 只有一張圖，演化就是把這一張圖從 $G_0$ 改到 $G_K$；refiner 的輸入只有一張圖、輸出只有四種零件修改，所以沒有「選哪一張圖」或「要不要新增一張圖」的決策。"
+    },
+    {
+      "id": "s11c.b2",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L142"
+      ],
+      "text": "**為什麼說只有一張圖。** 表 1 的每一欄是一個 benchmark，各有一組節點數與邊數。refiner 的輸入欄位是目前保留的那一張圖（Appendix B.5 的 current_graph_json）；輸出格式只有 `add_nodes`、`delete_nodes`、`add_edges`、`delete_edges`，全是改這一張圖的零件，沒有建立新圖的操作。"
+    },
+    {
+      "id": "s11c.b3",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L143"
+      ],
+      "text": "**「從零開始」是怎麼回事。** 它指的是起始圖只有 Start → End 兩個節點（Appendix D.2 的模式 4、5）。refiner 的做法仍然是對這張空圖 add_nodes 與 add_edges，EnterpriseArena 的 Round 1 就是這樣一次補出整條主線（Appendix E.3）。所以「從零生成」本質上還是修改既有的圖。"
+    },
+    {
+      "id": "s11c.b4",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L144"
+      ],
+      "text": "**一個 benchmark 裡任務很多樣怎麼辦？** 論文用同一張圖服務整個 benchmark。例如 GDPval 涵蓋不同職業的任務，也只有一張 15 個節點的圖，再靠定位機制讓每一步只取圖上的一小段。論文沒有討論依任務類型切換不同的圖，也沒有驗證過多張圖或異質任務的情況。"
+    },
+    {
+      "id": "s11c.b5",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L145"
+      ],
+      "text": "**如果同一張圖裡有互不相關的子圖，不該有連接怎麼辦？** 論文沒有討論這個情境，也沒分析過同一張圖放互不相關子圖會怎樣。下表左欄是論文有寫的，右欄是我由此推出來的："
+    },
+    {
+      "id": "s11c.b6",
+      "section": "s11c",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L146"
+      ],
+      "headers": [
+        "論文有寫",
+        "推測"
+      ],
+      "rows": [
+        [
+          "結構檢查列出的條件只有端點存在、型別合法、每個節點走得到終點，沒列出整張圖連通，或從 Start 可達（Appendix B.6）",
+          "不該連的子圖可以保持分離，只要 refiner 不去加連接邊"
+        ],
+        [
+          "第 1 步固定從 Start 定位，取 2 跳子圖",
+          "Start 要連到各子圖的入口，所以第 1 步的子圖會把各類任務的前兩層混在一起，靠 $\\Psi$（它有看到任務描述與 query）自己篩"
+        ],
+        [
+          "定位只看上一步動作對到哪個節點",
+          "圖沒有路徑記憶：同一個節點，不管任務是哪一類，都吐出同一個鄰域"
+        ],
+        [
+          "閘門比驗證集平均分，不低於舊圖就收",
+          "改動若對 A 類有利、對 B 類有害，只要平均不降就會被收；論文沒按任務類型拆開分析"
+        ]
+      ]
+    },
+    {
+      "id": "s11c.b7",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L147"
+      ],
+      "text": "**共用節點的例子（自編）：** 兩類任務都會呼叫 search。A 類 search 後要 verify，B 類 search 後要 summarize。圖上只有一個 search 節點，兩條出邊都會進鄰域，$\\Psi$ 只能靠 $q$ 和最近 3 步軌跡猜該用哪一條。"
+    },
+    {
+      "id": "s11c.b8",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L148"
+      ],
+      "text": "論文確實顯示過「無關的圖內容有害」：表 4（Gemini 3.5 Flash）裡，整張圖加生成式提示是最差設定，ALFWorld 成功率 54.48，局部子圖是 81.53。局部取子圖是它的緩解辦法，但只有在定位成功、鄰域本身不混雜時才成立。"
+    },
+    {
+      "id": "s11c.b9",
+      "section": "s11c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L149"
+      ],
+      "text": "**結論：** 論文沒處理異質任務，一個 benchmark 一張圖，互不相關的任務如何共存沒有說明。它靠「上一步動作 → 節點」的定位，加上 $\\Psi$ 這個 LLM 過濾，沒有任務類型路由。**推測：** 它在流程相近的任務上最說得通，例如 EnterpriseArena 每個月跑同一條主線；異質任務混在一張圖上是否有效，沒有被驗證。"
+    },
+    {
+      "id": "s11d.b1",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L150"
+      ],
+      "text": "refiner 每一輪看到的是「目前這張圖、這批訓練軌跡、被拒絕過的歷史」，外加任務背景；$H_{rejected}$ 每筆記的是「上次改了什麼、改出什麼圖、為什麼被拒」。"
+    },
+    {
+      "id": "s11d.b2",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L151"
+      ],
+      "text": "**先定義：訓練軌跡是什麼。** 它是 solver 在訓練題上實際跑出來的完整過程記錄：一題從開始到結束，每一步的動作和環境回傳的觀察，再加上最後的分數（Section 3.3 Step 1）。"
+    },
+    {
+      "id": "s11d.b3",
+      "section": "s11d",
+      "type": "formula",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L152"
+      ],
+      "latex": "X_k = \\{ (q_i,\\, T_i^{(k)},\\, S_i^{(k)}) \\}_{i=1}^{|B_k|}",
+      "intuition": "s11d.b2"
+    },
+    {
+      "id": "s11d.b4",
+      "section": "s11d",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L153"
+      ],
+      "items": [
+        "$B_k$：第 $k$ 輪從訓練集抽出的一批題目。",
+        "$q_i$：第 $i$ 題的問題。",
+        "$T_i^{(k)}$：solver 解這題的軌跡，也就是 $(a_1, o_1, a_2, o_2, \\dots)$，動作與觀察交錯排列。",
+        "$S_i^{(k)}$：這題的最終分數，範圍 0 到 1；二元任務就是成功或失敗。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s11d.b5",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L154"
+      ],
+      "text": "拒絕記憶那一節出現的 $C_k$，就是把這批 $X_k$ 裡的軌跡串接起來、必要時截斷後的結果。"
+    },
+    {
+      "id": "s11d.b6",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L155"
+      ],
+      "text": "白話一點：一批題各留一筆「題目、解題過程、得幾分」，refiner 拿這批資料比對高分與低分的過程。論文的公式只寫動作與觀察，但 solver prompt 的 Current Trajectory 欄位和 Appendix C.3 的 trace 都有 Thought，所以我推測 $T$ 也包含 Thought。"
+    },
+    {
+      "id": "s11d.b7",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L156"
+      ],
+      "text": "**refiner 的輸入**"
+    },
+    {
+      "id": "s11d.b8",
+      "section": "s11d",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L157"
+      ],
+      "headers": [
+        "#",
+        "輸入",
+        "內容"
+      ],
+      "rows": [
+        [
+          "1",
+          "目前保留的圖",
+          "$G_{k-1}$，序列化成 JSON"
+        ],
+        [
+          "2",
+          "這一輪的訓練軌跡 $C_k$",
+          "用 $G_{k-1}$ 在這批訓練題上跑出的軌跡串接起來，超過 $L_{max}$ 就砍開頭留結尾"
+        ],
+        [
+          "3",
+          "每題分數",
+          "每題的最終分數 $S_i$，供 refiner 比對高分與低分軌跡"
+        ],
+        [
+          "4",
+          "被拒絕的歷史",
+          "$H_{rejected}$ 經 SerializeRejections 整理後的內容"
+        ],
+        [
+          "5",
+          "任務描述",
+          "這個 benchmark 在做什麼（只出現在 Appendix B.5 的 prompt 模板）"
+        ],
+        [
+          "6",
+          "可用工具清單",
+          "agent 能執行的工具名稱，ACTION 節點必須對得上（只出現在 prompt 模板）"
+        ],
+        [
+          "7",
+          "模式",
+          "static_onetime、static_incremental、scratch_onetime、scratch_incremental 之一（只出現在 prompt 模板）"
+        ]
+      ]
+    },
+    {
+      "id": "s11d.b9",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L158"
+      ],
+      "text": "論文正文的公式只寫了第 1 項、第 2 項和第 4 項，是簡化版；第 5 項到第 7 項要看 Appendix B.5 才有。"
+    },
+    {
+      "id": "s11d.b10",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L159"
+      ],
+      "text": "**$H_{rejected}$ 每一筆記什麼**"
+    },
+    {
+      "id": "s11d.b11",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L160"
+      ],
+      "text": "每筆記一次「被丟的候選」，分兩種情況（Algorithm 1）："
+    },
+    {
+      "id": "s11d.b12",
+      "section": "s11d",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L161"
+      ],
+      "headers": [
+        "欄位",
+        "驗證沒過",
+        "結構檢查沒過"
+      ],
+      "rows": [
+        [
+          "$\\Delta G_k$：refiner 當輪輸出的修改清單（JSON）",
+          "有",
+          "有"
+        ],
+        [
+          "$G_k^{cand}$：套用修改後的候選圖",
+          "有",
+          "可能不存在（Appendix B.6）"
+        ],
+        [
+          "$X_k$：當輪的訓練軌跡（用被拒之前的圖 $G_{k-1}$ 跑出來的）",
+          "有",
+          "有"
+        ],
+        [
+          "結果",
+          "驗證分數 $S_k^{cand}$",
+          "錯誤診斷 $d_k$（沒有分數）"
+        ]
+      ]
+    },
+    {
+      "id": "s11d.b13",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L162"
+      ],
+      "text": "$H_{rejected}$ 一開始是空的，之後只增不減。要注意的是，存進去的軌跡是用被拒之前的那張圖 $G_{k-1}$ 跑出來的，refiner 就是看了這批軌跡才提出那份被拒的修改；候選圖本身在驗證集上跑出的軌跡不會存，只留下分數。所以記錄的是「當初為什麼這樣改」的證據。"
+    },
+    {
+      "id": "s11d.b14",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L163"
+      ],
+      "text": "**真正餵給 refiner 的是哪一部分？論文有兩種說法，沒有判定：**"
+    },
+    {
+      "id": "s11d.b15",
+      "section": "s11d",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L164"
+      ],
+      "headers": [
+        "位置",
+        "說法"
+      ],
+      "rows": [
+        [
+          "Section 3.3 Step 4",
+          "整筆都進 $H_{rejected}$，refiner 收到 $H_{rejected}$"
+        ],
+        [
+          "Appendix B.6",
+          "SerializeRejections 只交「候選圖加驗證分數（或結構錯誤診斷）」，訓練軌跡留在記錄裡，沒提 $\\Delta G$"
+        ]
+      ]
+    },
+    {
+      "id": "s11d.b16",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L165"
+      ],
+      "text": "**推測：** 實際餵進去的大概是 B.6 的版本，因為那是實作層的描述。這樣舊軌跡不會重複佔 context，但 $\\Delta G$ 沒給，refiner 得自己拿被拒圖和現在的圖比對，才看得出上次改了什麼。"
+    },
+    {
+      "id": "s11d.b17",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L166"
+      ],
+      "text": "**會不會 context 爆炸？** 論文沒處理這個問題，但在它的實驗規模下大概不會。論文有限制長度的只有訓練軌跡 $C_k$（超過 $L_{max}$ 就砍開頭，$L_{max}$ 的數值論文沒給）；$H_{rejected}$ 本身沒有上限、摘要或淘汰機制，演算法裡只有 append，從不清空。"
+    },
+    {
+      "id": "s11d.b18",
+      "section": "s11d",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L167"
+      ],
+      "text": "增長多快，取決於每筆實際放什麼：只放候選圖與分數時，一筆約等於一張小圖（除 BFCL 外，每張圖只有 7 到 27 條邊）；連軌跡也餵時，增長會快很多。實際筆數也很少，EnterpriseArena 在 R10 開始前只累積 4 筆。**推測：** 增長是線性的；輪數很多、或圖像 BFCL 那麼大時，要自己加上限，例如只留最近 $N$ 筆，或只留修改清單不留整圖，論文沒驗證過。"
+    },
+    {
+      "id": "s11e.b1",
+      "section": "s11e",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L168"
+      ],
+      "text": "七個對照做法裡，1 個是不用任何記憶的 ReAct，其餘 6 個是學習型做法。它們都用同一個 ReAct solver，差別只在「從訓練軌跡存下什麼」和「推論時怎麼放進 prompt」（Section 4、Appendix B.3）。順序依論文的「結構程度」由低到高，完整對照看表 6。"
+    },
+    {
+      "id": "s11e.b2",
+      "section": "s11e",
+      "type": "figure",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L169"
+      ],
+      "manifest_id": "img-010",
+      "alt": "七個對照做法的比較表，列出各方法存下的內容、組織方式，以及推論時如何使用。",
+      "caption": "表 6 — 主實驗中各種記憶機制的比較。",
+      "paper_label": "Table 6",
+      "role": "evidence"
+    },
+    {
+      "id": "s11e.b3",
+      "section": "s11e",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L170"
+      ],
+      "headers": [
+        "方法",
+        "存什麼",
+        "推論時怎麼用"
+      ],
+      "rows": [
+        [
+          "Vanilla ReAct",
+          "什麼都不存",
+          "無，這是起點"
+        ],
+        [
+          "MemoryBank",
+          "每題的經驗摘要，並依遺忘機制淘汰舊的",
+          "依相關度（偏重近期）取出，放在 prompt 最前面"
+        ],
+        [
+          "RAP",
+          "完整的歷史軌跡",
+          "找最相似的幾條軌跡，當範例放進 prompt"
+        ],
+        [
+          "ExpeL",
+          "比對成功與失敗軌跡後，歸納出的自然語言心得",
+          "心得放進 system prompt，另附取回的成功範例"
+        ],
+        [
+          "AutoGuide",
+          "「在狀態 X，做 Y」形式的條件式指引，也是從成功與失敗的對比中抽出",
+          "每步先概括當前狀態，再取出符合的指引"
+        ],
+        [
+          "AWM",
+          "從成功軌跡歸納出的工作流（文字描述加動作序列）",
+          "工作流放進 prompt"
+        ],
+        [
+          "KnowAgent",
+          "可用動作與「哪個動作後可接哪個」的文字規則",
+          "整份當固定前綴放進 prompt，每步都一樣"
+        ]
+      ]
+    },
+    {
+      "id": "s11e.b4",
+      "section": "s11e",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L171"
+      ],
+      "text": "和 PG 最近的有兩個："
+    },
+    {
+      "id": "s11e.b5",
+      "section": "s11e",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L172"
+      ],
+      "items": [
+        "**AutoGuide：** 論文自己說最接近（Appendix A.4）。同樣是「情境對應動作」，也是每步檢索。差別是 AutoGuide 的指引彼此獨立，PG 把它們連成圖。",
+        "**KnowAgent：** 它存的「動作轉移規則」，概念上就是 PG 的邊，但它是一份靜態文字，沒有圖結構，也不會依當前位置只取一段。"
+      ],
+      "ordered": false
+    },
+    {
+      "id": "s11e.b6",
+      "section": "s11e",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L173"
+      ],
+      "text": "這兩個如果贏過 PG，最值得細看，因為它們最接近 PG 宣稱的新東西。"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "kind": "folded",
+      "ledger": "L119",
+      "why": "這段「推測」留在延伸閱讀的概念補充（主線之後）內，主線不放；全文保留，語氣與「推測」標示不變",
+      "needs_human": true
+    },
+    {
+      "id": "D02",
+      "kind": "folded",
+      "ledger": "L137",
+      "why": "這段「推測」留在延伸閱讀的概念補充（主線之後）內，主線不放；全文保留，語氣與「推測」標示不變",
+      "needs_human": true
+    },
+    {
+      "id": "D03",
+      "kind": "folded",
+      "ledger": "L145",
+      "why": "這段「推測」留在延伸閱讀的概念補充（主線之後）內，主線不放；全文保留，語氣與「推測」標示不變",
+      "needs_human": true
+    },
+    {
+      "id": "D04",
+      "kind": "folded",
+      "ledger": "L149",
+      "why": "這段「推測」留在延伸閱讀的概念補充（主線之後）內，主線不放；全文保留，語氣與「推測」標示不變",
+      "needs_human": true
+    },
+    {
+      "id": "D05",
+      "kind": "folded",
+      "ledger": "L155",
+      "why": "這段「推測」留在延伸閱讀的概念補充（主線之後）內，主線不放；全文保留，語氣與「推測」標示不變",
+      "needs_human": true
+    },
+    {
+      "id": "D06",
+      "kind": "folded",
+      "ledger": "L165",
+      "why": "這段「推測」留在延伸閱讀的概念補充（主線之後）內，主線不放；全文保留，語氣與「推測」標示不變",
+      "needs_human": true
+    },
+    {
+      "id": "D07",
+      "kind": "folded",
+      "ledger": "L167",
+      "why": "這段「推測」留在延伸閱讀的概念補充（主線之後）內，主線不放；全文保留，語氣與「推測」標示不變",
+      "needs_human": true
+    },
+    {
+      "id": "D08",
+      "kind": "folded",
+      "ledger": "L012",
+      "why": "符號對照收進預設收合的區塊；公式前補一段白話直覺，讀者不開也能抓到意思",
+      "needs_human": false
+    },
+    {
+      "id": "D09",
+      "kind": "folded",
+      "ledger": "L026",
+      "why": "符號對照收進預設收合的區塊；公式前補一段白話直覺，讀者不開也能抓到意思",
+      "needs_human": false
+    },
+    {
+      "id": "D10",
+      "kind": "folded",
+      "ledger": "L030",
+      "why": "符號對照收進預設收合的區塊；公式前補一段白話直覺，讀者不開也能抓到意思",
+      "needs_human": false
+    },
+    {
+      "id": "D11",
+      "kind": "folded",
+      "ledger": "L039",
+      "why": "符號對照收進預設收合的區塊；公式前補一段白話直覺，讀者不開也能抓到意思",
+      "needs_human": false
+    },
+    {
+      "id": "D12",
+      "kind": "folded",
+      "ledger": "L048",
+      "why": "符號對照收進預設收合的區塊；公式前補一段白話直覺，讀者不開也能抓到意思",
+      "needs_human": false
+    },
+    {
+      "id": "D13",
+      "kind": "folded",
+      "ledger": "L061",
+      "why": "符號對照收進預設收合的區塊；公式前補一段白話直覺，讀者不開也能抓到意思",
+      "needs_human": false
+    },
+    {
+      "id": "D14",
+      "kind": "folded",
+      "ledger": "L041",
+      "why": "JSON 欄位與 delete_edges 的眉角屬於實作細節，收進預設收合的區塊；全文保留",
+      "needs_human": false
+    },
+    {
+      "id": "D15",
+      "kind": "folded",
+      "ledger": "L056",
+      "needs_human": true,
+      "why": "Reader 審查指出「為什麼推測是存活率」的 R4/R9 對照像偵探故事、打斷閘門的說明；推測本身與「這是我的推測」標示仍留在主線，只有推論依據收進預設收合的區塊"
+    }
+  ]
+}

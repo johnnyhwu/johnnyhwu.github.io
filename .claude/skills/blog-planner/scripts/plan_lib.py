@@ -24,9 +24,10 @@ INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
 CJK_RE = re.compile(r"[一-鿿]")
 IMG_LINE_RE = re.compile(r"^!\[.*\]\((img-\d+)\)\s*$")
 # Cross-references that are renumbered on purpose (our own figure labels, the paper's section numbers) are not data.
+# Spaces only, never a newline: a table cell ending in 圖 must not swallow the number in the next cell.
 REF_RE = re.compile(
-    r"(?:圖|表|第)\s?\d+(?:\.\d+)*(?:\s?節)?"
-    r"|(?<![A-Za-z])(?:Figure|Fig\.|Table|Section|Sections|Appendix|Step|Round|R)\s?[A-Z]?\d+(?:\.\d+)*")
+    r"(?:圖|表|第)[ \t]?\d+(?:\.\d+)*(?:[ \t]?節)?"
+    r"|(?<![A-Za-z])(?:Figure|Fig\.|Table|Section|Sections|Appendix|Step|Round|R)[ \t]?[A-Z]?\d+(?:\.\d+)*")
 NUM_RE = re.compile(r"(?<![\w.])(\d[\d,]*(?:\.\d+)?)(?!\w)")
 
 
