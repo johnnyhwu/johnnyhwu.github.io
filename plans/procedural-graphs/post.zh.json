@@ -1,8 +1,8 @@
 {
   "schema": "post-plan/1",
   "source": {
-    "article": "AI-Research/done/unpublished/Procedural-Graphs/article.md",
-    "manifest": "AI-Research/done/unpublished/Procedural-Graphs/assets/image-manifest.json",
+    "article": "AI-Research/done/published/Procedural-Graphs/article.md",
+    "manifest": "AI-Research/done/published/Procedural-Graphs/assets/image-manifest.json",
     "root": "AI-Research"
   },
   "meta": {
@@ -45,7 +45,7 @@
     ],
     "hook": {
       "kind": "scenario",
-      "text": "請 agent 做一個要走很多步的任務，到了後半段它又去查前面已經查過的東西，或把工具呼叫的順序弄反。能不能把「接下來該做什麼」直接畫成流程圖交給它？"
+      "text": "請 agent 做一個要走很多步的任務，到了後半段它又去查前面已經查過的東西，或把工具呼叫的順序弄反。能不能把「接下來該做什麼」畫成流程圖，每一步只挑出腳邊那一小段，轉成一句提醒交給它？"
     },
     "running_example": {
       "id": "cfo",

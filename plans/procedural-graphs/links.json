@@ -1,0 +1,4 @@
+[
+  {"block": "s2.b1", "zh": "ReAct", "en": "ReAct", "target": "../pre-act/"},
+  {"block": "s10a.b1", "zh": "skill", "en": "skill", "target": "../skillopt/"}
+]

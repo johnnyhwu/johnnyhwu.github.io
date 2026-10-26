@@ -1,8 +1,8 @@
 {
   "schema": "post-plan/1",
   "source": {
-    "article": "AI-Research/done/unpublished/Procedural-Graphs/article.md",
-    "manifest": "AI-Research/done/unpublished/Procedural-Graphs/assets/image-manifest.json",
+    "article": "AI-Research/done/published/Procedural-Graphs/article.md",
+    "manifest": "AI-Research/done/published/Procedural-Graphs/assets/image-manifest.json",
     "root": "AI-Research"
   },
   "meta": {
@@ -41,7 +41,7 @@
     ],
     "hook": {
       "kind": "scenario",
-      "text": "Ask an agent to do a task with many steps, and near the end it looks up what it already looked up, or calls tools in the wrong order. What if you drew \"what to do next\" as a flowchart and handed it only the piece around where it stands?"
+      "text": "Ask an agent to do a task with many steps, and near the end it looks up what it already looked up, or calls tools in the wrong order. What if you drew \"what to do next\" as a flowchart, and at each step gave the agent only a one-line reminder drawn from the piece around where it stands?"
     },
     "running_example": {
       "id": "cfo",
@@ -3586,7 +3586,7 @@
       "ledger": [
         "L166"
       ],
-      "text": "**Will the context blow up?** The paper does not address this, but at the scale of its experiments it probably will not. The only thing the paper caps in length is the training trajectories $C_k$ (cut from the beginning beyond $L_{max}$, whose value the paper does not give); $H_{rejected}$ itself has no cap, no summarization and no eviction, and the algorithm only appends, never clears."
+      "text": "**Will the context blow up?** The paper does not address this, but at the scale of its experiments it probably will not. The only thing the paper caps in length is the training trajectories $C_k$ (anything beyond $L_{max}$ is cut from the beginning, and the paper does not give the value of $L_{max}$); $H_{rejected}$ itself has no cap, no summarization and no eviction, and the algorithm only appends, never clears."
     },
     {
       "id": "s11d.b18",
