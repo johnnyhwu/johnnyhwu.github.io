@@ -28,9 +28,13 @@ telling the user which SEO steps you did not do and why**. Ignore `.mcp.json` th
 cannot start without the credentials) and ignore the due-rows prompt except to report it. Never call `mcp__gsc__*` in that case: an
 unauthenticated call waits for a browser and hangs.
 
-## Before publishing a post (Step 3 of `hugo-paper-post`)
+## Before publishing a post (Step 3, phase P1 of `blog-planner`)
 
-Tool-free, always: title and description per `hugo-paper-post/references/hugo-conventions.md`
+These checks run **before** the skeleton is written, because their results feed the title, the H2s, the first
+paragraph and the description in the Planner's plan. Record the outcome in `meta.seo` of the plan
+(`queries`, `notes`) and in `plans/<slug>/work/seo.md`; the PR description (Step 4) repeats it.
+
+Tool-free, always: title and description per `hugo-publisher/references/hugo-conventions.md`
 ("SEO checklist for front matter"; English title 52 characters or fewer, the searchable name inside
 those 52), contextual internal links and alt text. (The follow-up rows are added after, below.)
 
@@ -43,8 +47,8 @@ With GSC (about five minutes, recipes in `references/gsc-recipes.md`):
    collides with another meaning (DPO is also Data Protection Officer), AI Overview, related searches.
    Use it to decide whether the title needs a plain-words hook such as 「是什麼」 or 「介紹」. If Google
    shows a CAPTCHA or an unusual-traffic page, stop: never solve it, skip this check and say so.
-3. **Link targets.** From step 1, the existing posts that already earn impressions on the topic. Link
-   the new post to them. Links *back* from live posts would edit other posts, which is not this
+3. **Link targets.** From step 1, the existing posts that already earn impressions on the topic. Step 4
+   links the new post to them through `plans/<slug>/links.json`. Links *back* from live posts would edit other posts, which is not this
    task's scope: list up to three candidates in the PR ("could link here from X, Y") and let the
    author decide. Also check no existing post already targets the same query; if one does,
    say so in the PR rather than publishing a competitor.
@@ -52,7 +56,7 @@ With GSC (about five minutes, recipes in `references/gsc-recipes.md`):
 Write the outcome as a short "SEO" block in the PR description: name variants used, what the results
 page showed, the title decision, links added, anything skipped.
 
-## After publishing
+## After publishing (Step 4 of `hugo-publisher`)
 
 Add two `post` rows to **Open** in `seo/followups.md` with absolute dates: +7 days (indexed and
 crawled?) and +21 days (impressions, position, CTR), counted from the day the PR is opened (the author

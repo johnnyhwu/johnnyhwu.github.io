@@ -4,7 +4,7 @@
 # ~/Library/Caches/hugo_cache is left alone.
 #
 # Usage (from anywhere inside the repo):
-#   .claude/skills/hugo-paper-post/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+#   .claude/skills/hugo-publisher/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
 # Any arguments are passed straight to hugo. The first run downloads ~40MB (resumable, retried);
 # later runs reuse .tools/hugo/<version>/hugo.
 set -euo pipefail

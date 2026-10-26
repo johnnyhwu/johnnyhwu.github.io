@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Mechanical first pass: article.md -> content/posts/<section>/<slug>/index.zh-tw.md plus the image files.
+"""DEPRECATED: posts are now rendered from the Planner's plan JSON by render_post.py (see SKILL.md). Kept only until
+the Procedural Graphs trial of the new flow is done, then deleted.
+
+Mechanical first pass: article.md -> content/posts/<section>/<slug>/index.zh-tw.md plus the image files.
 
 Does the deterministic parts so they are not redone by hand (and not done wrong): drops the H1 and the
 trailing figure-map block and `---` rules, strips manual heading numbers (`一、`, `2.1`, `1.`, `概念3：`), converts

@@ -5,8 +5,8 @@
 # system-wide and ~/.npm, ~/Library/Caches/ms-playwright are not touched.
 #
 # Usage (from anywhere inside the repo); arguments go straight to node:
-#   .claude/skills/hugo-paper-post/scripts/node.sh .claude/skills/hugo-paper-post/scripts/check_layout.js <section>/<slug>
-#   .claude/skills/hugo-paper-post/scripts/node.sh --version
+#   .claude/skills/hugo-publisher/scripts/node.sh .claude/skills/hugo-publisher/scripts/check_layout.js <section>/<slug>
+#   .claude/skills/hugo-publisher/scripts/node.sh --version
 # The first run downloads about 40MB of Node, then Playwright and Chromium (a few hundred MB); later runs reuse them.
 # Prefer a Node you already have? Any `node` on PATH works for the scripts too, but then Playwright must be
 # resolvable from it (see loadPlaywright in check_layout.js).

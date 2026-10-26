@@ -9,6 +9,16 @@ ever disagree.
 These conventions apply to every section (`paper-intro`, `ai-concept`,
 `python-tutorial`, `other`); see this repo's `CLAUDE.md` for how to pick one.
 
+**How this relates to the plan JSON.** Posts are now rendered from the Planner's approved plan
+(`plans/<slug>/post.*.json`) by `scripts/render_post.py`, not converted from `article.md` by hand. Much of this
+document is therefore the *specification of correct output*: `render_post.py` implements the mechanical rules
+(math delimiters, tilde escaping, image shortcode and widths, mermaid palette, admonition and `fold` syntax,
+no hand-numbered headings), `verify_post.py` checks the result, and the judgement calls it describes (which
+formulas become blocks, which flows become diagrams, how to nest an extension theme, how many callouts)
+are the Planner's, see `blog-planner/references/planner-guide.md`. Where a passage says "when converting
+`article.md`", read it as the rule the plan must already satisfy. The visual vocabulary and its markup are in
+`visual-mapping.md`.
+
 ## Directory layout
 
 ```
@@ -125,21 +135,20 @@ single member does nothing for discovery. Say which you chose in the PR.
 
 - `src` is just the filename, relative to the page bundle (no leading
   slash, no `/paper-intro/<slug>/` prefix — Hugo resolves that).
-- Fold the Writer's visible caption line (the italic text under the image
-  in `article.md`) into the shortcode's `caption` parameter — don't also
-  add a separate italic Markdown line underneath the shortcode. The theme
+- The figure block's `caption` goes into the shortcode's `caption` parameter — never also
+  a separate italic Markdown line underneath the shortcode. The theme
   already renders `caption` as a visible `<figcaption>`; duplicating it as
   a markdown italic line looks inconsistent with every other post on the
   site, which only uses the shortcode's own caption rendering.
 - Source attribution: end every `caption` with `(Source: original paper,
   Figure N.)` in English or `（來源：原始論文 Figure N。）` in zh-tw,
   using the **paper's** own number (it is in the manifest `caption`). The
-  Writer's visible label (`圖 3 —`) is the article's own sequential
-  numbering and often differs, which is expected (see AI-Research's
-  `figure-map-schema.md`). Name bundle files after the paper's numbers too
+  visible label in the caption (`圖 3 —`) is the post's own sequential
+  numbering and often differs, which is expected. `render_post.py` adds the
+  attribution and names bundle files after the paper's numbers
   (`figure10.png`, `table7.png`) so they cannot collide.
-- Preserve the Writer's `alt` text content (translate it if you're
-  producing the other language's version) — don't rewrite its meaning.
+- `alt` and `caption` come from the plan (Step 3 wrote them in both languages); a threadbare alt is fixed
+  there, not here.
 
 ## SEO checklist for front matter
 
@@ -190,7 +199,7 @@ get wrong:
   naturally shorter because CJK characters carry more per character. This is
   the exact string search engines show, so it must stand alone, not read
   like a fragment.
-- Image `alt` text (from the Writer, preserved per the shortcode rule
+- Image `alt` text (written by the Planner, per the shortcode rule
   below): sanity-check it reads as a real descriptive sentence of what the
   figure shows, not a keyword list or a bare "Figure 1". If the Writer's
   alt text is genuinely just a label, tighten it — the meaning must stay
@@ -264,8 +273,8 @@ dangling relative link is an accepted convention here, not an accident.
 That makes it a narrow licence, not a blank cheque. A forward link is
 justified only when **both** hold:
 
-- The article's own prose already refers to that topic (you are linking the
-  Writer's existing words, not adding a new claim), **and**
+- The post's own prose already refers to that topic (you are linking
+  existing words, not adding a new claim), **and**
 - the target slug is already pinned by an existing link elsewhere on the
   site — so when that post lands, every reference to it lights up at once.
 
@@ -467,8 +476,9 @@ Markdown.
 
 `article.md` is platform-neutral, so the Writer has no way to emit a
 diagram; structural content arrives as ASCII art or an arrow chain
-instead. Converting it is Step 3's call, the same way math-delimiter
-conversion is. Convert when the snippet is genuinely **structure or
+instead. The Planner (Step 3) decides which snippets become a `diagram`
+block (kind `flow`, `tree` or `mindmap`); `render_post.py` writes the
+mermaid below. Convert when the snippet is genuinely **structure or
 flow**:
 
 - an ASCII tree drawn with `├─` / `└─` box-drawing characters → `graph TD`
@@ -520,7 +530,7 @@ Practical notes:
 - **A `hugo build` cannot validate mermaid**, because it renders
   client-side; a syntax error surfaces only in the browser (and still draws
   an SVG, mermaid's error graphic). Run
-  `node .claude/skills/hugo-paper-post/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots`
+  `node .claude/skills/hugo-publisher/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots`
   after a build: it serves a local mermaid@10 (the CDN is blocked in
   sandboxes), fails on any syntax error or over-wide diagram, in both
   languages at desktop and phone width, and saves a screenshot per diagram.
@@ -555,9 +565,9 @@ Use this vocabulary consistently rather than picking a type ad hoc:
 | `quote` | A direct quotation from the paper worth setting apart verbatim. |
 | `success` / `question` | Occasional use for a notable positive result or an open question the paper raises — don't force these if `tip`/`info` already fits better. |
 
-Don't invent a TL;DR, caveat, or aside that isn't grounded in `article.md` —
+Don't invent a TL;DR, caveat, or aside that isn't grounded in the plan's ledger —
 an admonition is a formatting choice, not a license to add content the
-Writer step didn't produce. A post with zero admonitions is fine if nothing
+plan doesn't have. A post with zero admonitions is fine if nothing
 in it warrants one; don't add one just to "use the feature."
 
 ## Heading structure (H2 vs. H3)
@@ -646,25 +656,15 @@ rather than leaving a number that no longer matches anything. A reference to
 the *paper's* section numbers ("論文第 4.3 節" / "In Section 4.3, the authors
 …") is about the source paper, not the post — leave those alone.
 
-## Stripping pipeline artifacts
+## Pipeline artifacts
 
-Before publishing, remove from the rendered body (but do surface in the PR
-description instead):
-- the trailing ```` ```figure-map ```` fenced block — pipeline metadata,
-  never meant for readers,
-- manual heading numbers (`## 一、`, `### 2.1`, `## 1.`) — the theme
-  auto-numbers, so leaving these renders the number twice; see "Never number
-  headings by hand" below,
-- any `<!-- NO-MANIFEST: ... -->` or `<!-- UNRESOLVED IMAGE: ... -->`
-  comments — replace `UNRESOLVED IMAGE` markers with an actual visible
-  placeholder if the image truly couldn't be resolved (see
-  `image-resolution.md`), but don't leave internal-pipeline-speak in a
-  published post.
+The plan JSON carries none of `article.md`'s pipeline leftovers (the trailing ```` ```figure-map ```` block,
+manual heading numbers, `NO-MANIFEST` / `UNRESOLVED IMAGE` comments), and `render_post.py` never emits them.
+`verify_post.py` still fails if any appear in a rendered file, which would mean a file was edited by hand.
 
 ## What NOT to change
 
-Translating the prose (per the bilingual requirement) is expected. Beyond
-that: don't restructure the article's argument, don't add sections it
-didn't have, don't "improve" claims for punchiness. Front matter, image
-wiring, math-notation conversion, and platform formatting are this skill's
-job — the article's substance is the Writer step's, already done upstream.
+Step 4 owns form: front matter checks, shortcodes, image wiring, math delimiters, tilde escaping, mermaid, links.
+It does not own content. The rendered `index.*.md` files are generated; never edit them by hand. A typo or a
+plain mistake is fixed in the plan JSON (both languages, then `validate_plan.py`, then re-render) and listed in the
+PR; a problem with the substance goes back to Step 3.

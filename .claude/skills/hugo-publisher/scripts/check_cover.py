@@ -2,7 +2,7 @@
 """Mechanical checks for a generated cover (featured-image.md): size, and whether anything is drawn inside the
 60px margins (1200x630 logical, so 90px at 1800x945) or below the y=570 text limit. Needs Pillow + numpy
 (`uv run python`). Does not judge design: look at the preview for that.
-Usage: uv run python .claude/skills/hugo-paper-post/scripts/check_cover.py <featured-image.png>"""
+Usage: uv run python .claude/skills/hugo-publisher/scripts/check_cover.py <featured-image.png>"""
 import sys
 import numpy as np
 from PIL import Image

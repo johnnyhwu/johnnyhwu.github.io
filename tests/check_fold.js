@@ -5,7 +5,7 @@
  * click, in both languages at a desktop and a phone width.
  *
  * Usage (after a build into .tools/public, see hugo-build.md):
- *   .claude/skills/hugo-paper-post/scripts/node.sh tests/check_fold.js <section>/<slug> [--root .tools/public]
+ *   .claude/skills/hugo-publisher/scripts/node.sh tests/check_fold.js <section>/<slug> [--root .tools/public]
  * Exit 0 = pass, 1 = fail, 2 = Playwright missing (fold NOT checked).
  */
 const http = require('http');
