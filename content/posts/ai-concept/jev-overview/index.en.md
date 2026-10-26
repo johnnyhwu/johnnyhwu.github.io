@@ -186,7 +186,7 @@ Take detecting whether input contains a prompt injection as an example — here'
 value: 0.92   <- represents a 0.92 probability of "yes"
 ```
 
-Noul has no separate confidence field, because for a binary judgment, the probability value itself already directly reflects the confidence level. That's a different design logic from Choice or Score, which need a separate confidence field: for Choice or Score, the "selected value" and the "confidence level" are two different things — picking "technical" doesn't necessarily mean high confidence — but for Noul, the "probability value" and the "confidence" are mathematically the same number. This "use the probability value itself as the confidence score" approach shares a spirit with [LLM-as-a-Verifier](../llm-as-a-verifier/)'s idea of reading the full token-probability distribution instead of taking a single argmax answer.
+Noul has no separate confidence field, because for a binary judgment, the probability value itself already directly reflects the confidence level. That's a different design logic from Choice or Score, which need a separate confidence field: for Choice or Score, the "selected value" and the "confidence level" are two different things — picking "technical" doesn't necessarily mean high confidence — but for Noul, the "probability value" and the "confidence" are mathematically the same number. This "use the probability value itself as the confidence score" approach shares a spirit with [LLM-as-a-Verifier](../../paper-intro/llm-as-a-verifier/)'s idea of reading the full token-probability distribution instead of taking a single argmax answer.
 
 ## Training method: the evolution from RLHF to RLCD
 

@@ -108,6 +108,8 @@ Under this definition: **Higher Token Confidence Value \(\uparrow\) = Higher Mod
 This is the opposite of Entropy (where lower is more confident), but the physical meaning is consistent. The advantage of doing this is that the calculation speed is extremely fast and has almost no impact on generation time.
 {{< /admonition >}}
 
+Another paper draws on the model's probability distribution for a different job: [LLM-as-a-Verifier](../llm-as-a-verifier/) reads the probabilities over the scores an LLM judge assigns and takes their expected value instead of the single most likely score, to fix judges that keep giving tied scores.
+
 ### Evaluating the Entire Path: Catching the "Black Sheep"
 
 Having the confidence of a single word is not enough; we need to evaluate the quality of the **entire Reasoning Trace**.
