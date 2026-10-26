@@ -1,0 +1,2708 @@
+{
+  "schema": "post-plan/1",
+  "source": {
+    "article": "AI-Research/done/published/WikiSkill/article.md",
+    "manifest": "AI-Research/done/published/WikiSkill/assets/image-manifest.json",
+    "root": "AI-Research"
+  },
+  "meta": {
+    "section": "paper-intro",
+    "slug": "wikiskill",
+    "tags": [
+      "Large Language Model",
+      "Agent Memory",
+      "Single-Agent"
+    ],
+    "title": "WikiSkill 解析：把執行紀錄編譯成 wiki，skill 才越改越準",
+    "title_alts": [
+      "agent skill 自動演化老是從零分析？WikiSkill 加一層不回滾的 wiki",
+      "agent skill 演化的記憶問題：WikiSkill 證明了什麼、沒證明什麼"
+    ],
+    "description": "agent skill 自動演化每輪都要從原始執行紀錄重新分析。WikiSkill 在紀錄與 skill 之間加一層不會被回滾的 wiki：五個模型全面領先，消融實驗多出 15.0 分，但最想證明的「結構化勝過扁平清單」其實沒被直接驗證。",
+    "reader": {
+      "persona": "剛入門 AI 的讀者：用過或聽過 agent 和 skill，不熟 agent 自動演化 skill 的流程，也不熟 ablation、validation set 這類實驗術語",
+      "promise": "讀完能用自己的話說出：skill 演化少了什麼、wiki 這一層放在哪又為什麼不被回滾；哪個結論證得紮實（多 15.0 分）、哪個其實沒被證明（結構化勝過扁平清單）；以及自己做類似系統時可以直接帶走的幾條原則",
+      "assumes": [
+        "prompt",
+        "agent"
+      ]
+    },
+    "takeaways": [
+      {
+        "id": "T1",
+        "text": "WikiSkill 的主張是：skill 演化缺的不是「有沒有記憶」，而是記憶的形式（這個主張本身沒被直接驗證）。它在原始紀錄（只增不改）和 skill（可整組退版）之間插一層 wiki，由專職角色整理、跨迭代疊加證據，而且不因某次提案被拒絕就回滾",
+        "memory_hook": "skill 會退版，wiki 不會"
+      },
+      {
+        "id": "T2",
+        "text": "證據分三級：最紮實的是讓 Skill Proposer 讀持久 wiki，在 Gemini-3.5-Flash 的消融實驗裡平均分數從 48.7% 升到 63.7%（+15.0）；中等的是效益隨模型變大、遷移成不成功看 skill 裡包了什麼；沒被證明的是論文最想主張的「結構化 wiki 勝過扁平歷史列表」",
+        "memory_hook": "48.7% → 63.7%"
+      },
+      {
+        "id": "T3",
+        "text": "自己做 agent 演化系統時四條通用判斷：三層分離（原始、結構化、可回退）、訓練時的 actor 不能偷看 optimizer 的知識來源、廣度靠全批次摘要而深度靠抽樣、消融的對照組要對準你想否定的那個形式",
+        "memory_hook": "對照組要對準你想否定的那個形式"
+      }
+    ],
+    "hook": {
+      "kind": "tension",
+      "text": "讓 agent 自己改自己的 skill，流程是跑任務、看哪裡錯、改 skill、驗證有進步才留下。做過的人大概都遇到同一件事：每一輪都得從原始執行紀錄重新爬一次失敗原因，前幾輪分析出來的東西沒有被好好留下來。Google Research 這篇 WikiSkill 的做法是在紀錄和 skill 之間多放一層不會被回滾的 wiki，也因此留下一個有趣的問題：它最想證明的主張，到底有沒有被實驗證明。"
+    },
+    "running_example": {
+      "id": "alfworld-loop",
+      "desc": "ALFWorld 上 Qwen-3.6-27B 演化出 break-repetition-loop 這個 skill 的過程：第 0 輪被拒絕、第 1 輪通過、第 4 輪被修改"
+    },
+    "cover_brief": {
+      "metaphor": "三層地層：最底下是只增不改、不斷往上疊的原始紀錄，中間是逐漸長高的 wiki 頁面堆，最上面一層 skill 被一條退版箭頭反覆彈回，而中間那層紋風不動",
+      "labels": [
+        {
+          "text": "Raw",
+          "ledger": "L006"
+        },
+        {
+          "text": "Wiki",
+          "ledger": "L006"
+        },
+        {
+          "text": "Skills",
+          "ledger": "L006"
+        },
+        {
+          "text": "48.7% → 63.7%",
+          "ledger": "L039"
+        }
+      ]
+    },
+    "seo": {
+      "queries": [
+        "wikiskill",
+        "wiki skill",
+        "wikiskill paper",
+        "wikiskill arxiv",
+        "google wikiskill"
+      ],
+      "notes": "GSC 2026-07-29 至 2026-10-26（舊版文章的數據，網址與日期不變）：中文版 61 點擊、600 曝光、位置 5.9，查 wikiskill 為 38 點擊、位置 3.5；英文版 23 點擊、1653 曝光、CTR 1.4%、位置 7.3，查 wikiskill 404 曝光、CTR 2.2%，另有 wiki skill、wikiskills、wikiskill paper、wikiskill arxiv、google wikiskill 等變體。英文標題與描述需要更白話地說明這是什麼，並自然帶出 paper 與 arXiv。無同 query 的既有文章。Chrome 搜尋結果頁檢查未做。"
+    },
+    "date": "2026-09-02"
+  },
+  "outline": [
+    {
+      "id": "s1",
+      "title": "skill 自動演化的老毛病：分析過的失敗，下一輪又從頭分析",
+      "role": "hook",
+      "goal": "讀者知道這篇要解決什麼、WikiSkill 的核心做法、結論有哪一塊證得不穩，以及接下來的路線",
+      "serves": [
+        "T1",
+        "T2"
+      ],
+      "recap": "",
+      "children": []
+    },
+    {
+      "id": "s2",
+      "title": "問題：現有方法的記憶只是附在修改紀錄旁的扁平清單",
+      "role": "context",
+      "goal": "讀者能說出 agent skill 自動演化的標準流程，以及這類方法的記憶為什麼不算真正的知識庫",
+      "serves": [
+        "T1"
+      ],
+      "recap": "現有方法也有記憶，但只是附在 skill 修改紀錄旁邊的扁平清單，沒有被獨立整理。",
+      "children": []
+    },
+    {
+      "id": "s3",
+      "title": "做法：在原始紀錄和 skill 之間插一層不回滾的 wiki",
+      "role": "mechanism",
+      "goal": "讀者能畫出三層架構、說出四個角色怎麼接力，並用一個具體案例看懂 wiki 怎麼塑造 skill",
+      "serves": [
+        "T1"
+      ],
+      "recap": "三層各有各的改法規則；一輪迭代由四個角色接力；案例顯示被拒絕的提案和累積的證據怎麼變成下一版 skill。",
+      "children": [
+        {
+          "id": "s3a",
+          "title": "三層各管什麼，誰能改、誰會被整組退回",
+          "role": "mechanism",
+          "goal": "讀者能說出 Skill、Wiki、Raw 三層的特性，以及三個最容易搞錯的規則",
+          "serves": [
+            "T1"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s3b",
+          "title": "一輪迭代裡，四個角色怎麼接力",
+          "role": "mechanism",
+          "goal": "讀者能依序說出 Inference Agent、Wiki Maintainer、Skill Proposer、Gating & Rollback 各做什麼，以及為什麼訓練時不能讓 Inference Agent 看 wiki",
+          "serves": [
+            "T1"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s3c",
+          "title": "三個最容易搞錯的規則：誰能刪、誰能改、誰只能加",
+          "role": "mechanism",
+          "goal": "讀者能說出 Skill、Wiki、Raw 三層各自「能不能刪、能不能改」，不被直覺帶偏",
+          "serves": [
+            "T1"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s3d",
+          "title": "走一遍：一個 skill 怎麼被 wiki 一步步塑造出來",
+          "role": "mechanism",
+          "goal": "讀者看過一個完整案例，知道被拒絕的提案和累積的 pattern 證據怎麼變成下一版 skill",
+          "serves": [
+            "T1"
+          ],
+          "recap": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "實驗結果：五個模型都領先，但領先幅度差很多",
+      "role": "evidence",
+      "goal": "讀者知道主結果有多穩、效益怎麼隨模型規模變、跨模型遷移成不成功取決於什麼",
+      "serves": [
+        "T2"
+      ],
+      "recap": "五個模型都領先，領先幅度隨模型變強而放大；skill 能不能搬走，看裡面包的是通用程序還是模型專屬的權宜之計。",
+      "children": [
+        {
+          "id": "s4a",
+          "title": "主結果：穩定，不只是峰值高",
+          "role": "evidence",
+          "goal": "讀者能說出 WikiSkill 在五個模型上都最高，而且其他方法會在部分設定上退步、它沒有",
+          "serves": [
+            "T2"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s4b",
+          "title": "模型越大，skill 演化的收益越大",
+          "role": "evidence",
+          "goal": "讀者能說出 skill 演化與模型規模互補，並舉出小模型加 skill 超過大模型的例子，也知道收益在任務間不平均",
+          "serves": [
+            "T2"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s4c",
+          "title": "跨模型遷移：能不能搬走，看 skill 裡包的是什麼",
+          "role": "evidence",
+          "goal": "讀者能說出遷移的三個發現、論文解釋了哪一個、哪一個沒解釋，以及「發掘知識」和「執行知識」是兩種能力",
+          "serves": [
+            "T2",
+            "T3"
+          ],
+          "recap": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "消融實驗：wiki 到底在哪裡起作用",
+      "role": "evidence",
+      "goal": "讀者知道哪個因素貢獻最大，以及為什麼最想證明的那一塊反而沒被測到",
+      "serves": [
+        "T2",
+        "T3"
+      ],
+      "recap": "給 Skill Proposer 持久 wiki 證得最紮實；但「結構化勝過扁平清單」沒有對應的對照組。",
+      "children": [
+        {
+          "id": "s5a",
+          "title": "給 Skill Proposer 看 wiki 多 15.0 分，給訓練時的 agent 看反而扣分",
+          "role": "evidence",
+          "goal": "讀者能說出五個設定的平均分數、兩個結論，以及訓練時不讓 Inference Agent 看 wiki 的理由（是假設）",
+          "serves": [
+            "T2",
+            "T3"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s5b",
+          "title": "最想證明的主張，正好是消融沒測到的那一塊",
+          "role": "caveat",
+          "goal": "讀者能說出 WikiSkill 的 wiki 和 EvoSkill 的歷史列表差在記憶的形式，並指出消融實驗缺的那組對照",
+          "serves": [
+            "T2",
+            "T3"
+          ],
+          "recap": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "title": "工程面：廣度、深度與呼叫成本",
+      "role": "mechanism",
+      "goal": "讀者能說出 batch size 管什麼、廣度和深度怎麼拆開處理、呼叫次數公式怎麼化簡，以及為什麼呼叫次數少不等於成本低",
+      "serves": [
+        "T3"
+      ],
+      "recap": "",
+      "children": [
+        {
+          "id": "s6a",
+          "title": "為什麼訓練跑全資料集，分析卻只精讀一小部分",
+          "role": "mechanism",
+          "goal": "讀者能說出 batch size 控制的是分析加提案的次數，以及廣度與深度分開處理的做法",
+          "serves": [
+            "T3"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s6b",
+          "title": "呼叫次數固定，不等於總成本低",
+          "role": "caveat",
+          "goal": "讀者能說出四個框架的呼叫次數怎麼隨訓練集變，以及論文沒比 token 成本這件事",
+          "serves": [
+            "T3"
+          ],
+          "recap": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "title": "帶走：證據的三個等級，和四個通用判斷",
+      "role": "takeaway",
+      "goal": "讀者能重述三個帶走的結論，並知道自己做類似系統時可以怎麼用",
+      "serves": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "recap": "",
+      "children": [
+        {
+          "id": "s7a",
+          "title": "證得多紮實，限制在哪",
+          "role": "caveat",
+          "goal": "讀者能說出三件事各證得多紮實，以及論文承認的幾個限制",
+          "serves": [
+            "T2"
+          ],
+          "recap": "",
+          "children": []
+        },
+        {
+          "id": "s7b",
+          "title": "四個可以直接帶走的判斷",
+          "role": "takeaway",
+          "goal": "讀者帶走四條可遷移到其他系統的判斷框架",
+          "serves": [
+            "T1",
+            "T3"
+          ],
+          "recap": "",
+          "children": []
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "skill",
+      "defined_in": "s1.b1"
+    },
+    {
+      "term": "trace",
+      "defined_in": "s1.b1"
+    },
+    {
+      "term": "回滾",
+      "defined_in": "s1.b3"
+    },
+    {
+      "term": "驗證集",
+      "defined_in": "s2.b2"
+    },
+    {
+      "term": "ReAct",
+      "defined_in": "s3b.b2"
+    },
+    {
+      "term": "baseline",
+      "defined_in": "s3d.b3"
+    },
+    {
+      "term": "消融實驗",
+      "defined_in": "s1.b4"
+    },
+    {
+      "term": "benchmark",
+      "defined_in": "s4a.b1"
+    },
+    {
+      "term": "batch size",
+      "defined_in": "s6a.b2"
+    },
+    {
+      "term": "rollout",
+      "defined_in": "s6a.b2"
+    },
+    {
+      "term": "context window",
+      "defined_in": "s6a.b3"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "L001",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          5,
+          5
+        ]
+      },
+      "gist": "做過 skill 自動演化的人都踩過：每輪從原始紀錄重爬失敗原因，前幾輪的分析沒被留下來，頂多變提案歷史清單",
+      "layer": "main",
+      "section": "s1",
+      "dest": [
+        "s1.b2"
+      ]
+    },
+    {
+      "id": "L002",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          7,
+          7
+        ]
+      },
+      "gist": "論文（Google Research + Virginia Tech，arXiv:2608.27454，2026 年 8 月）：在紀錄與 skill 之間插一層不被回滾的持久知識層；受 Karpathy 的 LLM Wiki gist 啟發，非原創；5 個模型、5 個任務驗證",
+      "layer": "main",
+      "section": "s1",
+      "dest": [
+        "s1.b3"
+      ]
+    },
+    {
+      "id": "L003",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          9,
+          9
+        ]
+      },
+      "gist": "本文路線：三層架構、實驗與缺口、具體案例",
+      "layer": "none",
+      "section": "s1",
+      "dest": []
+    },
+    {
+      "id": "L004",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          13,
+          13
+        ]
+      },
+      "gist": "agent skill：把特定領域操作步驟打包成目錄，核心 SKILL.md，不需重訓模型；手寫費力，近期研究讓 agent 自動演化（跑訓練任務、分析成敗軌跡、改 skill、反覆）",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b1"
+      ]
+    },
+    {
+      "id": "L005",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          15,
+          15
+        ]
+      },
+      "gist": "EvoSkill、Trace2Skill、SkillOpt 同一套流程；記憶（如 EvoSkill 的提案與評估清單）是附屬在修改紀錄上的扁平清單，不是獨立持續整理的知識表示",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b2"
+      ]
+    },
+    {
+      "id": "L006",
+      "kind": "table",
+      "src": {
+        "lines": [
+          19,
+          25
+        ]
+      },
+      "gist": "三層：Skill Layer（skills/，可逆有條件更新）、Wiki Layer（wiki/，持續累積絕不重置）、Raw Layer（raw/，永久保存只能新增）；Wiki 是這篇新加的中間層",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b1",
+        "s3a.b2"
+      ]
+    },
+    {
+      "id": "L007",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          27,
+          27
+        ]
+      },
+      "gist": "Wiki Layer 三種檔案：patterns/（一檔一個失敗模式或成功策略）、logs.md（按時間記每輪做了什麼）、skill-impact.md（提案內容、驗證分數、接受或拒絕）；每個 skill 資料夾有 SKILL.md 與 PURPOSE.md（被哪些 pattern 啟發、修改的動機）",
+      "layer": "support",
+      "section": "s3a",
+      "dest": [
+        "s3a.b4",
+        "s3a.b5",
+        "s3a.b6"
+      ]
+    },
+    {
+      "id": "L008",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          29,
+          29
+        ]
+      },
+      "gist": "三層是靜態結構，實際運作靠四個角色依序互動",
+      "layer": "none",
+      "section": "s3b",
+      "dest": []
+    },
+    {
+      "id": "L009",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          31,
+          34
+        ]
+      },
+      "gist": "四個角色：Inference Agent 跑訓練任務寫入 Raw（不能存取 wiki）；Wiki Maintainer 一次 LLM 呼叫抽樣少量 trace 做根因分析、更新 pattern/index/log；Skill Proposer 多輪 ReAct 讀 index、skill-impact、pattern、原始 trace，一次提一個 skill 新建或修改；Gating & Rollback 在驗證集測試，進步就採用、沒進步整組退回，不論結果都寫進 skill-impact.md",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b2"
+      ]
+    },
+    {
+      "id": "L010",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          36,
+          37
+        ]
+      },
+      "gist": "圖：WikiSkill 框架總覽（img-002）",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b3"
+      ]
+    },
+    {
+      "id": "L011",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          39,
+          39
+        ]
+      },
+      "gist": "關鍵設計：Inference Agent 跑訓練任務時完全不能存取 wiki，消融驗證這是必要的",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b4"
+      ]
+    },
+    {
+      "id": "L012",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          43,
+          45
+        ]
+      },
+      "gist": "Skill Layer 沒有「刪除」操作：Proposer 輸出只有新建、修改、不動作；看起來的刪除是 Gating & Rollback 整組版本回退",
+      "layer": "support",
+      "section": "s3c",
+      "dest": [
+        "s3c.b1",
+        "s3c.b2"
+      ]
+    },
+    {
+      "id": "L013",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          46,
+          46
+        ]
+      },
+      "gist": "Wiki Layer 不是只能新增：既有 pattern 可尾端加、替換指定文字、在指定文字後插入；「永不重置」是整個 wiki 狀態不因提案被拒絕而回滾",
+      "layer": "support",
+      "section": "s3c",
+      "dest": [
+        "s3c.b2"
+      ]
+    },
+    {
+      "id": "L014",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          47,
+          47
+        ]
+      },
+      "gist": "Raw Layer 的唯讀是使用方式的唯讀：每輪新增紀錄持續增長，immutable 指已寫入的不被改；Maintainer 與 Proposer 對它唯讀",
+      "layer": "support",
+      "section": "s3c",
+      "dest": [
+        "s3c.b2"
+      ]
+    },
+    {
+      "id": "L015",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          49,
+          49
+        ]
+      },
+      "gist": "論文自承：wiki 沒有自動清理機制，迭代越多越膨脹，留給未來研究",
+      "layer": "main",
+      "section": "s7a",
+      "dest": [
+        "s7a.b3",
+        "s7a.b4"
+      ]
+    },
+    {
+      "id": "L016",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          53,
+          55
+        ]
+      },
+      "gist": "Wiki Maintainer 的 system prompt：角色要求深度根因分析；輸入這輪 trace 加目前 wiki；輸出固定 JSON（新 pattern、修改、完整 index、迭代摘要）；CRITICAL 段：index.md 條目最重要，決定 agent 會不會點進 pattern，描述要具體到不用讀全頁就能判斷相關性並含問題、根因、解法",
+      "layer": "fold",
+      "section": "s3b",
+      "dest": [
+        "s3b.b6",
+        "s3b.b7"
+      ]
+    },
+    {
+      "id": "L017",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          59,
+          59
+        ]
+      },
+      "gist": "batch size 管的是分析加提案要分幾次做，不是 rollout；Inference Agent 每輪一定對整個訓練集跑一次；EvoSkill、SkillOpt 的 batch size 小於訓練集，WikiSkill 設成等於訓練集，每輪只分析一次",
+      "layer": "support",
+      "section": "s6a",
+      "dest": [
+        "s6a.b2"
+      ]
+    },
+    {
+      "id": "L018",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          61,
+          61
+        ]
+      },
+      "gist": "廣度與深度分兩個旋鈕：廣度靠全批次 rollout 加上 Proposer 拿到全部任務成敗摘要；深度靠有限抽樣——Maintainer 每輪最多 8 筆（5 敗 3 成）每筆截斷 15,000 字元，Proposer 動態挑 trace 精讀、至少 4 筆沒有上限；都為應付 context window",
+      "layer": "main",
+      "section": "s6a",
+      "dest": [
+        "s6a.b3"
+      ]
+    },
+    {
+      "id": "L019",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          65,
+          65
+        ]
+      },
+      "gist": "實驗：5 個模型（Qwen-3.5-4B、9B、Qwen-3.6-27B、Gemma-4-31B、Gemini-3.5-Flash）x 5 個任務（LiveMath、SealQA、SpreadSheet、OfficeQA、ALFWorld），每組合三次完整演化取平均",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b1"
+      ]
+    },
+    {
+      "id": "L020",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          67,
+          68
+        ]
+      },
+      "gist": "圖：五個模型的平均表現對照（img-001）",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b2"
+      ]
+    },
+    {
+      "id": "L021",
+      "kind": "number",
+      "src": {
+        "lines": [
+          70,
+          70
+        ]
+      },
+      "gist": "全部 5 個模型平均最高；比最強對手多 3.3、5.1、10.0、5.8、12.0 個百分點；Gemini-3.5-Flash LiveMath 33.0%→72.6%、SpreadSheet 50.5%→76.6%；Qwen-3.6-27B ALFWorld 52.8%→77.6%",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b3",
+        "s4a.b3t",
+        "s4a.b3c"
+      ]
+    },
+    {
+      "id": "L022",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          72,
+          73
+        ]
+      },
+      "gist": "表 1：跨模型、跨任務主結果（img-003）",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b4"
+      ]
+    },
+    {
+      "id": "L023",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          75,
+          75
+        ]
+      },
+      "gist": "論文強調穩定性：其他方法部分設定會退步（EvoSkill 讓 9B LiveMath 28.2%→58.1% 卻讓 Gemma-4-31B 33.9%→29.8%；SkillOpt 讓 Gemini SealQA 29.4%→28.2%）；WikiSkill 沒有時好時壞",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b5"
+      ]
+    },
+    {
+      "id": "L024",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          77,
+          77
+        ]
+      },
+      "gist": "資料清理：Gemini-3.5-Flash 在 ALFWorld 上所有方法含無 skill 都是 85.9%，因驗證集本來就 100% 觸發提早終止、沒真的跑演化，是任務太簡單不是無效",
+      "layer": "support",
+      "section": "s4a",
+      "dest": [
+        "s4a.b6"
+      ]
+    },
+    {
+      "id": "L025",
+      "kind": "number",
+      "src": {
+        "lines": [
+          81,
+          81
+        ]
+      },
+      "gist": "skill evolution 與 model scaling 互補；Qwen 系列 WikiSkill 平均進步 4B +12.3、9B +17.5、27B +23.9；SpreadSheet 上 +6.5、+9.3、+40.9",
+      "layer": "main",
+      "section": "s4b",
+      "dest": [
+        "s4b.b1",
+        "s4b.b2"
+      ]
+    },
+    {
+      "id": "L026",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          83,
+          83
+        ]
+      },
+      "gist": "小模型加好 skill 能超過沒 skill 的大模型：Qwen-3.5-9B+WikiSkill 平均 47.4% > Qwen-3.6-27B 無 skill 39.4%；論文解讀：模型能力與演化出的程序性知識提供互補效能來源",
+      "layer": "main",
+      "section": "s4b",
+      "dest": [
+        "s4b.b3"
+      ]
+    },
+    {
+      "id": "L027",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          85,
+          85
+        ]
+      },
+      "gist": "跨任務不平均：Qwen-3.6-27B 在 OfficeQA 只進步 11.6、SpreadSheet 進步 40.9，論文沒針對這個落差再拆；相關觀察：大模型能用演化出的搜尋流程導覽長文件，小模型（4B）執行不了多步驟搜尋、退回預設閱讀而些微退步",
+      "layer": "support",
+      "section": "s4b",
+      "dest": [
+        "s4b.b4"
+      ]
+    },
+    {
+      "id": "L028",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          89,
+          89
+        ]
+      },
+      "gist": "跨模型遷移實驗：用模型 A 演化的 skill 能不能直接給模型 B 用",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b1"
+      ]
+    },
+    {
+      "id": "L029",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          91,
+          92
+        ]
+      },
+      "gist": "表 2：跨模型 skill 遷移結果（img-004）",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b2"
+      ]
+    },
+    {
+      "id": "L030",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          94,
+          94
+        ]
+      },
+      "gist": "三個發現值得拆開看",
+      "layer": "none",
+      "section": "s4c",
+      "dest": []
+    },
+    {
+      "id": "L031",
+      "kind": "table",
+      "src": {
+        "lines": [
+          96,
+          100
+        ]
+      },
+      "gist": "三個發現：遷移的 skill 常比自己演化的好（27B 的 skill 給 9B 用在 SpreadSheet 50.5% > 自己的 33.6%）；能不能遷移看 skill 包通用程序或權宜之計（LiveMath 33.0%→67–74%；SpreadSheet 4B 的 skill 給 Gemini 50.5%→18.1%，27B 的 skill 卻 63.4%）；相同來源不同接收模型消化力不同（4B 自己的 skill 30.2%→28.5%，給 27B 42.1%→52.9%）",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b4"
+      ]
+    },
+    {
+      "id": "L032",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          102,
+          102
+        ]
+      },
+      "gist": "負遷移的根因分析：小模型 skill 包低階權宜之計（單行 Python、字串轉換規則），限制強模型用端到端腳本；破碎診斷流程製造多餘工具呼叫，可能耗光強模型互動預算",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b5"
+      ]
+    },
+    {
+      "id": "L033",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          104,
+          104
+        ]
+      },
+      "gist": "論文沒解釋：Qwen-3.5-4B 的 skill 讓 Gemma-4-31B 變好（LiveMath 73.1%、ALFWorld 66.9%），只報數字；整體只有 SpreadSheet 一例做因果解釋，且是定性錯誤分析不是系統性驗證",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b6"
+      ]
+    },
+    {
+      "id": "L034",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          106,
+          106
+        ]
+      },
+      "gist": "框架性論點：自我演化混雜兩種可拆開的能力——從經驗發掘程序性知識、推論時有效執行；評估 self-improving agent 時可問：是學到更好的東西，還是更會照指示做（這個視角比論文本身更通用）",
+      "layer": "main",
+      "section": "s4c",
+      "dest": [
+        "s4c.b7"
+      ]
+    },
+    {
+      "id": "L035",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          110,
+          110
+        ]
+      },
+      "gist": "消融：只用 Gemini-3.5-Flash，分別調整 Inference Agent 與 Skill Proposer 是否能存取 wiki；全文實驗設計最乾淨的一組",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b1"
+      ]
+    },
+    {
+      "id": "L036",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          112,
+          113
+        ]
+      },
+      "gist": "表 3：消融實驗各設定與子項分數（img-005）",
+      "layer": "support",
+      "section": "s5a",
+      "dest": [
+        "s5a.b4"
+      ]
+    },
+    {
+      "id": "L037",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          115,
+          115
+        ]
+      },
+      "gist": "Proposer 沒有 wiki 存取權時 Wiki Maintainer 一併移除；四種設定加無 skill 基準線共五個數字",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b2"
+      ]
+    },
+    {
+      "id": "L038",
+      "kind": "table",
+      "src": {
+        "lines": [
+          117,
+          123
+        ]
+      },
+      "gist": "五個平均分數：無 skill 40.4%；Inference 有 wiki/Proposer 無 45.3%；兩者皆無 48.7%；兩者皆有 60.9%；Inference 無 wiki/Proposer 有 63.7%（WikiSkill 預設）",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b3"
+      ]
+    },
+    {
+      "id": "L039",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          125,
+          125
+        ]
+      },
+      "gist": "結論一：Inference Agent 不碰 wiki 時，只打開 Proposer 的 wiki 存取權，48.7%→63.7%（+15.0），全文最大單一變因效果；LiveMath 51.3%→72.6%、SpreadSheet 49.9%→76.6%；解釋：沒有跨迭代累積的知識，Proposer 難處理需多次迭代才收斂的失敗模式",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b5"
+      ]
+    },
+    {
+      "id": "L040",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          127,
+          127
+        ]
+      },
+      "gist": "結論二：Proposer 已有 wiki 時，再讓 Inference Agent 訓練時看 wiki，平均 63.7%→60.9%，LiveMath 掉最多（72.6%→64.8%）；因此架構規定訓練時不能看 wiki",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b6"
+      ]
+    },
+    {
+      "id": "L041",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          127,
+          127
+        ]
+      },
+      "gist": "論文給的解釋標注為假設、沒進一步驗證：Inference Agent 同時看到 skill 與 wiki 可能直接從 wiki 找答案，訓練 trace 失真，Proposer 的訓練訊號失去代表性",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b7"
+      ]
+    },
+    {
+      "id": "L042",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          131,
+          131
+        ]
+      },
+      "gist": "EvoSkill 也有跨迭代不清空的歷史，WikiSkill 多做的不是有沒有記憶，而是記憶的形式",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b1"
+      ]
+    },
+    {
+      "id": "L043",
+      "kind": "table",
+      "src": {
+        "lines": [
+          133,
+          138
+        ]
+      },
+      "gist": "對照：EvoSkill 扁平列表 vs WikiSkill 結構化頁面——儲存形式、有無獨立整理步驟（專職 Wiki Maintainer）、證據累積方式（pattern 跨迭代疊加）、能否查找（index.md 一行摘要）",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b2"
+      ]
+    },
+    {
+      "id": "L044",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          140,
+          140
+        ]
+      },
+      "gist": "一句話：知識需要被主動整理、消化、累積證據，而不只是被動按時間堆疊",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b3"
+      ]
+    },
+    {
+      "id": "L045",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          142,
+          142
+        ]
+      },
+      "gist": "消融缺口：表 3 測「結構化知識 > 完全沒有」（+15%），沒有「結構化 wiki > 扁平列表」的對照；表 1 對 EvoSkill 的比較混雜另一變因（WikiSkill 的 Proposer 是可動態探索 10 到 20 輪的多輪 ReAct，EvoSkill 沒有）；整篇論證最大缺口",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b4"
+      ]
+    },
+    {
+      "id": "L046",
+      "kind": "example",
+      "src": {
+        "lines": [
+          146,
+          146
+        ]
+      },
+      "gist": "案例：ALFWorld 上 Qwen-3.6-27B 演化出 break-repetition-loop 的完整過程，示範回溯機制",
+      "layer": "main",
+      "section": "s3d",
+      "dest": [
+        "s3d.b1"
+      ]
+    },
+    {
+      "id": "L047",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          148,
+          149
+        ]
+      },
+      "gist": "圖：Wiki 引導 skill 演化的案例時間軸（img-006）",
+      "layer": "main",
+      "section": "s3d",
+      "dest": [
+        "s3d.b2"
+      ]
+    },
+    {
+      "id": "L048",
+      "kind": "example",
+      "src": {
+        "lines": [
+          151,
+          151
+        ]
+      },
+      "gist": "第 0 輪：Maintainer 建 take-examine-move-loop.md（拿起、檢查、放回循環，兩筆證據）；Proposer 提案新建 goal-directed-action，驗證 0.72 沒超過 baseline 被拒絕，skill-impact.md 記下 diff 與結果",
+      "layer": "main",
+      "section": "s3d",
+      "dest": [
+        "s3d.b3"
+      ]
+    },
+    {
+      "id": "L049",
+      "kind": "example",
+      "src": {
+        "lines": [
+          153,
+          153
+        ]
+      },
+      "gist": "第 1 輪：同樣錯誤又出現加新變體，追加進既有 pattern；Proposer 讀到拒絕紀錄，改提更聚焦的 break-repetition-loop，驗證 0.78 通過。第 2 到 3 輪（論文簡化未展開）建 multi-operation-loop.md（對同一物品重複操作卻不檢查任務是否完成）；第 4 輪 Proposer 據此修改（非重建）break-repetition-loop，再次通過",
+      "layer": "main",
+      "section": "s3d",
+      "dest": [
+        "s3d.b4",
+        "s3d.b5"
+      ]
+    },
+    {
+      "id": "L050",
+      "kind": "example",
+      "src": {
+        "lines": [
+          155,
+          155
+        ]
+      },
+      "gist": "PURPOSE.md 一行交代來龍去脈（建立為 break-repetition-loop；前一次 goal-directed-action 太抽象被拒；這版更精簡、用具體動作模式）；「每種操作類型只做一次」能在第 4 輪加入，是 pattern 頁面持續累積跨迭代證據；正是消融裡 Proposer 有 wiki 帶來 +15 分的具體實例",
+      "layer": "main",
+      "section": "s3d",
+      "dest": [
+        "s3d.b6"
+      ]
+    },
+    {
+      "id": "L051",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          159,
+          159
+        ]
+      },
+      "gist": "成本算的是每輪迭代分析加提案這步要打幾次 LLM API，不含 Inference Agent 跑訓練任務的呼叫",
+      "layer": "main",
+      "section": "s6b",
+      "dest": [
+        "s6b.b1"
+      ]
+    },
+    {
+      "id": "L052",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          161,
+          162
+        ]
+      },
+      "gist": "表 7：四個框架 optimizer API 呼叫複雜度對照（img-010）",
+      "layer": "fold",
+      "section": "s6b",
+      "dest": [
+        "s6b.b8"
+      ]
+    },
+    {
+      "id": "L053",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          164,
+          164
+        ]
+      },
+      "gist": "四個框架每輪呼叫次數公式：WikiSkill (1+T_ReAct)×(N_train/B)；EvoSkill 2×N_train/B；SkillOpt K_opt×N_train/B；Trace2Skill 約 N_train+(1+1/(c−1))×(N_train/B)+1",
+      "layer": "fold",
+      "section": "s6b",
+      "dest": [
+        "s6b.b6"
+      ]
+    },
+    {
+      "id": "L054",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          166,
+          166
+        ]
+      },
+      "gist": "訓練集從 80 變 800，WikiSkill 呼叫次數不變，EvoSkill、SkillOpt 隨資料線性增加，Trace2Skill 每筆 trace 單獨分析、下界與訓練集大小成正比，複雜度最差",
+      "layer": "main",
+      "section": "s6b",
+      "dest": [
+        "s6b.b3"
+      ]
+    },
+    {
+      "id": "L055",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          168,
+          168
+        ]
+      },
+      "gist": "呼叫次數少不等於總 token 成本低：每輪 ReAct 是完整 LLM 呼叫，Proposer 的 context 通常遠大於單筆 trace 分析；論文沒有 token 層級比較，只比呼叫次數",
+      "layer": "main",
+      "section": "s6b",
+      "dest": [
+        "s6b.b4"
+      ]
+    },
+    {
+      "id": "L056",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          172,
+          172
+        ]
+      },
+      "gist": "貢獻不算原創（套用 Karpathy 的 LLM Wiki 到 skill evolution），做的是系統化實作並紮實驗證；三件事證得程度不一：最紮實＝給 Proposer 持久不回滾的知識層（遠好於完全沒有跨迭代知識）；中等＝效益隨模型規模遞增、發掘與執行可拆分（部分現象無因果解釋）；沒被證明＝結構化勝過扁平列表，最大缺口",
+      "layer": "main",
+      "section": "s7a",
+      "dest": [
+        "s7a.b1",
+        "s7a.b2"
+      ]
+    },
+    {
+      "id": "L057",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          174,
+          174
+        ]
+      },
+      "gist": "論文承認的限制：wiki 沒有自動清理；驗證門檻嚴格（必須超越最佳分數），排除中性但可能有長期價值的提案；只驗證到單次 rollout 規模，沒測數百步、數小時的長時程",
+      "layer": "main",
+      "section": "s7a",
+      "dest": [
+        "s7a.b3",
+        "s7a.b4"
+      ]
+    },
+    {
+      "id": "L058",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          176,
+          176
+        ]
+      },
+      "gist": "脫離論文有幾個通用判斷框架",
+      "layer": "none",
+      "section": "s7b",
+      "dest": [
+        "s7b.b1"
+      ]
+    },
+    {
+      "id": "L059",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          178,
+          178
+        ]
+      },
+      "gist": "三層分離設計模式（不可變原始紀錄、持續累積不回滾的結構化知識、可回退的可執行產出）可遷移到其他 agent 演化系統",
+      "layer": "main",
+      "section": "s7b",
+      "dest": [
+        "s7b.b2"
+      ]
+    },
+    {
+      "id": "L060",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          179,
+          179
+        ]
+      },
+      "gist": "訓練時的 actor 不該偷看 optimizer 用的知識來源，否則訓練訊號失真",
+      "layer": "main",
+      "section": "s7b",
+      "dest": [
+        "s7b.b2"
+      ]
+    },
+    {
+      "id": "L061",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          180,
+          180
+        ]
+      },
+      "gist": "廣度用全批次摘要拿、深度用有限抽樣或動態檢索做，是 context window 有限下兼顧全局與個案的通用拆法",
+      "layer": "main",
+      "section": "s7b",
+      "dest": [
+        "s7b.b2"
+      ]
+    },
+    {
+      "id": "L062",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          181,
+          181
+        ]
+      },
+      "gist": "消融的對照組要精準對應想否定的具體形式，不能只對照「完全沒有」；這篇最想證明的論點恰好是唯一沒被消融直接驗證的一塊",
+      "layer": "main",
+      "section": "s7b",
+      "dest": [
+        "s7b.b2"
+      ]
+    },
+    {
+      "id": "L063",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          185,
+          185
+        ]
+      },
+      "gist": "結論：WikiSkill 在紀錄與 skill 之間插入結構化、永不回滾的知識庫，讓 Proposer 站在跨迭代累積的證據上判斷，是最紮實的貢獻與本文核心線索；做 agent skill 或 memory 系統可直接參考三層分離加永不重置知識庫",
+      "layer": "main",
+      "section": "s7b",
+      "dest": [
+        "s7b.b4"
+      ]
+    },
+    {
+      "id": "L064",
+      "kind": "number",
+      "src": {
+        "lines": [
+          164,
+          164
+        ]
+      },
+      "gist": "WikiSkill 全部資料集 B=N_train，N_train/B 恆等於 1，公式化簡成 1+T_ReAct，T_ReAct 約 10 到 20，與訓練集大小無關",
+      "layer": "main",
+      "section": "s6b",
+      "dest": [
+        "s6b.b2"
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "id": "s1.b1",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "讓 agent 自己改自己的 skill（把某個領域的操作步驟寫成一份文件，讓 agent 執行任務時讀來套用；例如一份 skill 可能寫著「發現自己一直在拿起又放下同一個東西時，先檢查任務是不是已經完成」），聽起來很美：跑一批任務、看哪裡錯、改 skill、驗證有進步才留下。做過的人大概都遇到同一件事：每一輪都得從原始的執行紀錄（trace，agent 每次做任務留下的完整過程）重新爬一次失敗原因，前幾輪分析出來的東西沒有被好好留下來。",
+      "purpose": "hook",
+      "illustrative": true
+    },
+    {
+      "id": "s1.b2",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L001"
+      ],
+      "text": "現有方法也有某種「記憶」，但頂多是一份「提案歷史清單」，附掛在 skill 的修改紀錄旁邊，算不上一個真正被維護的知識庫。"
+    },
+    {
+      "id": "s1.b3",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L002"
+      ],
+      "text": "Google Research 跟 Virginia Tech 這篇 *WikiSkill* 論文（arXiv:2608.27454，2026 年 8 月）想解的就是這件事：在「原始執行紀錄」跟「最終的 skill 文件」之間，插入一層**持久的知識層**，也就是 wiki，一組被整理過的結構化筆記；WikiSkill 的 Wiki 指的就是這一層。它不會因為某次提案被拒絕就被回滾（回滾，就是把這一輪的修改整組退回上一版），讓每一輪的 skill 修改都能站在累積的證據上做判斷，而不是每次從零分析。這個構想不是原創：作者自己在論文開頭就講明，是受 Andrej Karpathy 一篇談「LLM Wiki」的 gist（一篇公開的短文）啟發。但論文把它系統化實作，並在 5 個模型、5 個任務上紮實驗證。"
+    },
+    {
+      "id": "s1.b4",
+      "section": "s1",
+      "type": "callout",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "tone": "abstract",
+      "title": "先講結論",
+      "text": "WikiSkill 在五個模型上的平均分數都最高。最紮實的證據來自一組消融實驗（逐一拿掉系統的某個部分，看分數掉多少，藉此判斷每個部分的貢獻；只在 Gemini-3.5-Flash 上做）：只把負責提出 skill 修改的角色（Skill Proposer）接上 wiki，平均分數就從 48.7% 升到 63.7%，多了 15.0 分。\n\n但論文最想主張的那件事，「結構化整理過的 wiki 比扁平的歷史列表更好」，沒有對應的對照組直接驗證，只能算作者的主張。"
+    },
+    {
+      "id": "s1.b5",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "路線是這樣：先看現有方法的記憶缺了什麼，再看 WikiSkill 的三層架構、四個角色和一個完整案例；接著看主實驗和消融實驗各證明了什麼、哪裡留下缺口；最後談工程成本，和可以帶走的判斷。",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s2.b1",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L004"
+      ],
+      "text": "Agent skill 是一種輕量級的知識封裝方式：把特定領域的操作步驟打包成一個獨立的檔案目錄，核心是一份 `SKILL.md`，讓 agent 執行任務時可以讀取套用，不需要重新訓練模型參數。手動寫這些 skill 很花人力，於是最近一批研究開始讓 agent 自動演化 skill：先跑一批訓練任務，分析成功與失敗的執行紀錄，再據此修改 skill 內容，如此反覆迭代。"
+    },
+    {
+      "id": "s2.b2",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L005"
+      ],
+      "text": "論文拿來比較的三個代表方法，EvoSkill、Trace2Skill、SkillOpt，都遵循同一套流程：跑任務、分析 trace、修改 skill、驗證後決定是否採用（在另外留出來、不拿去訓練的一組任務，也就是驗證集上測試新版 skill）。它們也都有某種形式的「記憶」，例如 EvoSkill 會保留一份跨迭代不清空的提案與評估結果清單。但論文點出一個共同弱點：這些記憶都是附屬在「skill 修改紀錄」本身上面的**扁平清單**，沒有被當成一個獨立、會持續整理、隨時間增厚的知識表示法來維護。"
+    },
+    {
+      "id": "s2.b3",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "WikiSkill 的看法是：缺口不在「有沒有記憶」，而在記憶只是被動堆在旁邊的一份清單，所以要補的是一個會被主動整理、持續增厚的知識層。",
+      "purpose": "recap"
+    },
+    {
+      "id": "s3.b1",
+      "section": "s3",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "WikiSkill 的答案是多一層。下面先看三層各自的角色，再看一輪迭代裡四個角色怎麼接力，接著釐清三個最容易搞錯的規則，最後用一個真實案例（上面那種「一直拿起又放下」的循環，真的在實驗裡出現過）走一遍。",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s3a.b1",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L006"
+      ],
+      "text": "WikiSkill 把 agent 的工作空間切成三層，每一層的改法規則都不一樣："
+    },
+    {
+      "id": "s3a.b2",
+      "section": "s3a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L006"
+      ],
+      "headers": [
+        "層",
+        "特性",
+        "內容"
+      ],
+      "rows": [
+        [
+          "Skill Layer（`skills/`）",
+          "可逆、有條件更新",
+          "實際會被注入 prompt 的技能文件"
+        ],
+        [
+          "Wiki Layer（`wiki/`）",
+          "持續累積、絕不重置",
+          "整理過的結構化知識"
+        ],
+        [
+          "Raw Layer（`raw/`）",
+          "永久保存、只能新增",
+          "原始執行軌跡"
+        ]
+      ]
+    },
+    {
+      "id": "s3a.b3",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "可以把這三層想成一個調查案件：Raw 是監視器錄影，只會越存越多；Wiki 是調查員邊看邊整理的案件筆記，不會因為某一版作業手冊被打回就丟掉；Skill 是最後發出去的作業手冊，可以整本退回上一版。"
+    },
+    {
+      "id": "s3a.b4",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L007"
+      ],
+      "text": "Wiki Layer 是這篇論文新加的中間層，裡面有三種檔案："
+    },
+    {
+      "id": "s3a.b5",
+      "section": "s3a",
+      "type": "list",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L007"
+      ],
+      "ordered": false,
+      "items": [
+        "`patterns/`：底下一堆 markdown 檔，一個檔案對應一個具體的失敗模式或成功策略。",
+        "`logs.md`：按時間順序記錄每次迭代做了什麼。",
+        "`skill-impact.md`：記錄每次提案內容、驗證分數、被接受或拒絕的結果。"
+      ]
+    },
+    {
+      "id": "s3a.b6",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L007"
+      ],
+      "text": "Skill Layer 每個 skill 資料夾則有兩個檔案：`SKILL.md` 是技能內容本身，`PURPOSE.md` 記錄這個技能是被 wiki 裡哪些 pattern 啟發、修改過的動機。"
+    },
+    {
+      "id": "s3b.b1",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "三層是靜態的空間結構，實際運作靠四個角色依序互動，跑完一次迭代：",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s3b.b2",
+      "section": "s3b",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L009"
+      ],
+      "ordered": true,
+      "items": [
+        "**Inference Agent** 用上一輪的 skill 集合跑訓練任務，結果寫入 Raw Layer（只能新增，不能存取 wiki）。",
+        "**Wiki Maintainer** 用一次 LLM 呼叫，抽樣少量 trace 做根因分析（找出失敗背後真正的原因，而不只看表面症狀），更新 wiki 的 pattern、index（一份列出各 pattern 摘要的目錄）、log。",
+        "**Skill Proposer** 以多輪 ReAct（交替進行推理與工具呼叫）agent 的方式，依序讀 wiki index、`skill-impact.md`、相關 pattern、原始 trace，提出一個 skill 的新建或修改（一次只改一個）。",
+        "**Gating & Rollback** 在驗證集上測試候選 skill，分數進步就採用，沒進步就整組退回上一版，不論結果都把提案內容、diff、分數寫進 `skill-impact.md`，再進入下一輪。"
+      ]
+    },
+    {
+      "id": "s3b.b3",
+      "section": "s3b",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L010"
+      ],
+      "manifest_id": "img-002",
+      "alt": "WikiSkill 框架示意圖：最底層是不可變的原始執行紀錄，中間是持續累積的 Wiki 知識層，最上層是實際會被注入 prompt 的 Skill 層，四個角色依序互動完成一次迭代。",
+      "caption": "圖 1 — WikiSkill 框架總覽：Raw / Wiki / Skill 三層架構，以及一次迭代裡四個角色的互動順序。",
+      "paper_label": "Figure 2",
+      "role": "mechanism"
+    },
+    {
+      "id": "s3b.b4",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L011"
+      ],
+      "text": "這裡有個關鍵設計：**Inference Agent 在跑訓練任務時完全不能存取 wiki**。這個限制在後面的消融實驗裡被驗證是必要的：如果讓它偷看 wiki，反而會讓最終 skill 品質變差，原因留到後面講。"
+    },
+    {
+      "id": "s3b.b5",
+      "section": "s3b",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "Wiki Maintainer 的 prompt 長什麼樣：index 的品質和 pattern 一樣重要",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s3b.b6",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L016"
+          ],
+          "text": "論文附錄提供了 Wiki Maintainer 完整的 system prompt。角色定義要求它對執行紀錄做深度根因分析，不能只看表面症狀；輸入是這輪的原始 trace 加上目前的 wiki context；輸出固定成 JSON，包含新建 pattern、對既有 pattern 的修改、完整更新後的 index 內容（不是差異）、這輪迭代的摘要。"
+        },
+        {
+          "id": "s3b.b7",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L016"
+          ],
+          "text": "其中有一段標注為 CRITICAL 的指示特別值得注意：`index.md` 的條目是 wiki 裡最重要的部分，因為它們決定了 inference agent 會不會去讀完整的 pattern 頁面，描述必須具體到讓 agent 不用讀完整頁面就能判斷相關性，同時包含問題、根因跟解法。這透露一個工程細節：pattern 頁面寫得再好，如果 index 摘要品質差，後面的 agent 根本不會點進去看，所以 index 品質被拉到跟 pattern 內容本身同等地位。"
+        }
+      ]
+    },
+    {
+      "id": "s3c.b1",
+      "section": "s3c",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L012"
+      ],
+      "text": "討論這類分層設計時，最容易產生誤解的，是「哪一層能刪、能改、只能加」。實際規則跟直覺不太一樣："
+    },
+    {
+      "id": "s3c.b2",
+      "section": "s3c",
+      "type": "list",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L012",
+        "L013",
+        "L014"
+      ],
+      "ordered": false,
+      "items": [
+        "**Skill Layer 沒有「刪除」這個操作。** Skill Proposer 的輸出格式只有新建、修改既有、不動作三種，沒有刪除。你以為的「刪除」其實是 Gating & Rollback 造成的整組版本回退：新提案沒通過驗證，系統直接把整個 skill 集合退回上一輪版本，不是針對單一 skill 做刪除。",
+        "**Wiki Layer 不是只能新增。** Wiki Maintainer 對既有 pattern 頁面有三種修改方式：在檔案尾端加、找到指定文字替換、在指定文字後插入。所以既有內容可以被修正、覆寫。「永不重置」講的是整個 wiki 狀態不會因為某次提案被拒絕而回滾，不是「每個檔案只能加不能改」。",
+        "**Raw Layer 的唯讀，是「使用方式」的唯讀。** 這層每輪迭代都會新增這輪的執行紀錄，持續增長，「immutable」指的是已寫入的紀錄不會被修改或覆蓋。Wiki Maintainer 跟 Skill Proposer 對它的存取確實是唯讀，但這層本身一直在長大。"
+      ]
+    },
+    {
+      "id": "s3d.b1",
+      "section": "s3d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L046"
+      ],
+      "text": "這個案例具體示範前面講的機制實際長什麼樣：場景是 ALFWorld（論文用的五個任務之一，要 agent 在模擬環境裡實際操作物品的具身互動任務）上，Qwen-3.6-27B 演化出一個叫 `break-repetition-loop` 的 skill 的完整過程。"
+    },
+    {
+      "id": "s3d.b2",
+      "section": "s3d",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L047"
+      ],
+      "manifest_id": "img-006",
+      "alt": "時間軸示意圖：第 0 輪 Wiki Maintainer 建立 pattern 頁面、Skill Proposer 提案被拒絕；第 1 輪根據拒絕紀錄提出更聚焦的新提案並被接受；之後幾輪持續有新證據疊加進同一個 pattern 頁面，並在第 4 輪據此修改該 skill。",
+      "caption": "圖 2 — Wiki 引導 skill 演化的案例研究（ALFWorld，Qwen-3.6-27B）。",
+      "paper_label": "Figure 3",
+      "role": "mechanism"
+    },
+    {
+      "id": "s3d.b3",
+      "section": "s3d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L048"
+      ],
+      "text": "**第 0 輪。** Wiki Maintainer 建立了一個 pattern 頁面 `take-examine-move-loop.md`，描述 agent 會拿起物品、檢查、放回原位、不斷重複這個循環，證據來自兩筆訓練資料。同一輪，Skill Proposer 提案新建一個叫 `goal-directed-action` 的 skill，但驗證分數 0.72，沒超過 baseline（目前要超越的最佳分數），被拒絕。`skill-impact.md` 完整記下了這次的 diff（修改前後的差異）跟拒絕結果。"
+    },
+    {
+      "id": "s3d.b4",
+      "section": "s3d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L049"
+      ],
+      "text": "**第 1 輪。** Wiki Maintainer 發現同樣的錯誤又出現了，還多了一個新變體，於是把新證據追加進既有的 pattern 頁面。Skill Proposer 這次讀到了第 0 輪的拒絕紀錄，提案改成新建一個更具體、更聚焦動作模式的 skill `break-repetition-loop`，驗證分數 0.78，通過。"
+    },
+    {
+      "id": "s3d.b5",
+      "section": "s3d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L049"
+      ],
+      "text": "**第 2 到第 4 輪。** 第 2 到第 3 輪（論文沒有展開），Wiki Maintainer 又建立了一個新 pattern `multi-operation-loop.md`，描述 agent 對同一物品重複做操作卻不檢查任務是否已完成。到了第 4 輪，Skill Proposer 讀到這個新證據，提案修改（不是重建）`break-repetition-loop`，再次通過。"
+    },
+    {
+      "id": "s3d.b6",
+      "section": "s3d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L050"
+      ],
+      "text": "最終這個 skill 的 `PURPOSE.md` 只用一行話就交代清楚了來龍去脈：「建立為 break-repetition-loop。前一次嘗試 goal-directed-action 因為太抽象而被拒絕。這一版更精簡，用的是具體的動作模式。」不用回頭爬原始 trace 自己猜，光看這一行就知道這版 skill 為什麼長這樣。而「每種操作類型只做一次」這條規則能在第 4 輪被加進去，正是因為對應的 pattern 頁面持續累積了跨迭代證據。後面會看到的消融實驗裡，「Skill Proposer 有 wiki 存取權帶來 +15 分」，這個案例就是它的一個具體實例。"
+    },
+    {
+      "id": "s3d.b7",
+      "section": "s3d",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "記住這個案例的形狀：第 0 輪被拒絕的提案沒有白費，它變成第 1 輪更聚焦的依據；之後新的失敗證據不斷疊進 pattern 頁面，第 4 輪才有了修改 skill 的理由。三層分工的好處，就是讓這條線索不會斷。",
+      "purpose": "recap"
+    },
+    {
+      "id": "s4.b1",
+      "section": "s4",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "看完機制，來看它在實驗裡表現如何：先看主結果有多穩，再看效益怎麼隨模型規模變，最後看一個模型演化出的 skill 能不能搬給另一個模型用。",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s4a.b1",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L019"
+      ],
+      "text": "實驗涵蓋 5 個模型（Qwen-3.5-4B、Qwen-3.5-9B、Qwen-3.6-27B、Gemma-4-31B、Gemini-3.5-Flash）乘上 5 個任務：數學推理 LiveMath、需要 web search 的事實問答 SealQA、試算表操作 SpreadSheet、長文件問答 OfficeQA、具身互動任務 ALFWorld。每個任務都是一套 benchmark（拿來比較模型表現的標準測試題），每個組合跑三次完整演化流程取平均。"
+    },
+    {
+      "id": "s4a.b2",
+      "section": "s4a",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L020"
+      ],
+      "manifest_id": "img-001",
+      "alt": "長條圖顯示五個模型在無 skill、以及 EvoSkill、SkillOpt、WikiSkill 三種演化方法下的平均準確率，WikiSkill 全面領先，且模型越大領先幅度越明顯。",
+      "caption": "圖 3 — 五個模型的平均表現對照：WikiSkill 在所有模型上都領先，且優勢隨模型能力增強而放大。",
+      "paper_label": "Figure 1",
+      "role": "evidence"
+    },
+    {
+      "id": "s4a.b3",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L021"
+      ],
+      "text": "核心數字是：WikiSkill 在全部 5 個模型上平均分數都最高，跟每個模型「表現最好的競爭對手」相比，領先的幅度如下："
+    },
+    {
+      "id": "s4a.b3t",
+      "section": "s4a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L021"
+      ],
+      "headers": [
+        "模型",
+        "領先最強對手的百分點（對手 = 該模型上表現最好的競爭方法）"
+      ],
+      "rows": [
+        [
+          "Qwen-3.5-4B",
+          "3.3"
+        ],
+        [
+          "Qwen-3.5-9B",
+          "5.1"
+        ],
+        [
+          "Qwen-3.6-27B",
+          "10.0"
+        ],
+        [
+          "Gemma-4-31B",
+          "5.8"
+        ],
+        [
+          "Gemini-3.5-Flash",
+          "12.0"
+        ]
+      ]
+    },
+    {
+      "id": "s4a.b3c",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L021"
+      ],
+      "text": "幾個較顯眼的單點例子：Gemini-3.5-Flash 在 LiveMath 上從 33.0% 拉到 72.6%，在 SpreadSheet 上從 50.5% 拉到 76.6%；Qwen-3.6-27B 在 ALFWorld 上從 52.8% 拉到 77.6%。"
+    },
+    {
+      "id": "s4a.b4",
+      "section": "s4a",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L022"
+      ],
+      "manifest_id": "img-003",
+      "alt": "表格顯示五個模型分別在無 skill、以及 EvoSkill、Trace2Skill、SkillOpt、WikiSkill 四種方法下，於五個任務上的準確率對照。",
+      "caption": "表 1 — 跨模型、跨任務的主要結果對照表。WikiSkill 在每個模型區塊的平均分數都是最高。",
+      "paper_label": "Table 1",
+      "role": "evidence"
+    },
+    {
+      "id": "s4a.b5",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L023"
+      ],
+      "text": "論文特別強調的是**穩定性**，不只是峰值表現。其他方法在部分設定上會明顯退步，不是單純進步較少而已：EvoSkill 讓 Qwen-3.5-9B 在 LiveMath 上大幅進步（28.2%→58.1%），卻讓 Gemma-4-31B 在同一任務上退步（33.9%→29.8%）；SkillOpt 讓 Gemini-3.5-Flash 在 SealQA 上退步（29.4%→28.2%）。WikiSkill 沒有出現這種時好時壞的情況。"
+    },
+    {
+      "id": "s4a.b6",
+      "section": "s4a",
+      "type": "callout",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L024"
+      ],
+      "tone": "note",
+      "title": "Gemini 在 ALFWorld 的 85.9% 不代表沒效果",
+      "text": "Gemini-3.5-Flash 在 ALFWorld 上，所有方法（含無 skill）的分數都是 85.9%。原因是它在演化開始前，驗證集就已經拿到 100% 分數，觸發了提早終止機制，根本沒真的跑演化流程。不是 WikiSkill 在這個任務上沒效果，是這個任務對它來說本來就太簡單。"
+    },
+    {
+      "id": "s4b.b1",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L025"
+      ],
+      "text": "論文用「skill evolution 跟 model scaling **互補**」來描述這個發現。在 Qwen 系列裡看得最清楚（同一家族只有參數量不同，比較乾淨）：WikiSkill 帶來的平均進步幅度（和沒用 skill 的同一個模型相比）隨規模遞增；在 SpreadSheet 這個任務上尤其明顯。"
+    },
+    {
+      "id": "s4b.b2",
+      "section": "s4b",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L025"
+      ],
+      "headers": [
+        "模型",
+        "比沒用 skill 的平均進步",
+        "SpreadSheet 上比沒用 skill 的進步"
+      ],
+      "rows": [
+        [
+          "Qwen-3.5-4B",
+          "+12.3 分",
+          "+6.5 分"
+        ],
+        [
+          "Qwen-3.5-9B",
+          "+17.5 分",
+          "+9.3 分"
+        ],
+        [
+          "Qwen-3.6-27B",
+          "+23.9 分",
+          "+40.9 分"
+        ]
+      ]
+    },
+    {
+      "id": "s4b.b3",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L026"
+      ],
+      "text": "一個更直覺的說法是：小模型加上好的 skill，可以反過來打贏沒有 skill 的大模型。Qwen-3.5-9B 加上 WikiSkill，平均準確率拿到 47.4%，超過 Qwen-3.6-27B 完全沒用 skill 時的 39.4%。論文的解讀是：模型能力跟演化出的程序性知識（怎麼一步步做事的知識），提供的是互補的效能來源。越強的模型越能有效開發跟執行更精細的 skill，獲益也就越多；而有效的 skill，則可以讓小模型彌補跟大模型之間的能力差距。"
+    },
+    {
+      "id": "s4b.b4",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L027"
+      ],
+      "text": "不過跨資料集的效益也不平均。Qwen-3.6-27B 在 OfficeQA（長文件檢索型任務）只進步 11.6 分，相較之下在 SpreadSheet 上進步 40.9 分。論文沒有針對這個模型自己內部的落差再進一步拆解，但對 OfficeQA 這類任務有一個相關的觀察：大模型能有效運用演化出的搜尋流程導覽長文件，小模型（如 Qwen-3.5-4B）卻沒辦法執行這種多步驟搜尋流程，反而退回預設閱讀行為，導致些微退步。這點跟下一節的跨模型遷移結果互相呼應。"
+    },
+    {
+      "id": "s4c.b1",
+      "section": "s4c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L028"
+      ],
+      "text": "這一組實驗在測：用模型 A 演化出來的 skill，能不能直接拿給模型 B 用？"
+    },
+    {
+      "id": "s4c.b2",
+      "section": "s4c",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L029"
+      ],
+      "manifest_id": "img-004",
+      "alt": "表格顯示用無 skill、以及 Qwen-3.5-4B、Qwen-3.6-27B、Gemini-3.5-Flash 三個來源模型演化出的 skill，分別套用到各個推論模型上的準確率對照。",
+      "caption": "表 2 — 跨模型 skill 遷移結果。灰底列是模型自己演化、自己使用的情況。",
+      "paper_label": "Table 2",
+      "role": "evidence"
+    },
+    {
+      "id": "s4c.b3",
+      "section": "s4c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "三個發現值得拆開來看：",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s4c.b4",
+      "section": "s4c",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L031"
+      ],
+      "headers": [
+        "發現",
+        "具體例子"
+      ],
+      "rows": [
+        [
+          "遷移過去的 skill，常常比自己演化的還好用",
+          "Qwen-3.6-27B 的 skill 拿給 Qwen-3.5-9B 用在 SpreadSheet 上，拿到 50.5%，比它自己演化的 skill（33.6%）還高"
+        ],
+        [
+          "能不能遷移，取決於 skill 包的是通用程序還是模型專屬的權宜之計",
+          "LiveMath 的 skill 遷移得特別好（33.0%→67-74%）；但 SpreadSheet 上，Qwen-3.5-4B 的 skill 拿給 Gemini-3.5-Flash 用，分數從 50.5% 掉到 18.1%，同樣情境換成 Qwen-3.6-27B 的 skill 卻拉到 63.4%"
+        ],
+        [
+          "即使 skill 來源相同，不同接收模型「消化」skill 的能力也不一樣",
+          "Qwen-3.5-4B 自己演化的 skill 拿給自己用反而退步（30.2%→28.5%），同一份 skill 拿給 Qwen-3.6-27B 用卻進步（42.1%→52.9%）"
+        ]
+      ]
+    },
+    {
+      "id": "s4c.b5",
+      "section": "s4c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L032"
+      ],
+      "text": "第二點的負遷移案例，論文有做根因分析：小模型演化出的 skill 包了很多低階權宜之計（例如單行 Python 指令、字串轉換規則），幫小模型避開執行失敗，卻反而限制了強模型使用更完整的端到端腳本；破碎化的診斷流程也會製造多餘工具呼叫，可能在任務完成前就耗光強模型的互動預算。"
+    },
+    {
+      "id": "s4c.b6",
+      "section": "s4c",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L033"
+      ],
+      "tone": "note",
+      "title": "論文沒有解釋的一個現象",
+      "text": "但論文**沒有**解釋另一個更反直覺的現象：小模型（Qwen-3.5-4B）演化出的 skill，拿給 Gemma-4-31B 用之後，在 LiveMath、ALFWorld 上都讓它變好（分別拉到 73.1%、66.9%）。這件事論文只報告了數字，沒有進一步的根因分析。\n\n整體來看，論文給了很多「哪個方向遷移得好或不好」的現象描述，但真正做因果解釋的只有 SpreadSheet 這一個案例，而且做的也只是定性的錯誤分析，不是系統性驗證。"
+    },
+    {
+      "id": "s4c.b7",
+      "section": "s4c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L034"
+      ],
+      "text": "把上面三個發現合起來看，論文提出一個值得記住的框架性論點：自我演化這件事，其實混雜了兩種不同的能力，「從經驗中發掘出有用的程序性知識」跟「在推論時有效執行這些知識」。這兩者是可以拆開來看待的獨立能力，不是同一件事。這個視角比論文本身更通用：評估任何「self-improving agent」系統時，都可以先問一句，這個系統進步了，是因為它學到更好的東西，還是因為它更會照著指示做？"
+    },
+    {
+      "id": "s4c.b8",
+      "section": "s4c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "所以實驗這一段讀下來：領先是穩的，幅度隨模型變強而放大；但一份 skill 能不能搬走，要看裡面包的是通用的程序，還是只替來源模型補洞的權宜之計，接收的模型消不消化得了也是另一個變數。",
+      "purpose": "recap"
+    },
+    {
+      "id": "s5.b1",
+      "section": "s5",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "接下來是整篇論文實驗設計最乾淨的一組：它回答的是「有沒有 wiki 差多少」，以及 wiki 到底是在哪個環節起作用。",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s5a.b1",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L035"
+      ],
+      "text": "這組只用 Gemini-3.5-Flash 一個模型做，分別調整 Inference Agent 跟 Skill Proposer 是否有 wiki 存取權。"
+    },
+    {
+      "id": "s5a.b2",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L037"
+      ],
+      "text": "要注意的是，只要 Skill Proposer 沒有 wiki 存取權，負責維護 wiki 的 Wiki Maintainer 這個角色也就一併移除了。下面四種消融設定，加上完全不跑 skill 演化的基準線，一共五個數字："
+    },
+    {
+      "id": "s5a.b3",
+      "section": "s5a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L038"
+      ],
+      "headers": [
+        "Inference Agent 有 Wiki？",
+        "Skill Proposer 有 Wiki？",
+        "平均分數",
+        "備註"
+      ],
+      "rows": [
+        [
+          "—",
+          "—",
+          "40.4%",
+          "無 skill 基準線"
+        ],
+        [
+          "有",
+          "無",
+          "45.3%",
+          "Wiki Maintainer 已移除"
+        ],
+        [
+          "無",
+          "無",
+          "48.7%",
+          "Wiki Maintainer 已移除"
+        ],
+        [
+          "有",
+          "有",
+          "60.9%",
+          "完整配置"
+        ],
+        [
+          "無",
+          "有",
+          "63.7%",
+          "**WikiSkill 預設配置**"
+        ]
+      ]
+    },
+    {
+      "id": "s5a.b4",
+      "section": "s5a",
+      "type": "figure",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L036"
+      ],
+      "manifest_id": "img-005",
+      "alt": "表格顯示四種消融設定下（Inference Agent 有無 wiki 存取、Skill Proposer 有無 wiki 存取）的五個 benchmark 平均分數。",
+      "caption": "表 3 — 消融實驗結果：分別關閉 Inference Agent、Skill Proposer 的 wiki 存取權，觀察平均分數變化。",
+      "paper_label": "Table 3",
+      "role": "evidence"
+    },
+    {
+      "id": "s5a.b5",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L039"
+      ],
+      "text": "**第一個結論：讓 Skill Proposer 存取持久 wiki，效果非常顯著。** 在 Inference Agent 不能碰 wiki 的前提下，單純把 Skill Proposer 的 wiki 存取權打開，平均分數從 48.7% 跳到 63.7%，足足 +15.0 個百分點，是整篇論文裡最大幅度的單一變因效果。細看子項，LiveMath 從 51.3% 拉到 72.6%，SpreadSheet 從 49.9% 拉到 76.6%。論文的解釋是：沒有跨迭代累積的知識，Skill Proposer 很難處理複雜、需要多次迭代才能收斂的失敗模式。"
+    },
+    {
+      "id": "s5a.b6",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L040"
+      ],
+      "text": "**第二個結論：讓 Inference Agent 訓練時也碰 wiki，反而讓最終 skill 品質變差。** 在 Skill Proposer 已經有 wiki 存取權的前提下，如果連 Inference Agent 訓練時也讓它看 wiki，平均分數從 63.7% 掉到 60.9%，LiveMath 掉最多（72.6%→64.8%）。這也是為什麼架構設計裡刻意規定 Inference Agent 訓練時不能看 wiki。"
+    },
+    {
+      "id": "s5a.b7",
+      "section": "s5a",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L041"
+      ],
+      "tone": "info",
+      "title": "論文對這個退步的解釋（只是假設）",
+      "text": "當 Inference Agent 訓練時同時能看到 skill 跟 wiki，它可能直接從 wiki 裡找答案來解題，而不是靠 skill 本身解題。這樣一來產生出來的訓練 trace 就會失真：agent 表現好不是因為 skill 好用，是因為 wiki 幫了忙，這會讓 Skill Proposer 拿到的訓練訊號失去代表性。\n\n論文明確把這標注為一個假設，沒有進一步驗證。"
+    },
+    {
+      "id": "s5b.b1",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L042"
+      ],
+      "text": "表面上看，EvoSkill 也維護了一份跨迭代不清空的提案歷史，那 WikiSkill 到底多做了什麼？答案不是「有沒有記憶」，而是**記憶的形式**："
+    },
+    {
+      "id": "s5b.b2",
+      "section": "s5b",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L043"
+      ],
+      "headers": [
+        "",
+        "EvoSkill 的歷史列表",
+        "WikiSkill 的 wiki"
+      ],
+      "rows": [
+        [
+          "儲存形式",
+          "扁平列表：一筆一筆的提案內容、驗證分數、接受或拒絕",
+          "結構化、按主題組織的知識頁面，每頁對應一個具體的失敗模式或成功策略"
+        ],
+        [
+          "有沒有獨立的整理步驟",
+          "沒有，proposer 自己看歷史列表加這次的原始 trace，現場消化",
+          "有專門的 Wiki Maintainer，職責就是做根因分析、把原始 trace 提煉合併進既有 pattern 頁面"
+        ],
+        [
+          "證據累積方式",
+          "每次的失敗案例基本上獨立存在",
+          "同一個 pattern 頁面會跨迭代持續疊加證據"
+        ],
+        [
+          "能不能查找相關知識",
+          "沒有索引機制，只能整份歷史從頭看",
+          "有 `index.md`，每個 pattern 一行摘要（問題、根因、解法），讓 proposer 快速判斷哪些知識相關"
+        ]
+      ]
+    },
+    {
+      "id": "s5b.b3",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L044"
+      ],
+      "text": "濃縮成一句話，這就是 WikiSkill 的核心主張：**知識需要被主動整理、消化、累積證據，而不只是被動地按時間堆疊。**"
+    },
+    {
+      "id": "s5b.b4",
+      "section": "s5b",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L045"
+      ],
+      "tone": "warning",
+      "title": "消融實驗設計上的缺口",
+      "text": "表 3 拿掉 wiki 的那組設定，是完全移除 Wiki Maintainer，測的是「有結構化知識」對比「完全沒有跨迭代知識」，並沒有設計一組對照組去比較「結構化 wiki」對比「像 EvoSkill 那樣的扁平歷史列表」。換句話說，表 3 證明了「有結構化知識 > 完全沒有知識」（+15%），但沒有直接證明這篇論文最想主張的那件事：「結構化知識 > 扁平列表知識」。\n\n表 1 雖然有跟 EvoSkill 整體比較分數，但那個比較混雜了另一個變因：WikiSkill 的 Skill Proposer 是可以動態探索 10 到 20 輪的多輪 ReAct agent，而 EvoSkill 沒有這種機制，沒辦法乾淨歸因到「wiki 的結構化程度」這一項上。這是整篇論文論證上最大的一個缺口。"
+    },
+    {
+      "id": "s5b.b5",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "所以消融這一段要分開讀：「有 wiki 比沒有 wiki 好」在 Gemini-3.5-Flash 上證得很紮實；但「為什麼要整理成結構化的頁面」，是作者的主張，不是這組實驗量到的結果。",
+      "purpose": "recap"
+    },
+    {
+      "id": "s6.b1",
+      "section": "s6",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "最後補兩個工程面的問題：資料量大時，分析要怎麼分批；以及呼叫次數少，是不是就代表便宜。",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s7.b1",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "text": "回頭整理：三件事，各自證得的程度不同；再加上四個脫離這篇論文也用得上的判斷。",
+      "purpose": "signpost"
+    },
+    {
+      "id": "s7a.b1",
+      "section": "s7a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L056"
+      ],
+      "text": "論文的核心貢獻本身不算原創，作者自己講明是把 Karpathy 的 LLM Wiki 構想套用到 skill evolution 上。這篇論文真正做的事，是把這個構想系統化實作，並在 5 個模型、5 個任務上紮實驗證，做出了整篇論文裡唯一算乾淨的消融實驗。三件事證得程度不一："
+    },
+    {
+      "id": "s7a.b2",
+      "section": "s7a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L056"
+      ],
+      "headers": [
+        "證得程度",
+        "內容"
+      ],
+      "rows": [
+        [
+          "最紮實",
+          "給 Skill Proposer 一個持久、不隨 gating 結果回滾的知識層，效果遠好於完全沒有跨迭代知識（消融實驗只在 Gemini-3.5-Flash 上做）"
+        ],
+        [
+          "中等",
+          "效益隨模型規模遞增、發掘知識與執行知識可以拆分，但部分現象（例如小模型的 skill 讓大模型變好）沒有因果解釋"
+        ],
+        [
+          "沒有被證明",
+          "「結構化整理過的知識」比「扁平歷史列表」更好，這只是論文自己的主張，也是整篇論文論證上最大的缺口"
+        ]
+      ]
+    },
+    {
+      "id": "s7a.b3",
+      "section": "s7a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L057",
+        "L015"
+      ],
+      "text": "論文誠實承認的限制還有："
+    },
+    {
+      "id": "s7a.b4",
+      "section": "s7a",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L057",
+        "L015"
+      ],
+      "ordered": false,
+      "items": [
+        "wiki 沒有自動清理機制，隨著迭代數增加會持續膨脹，論文明講這是留給未來研究的問題。",
+        "驗證門檻是嚴格的「必須超越最佳分數」，排除了中性但可能有長期價值的提案。",
+        "目前只驗證到單次 rollout 規模的任務，沒測過真正長時程（數百步、數小時）的場景。"
+      ]
+    },
+    {
+      "id": "s7b.b1",
+      "section": "s7b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L058"
+      ],
+      "text": "脫離這篇論文本身，有幾個判斷框架是通用的，值得留在腦子裡："
+    },
+    {
+      "id": "s7b.b2",
+      "section": "s7b",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L059",
+        "L060",
+        "L061",
+        "L062"
+      ],
+      "ordered": false,
+      "items": [
+        "**三層分離的設計模式**（不可變的原始紀錄、持續累積且不回滾的結構化知識、可回退的可執行產出）可以直接遷移到其他 agent 演化系統上。",
+        "**訓練時的 actor（這裡是 Inference Agent）不該偷看 optimizer（這裡是 Skill Proposer）用的知識來源**，否則訓練訊號會失真。",
+        "**廣度用全批次摘要拿、深度用有限抽樣或動態檢索做**，是處理「既要全局視野又要個案深度、但 context window 有限」這類問題的通用拆法。",
+        "**做消融實驗時，對照組要精準對應到你想否定的那個具體形式，不能只對照「完全沒有」**。這篇論文最想證明的核心論點，恰好就是全文中唯一沒有被消融實驗直接驗證的一塊，值得引以為戒。"
+      ]
+    },
+    {
+      "id": "s7b.b3",
+      "section": "s7b",
+      "type": "callout",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "tone": "success",
+      "title": "三句話帶走",
+      "text": "1. skill 會被整組退版，wiki 不會：WikiSkill 在原始紀錄和 skill 之間多放了一層不會被退版的知識。\n2. 證據分級讀：48.7% → 63.7%（Gemini-3.5-Flash 的消融實驗）最紮實，「結構化勝過扁平清單」沒被證明。\n3. 自己做的時候，對照組要對準你想否定的那個形式。"
+    },
+    {
+      "id": "s7b.b4",
+      "section": "s7b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L063"
+      ],
+      "text": "WikiSkill 在「原始執行紀錄」跟「skill 文件」之間插入一層結構化、永不回滾的知識庫，讓 Skill Proposer 能站在跨迭代累積的證據上做判斷，這是整篇論文最紮實的貢獻，也是本文的核心線索。如果你在做 agent skill 或 memory 系統，三層分離加上永不重置的知識庫這個設計模式，值得直接拿去參考。"
+    },
+    {
+      "id": "s6a.b1",
+      "section": "s6a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "purpose": "signpost",
+      "text": "這一節回答一個實際問題：訓練資料變多時，分析的工作量怎麼不跟著暴增？答案分兩步：先把分析的批次設成整個訓練集，讓每輪只分析一次；再把「看得廣」和「看得深」拆開處理，讓這一次分析讀得進去。"
+    },
+    {
+      "id": "s6a.b2",
+      "section": "s6a",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L017"
+      ],
+      "text": "論文附錄定義的 batch size 這個參數，常常讓人搞混它管的到底是什麼。要拆成兩層看才清楚：Inference Agent 每輪迭代一定對整個訓練集跑一次 rollout（讓 agent 實際把任務做一遍），這件事跟 batch size 無關；batch size 真正控制的是「分析加提案」這個步驟要分幾次做。如果 batch size 小於訓練集大小（EvoSkill、SkillOpt 用的方式），訓練集會被切成多個小批次，各自觸發一輪完整分析；WikiSkill 則把 batch size 設成等於訓練集大小，所以每輪迭代只做一次分析。"
+    },
+    {
+      "id": "s6a.b3",
+      "section": "s6a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L018"
+      ],
+      "headers": [
+        "",
+        "廣度",
+        "深度"
+      ],
+      "rows": [
+        [
+          "目的",
+          "避免只看到部分資料而誤判某個錯誤模式的普遍性",
+          "控制成本，應付 context window（模型一次能讀進去的長度上限）的限制"
+        ],
+        [
+          "做法",
+          "全批次 rollout，加上 Skill Proposer 一開始拿到的全部任務成敗摘要",
+          "有限抽樣：Wiki Maintainer 是單次呼叫、固定抽樣；Skill Proposer 是多輪 ReAct、動態按需讀取"
+        ],
+        [
+          "具體規則",
+          "（看全部）",
+          "Wiki Maintainer 每輪固定抽樣最多 8 筆（5 敗 3 成），每筆截斷到 15,000 字元；Skill Proposer 不受這個限制，可以自己動態挑選整個訓練集的 trace 精讀，規則只要求至少讀滿 4 筆，沒有上限"
+        ]
+      ]
+    },
+    {
+      "id": "s6a.b4",
+      "section": "s6a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "purpose": "recap",
+      "text": "所以每輪只分析一次（batch size 設成整個訓練集）；廣度靠全批次，深度靠抽樣，讓這一次分析讀得進 context window。"
+    },
+    {
+      "id": "s6b.b1",
+      "section": "s6b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L051"
+      ],
+      "text": "這裡算的是「每輪迭代，分析加提案這個步驟本身要打幾次 LLM API」，不含 Inference Agent 本身跑訓練任務的呼叫。"
+    },
+    {
+      "id": "s6b.b2",
+      "section": "s6b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L064"
+      ],
+      "text": "WikiSkill 每輪迭代的呼叫次數是 $1 + T_{\\text{ReAct}}$，其中 $T_{\\text{ReAct}}$ 是 Skill Proposer 用掉的 ReAct 輪數，在論文實驗裡大約落在 10 到 20 之間。會化簡成這樣，是因為論文全部資料集都把 batch size $B$ 設成等於訓練任務數 $N_{\\text{train}}$，$N_{\\text{train}} / B$ 恆等於 1。結果是呼叫次數只跟 ReAct 輪數有關，跟訓練集大小完全無關。"
+    },
+    {
+      "id": "s6b.b3",
+      "section": "s6b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L054"
+      ],
+      "text": "這代表訓練集從 80 筆變成 800 筆，WikiSkill 每輪迭代的呼叫次數不會變，但 EvoSkill、SkillOpt 都是批次越小、資料越多，呼叫次數線性增加；Trace2Skill 更明確，因為它規定每一筆 trace 都要單獨分析一次，不管怎麼調 batch size，呼叫次數下界永遠跟訓練集大小成正比，是四者裡複雜度最差的。"
+    },
+    {
+      "id": "s6b.b4",
+      "section": "s6b",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L055"
+      ],
+      "tone": "warning",
+      "title": "呼叫次數少，不等於總成本低",
+      "text": "論文自己也承認這個「呼叫次數固定」的代價：每一輪 ReAct 都是一次完整的 LLM 呼叫，而且 Skill Proposer 讀的 context 通常比單筆 trace 分析要大很多。\n\n換句話說，呼叫次數少不等於總 token 成本低：如果每一輪 ReAct 都在讀很長的 wiki context 加 trace 內容，單次呼叫的 token 用量可能遠超過 EvoSkill 那種「小批次、多次但每次讀得少」的呼叫方式。論文完全沒有提供 token 層級的成本比較，只比較了呼叫次數這一個指標，這是評估這套框架實際部署成本時容易被忽略的陷阱。"
+    },
+    {
+      "id": "s6b.b5",
+      "section": "s6b",
+      "type": "fold",
+      "layer": "main",
+      "origin": "editorial",
+      "ledger": [],
+      "title": "四個框架的完整公式，和論文原表",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s6b.b6",
+          "section": "s6b",
+          "type": "table",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L053"
+          ],
+          "headers": [
+            "方法",
+            "每輪迭代的呼叫次數"
+          ],
+          "rows": [
+            [
+              "WikiSkill",
+              "$(1 + T_{\\text{ReAct}}) \\times (N_{\\text{train}} / B)$"
+            ],
+            [
+              "EvoSkill",
+              "$2 \\times N_{\\text{train}} / B$"
+            ],
+            [
+              "SkillOpt",
+              "$K_{\\text{opt}} \\times N_{\\text{train}} / B$"
+            ],
+            [
+              "Trace2Skill",
+              "大約 $N_{\\text{train}} + (1 + 1/(c-1)) \\times (N_{\\text{train}} / B) + 1$"
+            ]
+          ]
+        },
+        {
+          "id": "s6b.b7",
+          "section": "s6b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "editorial",
+          "ledger": [],
+          "text": "$N_{\\text{train}}$ 是訓練任務的數量，$B$ 是 batch size，$T_{\\text{ReAct}}$ 是 Skill Proposer 的 ReAct 輪數。$K_{\\text{opt}}$ 與 $c$ 的定義請見論文原表，本文不重述。"
+        },
+        {
+          "id": "s6b.b8",
+          "section": "s6b",
+          "type": "figure",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L052"
+          ],
+          "manifest_id": "img-010",
+          "alt": "表格列出 WikiSkill、EvoSkill、SkillOpt、Trace2Skill 四種框架每輪迭代的 optimizer API 呼叫次數公式與複雜度等級對照。",
+          "caption": "表 4 — 四種 self-improving agent 框架的 optimizer API 呼叫複雜度對照。",
+          "paper_label": "Table 7",
+          "role": "evidence"
+        }
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "kind": "moved",
+      "ledger": "L046",
+      "why": "案例（ALFWorld 的 break-repetition-loop）從文章中段（消融之後）移到機制之後、實驗之前，讓讀者在看實驗數字前先有一個具體畫面；全文保留",
+      "needs_human": false
+    },
+    {
+      "id": "D02",
+      "kind": "moved",
+      "ledger": "L047",
+      "why": "案例（ALFWorld 的 break-repetition-loop）從文章中段（消融之後）移到機制之後、實驗之前，讓讀者在看實驗數字前先有一個具體畫面；全文保留",
+      "needs_human": false
+    },
+    {
+      "id": "D03",
+      "kind": "moved",
+      "ledger": "L048",
+      "why": "案例（ALFWorld 的 break-repetition-loop）從文章中段（消融之後）移到機制之後、實驗之前，讓讀者在看實驗數字前先有一個具體畫面；全文保留",
+      "needs_human": false
+    },
+    {
+      "id": "D04",
+      "kind": "moved",
+      "ledger": "L049",
+      "why": "案例（ALFWorld 的 break-repetition-loop）從文章中段（消融之後）移到機制之後、實驗之前，讓讀者在看實驗數字前先有一個具體畫面；全文保留",
+      "needs_human": false
+    },
+    {
+      "id": "D05",
+      "kind": "moved",
+      "ledger": "L050",
+      "why": "案例（ALFWorld 的 break-repetition-loop）從文章中段（消融之後）移到機制之後、實驗之前，讓讀者在看實驗數字前先有一個具體畫面；全文保留",
+      "needs_human": false
+    },
+    {
+      "id": "D06",
+      "kind": "reworded",
+      "ledger": "L050",
+      "why": "案例搬到消融之前，原文「正是前面消融實驗裡 Skill Proposer 有 wiki 存取權帶來 +15 分的實例」改成往後指（「後面的消融實驗會量到」），不改數字與主張",
+      "needs_human": false
+    },
+    {
+      "id": "D07",
+      "kind": "moved",
+      "ledger": "L015",
+      "why": "「wiki 沒有自動清理」原本夾在三層規則段落尾端，移到收尾的限制段，與論文承認的其他限制放在一起；保留在主線",
+      "needs_human": false
+    },
+    {
+      "id": "D08",
+      "kind": "folded",
+      "ledger": "L016",
+      "why": "Wiki Maintainer 的 system prompt 細節（輸入輸出格式與 CRITICAL 段）是「這個角色怎麼被 prompt」的旁支，收進折疊；全文保留，index 品質同等重要這一點在折疊標題點出",
+      "needs_human": false
+    },
+    {
+      "id": "D09",
+      "kind": "folded",
+      "ledger": "L052",
+      "why": "表 7 原圖收進折疊，四個框架的公式已在主線以表格呈現；原圖多出的複雜度等級保留在折疊內",
+      "needs_human": false
+    },
+    {
+      "id": "D11",
+      "kind": "moved",
+      "ledger": "L012",
+      "why": "「三個最容易搞錯的規則」（L012–L014）從三層表格後面移到四個角色之後，單獨成一小節；規則裡會提到 Skill Proposer、Gating & Rollback，要讀者先認識這些角色",
+      "needs_human": false
+    },
+    {
+      "id": "D12",
+      "kind": "folded",
+      "ledger": "L053",
+      "why": "四個框架的完整公式（含 Trace2Skill 的長公式）收進折疊；主線改成先講「WikiSkill 的呼叫次數與訓練集大小無關」的結論和 80 對 800 的例子。K_opt 與 c 的定義原文也沒有，折疊裡註明請見論文原表",
+      "needs_human": false
+    },
+    {
+      "id": "D13",
+      "kind": "reworded",
+      "ledger": "L063",
+      "why": "結論段末的「前面已經拆開講過，這裡不重複」拿掉，因為前面的證據分級表已經在同一節，這句話只剩導覽作用；其餘內容不變",
+      "needs_human": false
+    }
+  ]
+}
