@@ -17,16 +17,24 @@ import plan_lib as L  # noqa: E402
 
 
 def attention(plan, ledger):
-    out = []
+    """Decisions grouped by (kind, reason, whether the author must decide), so seven identical 'this guess moved to
+    the deep-dives' decisions read as one line with seven items, not seven lines."""
+    groups = {}
     for d in plan.get("decisions", []):
-        it = ledger.get(d["ledger"], {})
-        flag = "NEEDS YOUR CALL" if d.get("needs_human") else "fyi"
-        out.append(f"- **{d['kind']}** `{d['ledger']}` ({it.get('kind', '?')}, layer {it.get('layer', '?')}) "
-                   f"[{flag}]: {it.get('gist', '')} — {d['why']}")
-    hidden = [it for it in ledger.values() if it.get("kind") in ("caveat", "inference")
-              and it.get("layer") in ("fold", "appendix")]
-    for it in hidden:
-        if not any(d["ledger"] == it["id"] for d in plan.get("decisions", [])):
+        groups.setdefault((d["kind"], d["why"], bool(d.get("needs_human"))), []).append(d["ledger"])
+    out = []
+    for (kind, why, human), lids in sorted(groups.items(), key=lambda kv: (not kv[0][2], kv[0][0])):
+        flag = "NEEDS YOUR CALL" if human else "fyi"
+        out.append(f"- **{kind}** x{len(lids)} [{flag}]: {why}")
+        shown = lids if human else lids[:3]
+        for lid in shown:
+            it = ledger.get(lid, {})
+            out.append(f"  - `{lid}` ({it.get('kind', '?')}, {it.get('layer', '?')}): {it.get('gist', '')}")
+        if len(shown) < len(lids):
+            out.append(f"  - ... and {len(lids) - len(shown)} more like it")
+    decided = {d["ledger"] for d in plan.get("decisions", [])}
+    for it in ledger.values():
+        if it.get("kind") in ("caveat", "inference") and it.get("layer") in ("fold", "appendix") and it["id"] not in decided:
             out.append(f"- **demoted without a decision** `{it['id']}` ({it['kind']}): {it['gist']}")
     return out
 
@@ -73,8 +81,8 @@ def main():
         serves = ",".join(node.get("serves", []))
         out.append("  " * (depth - 1) + f"- **{node['title']}** [{node['role']}] → {serves}: {node.get('goal', '')}  ({mix})")
         for it in items:
-            if it["layer"] in ("fold", "appendix"):
-                out.append("  " * depth + f"- _{it['layer']}_ `{it['id']}` {it['gist']}")
+            if it["layer"] == "fold":
+                out.append("  " * depth + f"- _fold_ `{it['id']}` {it['gist']}")
     out.append("")
 
     blocks = [b for b, _ in L.iter_blocks(plan.get("blocks", []))]
