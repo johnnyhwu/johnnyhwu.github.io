@@ -41,11 +41,14 @@ With GSC (about five minutes, recipes in `references/gsc-recipes.md`):
    paragraph and the description, only where it reads naturally.
 2. **Results page** (Chrome, Taiwan, at most two searches): who holds the name, whether the name
    collides with another meaning (DPO is also Data Protection Officer), AI Overview, related searches.
-   Use it to decide whether the title needs a plain-words hook such as 「是什麼」 or 「介紹」.
+   Use it to decide whether the title needs a plain-words hook such as 「是什麼」 or 「介紹」. If Google
+   shows a CAPTCHA or an unusual-traffic page, stop: never solve it, skip this check and say so.
+   In a batch of topics, the orchestrator does this check and the follow-up rows, never the
+   per-topic subagents (one browser, one `followups.md`).
 3. **Link targets.** From step 1, the existing posts that already earn impressions on the topic. Link
-   the new post to them, and add a link back from up to three of them where a natural mention exists
-   (both languages, same PR; bump their `lastmod` and add one line to `seo/log.md` listing them).
-   Also check no existing post already targets the same query; if one does,
+   the new post to them. Links *back* from live posts would edit other posts, which is not this
+   task's scope: list up to three candidates in the PR ("could link here from X, Y") and let the
+   author decide. Also check no existing post already targets the same query; if one does,
    say so in the PR rather than publishing a competitor.
 
 Write the outcome as a short "SEO" block in the PR description: name variants used, what the results
@@ -58,10 +61,12 @@ crawled?) and +21 days (impressions, position, CTR), counted from the day the PR
 merges soon after). Do this even when GSC was unavailable, and note "pre-publish checks skipped" in
 the PR. The rows go in the same PR as the post.
 
-When the hook (or the user) says rows are due, and GSC is available, run them with the recipes, then
-move each row to **Done** with a one-line result. If a post PR is open, the `seo/` updates ride in
-it; otherwise open a small `claude/seo-followup-<date>` PR for them. A title change from a check is
-always its own PR. Rules:
+When the hook lists rows as due, mention them to the user in a line. Run them (with GSC available)
+when the session's task is publishing or SEO, or when the user agrees; do not start unrelated GSC
+work in, say, a typo-fix session. Move each finished row to **Done** with a one-line result. If a post
+PR is open, the `seo/` updates ride in it; otherwise commit them on a `claude/seo-followup-<date>`
+branch and offer the PR rather than opening one. A title change from a check is always its own PR,
+opened only when the user asks. Rules:
 
 - Indexed check: if a URL is not indexed after 7 days, say so; only the user can press "Request
   indexing" in the GSC UI (no tool for it). Timely papers are worth asking for.

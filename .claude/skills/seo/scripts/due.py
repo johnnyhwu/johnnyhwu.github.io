@@ -44,8 +44,8 @@ def main():
         late = (today - when).days
         print(f"- [{kind}] {item} (due {when}{f', {late}d late' if late else ''})")
     print(
-        "Tell the user these are due. Run them only if the GSC tools are available "
-        "(see the seo skill's preflight); otherwise just report them as not done."
+        "Mention these to the user in one line, then carry on with their task. Run them only when the "
+        "task is publishing/SEO or the user agrees, and only if GSC is available (seo skill preflight)."
     )
 
 

@@ -152,8 +152,8 @@ so there's nothing to add per-post for those. What *is* per-post and easy to
 get wrong:
 
 - `title`: keep the English title to **52 characters or fewer** (Google cuts titles by pixel width at
-  roughly 47-62 characters, and measured on this site's results pages 52 is the safe edge; `verify_post.py`
-  warns above it). zh-TW stays within `verify_post.py`'s range. Don't sacrifice the "editorial,
+  roughly 47-62 characters; 52 was safe on the ten results read for this site, one locale, so treat it as
+  a target, not a law; `verify_post.py` warns above it). zh-TW stays within `verify_post.py`'s range. Don't sacrifice the "editorial,
   not a literal paper-title translation" rule above to hit the count: cut the part after the colon,
   not the hook.
   **A title has two jobs: tell a stranger what the post is about, and give

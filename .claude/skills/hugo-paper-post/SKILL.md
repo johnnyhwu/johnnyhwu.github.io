@@ -310,6 +310,7 @@ split up:**
 | The order of a numbered/sequential batch | Don't assume the order topics were listed or requested in is the series' real order — it may just be alphabetical. An article that's actually part of a numbered series usually self-declares its position ("第 N 篇") and points to its neighbors ("前一篇"/"下一篇"); grep every topic's `article.md` for these before deciding anything else, since front-matter dates and the internal-link chain both depend on getting this right first. |
 | Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. |
 | Cross-post internal links | A link from topic A to topic B is only correct once B's slug is fixed — and both posts in a batch may link to each other. |
+| The `seo` skill's results-page check and its `followups.md` rows | One shared browser and one shared file; concurrent subagents would clash. |
 | One final `hugo build` + site-wide link audit | Per-topic builds are slow and redundant, and the bilingual page-bundle bug and dangling-link checks are only meaningful site-wide. |
 | The PR | One PR describes the batch. |
 | The `done/unpublished/` → `done/published/` bucket move in `AI-Research` (workflow step 9) | It is one commit covering every topic in the batch, on one branch in the other repo. Subagents pushing to it concurrently would conflict. |

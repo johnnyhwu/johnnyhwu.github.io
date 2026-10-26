@@ -191,7 +191,8 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
 
 Any session that publishes, retitles or fixes a post runs the **`seo`** skill (`.claude/skills/seo/`):
 checks before publishing, follow-up rows after. Its state lives in `seo/` (committed; start at
-`seo/followups.md`). A `SessionStart` hook prints follow-ups that are due; tell the user about them.
+`seo/followups.md`). A `SessionStart` hook prints follow-ups that are due; mention them to the user,
+and let the skill say when to run them.
 
 The GSC checks need the owner's local `gsc` MCP server (`.mcp.json`, OAuth client in
 `~/.config/gsc/`). The skill's preflight says how to tell whether it is there. In a cloud VM it is not:
