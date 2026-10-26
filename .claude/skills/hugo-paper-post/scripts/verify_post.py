@@ -82,7 +82,7 @@ RAW_NOTATION_RES = [
 # zh-tw front matter is inconsistent about translating vs. keeping the
 # paper's original English title, so a tight range would be mostly noise.
 SEO_LEN_RANGES = {
-    "index.en.md": {"title": (30, 70), "description": (120, 170)},
+    "index.en.md": {"title": (30, 52), "description": (120, 170)},
     "index.zh-tw.md": {"title": (10, 55), "description": (40, 180)},
 }
 

@@ -152,6 +152,10 @@ prefer what an actual recent post does if the two ever disagree.
    check that silently fixes site-wide link rot; skipping it silently
    creates more.
 
+   **Then run the `seo` skill's pre-publish checks** (`.claude/skills/seo/SKILL.md`). They need the
+   owner's local GSC tools and are skipped elsewhere (cloud VM); say so at the end if skipped. Their
+   findings feed the title, description and links in steps 5 and 6.
+
 4. **Resolve every referenced image id.** Follow
    `references/image-resolution.md` exactly: direct id match is the default
    and needs no looking; fall back to semantic matching when it doesn't
@@ -227,7 +231,8 @@ prefer what an actual recent post does if the two ever disagree.
    were checked visually and why (and any width scaling applied), how the cover was made (generated with
    `canvas-design`: what it depicts, where every number or label in it
    comes from, its size; or the real cover/fallback that was used), any unresolved images or missing/fabricated
-   front-matter fields, any internal links added (or why none applied), and
+   front-matter fields, any internal links added (or why none applied), the
+   `SEO` block from the `seo` skill (or which of its checks were skipped), and
    confirmation that both language files were verified to build.
 
    The two PRs (this one and the AI-Research bucket move in step 9) must
@@ -305,6 +310,7 @@ split up:**
 | The order of a numbered/sequential batch | Don't assume the order topics were listed or requested in is the series' real order — it may just be alphabetical. An article that's actually part of a numbered series usually self-declares its position ("第 N 篇") and points to its neighbors ("前一篇"/"下一篇"); grep every topic's `article.md` for these before deciding anything else, since front-matter dates and the internal-link chain both depend on getting this right first. |
 | Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. |
 | Cross-post internal links | A link from topic A to topic B is only correct once B's slug is fixed — and both posts in a batch may link to each other. |
+| The `seo` skill's results-page check and its `followups.md` rows | One shared browser and one shared file; concurrent subagents would clash. |
 | One final `hugo build` + site-wide link audit | Per-topic builds are slow and redundant, and the bilingual page-bundle bug and dangling-link checks are only meaningful site-wide. |
 | The PR | One PR describes the batch. |
 | The `done/unpublished/` → `done/published/` bucket move in `AI-Research` (workflow step 9) | It is one commit covering every topic in the batch, on one branch in the other repo. Subagents pushing to it concurrently would conflict. |
@@ -359,6 +365,8 @@ Details for each item live in `references/hugo-conventions.md`; this is only the
   in prose, no tight `~` pairs; extension themes nested as H3 under one H2; flow-like code fences considered for
   mermaid (and, if used, checked in a browser with the site palette override).
 - Related posts linked where genuinely applicable in both languages, or the PR says why none.
+- SEO: the `seo` skill's pre-publish checks done (or reported as skipped), and its `post` follow-up rows
+  added to `seo/followups.md` in this PR. Skipped checks are told to the user when the task ends.
 - `verify_post.py` clean (warnings reviewed), a real `hugo.sh` build inspected, and `check_layout.js` passed via
   `node.sh` (or the PR says why it could not run).
 - Topic moved to `done/published/` in `AI-Research` on its own PR with manifest paths rewritten (step 9), unless

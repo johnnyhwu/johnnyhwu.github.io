@@ -10,7 +10,8 @@ __pycache__/
 .tools/
 resources/
 
-# personal SEO research/plan (written from Google Search Console data) and the
-# local MCP config that connects Claude Code to it
-seo/
-.mcp.json
+# SEO workspace (seo/) and the GSC MCP config (.mcp.json) are committed. Never commit credentials
+# or bulk exports: the OAuth client lives in ~/.config/gsc/, outside this repo.
+client_secrets*.json
+token.json
+seo/raw/

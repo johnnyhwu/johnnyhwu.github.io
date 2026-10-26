@@ -6,6 +6,10 @@ on:
   push:
     branches:
       - main
+    # SEO notes and the MCP config don't change the site
+    paths-ignore:
+      - "seo/**"
+      - ".mcp.json"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

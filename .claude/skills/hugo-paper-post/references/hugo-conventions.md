@@ -151,17 +151,23 @@ it reads straight from front matter (`description`, `tags`, `featuredImage`),
 so there's nothing to add per-post for those. What *is* per-post and easy to
 get wrong:
 
-- `title`: keep it in the ~50-60 character range where practical (it's
-  what search results truncate to) — but don't sacrifice the "editorial,
-  not a literal paper-title translation" rule above to hit the count.
+- `title`: keep the English title to **52 characters or fewer** (Google cuts titles by pixel width at
+  roughly 47-62 characters; 52 was safe on the ten results read for this site, one locale, so treat it as
+  a target, not a law; `verify_post.py` warns above it). zh-TW stays within `verify_post.py`'s range. Don't sacrifice the "editorial,
+  not a literal paper-title translation" rule above to hit the count: cut the part after the colon,
+  not the hook.
   **A title has two jobs: tell a stranger what the post is about, and give
   them a reason to click *this* one.** Both must work for someone who has
   never heard of the paper or its acronym.
   - **Plain subject first.** Say in everyday words what the post is about
     ("self-improving AI agents", "RAG over messy tables"), using the term a
     reader would actually search for. Do not lead with the method's name or
-    acronym unless it is already a household word (BERT, RAG). Put the name
-    after the hook (`… Inside Google's RRSI`, `… How MixRAG Fixes It`).
+    acronym unless it is already a household word (BERT, RAG) or is short and
+    is what people type. The name before or after the hook is fine, but it must
+    sit **inside the first 52 characters** so Google's cut never removes the one
+    string a reader would search (`… RRSI`, `… How MixRAG Fixes It`). Pages
+    on this site whose names are short and searchable (WikiSkill, Mem0, DPO)
+    are its top earners; whether the name causes that is not proven.
   - **The hook is a tension, in the reader's terms.** Find the one claim the
     article spends most of its length on (a common assumption it overturns,
     a claim vs. what was verified, a concrete before/after) and state it so
@@ -177,7 +183,7 @@ get wrong:
     field it is about (agents? RAG? training?) and why you'd care? If you
     need the article to decode it, rewrite. Bad: `RRSI: Give Up 2.3 Evolve
     Points, Win 3.3 on Unseen Benchmarks`. Better: `Do Self-Improving Agents
-    Just Memorize the Test? Inside Google's RRSI`.
+    Memorize the Test? RRSI` (48 characters, name inside the cut).
   - Each language gets its own native title, not a translation of the
     other's. `verify_post.py` only checks length; this test is on you.
 - `description`: aim for 150-160 characters in English; `verify_post.py`

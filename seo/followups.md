@@ -1,0 +1,30 @@
+# SEO follow-ups
+
+The to-do queue for checks that happen *after* something shipped. A `SessionStart` hook
+(`.claude/skills/seo/scripts/due.py`) prints every row in **Open** whose date has arrived, so a
+new session finds out without being told. Keep the table format: first cell is `YYYY-MM-DD`.
+
+How to close a row: do the check (recipe in `.claude/skills/seo/SKILL.md`), move the row to
+**Done** with the result in one line, and, for recurring kinds, add the next row to Open.
+
+Kinds: `post` (one-off check on a new or edited article), `experiment` (readout of a change set),
+`site` (recurring whole-site measurement).
+Cadence for new posts: `post` rows at 1 week (indexed?) and 3 weeks (impressions, position, CTR).
+Recurring: `site` baseline monthly, never-crawled pages monthly.
+
+## Open
+
+| Due | Kind | Item | How |
+|---|---|---|---|
+| 2026-10-26 | post | `paper-intro/many-shot-cot-icl` (published 2026-09-16): first performance check, never done | post check; impressions >100 and position <=10 with low CTR means adjust the title once |
+| 2026-10-28 | post | `paper-intro/skillzip` (published 2026-10-21): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs |
+| 2026-11-11 | post | `paper-intro/skillzip`: impressions, position, CTR | post check |
+| 2026-11-23 | site | Monthly baseline: last 90 days vs the 90 before, against the baseline in `plan.md` | site baseline; save as a new dated report; note new-post count |
+| 2026-11-23 | site | The ten never-crawled posts (see plan B3): last-crawled dates | `batch_url_inspection` on their URLs |
+| 2026-11-27 | experiment | A6 English-title batch (6 pages): first readout, 28 days after 2026-10-30 | `reports/2026-10-23-title-batch-baseline.md` explains how to read it; if the six pages have under about 60 clicks, wait for the next row |
+| 2026-12-25 | experiment | A6 English-title batch: 56-day readout and decision on the other ~90 titles | same report; a flat result means drop the remaining titles |
+
+## Done
+
+| Done | Kind | Item | Result |
+|---|---|---|---|
