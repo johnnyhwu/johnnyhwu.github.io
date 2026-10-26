@@ -6,9 +6,10 @@ on:
   push:
     branches:
       - main
-    # SEO notes and the MCP config don't change the site
+    # SEO notes, the Planner's JSON plans and the MCP config don't change the site
     paths-ignore:
       - "seo/**"
+      - "plans/**"
       - ".mcp.json"
 
   # Allows you to run this workflow manually from the Actions tab
