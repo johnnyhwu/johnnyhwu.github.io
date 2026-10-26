@@ -270,86 +270,10 @@ prefer what an actual recent post does if the two ever disagree.
    a location that no longer exists. `AI-Research/CLAUDE.md`'s "Moving a
    topic between buckets" section is the authority.
 
-   Cross-reference the two PRs in each other's description. For a batch,
-   one bucket-move PR covering every topic in the batch is right — don't
-   open one per topic. Skip this step only for a touch-up to an
+   Cross-reference the two PRs in each other's description. Skip this step only for a touch-up to an
    already-published post (the topic is already in `done/published/`), and
    if you can't push to `AI-Research` at all, say so in the Hugo PR instead
    of quietly leaving the buckets wrong.
-
-## Publishing several topics at once — dispatch one subagent per topic
-
-When a task covers more than one topic directory, **the default is one
-subagent per topic** (`Agent` tool, `general-purpose`), not doing them all
-inline. Each article is self-contained — topic directory in, page bundle
-out — so they parallelise cleanly, and writing two full-length language
-versions per article consumes a lot of context that the orchestrator needs
-for the cross-article work below.
-
-Tell each subagent to invoke this skill by name and give it exactly one
-topic. Delegate per topic:
-
-- read `<TopicDir>/article.md` + the manifest (workflow steps 2, 4) —
-  give it the **full bucketed path**, e.g.
-  `done/unpublished/<Topic>/`, not a bare `<Topic>/`,
-- resolve images, including any visual check (a subagent may itself spawn
-  a sub-check or look directly; it should report text, not pictures), apply
-  the display-width rule, and copy them into the bundle, then generate the
-  cover per `references/featured-image.md` (each subagent installs
-  Pillow/numpy itself and checks its own preview),
-- write `index.en.md` **and** `index.zh-tw.md` (both — the bilingual rule is
-  per post, so it binds each subagent individually),
-- run `verify_post.py` on that one directory and report its warnings back.
-
-**Keep these with the orchestrator — they are cross-article and break if
-split up:**
-
-| Decide centrally | Why it cannot be delegated |
-|---|---|
-| Section + slug for every topic | Slugs depend on the whole site's link graph, and two subagents choosing independently can collide or pick different spellings of the same series (`python-function` vs `python-function-1`). |
-| The order of a numbered/sequential batch | Don't assume the order topics were listed or requested in is the series' real order — it may just be alphabetical. An article that's actually part of a numbered series usually self-declares its position ("第 N 篇") and points to its neighbors ("前一篇"/"下一篇"); grep every topic's `article.md` for these before deciding anything else, since front-matter dates and the internal-link chain both depend on getting this right first. |
-| Dates across the batch | Spreading posts over a publishing gap needs a view of every date at once; independently chosen dates cluster. |
-| Cross-post internal links | A link from topic A to topic B is only correct once B's slug is fixed — and both posts in a batch may link to each other. |
-| The `seo` skill's results-page check and its `followups.md` rows | One shared browser and one shared file; concurrent subagents would clash. |
-| One final `hugo build` + site-wide link audit | Per-topic builds are slow and redundant, and the bilingual page-bundle bug and dangling-link checks are only meaningful site-wide. |
-| The PR | One PR describes the batch. |
-| The `done/unpublished/` → `done/published/` bucket move in `AI-Research` (workflow step 9) | It is one commit covering every topic in the batch, on one branch in the other repo. Subagents pushing to it concurrently would conflict. |
-
-So the shape is: orchestrator decides sections, slugs and dates up front →
-subagents write the posts in parallel → orchestrator does one build, one
-link audit, one Hugo PR, and one bucket-move PR in `AI-Research`. A single-topic task doesn't need a subagent at all;
-just do it inline.
-
-### Tell each subagent what it may link to
-
-Give every subagent an explicit allow-list of slugs it may link to: the
-already-published ones, plus **the slugs of the other topics in this same
-batch** (those don't exist on disk yet, so a subagent that checks will
-correctly conclude they're unpublished and skip them unless you say
-otherwise). Everything not on the list is off limits — a subagent has no
-way to know which of the remaining `done/unpublished/` topics have posts,
-and a wrong guess ships a dead link. (Anything under `done/published/` is
-by definition already live and safe to link to — that bucket is the cheapest
-way to answer "does a post exist for this topic?" without grepping the
-whole site.)
-
-### Require a fixed report back, and re-check titles against inbound prose
-
-Ask each subagent to report: the id → filename map, which images it
-looked at and why, which got a `width=` and what value, what it used for
-`featuredImage` and where that came from **plus its pixel dimensions**,
-anything unresolved or guessed, its final `verify_post.py` output, and which
-internal links it added. The orchestrator cannot write the PR description
-without these, and it is the only record of what happened inside the
-subagent.
-
-One thing to re-check yourself when the reports come back: **a subagent may
-legitimately shorten a title to hit the SEO length range, which can break
-the anchor text an existing post already uses to refer to that article in
-prose.** This is a real failure mode, not a hypothetical. When you convert those plain-text mentions
-into links, read the anchor text against the title the subagent actually
-chose and reword the anchor if they've drifted, rather than assuming the
-existing wording still matches.
 
 ## Definition of done
 

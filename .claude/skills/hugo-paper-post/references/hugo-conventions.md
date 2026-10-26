@@ -65,8 +65,7 @@ section resolves to nothing. `verify_post.py` does not catch this; check it
 by eye, and confirm the built path in the `hugo build` output.
 
 `date` and `lastmod` are the publish day (today's date) unless the task says
-otherwise; a batch spreads its dates deliberately (see SKILL.md). A touch-up
-to a live post bumps only `lastmod`.
+otherwise. A touch-up to a live post bumps only `lastmod`.
 
 `title`/`description` differ between `index.en.md` and `index.zh-tw.md`
 (each written natively in its own language, not translated word-for-word);

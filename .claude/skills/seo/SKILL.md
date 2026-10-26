@@ -43,8 +43,6 @@ With GSC (about five minutes, recipes in `references/gsc-recipes.md`):
    collides with another meaning (DPO is also Data Protection Officer), AI Overview, related searches.
    Use it to decide whether the title needs a plain-words hook such as 「是什麼」 or 「介紹」. If Google
    shows a CAPTCHA or an unusual-traffic page, stop: never solve it, skip this check and say so.
-   In a batch of topics, the orchestrator does this check and the follow-up rows, never the
-   per-topic subagents (one browser, one `followups.md`).
 3. **Link targets.** From step 1, the existing posts that already earn impressions on the topic. Link
    the new post to them. Links *back* from live posts would edit other posts, which is not this
    task's scope: list up to three candidates in the PR ("could link here from X, Y") and let the
