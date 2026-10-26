@@ -71,7 +71,7 @@ width = max(75%, round(image_px_width / widest_image_px_width_in_this_post * 100
 
 The widest image gets no `width`; neither does any within about 10% of it. Flat figures (aspect ratio above 2.5)
 rarely need shrinking at all. Say each width in the PR so the author can adjust. `verify_post.py` warns on a
-narrow image with no `width=` and on any `width=` below 75%. `scripts/article_to_zh.py` applies this rule.
+narrow image with no `width=` and on any `width=` below 75%. `scripts/render_post.py` applies this rule.
 
 ## When a reference truly can't be resolved
 
