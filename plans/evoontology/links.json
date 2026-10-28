@@ -1,0 +1,6 @@
+[
+  {"block": "s1.b1", "zh": "data agent", "en": "data agent", "target": "../../ai-concept/openai-data-agent/"},
+  {"block": "s2.b10", "zh": "context", "en": "context", "target": "../../ai-concept/context-engineering/"},
+  {"block": "s7.b1", "zh": "WikiSkill", "en": "WikiSkill", "target": "../wikiskill/"},
+  {"block": "s9c.b1", "zh": "WikiSkill", "en": "WikiSkill", "target": "../wikiskill/"}
+]
