@@ -1,0 +1,5 @@
+[
+ {"block": "s4c.b5", "zh": "裁判模型", "en": "judge models", "target": "../llm-as-a-verifier/"},
+ {"block": "s7b.b2", "zh": "KL 散度", "en": "KL divergence", "target": "../dpo/"},
+ {"block": "s11c.b4", "zh": "LLM 評審", "en": "pairwise LLM judge", "target": "../chateval/"}
+]

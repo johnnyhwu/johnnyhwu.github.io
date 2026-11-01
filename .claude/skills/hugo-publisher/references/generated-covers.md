@@ -19,8 +19,8 @@ row for the new cover.** A subagent can also be asked to look at an existing cov
 | `paper-intro/llm-as-a-verifier` | deep plum / pale lilac masses, one chartreuse accent | Libre Baskerville + Pixelify Sans | two panels of the same five bars: argmax keeps one lit, the expected value balances all of them on a beam with a chartreuse fulcrum; stat row (27% to 0%, 70.8% to 87.4%) above | none kept |
 | `paper-intro/wikiskill` | cool light slate grey / dark slate ink, one ultraviolet accent | National Park Bold + Arsenal SC | three strata: dashed ghost skill slabs with a rollback arrow on top, a growing staircase of violet wiki pages in the middle, an append-only stream of dashes below; stat (48.7% to 63.7%) at left above the title | none kept |
 | `paper-intro/evoontology` | blush pink / espresso ink, one emerald accent | Erica One + Silkscreen | three skewed plates in isometric-style stack (Tool solid, Content lit with a small node graph, Schema dashed ghost): an agent box exchanges browse and resolve arrows with the Tool plate, a dashed emerald candidate node waits at a two-post gate on the Content plate, a rejected node bounces back, dashed mappings drop to a field of grey data cells; stat (+17.8 pts on DDR-Bench) at left above the title | none kept (scratchpad only) |
+| `paper-intro/tasteful-agent` | oxblood / bone line work, one mint accent | Smooch Sans Medium + Italiana | diagonal: a braided two-line prefix rises to a mint fork node, branches A and B pass behind a hatched vertical curtain, only the endpoints show (mint check, hollow cross); stat (59.7%, best of 14, chance 25%, 502 questions) at left above the title | none kept (scratchpad only) |
 
 Cobalt is already used twice; avoid it. Free families as of this table: none of the hues are fully unused any more, so
-change the ground tone and the composition first (cool light slate with ultraviolet, ocean teal, deep plum and blush pink with emerald are now taken). Fonts still unused in
-`canvas-design/canvas-fonts/`: Italiana, Poiret One,
-Nothing You Could Do, Smooch Sans.
+change the ground tone and the composition first (cool light slate with ultraviolet, ocean teal, deep plum, blush pink with emerald and oxblood with mint are now taken). Fonts still unused in
+`canvas-design/canvas-fonts/`: Poiret One, Nothing You Could Do.
