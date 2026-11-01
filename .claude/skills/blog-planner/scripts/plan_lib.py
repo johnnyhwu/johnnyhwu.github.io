@@ -5,6 +5,7 @@ it, walk its blocks in reading order, and pull comparable text and numbers out o
 """
 import json
 import re
+from decimal import Decimal
 from pathlib import Path
 
 SCHEMA = "post-plan/1"
@@ -29,6 +30,12 @@ REF_RE = re.compile(
     r"(?:圖|表|第)[ \t]?\d+(?:\.\d+)*(?:[ \t]?節)?"
     r"|(?<![A-Za-z])(?:Figure|Fig\.|Table|Section|Sections|Appendix|Step|Round|R)[ \t]?[A-Z]?\d+(?:\.\d+)*")
 NUM_RE = re.compile(r"(?<![\w.])(\d[\d,]*(?:\.\d+)?)(?!\w)")
+# A number with a magnitude unit. zh and en group digits differently (270億 = 27B, 7,970萬 = 79.7M), so the zh/en
+# parity check compares the value, never a forced literal like "270 × 10⁸".
+SCALED_RE = re.compile(r"(?<![\w.])(\d[\d,]*(?:\.\d+)?)(?:[ \t]?(萬|万|億|亿|兆)|([KMB])(?![A-Za-z])"
+                       r"|[ \t](thousand|million|billion|trillion)\b)")
+SCALE = {"萬": 4, "万": 4, "億": 8, "亿": 8, "兆": 12, "K": 3, "M": 6, "B": 9,
+         "thousand": 3, "million": 6, "billion": 9, "trillion": 12}
 
 
 def load(path):
@@ -108,12 +115,21 @@ def strip_code_and_math_delims(text):
     return text.replace("$$", " ").replace("$", " ")
 
 
-def num_tokens(text):
-    """Comparable numeric tokens: thousands separators and signs dropped, our own figure/section refs removed."""
+def _scaled(m):
+    v = Decimal(m.group(1).replace(",", "")).scaleb(SCALE[m.group(2) or m.group(3) or m.group(4)])
+    s = format(v, "f")
+    return (s.rstrip("0").rstrip(".") if "." in s else s) + " "
+
+
+def num_tokens(text, scaled=False):
+    """Comparable numeric tokens: thousands separators and signs dropped, our own figure/section refs removed.
+    With `scaled`, a number with a magnitude unit (270億, 27B, 27 billion) becomes its value, for zh/en parity."""
     text = strip_code_and_math_delims(text)
     text = INLINE_CODE_RE.sub(" ", text)
     text = re.sub(r"^\s*\d+\.\s", " ", text, flags=re.M)        # ordered-list markers
     text = REF_RE.sub(" ", text)
+    if scaled:
+        text = SCALED_RE.sub(_scaled, text)
     out = []
     for m in NUM_RE.finditer(text):
         tok = m.group(1).replace(",", "")

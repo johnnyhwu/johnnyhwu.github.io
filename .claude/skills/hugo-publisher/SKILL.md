@@ -137,7 +137,7 @@ For a topic `<Topic>` with slug `<slug>`:
    again. Inside the submodule (`cd AI-Research`):
 
    ```bash
-   git checkout -b claude/mark-<topic>-published
+   git fetch origin && git checkout -b claude/mark-<topic>-published origin/main   # the local main may be stale
    git mv done/unpublished/<Topic> done/published/<Topic>
    # rewrite done/unpublished/ -> done/published/ in the manifest's source_pdf and every images[].file, then,
    # run inside AI-Research (it has the pymupdf environment this repo lacks):
@@ -147,7 +147,8 @@ For a topic `<Topic>` with slug `<slug>`:
 
    Push that branch and open the PR from there (`gh pr create` locally; in a cloud session attach
    `johnnyhwu/AI-Research` with `add_repo` at `access: "push"` and use the GitHub MCP tools). **Then put the
-   submodule back on `main` before staging anything here**: this repo's pointer must name a commit already on
+   submodule back with `git submodule update --remote AI-Research` before staging anything here** (not
+   `git checkout main`, which can land on a stale local branch): this repo's pointer must name a commit already on
    `AI-Research`'s `main`, never the unmerged bucket-move commit. The manifest rewrite is not optional (`git mv`
    does not touch contents); `AI-Research/CLAUDE.md`'s "Moving a topic between buckets" is the authority.
    **Also rewrite `source.article`, `source.manifest` and `source.root` in both plan files** from

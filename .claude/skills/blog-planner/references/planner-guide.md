@@ -29,6 +29,8 @@ Every later decision is checked against that promise.
   works only if the article answers it honestly.
 - Write 3 candidates into `title_alts`; the skeleton brief shows them to the author.
 - Use the vocabulary readers actually type (from the GSC check) where it reads naturally.
+- **Every number in the title, description and first screen must make sense to a stranger who has read nothing
+  else.** A bare "chance is 25%" next to "a two-way choice" reads as a contradiction; say what the number counts.
 
 ### Stay (the opening)
 
@@ -45,7 +47,8 @@ Every later decision is checked against that promise.
   introducing a new toy each time. If the paper has one, use it; otherwise make one and mark it `editorial`.
 - **Signposts**: a one-line "where we are" opening each major section, and a one-line recap (`purpose: recap`)
   closing it, in the reader's words. A `mindmap` or `flow` diagram near the top is worth it only when the post has
-  a real structure to show (three parts, a loop); do not draw a diagram of a list.
+  a real structure to show (three parts, a loop); do not draw a diagram of a list. A `flow` of more than about four
+  nodes uses `direction: TD`: left-to-right shrinks the labels below readable on a phone.
 - **Informative headings** that state the point ("整張圖會傷害，局部子圖才有效") rather than label it ("實驗二").
   No numbers (the theme numbers headings). Keep hierarchy contiguous; a section past about five paragraphs or two
   sub-ideas gets H3s.
@@ -83,7 +86,8 @@ Rules of thumb:
 - Move, don't summarise: the folded text is the Writer's content (reworded for flow), not a gist of it.
 - Put the conclusion **before** the deep-dives, so a reader who stops there still has the whole argument.
 - The Writer's "我的推測" paragraphs are substance. Gather related ones into one clearly labelled callout rather than
-  scattering blockquotes through the argument, but keep the label and the strength of each.
+  scattering blockquotes through the argument, but keep the label and the strength of each. Name the voice every
+  time: 「論文作者」 for the paper's claims, 「我的推論」 for the Writer's; a bare 「作者」 reads as either.
 
 ## 4. Expression: what you may do to the sentences
 
@@ -107,6 +111,15 @@ the sentence that makes the reader want it**, say what to look at in the text be
 describes what the figure shows. A figure that carries only data may be shortened to a `table` block if the numbers
 are all in the Writer's text; if not, keep the figure. Figure captions use the post's own numbering ("圖 2 —").
 
+Before the skeleton, have a subagent look at every figure the post will use at column width (about 800 px) and
+name any that are unreadable there (many panels, tiny text). Tell the author with the brief: a re-crop happens in
+`AI-Research` (Step 1), and is cheap only before publishing.
+
+**The paper link.** A paper's `article.md` opens with a `**來源**：` line (title, link, institutions). It is a
+ledger item like any other: put it as a short `support` paragraph at the end of the opening section, after the hook
+(「論文：[title](link)（…）」 / "Paper: [title](link) (…)"). If `article.md` has none, say so in the brief; the
+validator warns, and nothing else will link the paper.
+
 ## 6. Decisions to record
 
 Record in `decisions[]`: anything folded that is a caveat or inference; anything dropped or reworded because the
@@ -124,7 +137,9 @@ number the article contains). Step 4 draws it (`hugo-publisher/references/featur
 
 - Cover the body: do the title, description and first paragraph make you want to read on?
 - Read only the headings: can you tell the route?
-- Is there any symbol, term or acronym used before it is explained?
+- Is there any symbol, term or acronym used before it is explained? Check the closing sections and takeaways too:
+  the glossary check sees only the terms you listed, and a recap is where an unintroduced idea slips in.
+- Does every number say, where it first appears, what was counted and out of what?
 - Does every formula have its words first? Every abstract mechanism an example?
 - Is any limitation that changes the headline hidden in a fold?
 - Could the main line be read in one sitting without the folds, and still be true?

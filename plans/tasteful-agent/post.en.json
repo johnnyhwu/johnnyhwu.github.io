@@ -1970,7 +1970,7 @@
      "ledger": [
       "L069"
      ],
-     "text": "LoRA settings: rank 16, $\\alpha = 32$, about 7,970 × 10⁴ trainable parameters, roughly two hours of training per half on a single A100 80GB."
+     "text": "LoRA settings: rank 16, $\\alpha = 32$, about 79.7M trainable parameters, roughly two hours of training per half on a single A100 80GB."
     }
    ]
   },
@@ -2010,7 +2010,7 @@
     "L076",
     "L077"
    ],
-   "text": "Why learn the reasoning rather than the label directly? Each question has just one binary label and no intermediate reasoning. The paper's argument: fine-tune on labels alone and the model memorises answers without learning judgment. The underlying reason (general knowledge, not from the paper): each student trains on only about 195 questions while the model has 27B parameters (270 × 10⁸); when the loss sits on a single answer token, the easiest path is to memorise which surface features of a question map to which answer. Reasoning adds a few hundred tokens per question to fit, making it harder to lower the loss by memorising surface features alone. Note that the paper includes no labels-only comparison; this is the paper's argument."
+   "text": "Why learn the reasoning rather than the label directly? Each question has just one binary label and no intermediate reasoning. The paper's argument: fine-tune on labels alone and the model memorises answers without learning judgment. The underlying reason (general knowledge, not from the paper): each student trains on only about 195 questions while the model has 27B parameters; when the loss sits on a single answer token, the easiest path is to memorise which surface features of a question map to which answer. Reasoning adds a few hundred tokens per question to fit, making it harder to lower the loss by memorising surface features alone. Note that the paper includes no labels-only comparison; this is the paper's argument."
   },
   {
    "id": "s7b.b2",

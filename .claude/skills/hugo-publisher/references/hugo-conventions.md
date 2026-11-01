@@ -9,14 +9,11 @@ ever disagree.
 These conventions apply to every section (`paper-intro`, `ai-concept`,
 `python-tutorial`, `other`); see this repo's `CLAUDE.md` for how to pick one.
 
-**How this relates to the plan JSON.** Posts are now rendered from the Planner's approved plan
-(`plans/<slug>/post.*.json`) by `scripts/render_post.py`, not converted from `article.md` by hand. Much of this
-document is therefore the *specification of correct output*: `render_post.py` implements the mechanical rules
-(math delimiters, tilde escaping, image shortcode and widths, mermaid palette, admonition and `fold` syntax,
-no hand-numbered headings), `verify_post.py` checks the result, and the judgement calls it describes (which
-formulas become blocks, which flows become diagrams, how to nest an extension theme, how many callouts)
-are the Planner's, see `blog-planner/references/planner-guide.md`. Where a passage says "when converting
-`article.md`", read it as the rule the plan must already satisfy. The visual vocabulary and its markup are in
+**How this relates to the plan JSON.** Posts are rendered from the Planner's approved plan
+(`plans/<slug>/post.*.json`) by `scripts/render_post.py`, never written by hand. This document is the
+specification of correct output: `render_post.py` implements the mechanical rules, `verify_post.py` checks the
+result, and the judgement calls (which formulas become blocks, which flows become diagrams, how many callouts) are
+the Planner's (`blog-planner/references/planner-guide.md`). The visual vocabulary and its markup are in
 `visual-mapping.md`.
 
 ## Directory layout
@@ -284,377 +281,29 @@ publish will silently lose, and you have no way to know which spelling it
 will pick. Always list forward links you added in the PR so a human can
 see which targets are still pending.
 
-## Full-width Chinese punctuation in `index.zh-tw.md`
+## Rendering rules, and why they exist
 
-`article.md`'s own prose should already use full-width punctuation
-(，。；：？！「」『』, not `,` `;` `:` `?` `!`) — that's a `blog-writer`
-house rule in the content repo, checked by that skill's own Reviewer step
-and `verify_article.py`. But this skill also *authors* Chinese text of its
-own that never passes through that check: the `title`, `description`,
-admonition titles (`{{< admonition ... "..." >}}`), and any `alt`/`caption`
-text you translate or tighten (per the SEO checklist above). Hold that
-self-authored text to the same standard — a half-width comma or colon
-sitting between two Chinese characters is wrong in a title exactly the same
-way it's wrong in a body paragraph, and it's happened in a published
-`title`/`description` before. The exceptions are the same as `article.md`'s
-own: a digit-to-digit thousands separator (`4,000`) stays half-width, and
-so does punctuation that's genuinely part of an English abbreviation
-(`TL;DR`), an inline code span, or a URL — don't "fix" those. This has
-nothing to do with `index.en.md`, which keeps ordinary English punctuation
-throughout.
+`render_post.py` applies these and `verify_post.py` checks them; they are listed so a renderer change or a
+puzzling warning can be judged. Each one shipped broken at least once when posts were converted by hand.
 
-## Single-tilde strikethrough gotcha
-
-This site's `config/_default/markup.toml` turns on Goldmark's strikethrough
-extension (`[goldmark.extensions] strikethrough = true`), and — unlike GFM,
-which requires `~~double~~` tildes — Goldmark's default strikethrough
-parser pairs up **single** `~` delimiters too. `article.md` routinely uses
-a bare `~` as a Chinese-style numeric range separator (`1~250`) or for
-"approximately" (`~40%`), and neither is rare, formula-adjacent text —
-it's completely ordinary prose. The moment **two** unescaped tildes land in
-the same paragraph, Goldmark treats the first as opening and the second as
-closing a strikethrough span and silently draws a line through everything
-between them — this shipped once in a published post (`GPU1 存 token
-1~250、GPU2 存 251~500` rendered with `250、GPU2 存 251` struck through, an
-effect that isn't visible at all in the raw Markdown and is easy to miss on
-a text-only review pass).
-
-The delimiter follows the same CommonMark *emphasis*-style flanking rules
-as `*`/`_`, though: a `~` only becomes an active open/close delimiter when
-it sits tight against a non-space character on **both** sides (`1~250` —
-this is the dangerous form). One written with a space on either side
-(`0 ~ 1`, `#5 ~ #8`, a table cell like `| ~25x |`) is inert and renders as
-a literal tilde — confirmed by sweeping every already-published post on
-this site, where every space-padded `~` was safe and only the tight,
-unspaced form had actually shipped broken.
-
-**Rule**: whenever a tilde in the rendered body sits tight against
-non-space characters on both sides, and isn't inside a fenced code block
-or inline code span (both are safe — inline parsing doesn't run there),
-check whether a second tilde of the same tight form shows up anywhere
-later on the same line. If it does, escape both as `\~` — this renders
-identically (`1\~250` still displays as `1~250`) and is a pure
-platform-compatibility fix, the same category as the math-delimiter and
-heading-numbering fixes elsewhere on this page, not a change to the
-article's substance. Adding a space around a loose range instead (`1 ~
-250`) works too and needs no escaping, but changes the visual spacing, so
-prefer escaping when matching `article.md`'s exact original formatting
-matters. `scripts/verify_post.py` flags the tight form automatically
-(scans line by line, since this repo's own house style already puts one
-paragraph per source line, and only counts tight tildes to avoid crying
-wolf on the site's many safe spaced ones); treat its warning as something
-to actually open the file and check, not routinely dismiss. One residual
-gap the script can't rule out: two tight tildes landing in two *different*
-cells of the same table row look identical to a same-paragraph pair from a
-line-level regex, but can't actually pair (each table cell is its own
-independent inline-parsing context) — rare enough not to be worth
-cell-aware parsing, just confirm by eye if a warning turns out to be this
-shape.
-
-## Inline math notation
-
-Check `config/_default/markup.toml`'s `[goldmark.extensions.passthrough]`
-section before assuming MathJax syntax works as-is. As of this writing:
-- Inline math passthrough is configured only for `\( ... \)` — a bare
-  `$...$` will **not** render as math on this site.
-- Block math passthrough is configured for `$$ ... $$` (and `\[ ... \]`).
-
-`article.md` from the content repo may use single-`$` inline math (LaTeX
-convention, not this site's). **Convert every inline `$...$` occurrence to
-`\( ... \)`** when writing the Hugo post body. Leave `$$...$$` block math
-as-is. (See any post that uses inline math, e.g. `agentopt`, for a working
-example of the converted form.)
-
-Don't be tempted to "simplify" this by adding `math: enable: true` to front
-matter instead — that toggle only controls the client-side KaTeX/MathJax JS
-bundle (auto-render, `copy-tex`, `mhchem`). It does nothing for the delimiter
-question above: Hugo's Goldmark passthrough extension server-renders `\( \)`
-and `$$ $$` regardless of that flag, but it still won't touch a bare `$...$`
-either way. The fix for unrendered math is always "convert the delimiter,"
-never "flip the front-matter flag."
-
-**Never put a literal `$` in prose, escaped or not.** Prices ("US$12.182 per
-1,000 ... US$0.044 per 1,000") look harmless, but the theme's client-side
-KaTeX auto-render treats a bare `$...$` as inline math *after* Hugo has
-already consumed any `\$` escape. Two dollar signs on one line therefore
-typeset everything between them as one formula with no spaces and no break
-points (a 691px-wide run on a 358px phone column), which broke the English
-JEV page on mobile. Spell the amount as "USD 12.182" or
-"12.182 dollars". `verify_post.py` warns on two or more `$` on a line, and `check_layout.js`
-(see `hugo-build.md`) catches the rendered result.
-
-### Display math inside a list item
-
-An older `article.md` may tuck a `$$...$$` formula under a bullet (indented
-to "belong" to it). Don't publish it that way: end the list, then put each
-formula on its own line at the top level with blank lines around it and a
-one-line lead-in ("The two probe sets are updated as follows:"), and fold
-the bullet's trailing sentence back into the bullet. New articles should
-not contain this shape (AI-Research's `writing-style.md` forbids it), but
-check for it; a formula inside a list item is the one that most often fails
-to render as a display block.
-
-### When to promote inline math to block math
-
-Not every `\( ... \)` should stay inline just because that's how
-`article.md` wrote it. If a formula is a **standalone definition** (it has
-a top-level `=`, not just a bare symbol reference like `\( C_x \)` or
-`\( \eta \)`) **and** contains a tall construct — `\frac`, `\sum`, `\int`,
-a matrix, stacked limits — promote it to block math (`\[ ... \]` on its
-own line, blank line before and after) instead of leaving it embedded
-mid-sentence. Inline mode doesn't shrink `\frac`/`\sum`; a full-size stack
-crammed between two words blows out that line's height and reads as
-visually broken, even though nothing is technically wrong with the LaTeX.
-A bare symbol reference (`\( C_x \)`, `\( \nabla C \)`) is fine to leave
-inline regardless of length — this is about promoting *definitions*, not
-every piece of math. See `content/posts/ai-concept/gradient-descent/` and
-`stochastic-gradient-descent/` for worked examples of both the promoted
-block equations and the symbol references correctly left inline.
-
-This falls under this skill's "math-notation conversion" responsibility
-(see "What NOT to change" below) — it's a formatting call, not a change to
-the article's substance.
-
-### A code fence that's actually a formula, not a formula that's actually code
-
-`blog-writer` now writes genuine formal definitions (named variables, `=`,
-set/operator notation) as LaTeX directly, but an older `article.md` — or
-one from a source that hasn't picked up that rule yet — can still hand you
-a fenced code block that's really a definition wearing a code block as a
-costume:
-
-```
-r      = 根節點,代表最初的工作空間狀態
-v      = 樹上一個非根節點,代表一次嘗試
-s_v    = v 這次嘗試的分數(越大越好)
-```
-
-Recognize it by content, not just shape: assignment-style lines
-(`symbol = description`) with no actual control flow, loop, or executable
-syntax. Convert it to LaTeX (`\[ \begin{aligned} ... \end{aligned} \]` or a
-short list of `\( r = ... \)` lines, whichever reads better) rather than
-publishing it as a code fence — a reader's eye treats a code fence as
-"skippable implementation detail," which is backwards for a load-bearing
-definition. Leave a genuine procedural trace alone (a concrete
-round-by-round walkthrough with real numbers, or actual code) — that's
-correctly a code fence; only the "this is really math" case gets converted.
-Same category as the delimiter conversion above: formatting, not substance.
-
-### Convert the whole symbol, and don't double-wrap
-
-Two traps show up as soon as you start converting notation in bulk:
-
-1. **Don't leave a symbol's siblings behind.** If one symbol in a sentence
-   becomes `\( C \)`, every other symbol in that same sentence has to go
-   too — a line reading "從 \( A(T) \) 裡選出一個批次 \( C \),大小最多是 W"
-   looks broken precisely *because* the `W` didn't get converted. Tables are
-   the usual casualty here: a `分數 s_v` or `k*=3` cell is just as much
-   notation as anything in the prose, and the header's own `分數 V` /
-   `Score V` counts too.
-2. **Never run a blind find-and-replace.** Protecting fenced code blocks is
-   not enough — a rule like `s_v → \( s_v \)` will happily fire *inside*
-   already-converted `\( s_v \)` and inside a `\[ ... \]` block, producing
-   nested `\( \( s_v \) \)` that renders as literal garbage. After any
-   scripted pass, grep for nested delimiters before building:
-
-   ```bash
-   grep -nE '\\\([^)]*\\\(|\\\[[^]]*\\\(' content/posts/<section>/<slug>/index.*.md
-   ```
-
-   That grep returning nothing is the check; `verify_post.py` does not
-   catch this case.
-
-## Diagrams: a code fence that's actually a flowchart
-
-The theme ships **mermaid** support with no configuration required —
-both a ```` ```mermaid ```` fenced block (via
-`themes/DoIt/layouts/_markup/render-codeblock-mermaid.html`) and a
-`{{< mermaid >}}` shortcode render, and the page then lazy-loads
-`mermaid@10` from jsDelivr and picks its light/dark variant from
-`window.theme`. Prefer the fenced form — it stays readable as plain
-Markdown.
-
-`article.md` is platform-neutral, so the Writer has no way to emit a
-diagram; structural content arrives as ASCII art or an arrow chain
-instead. The Planner (Step 3) decides which snippets become a `diagram`
-block (kind `flow`, `tree` or `mindmap`); `render_post.py` writes the
-mermaid below. Convert when the snippet is genuinely **structure or
-flow**:
-
-- an ASCII tree drawn with `├─` / `└─` box-drawing characters → `graph TD`
-- an arrow chain that closes a cycle (`A -> B -> ... -> 迴圈回到最上面`)
-  → `graph TD` with the last node pointing back at the first
-- a two-layer routing / decision split ("handle these automatically,
-  escalate these") → `graph TD` with a `{"..."}` diamond and labeled edges
-
-**Leave it as a code fence** when it's a concrete round-by-round trace
-with real numbers, actual code, or a definition list ("Label: — trait —
-example"). A definition list is not a flow; forcing it into a diagram
-makes it worse, not better. The same "recognize it by content, not shape"
-test as the formula rule above applies.
-
-Practical notes:
-
-- Quote every node label (`A["文字"]`) and use `<br/>` for line breaks —
-  unquoted parentheses and CJK punctuation will break the parse.
-- **Always override the color palette per diagram** — don't ship mermaid's
-  bare default theme. It's a bright yellow subgraph fill with lavender
-  nodes that clashes with this site's blue/navy look, and (see the next
-  bullet) it doesn't even adapt between light/dark mode, so there's no
-  upside to leaving it. Prepend this `%%{init}%%` directive as the fenced
-  block's first line — it's scoped to that one diagram only, so it can't
-  affect any other post, and gives every diagram on the site a consistent
-  look:
-  ```
-  %%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#dbeafe', 'primaryBorderColor':'#3b82f6', 'primaryTextColor':'#1e3a5f', 'lineColor':'#3b82f6', 'secondaryColor':'#eff6ff', 'tertiaryColor':'#eff6ff', 'clusterBkg':'#eff6ff', 'clusterBorder':'#93c5fd', 'edgeLabelBackground':'#ffffff' }}}%%
-  ```
-  This overrides the global `mermaid.initialize()` call in
-  `themes/DoIt/layouts/_partials/assets.html` for that diagram, so it
-  renders with these colors regardless of the site's light/dark toggle —
-  intentional, since (per the next bullet) the toggle doesn't reliably
-  reach mermaid anyway, and a light, legible diagram beats one that's
-  correct in theory but was never actually verified in dark mode.
-- **Keep subgraph/cluster titles short — a few words, not a clause.**
-  Mermaid sizes a subgraph's box from its *child nodes'* content, not from
-  its own title text. A title longer than that box (a parenthetical aside
-  like `"Physical view (real GPU memory locations, can be non-contiguous)"`
-  is exactly the failure case) doesn't wrap or shrink — it silently
-  overflows and gets clipped once the diagram is squeezed into this site's
-  real prose-column width (~766px, not a full browser viewport), rendering
-  as something like `"...l view"` instead of the full title. This shipped
-  once in a published post and was **invisible in a wide standalone test
-  page**, since there was room for the overflow there — it only appeared
-  at the actual narrow column width. Move any context the short title
-  can't carry into a plain sentence in the prose right before the diagram
-  instead of cramming it into the title.
-- **A `hugo build` cannot validate mermaid**, because it renders
-  client-side; a syntax error surfaces only in the browser (and still draws
-  an SVG, mermaid's error graphic). Run
-  `node .claude/skills/hugo-publisher/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots`
-  after a build: it serves a local mermaid@10 (the CDN is blocked in
-  sandboxes), fails on any syntax error or over-wide diagram, in both
-  languages at desktop and phone width, and saves a screenshot per diagram.
-  **Then look at the screenshots** (one per diagram is enough): a clipped
-  subgraph title is a valid, error-free SVG that only the picture shows.
-  Check at normal desktop width; this site's prose column has a fixed
-  max-width, so a wider viewport does not reproduce a clipped title, and
-  include the 390px shot to confirm the diagram still scales down legibly.
-- Known theme limitation, not worth "fixing" in a post: mermaid reads
-  `window.theme` once at init, so toggling dark/light after page load
-  leaves the diagram in its original palette until a refresh. A per-diagram
-  `%%{init}%%` override (above) sidesteps this by not depending on
-  `window.theme` at all.
-
-## Admonitions for callouts
-
-The theme's `{{< admonition type="..." title="..." >}}...{{< /admonition >}}`
-shortcode is already used in most existing paper-intro posts and is the
-standard way to make a long section scannable — prefer it over a plain
-paragraph when the content is genuinely a TL;DR, an aside, or a caveat, not
-as decoration. Positional form (`{{< admonition tip "A title" >}}`) works
-too; named form is easier to read when combining with `open=false`.
-
-Use this vocabulary consistently rather than picking a type ad hoc:
-
-| Type | Use for |
-|---|---|
-| `abstract` | A "Key Takeaways (TL;DR)" box near the top of the post, summarizing the paper's core contribution in 2-4 bullets — the single most common admonition on this site. |
-| `tip` | An aside that helps the reader understand a subtle mechanism or implementation detail the main prose doesn't have room to unpack. |
-| `info` | Background/context a reader may not have, that isn't the article's main point but helps interpret it. |
-| `warning` | A caveat, limitation, or place where the paper's claim is narrower than it first sounds. |
-| `quote` | A direct quotation from the paper worth setting apart verbatim. |
-| `success` / `question` | Occasional use for a notable positive result or an open question the paper raises — don't force these if `tip`/`info` already fits better. |
-
-Don't invent a TL;DR, caveat, or aside that isn't grounded in the plan's ledger —
-an admonition is a formatting choice, not a license to add content the
-plan doesn't have. A post with zero admonitions is fine if nothing
-in it warrants one; don't add one just to "use the feature."
-
-## Heading structure (H2 vs. H3)
-
-The theme auto-numbers headings and builds the sidebar TOC from them for
-free (H2–H6, no per-post config needed) — use that instead of leaving a long
-section as an undifferentiated wall of text. As a rule of thumb: once an H2
-section (e.g. "Methodology", "Experiments") runs past roughly 4-5 paragraphs
-*or* visibly covers more than one sub-idea (e.g. "the training procedure"
-and "the evaluation protocol" both living under one "Method" heading), break
-it into H3 subsections with their own short, descriptive titles.
-
-This is a readability judgement call on how to present the article's
-existing structure, not a license to restructure its argument (see "What NOT
-to change" below) — the sub-ideas must already be there in the prose; adding
-H3s only makes existing structure visible, it doesn't invent new structure.
-Keep hierarchy contiguous (H2 → H3, not H2 → H4) — `verify_post.py` warns on
-skips.
-
-### A grouped "extension" theme: nest it, don't flatten it
-
-`blog-writer` articles sometimes carry two parts: the paper walkthrough
-itself, and a clearly-flagged second theme of standalone lessons (often
-introduced by its own short lead-in paragraph, e.g. "以下內容跟這篇論文本身的
-關係,比較像是引子…"). That second theme's own sub-topics belong as **H3
-children of one H2**, not as a flat run of sibling H2s — a wall of 6-8
-same-level headings reads as unrelated topics, not as "these are one group,
-separate from the paper." `article.md` should already arrive with correct
-levels for this (one `##` for the theme, `###` for each sub-topic) —
-mirror that directly. If an older or malformed `article.md` instead has the
-theme itself promoted to a second top-level `#` (a real bug that shipped
-once), don't mirror that literally: treat it as the same grouping signal
-and render one H2 for the theme with H3 children, exactly as if the source
-had been leveled correctly.
-
-### Don't let admonitions become their own repeated pattern
-
-The "Admonitions for callouts" section above picks a *type* per callout;
-this is about *frequency*. Five `warning` admonitions in a row, or every
-section closing with the same kind of callout, reads as a template no
-matter how well-chosen each individual type is — the same "structural
-repetition" failure mode as a repeated sentence shape, just expressed as
-formatting instead of prose. When a passage rewrite would otherwise trigger
-several similar callouts back to back, fold the minor ones into the body
-prose and reserve the admonition for the one that genuinely needs visual
-separation.
-
-### Never number headings by hand — the theme already does it
-
-Because the theme auto-numbers (above), a heading that carries its **own**
-number renders it twice. `article.md` routinely arrives with manual
-numbering (`## 一、典範轉移…`, `### 2.1 範例越多…`, `## 1. A Paradigm Shift…`)
-because it's a platform-neutral document with no theme to do the numbering
-for it. **Strip that prefix when publishing** — keep the heading text, drop
-the `一、` / `2.1` / `1.` in front of it.
-
-This shipped to production once (`many-shot-cot-icl`, fixed after the fact).
-It's worse than a cosmetic duplicate, because the theme counts the
-`前言`/`Introduction` H2 as section 1, so the two numbering schemes also sit
-**off by one** and actively contradict each other:
-
-| Rendered | Source heading |
-|---|---|
-| `2 一、典範轉移：ICL 不是抄答案…` | `## 一、典範轉移：ICL 不是抄答案…` |
-| `3.1 2.1 範例越多，模型反而越亂` | `### 2.1 範例越多，模型反而越亂` |
-| `5.3 4.3 The Four-Step Workflow…` | `### 4.3 The Four-Step Workflow…` |
-
-Every other post on this site (`agentopt`, `recursivemas`, …) numbers
-nothing by hand. `verify_post.py` now warns on this, but the warning fires
-on the Markdown source — the rendered HTML is where you *see* it, so when
-in doubt grep the build output:
-
-```bash
-grep -o '<h2 id=[^>]*>.\{0,80\}' public/<section>/<slug>/index.html
-```
-
-One caveat: a heading that legitimately *begins* with a number is fine and
-the check is deliberately built not to flag it — `## 2-opt local search`,
-`## 5 Ways to …`. Only a CJK numeral with `、`, a dotted sequence (`2.1`),
-or a number with trailing punctuation (`1.`) counts as manual numbering.
-
-**Cross-references to section numbers.** Before stripping, check whether the
-prose points at its own sections ("見第 3 節" / "as we saw in Section 2"). If
-it does, reword to a relative reference ("前一節" / "the previous section")
-rather than leaving a number that no longer matches anything. A reference to
-the *paper's* section numbers ("論文第 4.3 節" / "In Section 4.3, the authors
-…") is about the source paper, not the post — leave those alone.
+- **Full-width punctuation in zh text**, including what Step 3 writes itself (title, description, callout titles,
+  alt text, captions): ，；：？！ between Chinese characters. Exceptions: `4,000`, `TL;DR`, code, URLs. English
+  text keeps English punctuation.
+- **Tildes.** `config/_default/markup.toml` enables Goldmark strikethrough, which pairs even *single* tight
+  tildes: `1~250、251~500` struck through `250、251`. Two tight `~` on one line are escaped as `\~` (renders the
+  same); a spaced `~` is inert. A warning about two tildes in different table cells is a false alarm.
+- **Math.** The passthrough renders inline math only as `\( .. \)` and blocks as `$$ .. $$`; the plan stores
+  `$..$` and the renderer converts it. A literal `$` (a price) would open math, so the render refuses it. Which
+  formulas become blocks is the Planner's call (a `formula` block, words first).
+- **Mermaid.** Every diagram starts with the site palette `%%{init}%%` (mermaid's default yellow/lavender
+  ignores the dark-mode toggle anyway). Labels are quoted, brackets stripped. A subgraph title wider than its
+  nodes is clipped silently at the real column width (~766 px), so keep titles to a few words. Mermaid renders
+  client-side: only `check_mermaid.js` and its screenshots catch a syntax error or a clipped label.
+- **Callouts and folds** map to admonitions and the `fold` shortcode per `visual-mapping.md`; how many callouts a
+  post carries is a Planner rule (`blog-planner/references/planner-guide.md` §4).
+- **Headings** come from the plan's outline (H2, H3, H4) and carry no number of their own: the theme numbers them
+  and counts 前言 as section 1, so a hand-written `一、` or `2.1` renders twice and off by one. A post's own
+  section numbers never appear in prose either; the paper's ("論文第 4.3 節") are fine.
 
 ## Pipeline artifacts
 

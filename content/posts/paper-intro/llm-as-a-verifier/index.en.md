@@ -2,7 +2,7 @@
 # weight: 1
 title: "LLM-as-a-Verifier: Why LLM Judges Tie, and a Fix"
 date: 2026-08-26
-lastmod: 2026-10-26
+lastmod: 2026-11-01
 draft: false
 description: "LLM judges that keep only the top score often tie. LLM-as-a-Verifier grades with the full probability distribution instead: no ties, and a clear gain on robot tasks."
 featuredImage: "featured-image.png"
@@ -526,8 +526,8 @@ So where is the clean evidence? On a robotics benchmark, RoboRewardBench, which 
 | Method | Accuracy |
 | --- | --- |
 | **LLM-as-a-Verifier (this method)** | **87.4%** |
-| RoboReward-8B (trained, about 4.5 × 10⁴ episodes) | 81.4% |
-| Robometer-4B (trained, about 100 × 10⁴ comparisons) | 78.8% |
+| RoboReward-8B (trained, about 45K episodes) | 81.4% |
+| Robometer-4B (trained, about 1M comparisons) | 78.8% |
 | TOPReward | 74.7% |
 | LLM-as-a-Judge (the same VLM, discrete) | 70.8% |
 

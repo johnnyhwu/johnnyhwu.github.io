@@ -23,8 +23,8 @@ are in the plan vocabulary. Add one only after a real post proves it renders cle
 
 ## House rules that apply to the form
 
-- Never two admonitions of the same tone back to back; fold minor ones into prose (see "Don't let admonitions
-  become their own repeated pattern" in `hugo-conventions.md`).
+- Never two admonitions of the same tone back to back; fold minor ones into prose
+  (`blog-planner/references/planner-guide.md` §4).
 - Headings are generated from the plan's outline (H2 for depth 1, H3 for depth 2, H4 for depth 3); the theme numbers
   them, so the outline carries no numbers.
 - Never a literal `$` in prose; `render_post.py` refuses to write a file in which one survives.

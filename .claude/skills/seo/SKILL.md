@@ -20,8 +20,9 @@ Procedure lives here; state lives in `seo/` (committed). Keep it that way so `CL
 1. `test -f "$HOME/.config/gsc/client_secrets.json"`; if missing, you are not on the owner's Mac (for
    example an Anthropic cloud VM). **GSC is unavailable.**
 2. `ToolSearch` with `select:mcp__gsc__get_site_details`; if it does not load, GSC is unavailable.
-3. Chrome (`mcp__claude-in-chrome__*`) is separate and only needed for the results-page check. Without
-   it, skip that one check, not the rest.
+3. Chrome (`mcp__claude-in-chrome__*`) is separate and only needed for the results-page check. Load it
+   with `ToolSearch` now, not when that check comes up; if it is missing, say so in the skeleton brief
+   (the author can connect it before the draft), and otherwise skip that one check, not the rest.
 
 If GSC is unavailable: skip every GSC step, still do the tool-free work below, and **end the task by
 telling the user which SEO steps you did not do and why**. Ignore `.mcp.json` there (the server
@@ -42,7 +43,9 @@ With GSC (about five minutes, recipes in `references/gsc-recipes.md`):
 
 1. **Site vocabulary.** Query the last 90 days for the paper's concept and name variants. Reuse the
    phrasings readers actually type (`wiki skill` vs `wikiskill`, `dpo 是什麼`) in H2s, the first
-   paragraph and the description, only where it reads naturally.
+   paragraph and the description, only where it reads naturally. A paper the site has never covered
+   usually has no impressions under any of its names: one query for the name variants and one for the
+   broad concept settle that, so stop there and lead the title with the paper's name.
 2. **Results page** (Chrome, Taiwan, at most two searches): who holds the name, whether the name
    collides with another meaning (DPO is also Data Protection Officer), AI Overview, related searches.
    Use it to decide whether the title needs a plain-words hook such as 「是什麼」 or 「介紹」. If Google

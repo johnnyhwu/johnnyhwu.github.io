@@ -30,7 +30,7 @@ They run as one task, with a pause for the author at the Step 3 skeleton.
 | "幫 `<Topic>` 做 / 換 feature image" / "redo the cover for `<Topic>`" | `hugo-publisher`, `references/featured-image.md`: generate the cover with the vendored **`canvas-design`** skill, in a visual style distinct from the site's other generated covers. Works on a post being published or on one already live. |
 
 Both skills serve **every** kind of `AI-Research` topic, not just academic papers — see "Which section does it
-belong in?" below. (`hugo-publisher` was `hugo-paper-post`; the "paper" never limited it.)
+belong in?" below.
 
 ## How Steps 3 and 4 divide the work
 
@@ -84,7 +84,7 @@ already indexed and other posts may already link to it).
 `johnnyhwu/AI-Research` is a **git submodule of this repo**, checked out at
 `AI-Research/` (see `.gitmodules`). It is still its own repo with its own
 history; the submodule just pins a commit of it next to the post that was
-built from it. There is nothing to attach or register any more.
+built from it.
 
 **Before starting any new post (and before answering "what's ready to
 publish?"), pull the latest content:**
@@ -110,8 +110,8 @@ Then:
   `main`.** The bucket-move commit (below) lives on an unmerged branch, so
   never `git add AI-Research` while the submodule is checked out on it — a
   teammate's `git submodule update` would fail to find that commit. After
-  pushing the branch, `git -C AI-Research checkout main` (or re-run the
-  update command) before staging anything here.
+  pushing the branch, re-run the update command above before staging
+  anything here (not `checkout main`: the local branch can be stale).
 - The theme is the other submodule. To fetch only it (e.g. for a local
   Hugo build), use `git submodule update --init themes/DoIt`; a bare
   `git submodule update --init` also pulls `AI-Research` and its PDFs.
@@ -129,38 +129,10 @@ Topic directories live **two** levels down under `done/`, one under
 
 ### Finish the loop: mark the topic published
 
-Publishing a post is only half of Step 4. Once the Hugo post is merged (or
-at least once the PR here is open), the topic must move buckets in
-`AI-Research`. Do it inside the submodule, on a branch, and push from there:
-
-```bash
-cd AI-Research
-git checkout -b claude/mark-<topic>-published
-git mv done/unpublished/<Topic> done/published/<Topic>
-```
-
-then rewrite the manifest's baked-in `source_pdf` / `images[].file` paths
-from `done/unpublished/...` to `done/published/...` and re-run
-`verify_manifest.py` (`uv run python ...`; it needs `pymupdf`) — `git mv`
-does not rewrite file contents, so skipping this leaves every image path in
-that manifest pointing at nothing. `AI-Research/CLAUDE.md`'s "Moving a topic
-between buckets" section is the authority on the exact procedure.
-
-That means a publish task normally produces **two** PRs: the post here, and
-a small bucket-move PR in `AI-Research`. Push the branch with plain `git`
-from inside the submodule, then open the PR the way your environment allows:
-locally, `gh pr create` from the submodule; in a cloud session there is no
-`gh`, so first attach `johnnyhwu/AI-Research` with `add_repo` and
-`access: "push"`, then use the GitHub MCP tools. Say in each PR that the
-other one exists. A cloud session may only open a PR the user has asked
-for: if they haven't, push both branches (the one here and the
-`AI-Research` bucket-move branch), draft the descriptions, and offer to open
-the PRs. If you
-genuinely can't open the `AI-Research` PR, say so explicitly rather than
-leaving the topic silently mis-bucketed — a topic stuck in
-`done/unpublished/` after its post ships will be offered up for publishing
-all over again. Afterwards switch the submodule back to `main` (see the
-pointer rule above) so this repo's PR doesn't point at the unmerged branch.
+A publish task produces **two** PRs: the post here, and a bucket move in `AI-Research`
+(`done/unpublished/<Topic>` -> `done/published/<Topic>`, manifest paths rewritten), each linking the other.
+`hugo-publisher` step 8 has the procedure; `AI-Research/CLAUDE.md` is the authority on the move. If you can't
+open the `AI-Research` PR, say so: a topic left in `done/unpublished/` gets offered for publishing again.
 
 ## Global rules for anything touching a published post
 
@@ -177,25 +149,14 @@ pointer rule above) so this repo's PR doesn't point at the unmerged branch.
   to `article.md`, so it is easy to open by accident. Steps 3 and 4 work
   from `article.md` + `image-manifest.json` + the already-extracted image
   files (and, in Step 4, the plan) only.
-- **Looking at images is allowed — the goal is a high-quality post — but
-  delegate it.** Any image may be viewed: extracted figures/tables, the
-  covers of other posts, a rendered page screenshot, your own generated
-  cover. Hand the viewing to a **subagent** (give it the file path and a
-  specific question, get back a short text answer) so image bytes don't pile
-  up in your own context. View an image yourself only when a subagent round
-  trip would cost more than it saves or you need the pixels to make the next
-  decision (judging your own cover, say), and then downscale first (~600px
-  for a figure, ~1000px for a cover). The skill has the detail
-  (`hugo-publisher/references/image-resolution.md`, `references/featured-image.md`). What
-  stays forbidden is the PDF, and "viewing" never replaces the manifest id
-  join: resolve images by id first, look only to confirm or to judge quality.
+- **Looking at images is allowed, but delegate it** to a subagent (file path plus a specific question, short
+  text answer back) so image bytes stay out of your context; view one yourself only downscaled and when you need
+  the pixels for the next decision. Resolve images by manifest id first; looking only confirms or judges quality
+  (`hugo-publisher/references/image-resolution.md`).
 - **Never invent a manifest id, a number, or front-matter metadata the site
-  needs but the article doesn't supply.** The cover image is the common
-  case: don't leave it out, don't source a stock photo, and don't pass a
-  figure off as a cover. Generate an original one with `canvas-design` per
-  the skill, label it as generated in the PR, and keep every number or
-  label in it traceable to the article. Flag any other gap in the PR
-  description instead of papering over it.
+  needs but the article doesn't supply.** The cover is the common case: generate an original one with
+  `canvas-design` (`hugo-publisher/references/featured-image.md`), never a stock photo or a paper figure. Flag
+  any other gap (a missing paper link, say) in the PR instead of papering over it.
 - **Fail loud, not silent.** An image id that doesn't resolve, a detail that lands nowhere, a number that went
   missing, a link that can't apply: each fails `validate_plan.py` or `render_post.py` and is fixed in the plan
   or reported in the PR — never a silent guess.

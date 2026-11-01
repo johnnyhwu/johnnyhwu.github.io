@@ -2739,11 +2739,11 @@
      "**87.4%**"
     ],
     [
-     "RoboReward-8B (trained, about 4.5 × 10⁴ episodes)",
+     "RoboReward-8B (trained, about 45K episodes)",
      "81.4%"
     ],
     [
-     "Robometer-4B (trained, about 100 × 10⁴ comparisons)",
+     "Robometer-4B (trained, about 1M comparisons)",
      "78.8%"
     ],
     [

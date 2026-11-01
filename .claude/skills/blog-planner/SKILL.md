@@ -96,12 +96,15 @@ python3 $S/brief.py plans/<slug>/post.zh.json --out plans/<slug>/work/skeleton.m
 ```
 
 **Stop and show the author the brief** (a short chat summary of `skeleton.md`: title candidates, hook, the three
-takeaways, the outline, and everything under "Needs your attention"). Wait for approval or changes. Do not write
+takeaways, the outline, and everything under "Needs your attention"), plus what is still cheap to fix now: a
+missing paper link (`planner-guide.md` §5), figures unreadable at column width, and any SEO check skipped for a
+missing tool (the author can turn it on before the draft). Wait for approval or changes. Do not write
 the full draft before that: changing the story after the draft costs the most.
 
 **P3. Draft.** Write the `blocks` (and finish `glossary`, `decisions`, each ledger item's `dest`) following
 `references/planner-guide.md`. Re-run `validate_plan.py` (default stage `draft`) until it exits 0. Warnings are
-read, not ignored.
+read, not ignored. Context is the scarce resource on a long post: write the blocks one section at a time, and fix
+validator findings with targeted edits by block id rather than re-reading or regenerating the whole plan.
 
 **P4. Review loop**, exactly as in `references/review-loop.md`: two fresh subagents (Reader and Fidelity) on views
 made by `scripts/views.py`; later rounds see only what changed (`delta.json`); at most 5 rounds; escalate to the
