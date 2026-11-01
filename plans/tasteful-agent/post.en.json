@@ -1,0 +1,3415 @@
+{
+ "schema": "post-plan/1",
+ "source": {
+  "article": "AI-Research/done/published/Tasteful-Agent/article.md",
+  "manifest": "AI-Research/done/published/Tasteful-Agent/assets/image-manifest.json",
+  "root": "AI-Research"
+ },
+ "meta": {
+  "section": "paper-intro",
+  "slug": "tasteful-agent",
+  "tags": [
+   "Single-Agent",
+   "Benchmark",
+   "Evaluation",
+   "Fine-Tuning"
+  ],
+  "title": "The Tasteful Agent: Measuring AI Agents' Taste",
+  "description": "Agent benchmarks only check if a task got done. Taste-Bench quizzes models on 502 forks from past agent runs: the best of 14 scores 59.7%, chance is 25%.",
+  "reader": {
+   "persona": "A newcomer to AI who has used or heard of LLM agents and benchmarks like SWE-bench, but does not know distillation, KL divergence, position bias or LoRA",
+   "promise": "Afterwards you can explain what an agent's taste is and why it is hard to measure; how Taste-Bench turns diverging runs of the same task into answerable two-choice questions and filters out the too-easy and the undecidable ones; how current models score and which questions are hardest; whether taste can be trained and what the end-to-end experiment still leaves unproven; and you can reuse the question-mining recipe, the swap-the-order scoring rule and the rule for truncating forward KL",
+   "assumes": [
+    "agent",
+    "prompt",
+    "token",
+    "benchmark"
+   ]
+  },
+  "takeaways": [
+   {
+    "id": "T1",
+    "text": "If two runs of the same task are identical up to the point where they split, the final outcome is a free label for the decision made at the split. Mine those forks (parallel and detour), write the two options in parallel wording, filter out the too-easy and the undecidable, and you have a test of decision quality; expect to need about ten times as many candidates as you keep",
+    "memory_hook": "The second half of a run is the answer key for the first half: 4,657 candidates filtered down to 502 questions"
+   },
+   {
+    "id": "T2",
+    "text": "Today's models have limited taste: the best, GPT-5.6 Sol, scores 59.7% against a 25% chance baseline; detour engineering questions are the hardest, accuracy falls the later the deciding evidence appears, and extra reasoning tokens do not clearly help",
+    "memory_hook": "Best model 59.7%; when the evidence only shows up late, 21.0%"
+   },
+   {
+    "id": "T3",
+    "text": "Taste can be trained: a teacher that peeked at the answer distils its reasoning into a student, which goes from 30.0% to 47.9% on unseen tasks, and its advice lifts an executor's success rate from 14.6% to 33.7%. But the end-to-end test used forks mined in advance; finding forks and writing candidates on a new task is still untested, so read it as a directional signal",
+    "memory_hook": "33.7% shows good advice helps, not that the method works on a new task as is"
+   },
+   {
+    "id": "T4",
+    "text": "Two practices that hold beyond this paper: score two-choice evaluations twice with the order swapped and count a question only if both are right (chance becomes 25%, always picking one slot scores 0%); when truncating forward KL, keep the teacher's top K",
+    "memory_hook": "Ask once, and a model that always answers A still gets 50%"
+   }
+  ],
+  "hook": {
+   "kind": "tension",
+   "text": "An agent fixing a bug can change a helper's default output, or put the change on the calling path. Both look reasonable when written; only the tests tell them apart. Benchmarks today only ask whether the agent finished. The Tasteful Agent measures the decision itself, cheaply: take several runs of the same task, hide everything after the point where they split, and ask a model which way to go. The recorded outcome is the answer. The best of 14 frontier models gets 59.7%; guessing gets 25%."
+  },
+  "running_example": {
+   "id": "ansible-helper",
+   "desc": "The Ansible detour example from the paper's appendix: adding a placeholder for missing metadata, option B extends the helper's default return (3 tests fail), option A puts the placeholder on the calling path (28 pass); used in the opening, the detour section, the leakage concern and concept 4"
+  },
+  "cover_brief": {
+   "metaphor": "An agent's trajectory reaches a fork and splits into two branches; past the fork a curtain hides the road, and only the two endpoints glow with an outcome (one pass, one fail); a model stands at the fork and must choose before it sees the results",
+   "labels": [
+    {
+     "text": "decision fork",
+     "ledger": "L010"
+    },
+    {
+     "text": "A / B",
+     "ledger": "L011"
+    },
+    {
+     "text": "59.7%",
+     "ledger": "L002"
+    },
+    {
+     "text": "502",
+     "ledger": "L035"
+    },
+    {
+     "text": "14",
+     "ledger": "L002"
+    },
+    {
+     "text": "25%",
+     "ledger": "L002"
+    }
+   ]
+  },
+  "seo": {
+   "queries": [
+    "the tasteful agent",
+    "taste-bench",
+    "agent decision quality benchmark",
+    "decision fork agent trajectory"
+   ],
+   "notes": "GSC 2026-08-03 to 2026-11-01: no impressions for taste, distill, swe-bench, position bias or kl on datasciocean.com; no existing post targets these queries. Agent queries that do earn impressions are paper-name searches, so the paper name leads the title. Link candidates: llm-as-a-verifier, chateval, dpo, llm-fine-tuning-rlhf. Results-page check in Chrome skipped."
+  }
+ },
+ "outline": [
+  {
+   "id": "s1",
+   "title": "Nobody grades an agent's choices along the way, so this paper gets test questions for free",
+   "role": "hook",
+   "goal": "You know what taste means here, how the questions are made, the headline numbers, the verdict and the route",
+   "serves": [
+    "T1",
+    "T2",
+    "T3"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s2",
+   "title": "Why an agent's taste is hard to measure",
+   "role": "context",
+   "goal": "You can name what end-to-end benchmarks miss and the two difficulties",
+   "serves": [
+    "T1"
+   ],
+   "recap": "A decision only shows its value in later work, and expert labels are expensive and hard to scale, so benchmarks score only the finish line.",
+   "children": []
+  },
+  {
+   "id": "s3",
+   "title": "Turning a fork into a question: the second half of a run is the answer",
+   "role": "mechanism",
+   "goal": "You can say why the runs must share a task and a prefix, and define a question, its label and the accuracy",
+   "serves": [
+    "T1"
+   ],
+   "recap": "Two runs of one task are identical up to the fork, so the difference in outcomes comes mostly from that one judgment; whichever branch scores higher is the answer.",
+   "children": [
+    {
+     "id": "s3a",
+     "title": "Same task, same prefix: only then can the outcome be pinned on the judgment",
+     "role": "mechanism",
+     "goal": "You can explain why a single run cannot show judgment, and the limit of this assumption",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s3b",
+     "title": "What a question looks like: the label and the accuracy",
+     "role": "mechanism",
+     "goal": "You can compute the label for Figure 1's example and know it means who won this time",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "How Taste-Bench is built: two ways to mine, three gates",
+   "role": "mechanism",
+   "goal": "You can tell parallel from detour, list the generator's rules, say what each filter blocks and what human review checked",
+   "serves": [
+    "T1"
+   ],
+   "recap": "Parallel catches mistakes the agent never noticed, detour catches mistakes it fixed itself; 4,657 candidates pass three gates to leave 502, and human review confirms labels match the records.",
+   "children": [
+    {
+     "id": "s4a",
+     "title": "Two ways to mine forks: parallel and detour",
+     "role": "mechanism",
+     "goal": "You can walk through both constructions and one detour example",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s4b",
+     "title": "The generator's guardrails: no hindsight, no strawmen",
+     "role": "mechanism",
+     "goal": "You can list the rules that keep a question valid",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s4c",
+     "title": "From 4,657 candidates to 502 questions",
+     "role": "mechanism",
+     "goal": "You can name the raw data, the funnel and what the trivial and undecidable filters see and block",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s4d",
+     "title": "Human review: labels match the records, which is not causation",
+     "role": "caveat",
+     "goal": "You can say what 98.8% checks and what it does not",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "title": "Scoring: ask twice with the order swapped, so chance is 25%",
+   "role": "mechanism",
+   "goal": "You can explain the double scoring, the two baselines and accuracy, mean accuracy and Average",
+   "serves": [
+    "T2",
+    "T4"
+   ],
+   "recap": "Both answers must be right, so guessing scores 25% and always picking one slot scores 0%; the headline 59.7% is an Average that weights engineering and research equally.",
+   "children": []
+  },
+  {
+   "id": "s6",
+   "title": "How frontier models score: none come close to solving it",
+   "role": "evidence",
+   "goal": "You can state the best score, the hardest questions, what time horizon and reasoning budget do, and the noise to keep in mind",
+   "serves": [
+    "T2"
+   ],
+   "recap": "The best model reaches 59.7%; detour engineering is hardest; the later the evidence, the worse the accuracy, and thinking longer does not clearly help.",
+   "children": [
+    {
+     "id": "s6a",
+     "title": "Overall: best 59.7%, detour engineering hardest",
+     "role": "evidence",
+     "goal": "You can name the leaders, the difficulty of the four cells and the two sources of noise",
+     "serves": [
+      "T2"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s6b",
+     "title": "The later the deciding evidence, the lower the accuracy",
+     "role": "evidence",
+     "goal": "You can describe the four time-horizon levels and their accuracy",
+     "serves": [
+      "T2"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "title": "Can taste be trained? A teacher that peeked at the answer teaches a student",
+   "role": "mechanism",
+   "goal": "You can explain the teacher and student, why reasoning rather than labels, what forward KL measures, what calibration does and what the leakage control misses",
+   "serves": [
+    "T3"
+   ],
+   "recap": "One model plays both roles and the teacher also sees the answer; the student learns the teacher's reasoning with forward KL, then calibrates its final pick after its own reasoning.",
+   "children": [
+    {
+     "id": "s7a",
+     "title": "Setup: one model, and the teacher gets to see the answer",
+     "role": "mechanism",
+     "goal": "You can define distillation, privileged teacher, demonstration, LoRA and held-out, and say how the data is split",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s7b",
+     "title": "Why learn the reasoning, and with what loss: forward KL",
+     "role": "mechanism",
+     "goal": "You can say in one sentence what forward KL compares and follow the three-token example",
+     "serves": [
+      "T3",
+      "T4"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s7c",
+     "title": "Stage two: teaching the student to pick right after its own reasoning",
+     "role": "mechanism",
+     "goal": "You can say what calibration does and what the paper leaves unexplained",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s7d",
+     "title": "The leakage control, and the paraphrase it cannot stop",
+     "role": "caveat",
+     "goal": "You can say what the structural control blocks and why paraphrase in the reasoning is still a concern",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "title": "Distillation results: 30.0% to 47.9% on unseen tasks",
+   "role": "evidence",
+   "goal": "You can state the student's gain on held-out questions and where it lands on the leaderboard",
+   "serves": [
+    "T3"
+   ],
+   "recap": "92.9% on the training split only shows memorisation; the evidence is the unseen split, 30.0% to 47.9%, level with GLM-5.2.",
+   "children": []
+  },
+  {
+   "id": "s9",
+   "title": "Student picks as advice: executor success goes from 14.6% to 33.7%",
+   "role": "evidence",
+   "goal": "You can describe advice injection, what the student actually decides, the three success rates and how this differs from the distillation test",
+   "serves": [
+    "T3"
+   ],
+   "recap": "The student makes one binary choice per fork and templates write the advice; student advice reaches about 78% of the gain from always-correct advice.",
+   "children": [
+    {
+     "id": "s9a",
+     "title": "The pipeline: the student only picks A or B, another agent does the work",
+     "role": "mechanism",
+     "goal": "You can say how advice is made, where it goes and who the executor is",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s9b",
+     "title": "Result: about 78% of the upper bound",
+     "role": "evidence",
+     "goal": "You can state the three success rates and what the upper bound means",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s9c",
+     "title": "How the two experiments differ: with or without an executor",
+     "role": "evidence",
+     "goal": "You can tell what each experiment asks",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s10",
+   "title": "The end-to-end gain does not carry over to new tasks yet: the deployment gap",
+   "role": "caveat",
+   "goal": "You can say what was prepared in advance, which two steps were never tested and what 33.7% actually shows",
+   "serves": [
+    "T3"
+   ],
+   "recap": "Forks and candidates were mined from earlier runs; on a new task the agent must find the fork and write the options itself, and the paper tests neither.",
+   "children": []
+  },
+  {
+   "id": "s11",
+   "title": "Verdict and what to take away",
+   "role": "takeaway",
+   "goal": "You can say what the paper does well and take away the recipe, the swap-order rule and the forward KL truncation rule",
+   "serves": [
+    "T1",
+    "T2",
+    "T3",
+    "T4"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s11a",
+     "title": "What the paper gets right, and its research and engineering value",
+     "role": "takeaway",
+     "goal": "You can name three strengths, where the novelty comes from and where the engineering value sits",
+     "serves": [
+      "T1",
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s11b",
+     "title": "Takeaway one (the paper's own contribution): the question recipe",
+     "role": "takeaway",
+     "goal": "You can follow the ingredients, steps, yield and pitfalls to build questions from your own runs",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s11c",
+     "title": "Takeaway two (holds beyond the paper): ask two-choice questions twice, order swapped",
+     "role": "takeaway",
+     "goal": "You can apply strict scoring to your own A/B evaluations and know its cost",
+     "serves": [
+      "T4"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s11d",
+     "title": "Takeaway three (holds beyond the paper): truncate forward KL on the teacher's top K",
+     "role": "takeaway",
+     "goal": "You can choose whose top K to keep from the direction of the KL",
+     "serves": [
+      "T4"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s11e",
+     "title": "The whole post in three sentences",
+     "role": "takeaway",
+     "goal": "You can retell the post in three sentences",
+     "serves": [
+      "T1",
+      "T2",
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s12",
+   "title": "Concepts in depth",
+   "role": "deep-dive",
+   "goal": "A reader reviewing later can read each of four easily confused ideas on its own",
+   "serves": [
+    "T1",
+    "T4"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s12a",
+     "title": "Parallel and detour also decide where the label comes from",
+     "role": "deep-dive",
+     "goal": "You can state each construction's label source, reliability and difficulty",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s12b",
+     "title": "How to read the human-review agreement numbers",
+     "role": "deep-dive",
+     "goal": "You can explain the two denominators, 172 and 74, and what kappa means",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s12c",
+     "title": "How forward KL is truncated in practice",
+     "role": "deep-dive",
+     "goal": "You can say how reasoning positions and the choice position are truncated",
+     "serves": [
+      "T4"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s12d",
+     "title": "Whose text should the KL be computed on?",
+     "role": "deep-dive",
+     "goal": "You can separate whom the student imitates from whose text the comparison runs on",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  }
+ ],
+ "glossary": [
+  {
+   "term": "taste",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "end-to-end benchmark",
+   "defined_in": "s2.b2"
+  },
+  {
+   "term": "decision fork",
+   "defined_in": "s3a.b1"
+  },
+  {
+   "term": "prefix",
+   "defined_in": "s3a.b2"
+  },
+  {
+   "term": "generator",
+   "defined_in": "s4a.b1"
+  },
+  {
+   "term": "parallel",
+   "defined_in": "s4a.b1"
+  },
+  {
+   "term": "detour",
+   "defined_in": "s4a.b1"
+  },
+  {
+   "term": "rubric",
+   "defined_in": "s4c.b3"
+  },
+  {
+   "term": "trivial",
+   "defined_in": "s4c.b6"
+  },
+  {
+   "term": "undecidable",
+   "defined_in": "s4c.b6"
+  },
+  {
+   "term": "Cohen's kappa",
+   "defined_in": "s4d.b2"
+  },
+  {
+   "term": "position bias",
+   "defined_in": "s5.b1"
+  },
+  {
+   "term": "mean accuracy",
+   "defined_in": "s5.b7"
+  },
+  {
+   "term": "Average",
+   "defined_in": "s5.b7"
+  },
+  {
+   "term": "time horizon",
+   "defined_in": "s6b.b1"
+  },
+  {
+   "term": "distillation",
+   "defined_in": "s7a.b2"
+  },
+  {
+   "term": "privileged teacher",
+   "defined_in": "s7a.b2"
+  },
+  {
+   "term": "demonstration",
+   "defined_in": "s7a.b2"
+  },
+  {
+   "term": "LoRA",
+   "defined_in": "s7a.b2"
+  },
+  {
+   "term": "held-out",
+   "defined_in": "s7a.b3"
+  },
+  {
+   "term": "fold",
+   "defined_in": "s7a.b3"
+  },
+  {
+   "term": "KL divergence",
+   "defined_in": "s7b.b2"
+  },
+  {
+   "term": "forward KL",
+   "defined_in": "s7b.b2"
+  },
+  {
+   "term": "cross-entropy",
+   "defined_in": "s7c.b2"
+  },
+  {
+   "term": "executor",
+   "defined_in": "s9a.b1"
+  },
+  {
+   "term": "log-odds",
+   "defined_in": "s9a.b3"
+  },
+  {
+   "term": "process reward",
+   "defined_in": "s11a.b2"
+  },
+  {
+   "term": "context distillation",
+   "defined_in": "s7a.b2"
+  },
+  {
+   "term": "reverse KL",
+   "defined_in": "s11d.b3"
+  },
+  {
+   "term": "teacher forcing",
+   "defined_in": "s12d.b7"
+  },
+  {
+   "term": "on-policy distillation",
+   "defined_in": "s12d.b7"
+  }
+ ],
+ "blocks": [
+  {
+   "id": "s1.b1",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L033"
+   ],
+   "text": "Picture an agent fixing some code. It has two reasonable-looking ways to do it: change a shared helper function that other code relies on, or make the change only at the one place that needs it. (The real case, from the paper: adding a stand-in value for missing metadata in an Ansible tool.) Both look perfectly reasonable when written. The difference only shows once the tests run: the first breaks 3 existing unit tests, the second passes all 28.",
+   "purpose": "hook"
+  },
+  {
+   "id": "s1.b2",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L001",
+    "L006"
+   ],
+   "text": "When an LLM agent works on a long task, mid-task decisions like this one (which hypothesis to test first, which implementation to build on) often decide whether it succeeds. The Tasteful Agent paper calls the ability to make good decisions over a long task \"taste\". The trouble is that today's benchmarks only check whether the agent finished. Nobody measures the quality of the decisions themselves."
+  },
+  {
+   "id": "s1.b3",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L001"
+   ],
+   "text": "The paper's way of measuring it is cheap. Agents often attempt the same task several times, and the attempts head in different directions partway through, one ending well and one badly. Hide everything after the split, ask a model which direction to take, and the recorded outcome is the answer. No human labelling is needed."
+  },
+  {
+   "id": "s1.b4",
+   "section": "s1",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L002"
+   ],
+   "tone": "abstract",
+   "title": "The results first",
+   "text": "With this method the paper builds Taste-Bench, a 502-question test set. Of 14 frontier models, the best, GPT-5.6 Sol, gets only 59.7% right, against a 25% chance baseline (each question is asked twice and both answers must be right).\n\nThe paper then does two more things. A teacher model that has peeked at the answer writes out its reasoning, and a student model that sees only the question learns from it; on tasks it has never seen, the student's accuracy rises from 30.0% to 47.9%. Then it turns the student's choices into advice for another agent, and on 41 real coding tasks from SWE-bench Pro that agent's success rate rises from 14.6% to 33.7%."
+  },
+  {
+   "id": "s1.b5",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L004"
+   ],
+   "text": "My view: the paper's real value is its recipe for making questions. The two training experiments are, for now, only a directional signal, and the part where advice goes to another agent has a deployment gap I will spell out later."
+  },
+  {
+   "id": "s1.b6",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L003",
+    "L004"
+   ],
+   "text": "We start with why taste is hard to measure, then how Taste-Bench turns runs into questions and how models score, then the two training experiments and their gaps, and finally the practices you can take away. At the end, four standalone deep dives cover the ideas most easily confused: how the two question types decide the label, how to read the human-review agreement, how the training loss saves compute, and whose text that loss is computed on.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s2.b1",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L005"
+   ],
+   "text": "LLM agents are taking on longer and longer tasks: machine-learning research that runs from an idea all the way to a paper, or evolving a large software project across many versions. Along the way an agent makes many far-reaching choices: which hypothesis to test, which implementation to build on, which experiment to run next. A wrong choice often looks reasonable at the time, and its cost only surfaces after the agent has spent most of its budget."
+  },
+  {
+   "id": "s2.b2",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L007"
+   ],
+   "text": "Current agent evaluations, such as SWE-bench, where agents fix real GitHub issues, are end-to-end benchmarks: they report only whether the agent completed the task, and say nothing about the quality of each decision along the way. Why not measure decisions directly? Two difficulties stand in the way."
+  },
+  {
+   "id": "s2.b3",
+   "section": "s2",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L008",
+    "L009"
+   ],
+   "items": [
+    "**Delayed consequences.** At the moment of choosing, a good option and a bad one look equally reasonable; the difference shows up later. The paper's own example: a clean implementation and a sloppy one can pass the same tests when first written; the clean one's advantage only appears as every later change becomes easier. So a decision's value lives entirely in the work that follows.",
+    "**Judging takes experts.** Deciding whether a choice was good needs deep domain knowledge. Human labels are expensive and hard to extend to new domains."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s2.b4",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "So a decision's quality only shows in later work, and asking experts to judge each one is impractical. The paper's way in is something agent systems already produce: many attempts at the same task.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s3.b1",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "This section is where the whole paper starts: how to give every mid-task decision an answer without calling in experts.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s3a.b1",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L010",
+    "L011"
+   ],
+   "text": "In practice, agent systems often run the same task several times, and the runs diverge partway through. Every branch ends with a recorded outcome, so the trajectories carry their own label for which direction was better. The paper calls this point of divergence a decision fork. A question is made by freezing the trajectory at the fork, hiding everything after it, and asking the model: which of these two directions would you take?"
+  },
+  {
+   "id": "s3a.b2",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L012",
+    "L013"
+   ],
+   "text": "Why two runs of the same task? Because the outcome of a single run mixes three things: the quality of the judgment, the quality of execution and the environment. You cannot tell whether the judgment caused the result. If two runs are identical up to the fork, meaning the same task and the same preceding context (called the prefix), then the difference between the branches' outcomes comes mostly from the judgment made at the fork."
+  },
+  {
+   "id": "s3a.b3",
+   "section": "s3a",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "task",
+     "label": "Same task"
+    },
+    {
+     "id": "prefix",
+     "label": "Shared prefix"
+    },
+    {
+     "id": "fork",
+     "label": "Fork: the question stops here"
+    },
+    {
+     "id": "a",
+     "label": "Direction A"
+    },
+    {
+     "id": "b",
+     "label": "Direction B"
+    },
+    {
+     "id": "ra",
+     "label": "A's final outcome (hidden)"
+    },
+    {
+     "id": "rb",
+     "label": "B's final outcome (hidden)"
+    }
+   ],
+   "edges": [
+    {
+     "from": "task",
+     "to": "prefix"
+    },
+    {
+     "from": "prefix",
+     "to": "fork"
+    },
+    {
+     "from": "fork",
+     "to": "a"
+    },
+    {
+     "from": "fork",
+     "to": "b"
+    },
+    {
+     "from": "a",
+     "to": "ra"
+    },
+    {
+     "from": "b",
+     "to": "rb"
+    }
+   ]
+  },
+  {
+   "id": "s3a.b4",
+   "section": "s3a",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L014"
+   ],
+   "tone": "warning",
+   "title": "This assumption does not always hold",
+   "text": "After the branches split, execution quality can still affect the outcome. The paper handles this with the later filtering steps; see \"From 4,657 candidates to 502 questions\" in the next section."
+  },
+  {
+   "id": "s3b.b1",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L016",
+    "L017"
+   ],
+   "text": "One question corresponds to one fork, and its label is whichever of the two branches ended better. In symbols: several attempts at task $q$ share a prefix $h_t$ and split at time step $t$ into two candidate directions, $c_1$ and $c_2$. Each branch runs to the end and leaves evidence $E_i$ (test results, a research score). A function $U$ turns the evidence into a number, where higher means a better outcome. In plain words: whichever ends with the higher score is right. The label $y$ is defined as:"
+  },
+  {
+   "id": "s3b.b2",
+   "section": "s3b",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L018"
+   ],
+   "latex": "y = \\arg\\max_{i \\in \\{1,2\\}} U(E_i)",
+   "intuition": "s3b.b1"
+  },
+  {
+   "id": "s3b.b3",
+   "section": "s3b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L018"
+   ],
+   "items": [
+    "$y$: the correct answer (label) for this question, either 1 or 2.",
+    "$i$: the branch index.",
+    "$E_i$: the evidence left by branch $i$ when it finishes.",
+    "$U$: the function that turns evidence into a score.",
+    "$\\arg\\max$: picks the $i$ that makes $U(E_i)$ largest."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s3b.b4",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L019"
+   ],
+   "text": "The question itself is $x = (q, h_t, c_1, c_2)$: the task, the prefix and the two candidates, with everything after the fork hidden. A model under test, $\\pi$, sees $x$ and picks one; its answer is $\\pi(x)$. The model's estimated taste is the share of questions where $\\pi(x) = y$, that is, its accuracy, where $N$ is the number of questions:"
+  },
+  {
+   "id": "s3b.b5",
+   "section": "s3b",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L019"
+   ],
+   "latex": "\\hat{T}(\\pi) = \\frac{\\#\\{x : \\pi(x) = y\\}}{N}",
+   "intuition": "s3b.b4"
+  },
+  {
+   "id": "s3b.b6",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L020"
+   ],
+   "text": "Let's check it with the paper's own example. Figure 1 shows a fork in a machine-learning trajectory, where the model under test must choose before the later losses are revealed."
+  },
+  {
+   "id": "s3b.b7",
+   "section": "s3b",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L021"
+   ],
+   "manifest_id": "img-001",
+   "alt": "A decision fork in a machine-learning trajectory: a masked language model training task splits into two candidate directions, and only the later final losses reveal which was better.",
+   "caption": "Figure 1 — A decision fork in a machine-learning trajectory. The model under test must choose before the later losses reveal that candidate A is better.",
+   "paper_label": "Figure 1",
+   "role": "concept"
+  },
+  {
+   "id": "s3b.b8",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L022"
+   ],
+   "text": "The task is to train a masked language model. Candidate A shrinks the model and trains more steps; candidate B keeps the model size and trains fewer steps. Many steps later, A's final loss is 6.56 and B's is 7.66 (B's training ran into a timeout). Lower loss is better, so here we make up $U = -\\text{loss}$ (the paper gives no $U$ for this example):"
+  },
+  {
+   "id": "s3b.b9",
+   "section": "s3b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L022"
+   ],
+   "headers": [
+    "Item",
+    "Value"
+   ],
+   "rows": [
+    [
+     "$c_1$",
+     "A: shrink the model, train more steps"
+    ],
+    [
+     "$c_2$",
+     "B: keep the model size, train fewer steps"
+    ],
+    [
+     "$E_1, E_2$",
+     "Final loss: 6.56, 7.66"
+    ],
+    [
+     "$U(E_1), U(E_2)$",
+     "$-6.56$, $-7.66$"
+    ],
+    [
+     "$y$",
+     "$U(E_1)$ is larger, so $y = 1$: the answer is A"
+    ]
+   ]
+  },
+  {
+   "id": "s3b.b10",
+   "section": "s3b",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L024"
+   ],
+   "tone": "warning",
+   "title": "The label means \"who won this time\"",
+   "text": "The paper says good taste means choosing the direction with the higher expected outcome, but the label above uses only one actual run of each branch. A single run includes luck, so strictly the label says who won this time, not who is better in expectation. The paper relies on the later filtering to reduce this problem."
+  },
+  {
+   "id": "s3b.b11",
+   "section": "s3b",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "If you go on to read the paper: a notation trap",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s3b.b13",
+     "section": "s3b",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L023"
+     ],
+     "text": "The paper uses the same letter E for the evidence $E_i$ and for the expectation symbol $\\mathbb{E}[\\cdot]$; they are different things."
+    }
+   ]
+  },
+  {
+   "id": "s3b.b12",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "So a question is now clear: a task, a prefix and two candidates, with the answer being whichever side ended better. The next question is where these forks come from.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s4.b1",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L015"
+   ],
+   "text": "Taste-Bench is built in three steps: mine forks from trajectories, weed out bad questions with rules and judge models, then confirm the labels with human review. How the questions are asked and scored comes in the next section.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s4a.b1",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L025"
+   ],
+   "text": "Forks come from two sources. Two independent attempts can head in different directions, called parallel; or a single attempt goes wrong and the agent corrects itself, called a detour. Both are handled by the same generator (the question-writing model, here GPT-5.6 Sol at high reasoning effort), which reads the trajectories, finds the fork and writes the question."
+  },
+  {
+   "id": "s4a.b2",
+   "section": "s4a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L026"
+   ],
+   "manifest_id": "img-002",
+   "alt": "Taste-Bench construction and filtering: the top shows the parallel and detour construction routes, the bottom the filtering stage.",
+   "caption": "Figure 2 — How Taste-Bench is built and filtered. Parallel compares branches of the same task, detour compares an abandoned direction with the later recovery, and both then pass through filtering.",
+   "paper_label": "Figure 2",
+   "role": "concept"
+  },
+  {
+   "id": "s4a.b3",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027"
+   ],
+   "text": "**Parallel catches mistakes the agent never noticed.** The steps:"
+  },
+  {
+   "id": "s4a.b4",
+   "section": "s4a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027"
+   ],
+   "items": [
+    "Within one task, pair a successful attempt with a failed one (at most 8 pairs per task, preferring attempts from the same model and reasoning setting).",
+    "The generator reads both full trajectories and finds the fork in each.",
+    "The successful run's part before the fork becomes the prefix; each direction is written as a short, neutral description, giving the two candidates.",
+    "The successful branch is the answer."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s4a.b5",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L032"
+   ],
+   "text": "One parallel engineering question from the appendix: changing Element Web's server-discovery validation logic. Candidate A copies only five fields into the config; candidate B assigns the whole discovered auth block. The answer is A, because B also carries a status flag and error fields, and the hidden test uses deep equality (every field must match exactly) on just those five fields."
+  },
+  {
+   "id": "s4a.b6",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L028"
+   ],
+   "text": "**Detour catches mistakes the agent hit, then fixed on its own.** The steps:"
+  },
+  {
+   "id": "s4a.b7",
+   "section": "s4a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L028"
+   ],
+   "items": [
+    "The generator reads one full trajectory and its outcome, and finds three things in order: the agent picks a direction, an observed failure ends it, and the agent switches to another direction and finishes the task.",
+    "The fork goes one step before the agent starts down the abandoned direction; everything before it is the prefix.",
+    "The two candidates are the abandoned direction and the later fix, written in parallel wording.",
+    "The fix is the answer, because the abandoned direction produced an observable failure while the fix completed the task."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s4a.b8",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L028"
+   ],
+   "text": "What this construction tests: can the model under test spot the failure earlier than the agent that was acting at the time?"
+  },
+  {
+   "id": "s4a.b9",
+   "section": "s4a",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L033"
+   ],
+   "tone": "example",
+   "title": "The Ansible example from the opening, as a detour",
+   "text": "The agent must update an Ansible role's documentation to add a standard placeholder for missing metadata. It first picks candidate B, extending the default return structure of the helper functions, and 3 unit tests fail, because existing tests call those helpers directly and expect the original output format. It then switches to candidate A, putting the placeholder on the calling path, and all 28 pass. The question's fork sits one step before the agent chose B, and the answer is A."
+  },
+  {
+   "id": "s4a.b10",
+   "section": "s4a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027",
+    "L028"
+   ],
+   "headers": [
+    "",
+    "Parallel",
+    "Detour"
+   ],
+   "rows": [
+    [
+     "Raw material",
+     "Two attempts at one task, one success and one failure",
+     "One attempt that went wrong, recovered and succeeded"
+    ],
+    [
+     "Mistakes caught",
+     "Ones the agent never noticed",
+     "Ones the agent hit and fixed itself"
+    ],
+    [
+     "Answer",
+     "The successful branch",
+     "The later fix"
+    ]
+   ],
+   "purpose": "recap"
+  },
+  {
+   "id": "s4a.b11",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L034"
+   ],
+   "text": "My own inference here, not the paper's: detour labels depend more than parallel labels on the generator's rules and the later filtering; the first deep dive at the end explains why."
+  },
+  {
+   "id": "s4b.b1",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L029"
+   ],
+   "text": "The generator is not free to improvise; it is bound by guardrails. These rules are what make the questions good, and they are the part of the recipe you can carry elsewhere:"
+  },
+  {
+   "id": "s4b.b2",
+   "section": "s4b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L031"
+   ],
+   "items": [
+    "**No hindsight.** If the better direction can only be named after seeing the failure, the trajectory is rejected: such a question needs no judgment.",
+    "**No strawmen.** Both candidates must be reasonable at the time, written in parallel wording of similar length and tone, with no giveaway words like \"correctly\" or \"better\".",
+    "**The difference must come from the direction.** Parallel pairs are rejected when the outcome gap comes mainly from typos, crashes, luck or missing packages, things unrelated to the direction."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s4b.b3",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L030"
+   ],
+   "text": "Detour gets one more mechanical check. The generator must quote four passages from the trajectory: the step choosing the abandoned direction, the failure that ended it, the step choosing the fix, and the evidence the fix worked. Code then checks three things: each quote really appears at the cited step, the four steps are in order, and the failure passage really carries a failure signal (a non-zero exit code or an error message). Fail any one and the candidate is discarded."
+  },
+  {
+   "id": "s4c.b1",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L035"
+   ],
+   "text": "Of 4,657 candidate forks the generator proposed, only 10.8%, that is 502 questions, passed every filter. The raw material comes in two kinds:"
+  },
+  {
+   "id": "s4c.b2",
+   "section": "s4c",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L036"
+   ],
+   "items": [
+    "**Engineering:** the paper's authors ran GPT-5.4 and GPT-5.5 agents on 517 SWE-bench Pro tasks, producing 2,677 scored trajectories.",
+    "**Research:** 1,132 agent runs on 47 AI R&D tasks (the research subsets of RE-Bench and HCAST), with trajectories taken from the MALT dataset that METR released publicly."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s4c.b3",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L037"
+   ],
+   "text": "Filtering works like a funnel. Of the 4,657 candidates, 1,809 pass the generator's own check against a rubric (a set of scoring criteria): the generator is told to reject anything whose evidence is not clean, so it throws out most of them itself."
+  },
+  {
+   "id": "s4c.b5",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L040"
+   ],
+   "text": "A candidate that passes the rubric can still be a bad question. The paper runs two filters with four judge models (Kimi K2.5, GPT-4.1, Llama 4 Maverick and Mistral Large 3, none of them the generator):"
+  },
+  {
+   "id": "s4c.b6",
+   "section": "s4c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L040"
+   ],
+   "headers": [
+    "",
+    "Filter one: trivial (too easy)",
+    "Filter two: undecidable"
+   ],
+   "rows": [
+    [
+     "What the judges see",
+     "Only the two candidates' text, no task or trajectory",
+     "The full record: task, prefix, both branches' full continuations and final outcomes"
+    ],
+    [
+     "Removed when",
+     "All four judges answer correctly",
+     "Any one judge disagrees with the label"
+    ],
+    [
+     "What it blocks",
+     "Questions whose wording gives the answer away",
+     "Questions whose label does not match the full record"
+    ]
+   ]
+  },
+  {
+   "id": "s4c.b7",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L040"
+   ],
+   "text": "So every released question meets two conditions at once: with the trajectory hidden, at least one judge gets it wrong; with the full record laid out, all four judges agree with the label."
+  },
+  {
+   "id": "s4c.b8",
+   "section": "s4c",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L041"
+   ],
+   "items": [
+    "**A trivial question that was removed:** candidate A reads \"hard-code the answers for the three cases known to pass and return an empty string for everything else\"; candidate B is a normal general-purpose routine. The wording alone tells you to pick B.",
+    "**An undecidable question that was removed:** the label says A (a single-pixel attack) is right, but the last measurement in the prefix shows B (a multi-strategy ensemble) with the higher success rate (0.80 vs 0.43). The label came only from B timing out later in the full run, while the task never stated a time limit, so the judges disagreed."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s4c.b12",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L037"
+   ],
+   "text": "Back to the funnel: of the 1,809 candidates that passed the rubric, 729 pass the trivial filter, and 502 questions remain after the undecidable filter, split into four cells:"
+  },
+  {
+   "id": "s4c.b4",
+   "section": "s4c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L037"
+   ],
+   "headers": [
+    "",
+    "Parallel",
+    "Detour",
+    "Total"
+   ],
+   "rows": [
+    [
+     "Engineering",
+     "124",
+     "266",
+     "390"
+    ],
+    [
+     "Research",
+     "48",
+     "64",
+     "112"
+    ]
+   ]
+  },
+  {
+   "id": "s4c.b9",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L038",
+    "L039"
+   ],
+   "text": "Figure 3 shows the yield for each cell, with band widths proportional to the candidates left at each stage; Table 1 gives proposed and released counts per cell."
+  },
+  {
+   "id": "s4c.b10",
+   "section": "s4c",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L038"
+   ],
+   "manifest_id": "img-009",
+   "alt": "A flow chart of filtering yield per cell, narrowing from 4,657 candidates to 502 questions.",
+   "caption": "Figure 3 — Filtering yield per cell. Band width is proportional to the candidates left at each stage: of 4,657 candidates, 1,809 pass the generator's rubric, 729 survive the trivial filter, and 502 questions are released.",
+   "paper_label": "Figure 8",
+   "role": "evidence"
+  },
+  {
+   "id": "s4c.b11",
+   "section": "s4c",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L039"
+   ],
+   "manifest_id": "img-010",
+   "alt": "A table of proposed and released questions for each cell.",
+   "caption": "Table 1 — Proposed and released questions per cell. The two detour-research rows list the first and second pass separately.",
+   "paper_label": "Table 2",
+   "role": "evidence"
+  },
+  {
+   "id": "s4d.b1",
+   "section": "s4d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L042"
+   ],
+   "text": "Can labels made this way be trusted? The paper's authors sampled 100 questions (70 from the release, 15 removed by the trivial filter, 15 removed by the undecidable filter). Two reviewers first said which direction they would choose, then read a summary of what happened next and the outcome, and judged which decision was better."
+  },
+  {
+   "id": "s4d.b2",
+   "section": "s4d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L043"
+   ],
+   "text": "Of the 172 judgments with a clear A/B preference, 170 matched the automatic label (98.8%). Compared with each other, the two reviewers agreed 98.6% of the time (73 of the 74 questions where both made a clear choice), with Cohen's kappa (agreement after removing what matches by chance; 1 means perfect agreement) at $\\kappa = 0.973$. Why the denominators are two different numbers, 172 and 74, is explained in the second deep dive at the end."
+  },
+  {
+   "id": "s4d.b3",
+   "section": "s4d",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L044"
+   ],
+   "tone": "warning",
+   "title": "This checks that labels match, not causation",
+   "text": "The reviewers judged after seeing the outcome, so this confirms that labels match the records, not that the decision actually caused the difference in outcomes."
+  },
+  {
+   "id": "s4d.b4",
+   "section": "s4d",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L045"
+   ],
+   "manifest_id": "img-017",
+   "alt": "A table of the two reviewers' human-review results.",
+   "caption": "Table 2 — Human review after the outcome is disclosed: each reviewer's retained judgments and agreement with the label.",
+   "paper_label": "Table 9",
+   "role": "evidence"
+  },
+  {
+   "id": "s4d.b5",
+   "section": "s4d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "To sum up how Taste-Bench is made: parallel catches mistakes the agent never noticed, detour catches mistakes it fixed itself; 4,657 candidates pass the rubric, too-easy and undecidable gates to leave 502 questions, and human review confirms the labels match the records.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s5.b1",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L046",
+    "L047"
+   ],
+   "text": "With the questions built, how they are asked matters too. Every question is asked twice with A and B swapped, and it counts as correct only if both answers are right. The point is to rule out position bias: a model's tendency to pick the first or the second option regardless of content. Two-choice questions are the most exposed to it, and simply swapping the order changes many models' answers."
+  },
+  {
+   "id": "s5.b2",
+   "section": "s5",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L048"
+   ],
+   "items": [
+    "First pass: present A and B in a fixed, per-question seeded order (the same order for every model).",
+    "Second pass: the exact reverse.",
+    "Only if both are right does the question count. A response with no parseable answer counts as wrong."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s5.b3",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L049"
+   ],
+   "text": "Every model receives the same system message and user message and is asked to output a single line, `ANSWER: X`, so answers are easy to extract and score."
+  },
+  {
+   "id": "s5.b4",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L050"
+   ],
+   "text": "This design moves the baseline away from what intuition expects:"
+  },
+  {
+   "id": "s5.b5",
+   "section": "s5",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L050"
+   ],
+   "headers": [
+    "Model behaviour",
+    "Score"
+   ],
+   "rows": [
+    [
+     "Guesses each time with probability 1/2",
+     "$\\frac{1}{2} \\times \\frac{1}{2} = 25\\%$"
+    ],
+    [
+     "Always picks the same slot",
+     "0% (one of the two passes is always wrong)"
+    ]
+   ]
+  },
+  {
+   "id": "s5.b6",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L050",
+    "L051"
+   ],
+   "text": "So the chance baseline for this metric is 25%, not 50%. The paper reports three metrics:"
+  },
+  {
+   "id": "s5.b7",
+   "section": "s5",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L051"
+   ],
+   "items": [
+    "**Accuracy (strict):** the share of questions answered right both times. This is the main metric.",
+    "**Mean accuracy:** score all $502 \\times 2 = 1{,}004$ answers separately, so a question right only once counts as half. More lenient.",
+    "**Average:** compute strict accuracy for research and engineering separately, then average them 1:1. Research has only 112 questions and engineering 390, but each domain gets half the weight, so Average differs from strict accuracy pooled over all 502."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s5.b8",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L052"
+   ],
+   "text": "A check with GPT-5.6 Sol (see Table 3): right both times (CC) 292, right only the first time (CW) 25, right only the second time (WC) 29, wrong both times (WW) 156, for a total of 502. Pooled strict accuracy is $292 / 502 = 58.2\\%$. The 59.7% from the opening is the Average: engineering 56.9% and research 62.5%, averaged 1:1, give $(56.9 + 62.5) / 2 = 59.7\\%$."
+  },
+  {
+   "id": "s5.b9",
+   "section": "s5",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L053"
+   ],
+   "manifest_id": "img-012",
+   "alt": "The full results table for 14 models on Taste-Bench.",
+   "caption": "Table 3 — Full results for 14 models. P and D are parallel and detour, Eng and Res are engineering and research; Unparsed counts answers out of 1,004 with no parseable answer.",
+   "paper_label": "Table 4",
+   "role": "evidence"
+  },
+  {
+   "id": "s5.b10",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Two baselines to remember: guessing gets 25%, always picking one slot gets 0%; the headline 59.7% is an Average that weights engineering and research equally.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s6.b1",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L054"
+   ],
+   "text": "The paper runs six experiments. The two training experiments come later; this section covers model scores, which questions are hardest and whether a bigger reasoning budget helps in one table, then looks closely at how late the deciding evidence appears.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s6a.b1",
+   "section": "s6a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L055"
+   ],
+   "headers": [
+    "Experiment",
+    "What it shows",
+    "Result",
+    "Key point"
+   ],
+   "rows": [
+    [
+     "Accuracy of 14 models (Figure 4, Table 3)",
+     "Current models' taste is limited",
+     "Best is GPT-5.6 Sol at 59.7%, then GPT-5.5 59.5% and Claude Opus 5 55.5%; chance is 25%",
+     "No model comes close to solving it"
+    ],
+    [
+     "Construction and domain",
+     "Which questions are hardest",
+     "Average over 14 models: parallel engineering 58.1%, parallel research 50.9%, detour research 50.8%, detour engineering 35.9%",
+     "The gap between constructions (parallel / detour) is larger than between domains (engineering / research); detour engineering is hardest"
+    ],
+    [
+     "Reasoning budget (Figure 5 right, Table 4)",
+     "Does thinking longer help?",
+     "Raising the same model's reasoning setting from lowest to highest: GPT-5.6 Sol changes by $-0.2$ points, GPT-5.6 Luna by $+2.2$ points",
+     "More reasoning tokens bring no clear gain, and models think longest on the hardest questions. Only two models from one family were tested"
+    ]
+   ]
+  },
+  {
+   "id": "s6a.b2",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L058"
+   ],
+   "text": "Figure 4 shows all 14 models: the first column is the Average, then the research and engineering subsets, each sorted from high to low."
+  },
+  {
+   "id": "s6a.b3",
+   "section": "s6a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L058"
+   ],
+   "manifest_id": "img-003",
+   "alt": "Bar charts of 14 models' accuracy in three columns, each sorted from high to low, with confidence intervals.",
+   "caption": "Figure 4 — Model performance on Taste-Bench. The first column is the Average, then the research and engineering subsets, each sorted independently from high to low.",
+   "paper_label": "Figure 3",
+   "role": "evidence"
+  },
+  {
+   "id": "s6a.b5",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L059"
+   ],
+   "text": "Table 4 gives two models' accuracy at three reasoning-effort settings."
+  },
+  {
+   "id": "s6a.b6",
+   "section": "s6a",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L059"
+   ],
+   "manifest_id": "img-015",
+   "alt": "A table of two models' accuracy at three reasoning-effort settings.",
+   "caption": "Table 4 — Two models' accuracy at three reasoning-effort settings, also broken down by how late the deciding evidence appears (levels in the next subsection).",
+   "paper_label": "Table 7",
+   "role": "evidence"
+  },
+  {
+   "id": "s6a.b4",
+   "section": "s6a",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L056",
+    "L057"
+   ],
+   "tone": "warning",
+   "title": "Two sources of noise to keep in mind",
+   "text": "First, Grok 4.20 Reasoning, GPT-5.4 Mini and GPT-5.4 Nano, near the bottom, had 459, 112 and 93 answers (out of 1,004) that could not be parsed and were scored wrong, so their scores also reflect format-following.\n\nSecond, GPT-5.6 Sol scores 58.2% (292/502) in the main experiment but 55.6% when rerun with the same setting for Table 4, a gap of 2.6 points the paper does not explain. My inference: both are pooled strict accuracy over 502 questions, so this gap is the same size as the reasoning-budget differences above, and that noise should be kept in mind when reading the reasoning-budget conclusion."
+  },
+  {
+   "id": "s6b.b1",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L060"
+   ],
+   "text": "The paper labels each question with a time horizon: how far into the future you must look before the right answer is certain. There are four levels, and accuracy is reported for each. The labeller is GPT-5.5, which reads the question, the prefix, the two candidates and the correct answer, and judges what kind of evidence supports the answer."
+  },
+  {
+   "id": "s6b.b2",
+   "section": "s6b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L061"
+   ],
+   "headers": [
+    "Level",
+    "Meaning",
+    "Questions"
+   ],
+   "rows": [
+    [
+     "In prefix",
+     "The prefix already holds a decisive fact that rules out one candidate (an error message, say)",
+     "158"
+    ],
+    [
+     "Inferable",
+     "No single decisive fact, but clues in the prefix together are enough to decide",
+     "219"
+    ],
+    [
+     "Next step",
+     "The first observation after the fork settles it",
+     "56"
+    ],
+    [
+     "More work",
+     "It takes a local check, or longer follow-up work, to settle it",
+     "69"
+    ]
+   ]
+  },
+  {
+   "id": "s6b.b3",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L062"
+   ],
+   "text": "More work merges the original top two levels: quick local check (settled after one local check), 56 questions, plus the top level (settled only after longer follow-up work), 13 questions, for 69 in all. These 56 are a different group from the 56 next-step questions in the row above; the counts just happen to match. The top level alone had only 13 questions, too few to report separately, hence the merge."
+  },
+  {
+   "id": "s6b.b4",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L063"
+   ],
+   "text": "Result: averaged over the 14 models, accuracy falls with each level: 62.3%, 42.9%, 31.5%, 21.0%. The later the answer becomes visible, the harder the question. The left half of Figure 5 shows this falling curve, the right half the reasoning-budget comparison; Table 5 gives every model's numbers per level."
+  },
+  {
+   "id": "s6b.b5",
+   "section": "s6b",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L064"
+   ],
+   "manifest_id": "img-004",
+   "alt": "Left, the 14-model average accuracy falling with time horizon; right, two models' accuracy at different reasoning budgets.",
+   "caption": "Figure 5 — Accuracy by time horizon and reasoning budget. Left: the dark line is the 14-model mean with its 95% interval, faint lines are individual models; right: the same four levels at three reasoning-effort settings.",
+   "paper_label": "Figure 4",
+   "role": "evidence"
+  },
+  {
+   "id": "s6b.b6",
+   "section": "s6b",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L065"
+   ],
+   "manifest_id": "img-014",
+   "alt": "A table of 14 models' accuracy at the four time-horizon levels, with the model average in the last row.",
+   "caption": "Table 5 — Each model's accuracy per time-horizon level. Accuracy requires both presentation orders to be right.",
+   "paper_label": "Table 6",
+   "role": "evidence"
+  },
+  {
+   "id": "s6b.b7",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "When the evidence is already in the prefix, models average 62.3%; when it takes more work to see the answer, only 21.0%. The later the evidence, the worse they do.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s7.b1",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L066"
+   ],
+   "text": "What Taste-Bench shows is that current models have limited taste. The next question: can taste be trained? This section covers the method; the results come in the next two.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s7a.b1",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L067"
+   ],
+   "text": "The idea is to have a teacher that has peeked at the answer write out its reasoning, then train a student that has not seen the answer to produce the same reasoning and choice from its own input. Teacher and student are the same model; only their inputs differ. A few terms first:"
+  },
+  {
+   "id": "s7a.b2",
+   "section": "s7a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L068",
+    "L069",
+    "L070"
+   ],
+   "items": [
+    "**Distillation:** training a student model to imitate a teacher model's outputs.",
+    "**Privileged teacher:** a teacher whose input includes information the student cannot see; here, the correct answer.",
+    "**Demonstration:** a short text placed in the teacher's input stating \"at this fork the right move is this candidate; avoid the other\".",
+    "**LoRA:** instead of changing the original model's weights, train only small low-rank matrices added on top (settings in the collapsed details below).",
+    "**Context distillation:** using training to bake the effect of information placed in the input into the model's weights. This is general knowledge, not from the paper; the paper's method falls into this family."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s7a.b3",
+   "section": "s7a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L071",
+    "L073"
+   ],
+   "items": [
+    "The training data is the 390 engineering questions, split by task into two halves (the paper calls each a fold, 195 questions each, with every repository appearing in both). The student trains on one half and is tested on the other, so the tasks in the test half were never seen in training; data held back for testing like this is called held-out.",
+    "The base model, frozen, is Qwen3.6-27B; it serves as both teacher and student.",
+    "The teacher's input is the question plus the demonstration; the student's input is just the question (task, prefix, two shuffled candidates), exactly what a model sees during evaluation.",
+    "Each question appears once in each A/B order, and the teacher writes a reasoning passage for each.",
+    "Training objective: from its own input, the student should produce the teacher's reasoning and final choice."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s7a.b4",
+   "section": "s7a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "Training details: how teacher reasoning is sampled, and the LoRA settings",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s7a.b5",
+     "section": "s7a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L072"
+     ],
+     "text": "Each question appears once in each A/B order; each is called a view. The teacher writes one reasoning passage per view at temperature 1.0, up to 3,072 tokens; a passage is kept only if its reasoning block is well formed and at least 32 tokens long, and a question enters training only if both of its views are kept."
+    },
+    {
+     "id": "s7a.b8",
+     "section": "s7a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L069"
+     ],
+     "text": "LoRA settings: rank 16, $\\alpha = 32$, about 7,970 × 10⁴ trainable parameters, roughly two hours of training per half on a single A100 80GB."
+    }
+   ]
+  },
+  {
+   "id": "s7a.b6",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L074"
+   ],
+   "text": "The left half of Figure 6 is this distillation: the reasoning of a teacher that saw the correct candidate is taught to a student that sees only the question. Training has two stages. In stage one, the teacher writes its reasoning after seeing the answer, the student predicts the next word at every position of that reasoning, and the gap between the two distributions is the loss. In stage two, the student switches to its own reasoning and is trained only at the final A/B choice position, against the correct answer. The right half involves a separate, fixed agent that actually carries out the task, covered later."
+  },
+  {
+   "id": "s7a.b7",
+   "section": "s7a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L075"
+   ],
+   "manifest_id": "img-006",
+   "alt": "Overview of distillation and advice injection: the left half shows the teacher and student's two training stages, the right half the student's judgment written as advice for the agent that performs the task.",
+   "caption": "Figure 6 — Overview of distillation and advice injection. Left: the reasoning of a teacher that saw the correct candidate is distilled into a student that sees only the question. Right: at evaluation, the student's judgment at each fork is written as advice for a fixed agent that completes the task on its own.",
+   "paper_label": "Figure 6",
+   "role": "concept"
+  },
+  {
+   "id": "s7b.b1",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L076",
+    "L077"
+   ],
+   "text": "Why learn the reasoning rather than the label directly? Each question has just one binary label and no intermediate reasoning. The paper's argument: fine-tune on labels alone and the model memorises answers without learning judgment. The underlying reason (general knowledge, not from the paper): each student trains on only about 195 questions while the model has 27B parameters (270 × 10⁸); when the loss sits on a single answer token, the easiest path is to memorise which surface features of a question map to which answer. Reasoning adds a few hundred tokens per question to fit, making it harder to lower the loss by memorising surface features alone. Note that the paper includes no labels-only comparison; this is the paper's argument."
+  },
+  {
+   "id": "s7b.b2",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L078"
+   ],
+   "text": "The loss is forward KL. KL divergence measures how different two probability distributions are: 0 when they are identical, larger the more they differ. At every position $t$ of the teacher's written reasoning, both models read the same preceding text and each predicts the next token; the more their guesses differ, the bigger the loss, and training pulls the student's guesses toward the teacher's. As a formula:"
+  },
+  {
+   "id": "s7b.b3",
+   "section": "s7b",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L078"
+   ],
+   "latex": "\\mathcal{L}_t = \\sum_{v} p_T(v \\mid c_T, y_{<t}) \\, \\log \\frac{p_T(v \\mid c_T, y_{<t})}{p_S(v \\mid c_S, y_{<t})}",
+   "intuition": "s7b.b2"
+  },
+  {
+   "id": "s7b.b4",
+   "section": "s7b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L078"
+   ],
+   "items": [
+    "$t$: the position within the reasoning.",
+    "$v$: a possible next token.",
+    "$y_{<t}$: the reasoning written before this position, sampled from the teacher's output.",
+    "$c_T$, $c_S$: the teacher's input (question plus demonstration) and the student's input (question only).",
+    "$p_T$, $p_S$: the probability the teacher and the student give each $v$ at this position."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s7b.b5",
+   "section": "s7b",
+   "type": "callout",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L079"
+   ],
+   "tone": "example",
+   "title": "Try it once (a made-up example)",
+   "text": "Look at just three tokens at one position. The teacher's probabilities are 0.7, 0.2, 0.1 and the student's 0.4, 0.4, 0.2. Loss $= 0.7 \\ln(0.7/0.4) + 0.2 \\ln(0.2/0.4) + 0.1 \\ln(0.1/0.2) \\approx 0.392 - 0.139 - 0.069 = 0.184$; if the student matched the teacher exactly, it would be 0.",
+   "illustrative": true
+  },
+  {
+   "id": "s7b.b6",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L080"
+   ],
+   "text": "To save compute, the implementation truncates: reasoning positions are computed over a small set of tokens with the rest lumped into one bucket, the final choice position compares only A and B, and long reasoning is subsampled to at most 512 positions."
+  },
+  {
+   "id": "s7b.b7",
+   "section": "s7b",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L117"
+   ],
+   "tone": "question",
+   "title": "A question to hold: whose top tokens should truncation keep?",
+   "text": "At reasoning positions the paper keeps the student's top 100 tokens; but forward KL is weighted by the teacher's probabilities, so keeping the teacher's top tokens is actually the more natural choice (my judgment; the paper runs no comparison). Why, and by how much, comes in takeaway three. The full truncation details are in the third deep dive, and why this KL is computed on the teacher's text is in the fourth."
+  },
+  {
+   "id": "s7c.b1",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L081"
+   ],
+   "text": "After distillation the paper adds one small step, called calibration. During distillation the student learns its final choice after the teacher's reasoning; at test time it follows its own reasoning. Calibration teaches the student to pick correctly after its own reasoning too:"
+  },
+  {
+   "id": "s7c.b2",
+   "section": "s7c",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L081"
+   ],
+   "items": [
+    "The student writes its own reasoning for every training question (once in each A/B order).",
+    "Only at the final choice position, it is trained against the correct answer with cross-entropy (a loss measuring how much probability the model gives the right answer); the reasoning is left alone.",
+    "Settings: learning rate $10^{-5}$ (a tenth of distillation's), 1 epoch, softmax temperature 2.0 (flattening the distribution so it is not pushed to extreme confidence), with 306 and 320 views for the two halves (each question's A and B orders count as one view each)."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s7c.b3",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L082"
+   ],
+   "text": "Cross-entropy, intuitively: if the right answer is A and the model gives A probability 0.55, the loss is $-\\ln 0.55 \\approx 0.60$; at 0.90 it is $-\\ln 0.90 \\approx 0.11$."
+  },
+  {
+   "id": "s7c.b4",
+   "section": "s7c",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L083"
+   ],
+   "tone": "warning",
+   "title": "The gaps in this step",
+   "text": "The paper does not explain why calibration is needed; \"training and testing follow different reasoning\" above is my inference. Calibration uses the correct answers directly, which the main text does not mention (only the appendix does), and the paper reports no accuracy before versus after calibration."
+  },
+  {
+   "id": "s7d.b1",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L084"
+   ],
+   "text": "One more risk to guard against. The teacher's output was written after seeing the demonstration. If it contains things only someone who saw the answer could write, a student trained to write them learns to fake a justification and then guess. The paper's fix is a structural control: the choice is restricted to A or B, and the teacher's output ends at the final answer, so no part of the output copies the demonstration's text. This control belongs to stage one (distillation); stage two (calibration) uses the student's own reasoning and carries no such risk."
+  },
+  {
+   "id": "s7d.b2",
+   "section": "s7d",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L085"
+   ],
+   "tone": "question",
+   "title": "Concern: paraphrase inside the reasoning gets through",
+   "text": "The structural control only blocks the answer field. The reasoning is still free text, and the teacher can restate the demonstration in its own words, such as \"the existing tests call this helper directly\" from the Ansible example. A paraphrase is not a copy, so the control cannot stop it, and the paper reports no check for this. How much of what the student learns is real judgment can only be read from the unseen half, which is the next section."
+  },
+  {
+   "id": "s7d.b3",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "In short: one model plays teacher and student, and the teacher also sees the answer; the student first learns the teacher's reasoning with forward KL, then calibrates its final choice after its own reasoning.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s8.b1",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L092"
+   ],
+   "text": "How it is tested: the 390 engineering questions are split by task into two halves; the student trains on one and is tested on the other, and the two halves combine into a score over 390 questions. The training half only shows the model can memorise its training questions; the unseen half is the evidence. The comparison is the base model, Qwen3.6-27B, without fine-tuning."
+  },
+  {
+   "id": "s8.b2",
+   "section": "s8",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L092"
+   ],
+   "headers": [
+    "",
+    "Training half",
+    "Unseen half"
+   ],
+   "rows": [
+    [
+     "Right in a single order",
+     "48.6% → 92.9%",
+     "Not reported"
+    ],
+    [
+     "Strict accuracy (both orders right)",
+     "Not reported",
+     "Base model 30.0% → student 47.9%"
+    ],
+    [
+     "Mean accuracy (each order scored)",
+     "Not reported",
+     "42.7% → 62.4%"
+    ]
+   ]
+  },
+  {
+   "id": "s8.b3",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L093"
+   ],
+   "text": "A check with numbers from the appendix: the student is right in both orders on 187 questions, the base model on 117. The student is right where the base model is wrong on 104, the reverse on 34, a net gain of 70 questions: $70 / 390 = 17.9$ points."
+  },
+  {
+   "id": "s8.b4",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L094"
+   ],
+   "text": "Where the student lands among engineering scores:"
+  },
+  {
+   "id": "s8.b5",
+   "section": "s8",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L094"
+   ],
+   "headers": [
+    "Model",
+    "Engineering accuracy",
+    "Versus the student (47.9%)"
+   ],
+   "rows": [
+    [
+     "GPT-5.6 Sol",
+     "56.9%",
+     "Student lower"
+    ],
+    [
+     "GPT-5.6 Terra",
+     "50.0%",
+     "Student lower"
+    ],
+    [
+     "GLM-5.2",
+     "47.9%",
+     "Level"
+    ],
+    [
+     "Claude Opus 5",
+     "46.7%",
+     "Student higher"
+    ]
+   ]
+  },
+  {
+   "id": "s8.b6",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L094"
+   ],
+   "text": "The base model (30.0%) sits just below GPT-5.4 Nano (32.1%)."
+  },
+  {
+   "id": "s8.b7",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L095"
+   ],
+   "text": "The left half of Figure 7 shows these distillation results: on the 390 held-out engineering questions, scored with both orders required, the distilled student beats the base model; the dashed line is GPT-5.6 Sol's 56.9% on the same questions. The right half is the end-to-end result in the next section."
+  },
+  {
+   "id": "s8.b8",
+   "section": "s8",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L095"
+   ],
+   "manifest_id": "img-007",
+   "alt": "Left, the base model's and distilled student's accuracy on held-out engineering questions; right, the success rate of the agent performing the task under three advice settings.",
+   "caption": "Figure 7 — Distillation results. Left: on 390 held-out engineering questions the distilled student beats the base model; the dashed line is GPT-5.6 Sol's 56.9%. Right: on held-out SWE-bench Pro tasks, the success rate of the agent using student advice reaches most of the upper bound (the dashed bar, where every fork gets correct advice).",
+   "paper_label": "Figure 7",
+   "role": "evidence"
+  },
+  {
+   "id": "s9.b1",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "The student can now pick, but does picking right help? This section asks whether the student's choices make another agent do the task better.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s9a.b1",
+   "section": "s9a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L086"
+   ],
+   "text": "The student does not write code. It gives one piece of advice at each fork, and a separate, fixed agent, called the executor, reads the advice and does the task; the question is whether its success rate goes up. The pipeline:"
+  },
+  {
+   "id": "s9a.b2",
+   "section": "s9a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L087"
+   ],
+   "items": [
+    "Each held-out task already has a few forks (98 across 41 tasks); the forks and the two candidates' text were mined from earlier runs of these tasks by the question-making process above.",
+    "The student picks one candidate per fork. Advice comes from the student that never trained on that task (one student is trained per half).",
+    "Each fork becomes an advice note: the situation, the candidate to avoid and the candidate to take.",
+    "All notes go in the executor's first message, before the problem statement.",
+    "The executor completes the whole task on its own.",
+    "The official SWE-bench Pro tests decide whether the patch is accepted; that is success."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s9a.b3",
+   "section": "s9a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L088",
+    "L089"
+   ],
+   "text": "**The student decides exactly one thing.** The advice text (situation, candidate descriptions) is assembled from a template using what the generator wrote when making the questions; the student only decides which candidate is marked to avoid and which to take, one binary choice per fork. The rule: add up the student's log-odds (the log of the ratio between the two answers' probabilities; more positive means leaning A) for the A and B answer tokens across both orders, and take the candidate the sum leans toward."
+  },
+  {
+   "id": "s9a.b4",
+   "section": "s9a",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "What the advice looks like (template summary from the appendix)",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s9a.b5",
+     "section": "s9a",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L090"
+     ],
+     "text": "Each fork gets a Decision trap block; a fixed opening reminds the executor these are records of other runs, and a fixed closing reminds it that picking a route is not verification:"
+    },
+    {
+     "id": "s9a.b6",
+     "section": "s9a",
+     "type": "code",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L090"
+     ],
+     "lang": "markdown",
+     "code": "# Task-specific pitfall notes (from prior runs on this exact task)\nFixed opening: these are records from other runs, not evidence about your current change;\n               before submitting, run the relevant tests or build a check yourself and look at the actual output.\n\n## Decision trap {n} [{parallel|detour}] (step {fork step})\n### Situation where prior runs diverged   -> the situation at the fork\n### Known trap (this route produced a FAILING patch) -> the candidate to avoid\n### Route that avoided the trap in a prior run       -> the candidate to take\nFixed closing: choosing this route is not verification; produce your own evidence after acting."
+    }
+   ]
+  },
+  {
+   "id": "s9a.b7",
+   "section": "s9a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L091"
+   ],
+   "text": "The executor is SWE-agent 1.1.0 running Qwen3.6-27B (not distilled, thinking off, temperature 0.7), with at most 75 model calls per run, 600 seconds per command and 4,800 seconds in total, inside each task's official SWE-bench Pro container. The 41 tasks span 11 repositories."
+  },
+  {
+   "id": "s9b.b1",
+   "section": "s9b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L096"
+   ],
+   "text": "On 41 unseen SWE-bench Pro tasks, three settings were run by the same fixed executor (Qwen3.6-27B on SWE-agent), with success judged by the official tests:"
+  },
+  {
+   "id": "s9b.b2",
+   "section": "s9b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L096"
+   ],
+   "headers": [
+    "Setting",
+    "Advice",
+    "Success rate"
+   ],
+   "rows": [
+    [
+     "No advice",
+     "None",
+     "14.6%"
+    ],
+    [
+     "Correct advice",
+     "The correct candidate at every fork",
+     "39.0%"
+    ],
+    [
+     "Student advice",
+     "The candidate the student picked",
+     "33.7%"
+    ]
+   ]
+  },
+  {
+   "id": "s9b.b3",
+   "section": "s9b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L097"
+   ],
+   "text": "Correct advice beats no advice by 24.4 points, which the paper treats as the ceiling for this kind of advice. Student advice gains 19.1 points, about 78% of the ceiling ($19.1 / 24.4$). The student picked correctly at 77 of the 98 forks (78.6%)."
+  },
+  {
+   "id": "s9c.b1",
+   "section": "s9c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L098"
+   ],
+   "text": "Both experiments use the same students but ask different questions:"
+  },
+  {
+   "id": "s9c.b2",
+   "section": "s9c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L098"
+   ],
+   "headers": [
+    "",
+    "Distillation transfer",
+    "End-to-end"
+   ],
+   "rows": [
+    [
+     "What happens",
+     "The student answers Taste-Bench A/B questions directly",
+     "The student's choices become advice for an executor fixing the bug"
+    ],
+    [
+     "Executor?",
+     "No",
+     "Yes (Qwen3.6-27B on SWE-agent)"
+    ],
+    [
+     "What is measured",
+     "Share of forks picked right (30.0% → 47.9%)",
+     "Task success rate (14.6% → 33.7%)"
+    ],
+    [
+     "Test data",
+     "The unseen half of the 390 engineering questions",
+     "41 held-out SWE-bench Pro tasks"
+    ]
+   ]
+  },
+  {
+   "id": "s9c.b3",
+   "section": "s9c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L098"
+   ],
+   "text": "Put simply, distillation transfer asks whether the student can choose, and end-to-end asks whether its choices help someone else do better. In end-to-end, every task's advice comes from the student that never trained on that task, so both experiments agree on one point: the student has not seen the task.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s10.b1",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L100"
+   ],
+   "text": "This is the part most worth watching when reading the paper. The forks and candidates in the end-to-end experiment were mined in advance from earlier runs of the same tasks; the paper itself says the advice is prepared before the new run starts. So the experiment tests whether advice helps given a ready-made pair of candidates, not whether an agent can judge for itself on a new task. Breaking the pipeline into steps:"
+  },
+  {
+   "id": "s10.b2",
+   "section": "s10",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L101"
+   ],
+   "headers": [
+    "Step",
+    "Tested in the paper?"
+   ],
+   "rows": [
+    [
+     "The student picks on an already-written A/B question",
+     "Yes (47.9% on unseen tasks)"
+    ],
+    [
+     "Detecting \"this is a fork\"",
+     "No"
+    ],
+    [
+     "Writing two candidates in parallel wording",
+     "No"
+    ],
+    [
+     "Turning the choice into advice for an executor",
+     "Yes"
+    ]
+   ]
+  },
+  {
+   "id": "s10.b3",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L102",
+    "L103",
+    "L104"
+   ],
+   "text": "A new task has no earlier runs, so in real use the agent must find the fork and write the candidates itself, and the paper validates neither step. My inference is that real candidates will not arrive in Taste-Bench's clean, parallel wording, and each of those two steps will make its own mistakes. Also, all 41 tasks are ones where at least one fork was mined, which amounts to picking only tasks that truly had a decision split."
+  },
+  {
+   "id": "s10.b4",
+   "section": "s10",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L105"
+   ],
+   "tone": "warning",
+   "title": "What 33.7% does show",
+   "text": "33.7% shows that an executor benefits when the advice is good enough, not that this method raises success rates on new tasks out of the box."
+  },
+  {
+   "id": "s11.b1",
+   "section": "s11",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L108"
+   ],
+   "text": "First the overall verdict, then what to take away. The takeaways come in two kinds: the paper's own contribution (small), and ideas picked up while reading it that hold without it, which are usually the real gain.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s11a.b1",
+   "section": "s11a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L099"
+   ],
+   "items": [
+    "**Outcomes of existing runs as free labels.** Attempts at one task diverge partway through and the final outcome is the answer: no expert labels needed, and the question bank grows with the trajectories agent systems produce anyway. The idea is simple, portable and sound.",
+    "**Two complementary constructions, reported separately.** Parallel catches mistakes the agent never noticed, detour catches ones it fixed itself. Readers can see the difference in difficulty instead of one blended average.",
+    "**Label quality is checked by humans.** Human review agrees with the automatic labels 98.8% of the time; it was judged after seeing outcomes, but it at least rules out obviously wrong labels."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s11a.b2",
+   "section": "s11a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L106"
+   ],
+   "text": "As research, it is not very new: labelling mid-task decisions by their outcomes extends the process reward line of work (scoring each step by the result of running the task to the end, a rollout), and the distillation is a variant of context distillation. What is new is applying these to forks in long agent tasks and providing a reproducible question-making pipeline."
+  },
+  {
+   "id": "s11a.b3",
+   "section": "s11a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L107"
+   ],
+   "text": "As engineering, the value sits in question making. If you have several recorded runs of the same task with outcomes, the mine-the-fork, write-parallel-candidates, then-filter pipeline is directly usable as a source of data for evaluating an agent's decisions. The distillation and advice part shows that internalising judgment made with hindsight is a workable direction, but it has not been shown to deploy on new tasks."
+  },
+  {
+   "id": "s11b.b1",
+   "section": "s11b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L109"
+   ],
+   "text": "The paper offers one thing worth keeping: **the question recipe**, a way to make decision-quality test questions for free from trajectories agents have already produced. Why it works: a single run's outcome mixes judgment, execution and environment, so you cannot tell whether judgment caused it; but if two runs of one task are identical until they split, the difference in outcomes comes mostly from the decision at the split, so which outcome is better can serve as the label for whether that decision was good. The argument depends on no particular model or domain, which is why it lasts. You need three ingredients:"
+  },
+  {
+   "id": "s11b.b2",
+   "section": "s11b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L109"
+   ],
+   "items": [
+    "Several recorded runs of the same task.",
+    "A trustworthy outcome signal for each run (tests passed or not, a score).",
+    "A generator model that can read a full trajectory."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s11b.b3",
+   "section": "s11b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L110"
+   ],
+   "text": "The pseudocode below maps to the two constructions and the three gates above; the comments say what each gate blocks:"
+  },
+  {
+   "id": "s11b.b4",
+   "section": "s11b",
+   "type": "code",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L110"
+   ],
+   "lang": "python",
+   "code": "def build_taste_questions(runs_by_task, generator, judges):\n    candidates = []\n    for task, runs in runs_by_task.items():\n        # Source A: parallel runs, one success and one failure on the same task\n        for good, bad in pair_opposite_outcomes(runs):\n            candidates.append(generator.find_fork(task, good, bad))\n        # Source B: detours, \"choose X -> hit a wall -> switch to Y -> succeed\" within one run\n        for run in runs:\n            candidates.append(generator.find_detour(task, run))\n\n    # Gate 1: the generator drops candidates with unclean evidence by its rubric (most are dropped)\n    qs = [c for c in candidates if c is not None and c.passes_rubric]\n\n    # Gate 2: drop the too easy; if every judge is right from the wording alone, no judgment was tested\n    qs = [q for q in qs\n          if not all(j.choose(q.cands) == q.label for j in judges)]\n\n    # Gate 3: drop the undecidable; with the full record, drop it if any judge disagrees with the label\n    qs = [q for q in qs\n          if all(j.choose(q.cands, full_record=q.record) == q.label for j in judges)]\n    return qs"
+  },
+  {
+   "id": "s11b.b5",
+   "section": "s11b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L111"
+   ],
+   "text": "Expected yield in practice: the paper kept only 502 of 4,657 candidates (10.8%), so plan on roughly ten times as many candidates as you need. The judges must not include the generator itself. The most common mistakes in question making already have counters in the generator's rules: the outcome gap really comes from typos, crashes or luck; the better direction can only be named after seeing the failure; one candidate is a strawman; the wording gives the answer away."
+  },
+  {
+   "id": "s11c.b1",
+   "section": "s11c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L112"
+   ],
+   "text": "LLMs answering two-choice questions have position bias. Ask once, and a model that always answers A scores 50% on a bank split evenly between A and B, and that 50% says nothing about judgment. Models with a partial bias are affected too: part of their score is luck that the order happened to suit them. The fix is to ask every question twice, swapping the two options completely the second time, and count it only if both answers are right:"
+  },
+  {
+   "id": "s11c.b2",
+   "section": "s11c",
+   "type": "code",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L113"
+   ],
+   "lang": "python",
+   "code": "def strict_accuracy(model, questions):\n    correct = 0\n    for q in questions:\n        a1 = model(q.task, q.prefix, first=q.cand_x, second=q.cand_y)  # order one\n        a2 = model(q.task, q.prefix, first=q.cand_y, second=q.cand_x)  # order two, fully reversed\n        ok1 = (a1 == slot_of(q.label, order=1))\n        ok2 = (a2 == slot_of(q.label, order=2))\n        correct += (ok1 and ok2)     # counts only if both are right\n    return correct / len(questions)"
+  },
+  {
+   "id": "s11c.b3",
+   "section": "s11c",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L114"
+   ],
+   "items": [
+    "The chance baseline and the always-one-slot score both drop, to 25% and 0% (see the scoring section).",
+    "Questions whose answer flips with the order do not count as taste.",
+    "The paper's numbers show the effect: for GPT-5.6 Sol, the $25 + 29 = 54$ questions right only once (10.8%) change answer with the order; asked once, half of them would count as right, and strict scoring excludes them all."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s11c.b4",
+   "section": "s11c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L115"
+   ],
+   "text": "The cost: inference doubles, and scores look lower than you are used to. You can also report the lenient version that scores each answer separately; the gap between the two numbers itself measures the model's sensitivity to position. This applies to any pairwise LLM judge or A/B preference evaluation."
+  },
+  {
+   "id": "s11d.b1",
+   "section": "s11d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L116"
+   ],
+   "text": "Back to the question left open in the distillation section. In distillation the student moves toward the teacher's next-token distribution. With vocabularies of a hundred thousand tokens or more, computing KL over every token is too expensive, so implementations truncate: keep some tokens and merge the rest into one \"other\" bucket. The question is whose top K to keep. The key fact is that forward KL is weighted by the teacher's probabilities:"
+  },
+  {
+   "id": "s11d.b2",
+   "section": "s11d",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L116"
+   ],
+   "latex": "D_{KL}(p_T \\,\\|\\, p_S) = \\sum_{v} p_T(v) \\log \\frac{p_T(v)}{p_S(v)}",
+   "intuition": "s11d.b1"
+  },
+  {
+   "id": "s11d.b3",
+   "section": "s11d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L116"
+   ],
+   "text": "Every term is multiplied by $p_T(v)$. Tokens the teacher gives tiny probability contribute almost 0 and can be dropped safely; tokens the teacher rates highly are where the loss comes from. (General knowledge: reverse KL is weighted by the student's probabilities, and there keeping the student's top K is the natural choice.)"
+  },
+  {
+   "id": "s11d.b4",
+   "section": "s11d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L117"
+   ],
+   "text": "Yet the paper keeps the student's top 100, plus one \"other\" bucket. If a token the teacher wants is not in the student's top 100 (the student gives it low probability), that token is merged into \"other\", and the student only hears \"give a bit more probability to something off the list\", not which token."
+  },
+  {
+   "id": "s11d.b5",
+   "section": "s11d",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "How big is this gap? A made-up example",
+   "tone": "info",
+   "children": [
+    {
+     "id": "s11d.b6",
+     "section": "s11d",
+     "type": "table",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L118"
+     ],
+     "headers": [
+      "Token",
+      "Student $p_S$",
+      "Teacher $p_T$"
+     ],
+     "rows": [
+      [
+       "W",
+       "0.5",
+       "0.2"
+      ],
+      [
+       "X",
+       "0.3",
+       "0.1"
+      ],
+      [
+       "Z",
+       "0.01",
+       "0.6"
+      ],
+      [
+       "Other",
+       "0.19",
+       "0.1"
+      ]
+     ],
+     "illustrative": true
+    },
+    {
+     "id": "s11d.b7",
+     "section": "s11d",
+     "type": "list",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L118"
+     ],
+     "items": [
+      "Bucket by the student's top 2 (W, X), so Z is merged into \"other\" (student 0.20, teacher 0.70): KL $\\approx 0.2 \\ln(0.2/0.5) + 0.1 \\ln(0.1/0.3) + 0.7 \\ln(0.7/0.2) \\approx 0.58$.",
+      "Bucket by the teacher's top 3 (Z, W, X), giving Z its own bucket: KL $\\approx 0.6 \\ln(0.6/0.01) + 0.2 \\ln(0.2/0.5) + 0.1 \\ln(0.1/0.3) + 0.1 \\ln(0.1/0.19) \\approx 2.10$. Since every token in this example is already listed, 2.10 is the full, untruncated KL."
+     ],
+     "ordered": false,
+     "illustrative": true
+    },
+    {
+     "id": "s11d.b8",
+     "section": "s11d",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L119",
+      "L120"
+     ],
+     "text": "So in this example, bucketing by the student's top K underestimates the loss on the token the teacher cares about most by a factor of 3.6, and the gradient points at the whole \"other\" bucket, not at Z. My inference: the gradient raises every off-list token in proportion to its current probability, and the token the teacher wants starts out small, so it rises little and is learned slowly.",
+     "illustrative": true
+    }
+   ]
+  },
+  {
+   "id": "s11d.b9",
+   "section": "s11d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L121"
+   ],
+   "text": "The rule (my judgment; the paper runs no comparison): when truncating, keep the high-probability entries of whichever side does the weighting."
+  },
+  {
+   "id": "s11d.b10",
+   "section": "s11d",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L121"
+   ],
+   "headers": [
+    "KL direction",
+    "Weighting distribution",
+    "Keep whose top K"
+   ],
+   "rows": [
+    [
+     "Forward KL (teacher as target)",
+     "$p_T$",
+     "The teacher's top K"
+    ],
+    [
+     "Reverse KL",
+     "$p_S$",
+     "The student's top K"
+    ],
+    [
+     "Unsure, want to be safe",
+     "Neither",
+     "The union of both top-K sets, plus one \"other\" bucket"
+    ]
+   ]
+  },
+  {
+   "id": "s11d.b11",
+   "section": "s11d",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L122"
+   ],
+   "text": "The paper does not say why it keeps the student's top 100. A reasonable guess is that the student's logits are already at hand during training, so taking its top 100 is the simplest to implement. That guess is my inference, not something the paper says. How the two sides' buckets are aligned is in the third deep dive."
+  },
+  {
+   "id": "s11e.b1",
+   "section": "s11e",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L140"
+   ],
+   "text": "The paper's core idea is simple: when several attempts at one task are identical until they diverge, the final outcome is the label for the decision at the fork. With it, the paper's authors filter 4,657 candidates into the 502-question Taste-Bench, the best of 14 frontier models scores only 59.7%, and the later the deciding evidence appears, the worse models do."
+  },
+  {
+   "id": "s11e.b2",
+   "section": "s11e",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L141"
+   ],
+   "text": "The distillation and end-to-end results (30.0% to 47.9%, 14.6% to 33.7%) are a positive, directional signal, but end-to-end relied on forks mined in advance, so it is not yet evidence that this works directly on new tasks."
+  },
+  {
+   "id": "s11e.b3",
+   "section": "s11e",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L142"
+   ],
+   "tone": "tip",
+   "title": "If you keep only one thing",
+   "text": "Keep the question recipe: the second half of a run is the answer key for the decision in its first half. The other two takeaways that hold beyond the paper: ask two-choice evaluations twice with the order swapped, and when truncating forward KL, keep the teacher's most likely top K."
+  },
+  {
+   "id": "s11e.b4",
+   "section": "s11e",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Next time you have a pile of agent run logs, try mining a few forks from them to quiz your own model. Next time you run an A/B evaluation, swap the order and ask again. And next time you see \"student advice boosts success rates\", ask one question first: who found the forks?",
+   "purpose": "recap"
+  },
+  {
+   "id": "s12.b1",
+   "section": "s12",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L123"
+   ],
+   "text": "The four sections below cover the ideas most easily confused or forgotten. Each is written to stand on its own without the paper, so you can jump straight to one when reviewing.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s12a.b1",
+   "section": "s12a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L124"
+   ],
+   "text": "**Bottom line: parallel and detour are not just where the samples come from; they also decide how each question's answer was obtained.** These are the two raw materials for making decision-quality questions from agent trajectories. Their differences were covered in \"Two ways to mine forks\"; this section adds how each decides the label and why that affects reliability."
+  },
+  {
+   "id": "s12a.b2",
+   "section": "s12a",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L124"
+   ],
+   "headers": [
+    "",
+    "Where the label comes from",
+    "Is there a control?",
+    "Mistakes caught"
+   ],
+   "rows": [
+    [
+     "Parallel",
+     "A comparison of two branches' final outcomes; the direction of the better one is the answer",
+     "Yes: the branches are identical before the fork, a true control",
+     "Ones the agent never noticed"
+    ],
+    [
+     "Detour",
+     "One run's sequence of choosing direction X, hitting a wall, switching to direction Y and succeeding: the abandoned direction produced an observable failure, the fix completed the task",
+     "No parallel branch to compare against",
+     "Ones the agent later noticed and fixed itself"
+    ]
+   ]
+  },
+  {
+   "id": "s12a.b3",
+   "section": "s12a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L125"
+   ],
+   "text": "Taste-Bench has 172 parallel questions and 330 detour questions (per-cell counts in the four-cell table earlier). The paper reports them separately because their difficulty differs a lot: the gap due to construction is larger than the gap due to domain, and detour engineering is hardest (per-cell accuracy is in the overall results table earlier)."
+  },
+  {
+   "id": "s12a.b4",
+   "section": "s12a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L126"
+   ],
+   "text": "Why such a gap? My inference: parallel asks which of two branches took the better direction, and the agent really walked both; detour asks whether you can see that a direction will fail earlier than the agent acting at the time did, which takes foreseeing consequences rather than comparing two outcomes."
+  },
+  {
+   "id": "s12a.b5",
+   "section": "s12a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L127"
+   ],
+   "text": "In other settings: any approach that mines test questions from logs faces the same choice. Build a counterfactual control from two different runs, or use self-correction within one run? The first gives more reliable labels; the second gives more data but runs a higher risk of hindsight questions."
+  },
+  {
+   "id": "s12b.b1",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L128"
+   ],
+   "text": "**Bottom line: the paper reports two different comparisons. Humans agree with the automatic labels (98.8%), and humans agree with each other (98.6%, $\\kappa = 0.973$); both hold.** Think of two teachers grading the same exam against the answer key."
+  },
+  {
+   "id": "s12b.b2",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L128"
+   ],
+   "text": "**Setup.** Each of two reviewers looks at the same 100 questions. For each, they first say which direction they would choose; then, after reading a summary of what happened next and the outcome, they answer which decision was better: A, B, or \"about the same / the choice does not explain the outcome gap\". Only the second-stage answers are analysed, and answers without a clear A/B preference are excluded."
+  },
+  {
+   "id": "s12b.b3",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L128"
+   ],
+   "text": "**Comparison 1: humans versus the label.** Each reviewer's clear A/B judgments are compared with the automatic label separately (numbers in Table 2 earlier):"
+  },
+  {
+   "id": "s12b.b4",
+   "section": "s12b",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L128"
+   ],
+   "headers": [
+    "",
+    "Clear A/B judgments",
+    "Agree with label"
+   ],
+   "rows": [
+    [
+     "Reviewer 1",
+     "87",
+     "86 (98.9%)"
+    ],
+    [
+     "Reviewer 2",
+     "85",
+     "84 (98.8%)"
+    ],
+    [
+     "Total",
+     "172",
+     "170 (98.8%)"
+    ]
+   ]
+  },
+  {
+   "id": "s12b.b5",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L128"
+   ],
+   "text": "Nearly every choice either reviewer made matched the automatic label. **Comparison 2: human versus human.** Now ignore the label and compare the reviewers with each other. Only 74 questions have a clear A/B choice from both, and on 73 of them they chose the same (98.6%)."
+  },
+  {
+   "id": "s12b.b6",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L128"
+   ],
+   "text": "**Why are the denominators 172 and 74 rather than one number?** 172 counts judgments ($87 + 85$), the retained judgments of both reviewers added together. Each reviewer answered \"about the same\" on some questions, which were excluded. Comparing two people requires both to have a clear choice on the same question, which leaves only 74."
+  },
+  {
+   "id": "s12b.b7",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L128"
+   ],
+   "text": "**What $\\kappa$ is.** Cohen's kappa still answers comparison 2's question: how much two raters agree, after removing agreement that happens by chance. With only A and B to choose from, two people guessing would match about 50% of the time, so $\\kappa$ is stricter than raw agreement. It equals how far actual agreement exceeds chance agreement, divided by how far it could exceed it at most:"
+  },
+  {
+   "id": "s12b.b8",
+   "section": "s12b",
+   "type": "formula",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L129"
+   ],
+   "latex": "\\kappa = \\frac{p_o - p_e}{1 - p_e}",
+   "intuition": "s12b.b7"
+  },
+  {
+   "id": "s12b.b9",
+   "section": "s12b",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L129"
+   ],
+   "items": [
+    "$p_o$: the observed agreement.",
+    "$p_e$: the agreement expected by chance if both chose at random.",
+    "The denominator $1 - p_e$: the most room left above chance agreement.",
+    "$\\kappa = 1$ means perfect agreement; $\\kappa = 0$ means no better than guessing."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s12b.b10",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L129"
+   ],
+   "text": "Check: $p_o = 73 / 74 \\approx 0.986$. With A and B roughly half and half, $p_e \\approx 0.5$, so $\\kappa \\approx (0.986 - 0.5) / (1 - 0.5) \\approx 0.973$, matching the paper."
+  },
+  {
+   "id": "s12b.b11",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L130"
+   ],
+   "text": "**What these numbers verify, and what they do not.** The reviewers judged after seeing the outcome (stage two), so 98.8% verifies that the automatic labels match the recorded outcomes: a consistency check. It does not verify that the decision actually caused the difference in outcomes, nor that the question was answerable at decision time. Also, the reviewers' stage-one choices (made before seeing the outcome) amount to human accuracy on this task and could be compared with models; the paper's main text does not report that number."
+  },
+  {
+   "id": "s12b.b12",
+   "section": "s12b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L131"
+   ],
+   "text": "**The idea that transfers.** For any dataset labelled automatically by an LLM, report \"humans versus labels\" and \"humans versus humans\" separately: the first says whether the labels can be trusted, the second whether the task itself has clear answers."
+  },
+  {
+   "id": "s12c.b1",
+   "section": "s12c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L132"
+   ],
+   "text": "**In one sentence: KL sums over every token in the vocabulary, which is too expensive, so the implementation computes it on a small set of tokens and lumps the rest into one \"other\" bucket; the probabilities still sum to 1, nothing is thrown away.** Background (general knowledge): at every position a language model gives a probability to every token in its vocabulary (often a hundred thousand or more), and the loss formula in the distillation section sums over every $v$:"
+  },
+  {
+   "id": "s12c.b2",
+   "section": "s12c",
+   "type": "formula",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L132"
+   ],
+   "latex": "\\mathcal{L}_t = \\sum_{v} p_T(v) \\log \\frac{p_T(v)}{p_S(v)}",
+   "intuition": "s12c.b1"
+  },
+  {
+   "id": "s12c.b3",
+   "section": "s12c",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L132"
+   ],
+   "items": [
+    "$p_T(v)$, $p_S(v)$: the probability the teacher and the student give token $v$ at this position.",
+    "Summed over: the whole vocabulary."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s12c.b4",
+   "section": "s12c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L133"
+   ],
+   "text": "Computing this for every position of every training view costs a lot of memory and compute, so the paper simplifies in four ways. **First, reasoning positions: the top 100 plus one \"other\" bucket.** Take the student's 100 most likely tokens; add up the probabilities of the tens of thousands of others as bucket 101, \"other\"; compute KL over these buckets. It is cheap and the probabilities still sum to 1. The paper only says \"the student's top 100 plus one bucket for the remaining probability\" and does not say what happens on the teacher's side."
+  },
+  {
+   "id": "s12c.b5",
+   "section": "s12c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L134"
+   ],
+   "text": "My inference: KL compares bucket by bucket how much the teacher and the student give each bucket, so both sides need the same buckets, and the sensible approach is to read the teacher's probabilities on the same 100 tokens and sum the rest into \"other\". This is inference, not something the paper states."
+  },
+  {
+   "id": "s12c.b6",
+   "section": "s12c",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L135"
+   ],
+   "items": [
+    "**Second, the final choice position: compare only A and B.** The model ends with `{\"answer\":\"A\"}`, and at the A/B position there are just two buckets. Made-up example: teacher $P(A) = 0.95$, $P(B) = 0.05$; student $P(A) = 0.55$, $P(B) = 0.45$; loss $= 0.95 \\ln(0.95/0.55) + 0.05 \\ln(0.05/0.45) \\approx 0.52 - 0.11 = 0.41$.",
+    "**Third, the total loss.** The KL at reasoning positions and the KL at the choice position are each weighted by 1 and added.",
+    "**Fourth, long reasoning is subsampled.** The teacher's reasoning can run to 3,072 tokens; computing every position uses too much memory, so at most 512 evenly spaced positions are used.",
+    "The full three-token worked example is in the loss-function part of the distillation section."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s12c.b7",
+   "section": "s12c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L136"
+   ],
+   "text": "**Why truncation is acceptable.** Forward KL is weighted by the teacher's probabilities, so tokens the teacher gives tiny probability contribute almost 0; as long as the kept buckets cover the tokens the teacher really cares about, little is lost. The problem is whose top 100 to keep; see takeaway three."
+  },
+  {
+   "id": "s12d.b1",
+   "section": "s12d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L137"
+   ],
+   "text": "**Key point: whom the student imitates and whose written text the comparison runs on are two different things. The student always imitates the teacher; the paper chooses the teacher's text as the place to compare.**"
+  },
+  {
+   "id": "s12d.b2",
+   "section": "s12d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L137"
+   ],
+   "text": "First, what KL needs: a piece of text that has already been written. At each position of that text, both models read the same preceding words, predict the next token, and the two predictions are compared. So you must first decide whose text to compare on. The common line, \"we are learning from the teacher, so the teacher comes first\", mixes up two things and is only half right:"
+  },
+  {
+   "id": "s12d.b3",
+   "section": "s12d",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L137"
+   ],
+   "items": [
+    "**Who is imitated?** Always the teacher. Every term of the formula is multiplied by the teacher's probability $p_T$, so whichever text is used, the student moves toward the teacher.",
+    "**Whose text is the place to compare?** This is the real question, and there are two choices."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s12d.b4",
+   "section": "s12d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L137"
+   ],
+   "text": "**Choice A (the paper's): the teacher's text.** A made-up example, back to the Ansible question: the teacher, having seen the demonstration, writes \"keep the helper's default output unchanged so the existing tests do not break, so choose A.\" At the position of the key insight that the existing tests would break, the teacher knows the answer and predicts with high probability; the student has not seen the answer and predicts low. The gap is large, the loss is large, and the student is pushed to learn to think of this. At the \"so choose\" position, the teacher predicts A at 0.95 and the student only 0.55, again a big gap. Using the teacher's text walks the student through the teacher's line of thought, asking at each step: your turn, what would you write next?"
+  },
+  {
+   "id": "s12d.b5",
+   "section": "s12d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L137"
+   ],
+   "text": "**Choice B: the student's own text.** Without the answer, the student writes something vaguer, say \"both options are reasonable, B is more complete...\". On that text the teacher and student predict about the same at most positions, so the loss is small. The key insights that really separate them never appear in the student's text, so there is no position to compare them on."
+  },
+  {
+   "id": "s12d.b6",
+   "section": "s12d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L137"
+   ],
+   "text": "The paper's reasoning, in plain words: the two inputs differ only in the demonstration, so the tokens where predictions truly differ appear only in the teacher's output. The student's own samples rarely produce them, so computing KL on the student's text misses the teacher's preferences. Put simply: an insight the student cannot think of never shows up in its own text, so there is nothing there to teach it."
+  },
+  {
+   "id": "s12d.b7",
+   "section": "s12d",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L138"
+   ],
+   "items": [
+    "This is close to teacher forcing in ordinary supervised fine-tuning: feed the model the correct preceding text and check only whether it predicts the next word (general knowledge).",
+    "Computing KL on the student's own samples is the standard practice of on-policy distillation (distilling on the student's own outputs). The paper deliberately does not, and gives its reasons in the appendix; it offers no comparison run using the student's text."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s12d.b8",
+   "section": "s12d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L139"
+   ],
+   "text": "**In general.** When the teacher and student differ because the teacher sees extra information, compare on the teacher's trajectory: only there does that information show its effect; on its own trajectory, the student never gets there."
+  }
+ ],
+ "decisions": []
+}
