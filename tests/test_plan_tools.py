@@ -184,6 +184,13 @@ class TestNumberTokens(unittest.TestCase):
         self.assertEqual(plan_lib.num_tokens("無圖\n58.8\n-"), ["58.8"])
         self.assertEqual(plan_lib.num_tokens("看圖 2 和表 3"), [])
 
+    def test_magnitude_units_compare_by_value(self):
+        import plan_lib
+        zh = plan_lib.num_tokens("270 億參數、7,970萬筆、1.5 萬", scaled=True)
+        en = plan_lib.num_tokens("27B parameters, 79.7 million rows, 15K", scaled=True)
+        self.assertEqual(zh, en)
+        self.assertEqual(plan_lib.num_tokens("Qwen3-8B", scaled=True), ["8000000000"])
+
 
 class TestViews(Base):
     def test_reader_view_hides_source(self):

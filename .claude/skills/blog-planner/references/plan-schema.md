@@ -47,12 +47,12 @@ Length targets, warned by the validator: zh title 10 to 55 characters and descri
 A tree of `{id, title, role, goal, serves[], recap, children[]}`. `role` is one of `hook`, `context`, `mechanism`,
 `evidence`, `caveat`, `takeaway`, `deep-dive`. `goal` is what the reader can do or say after the section.
 `serves` lists takeaway ids. Depth 1 renders as H2, depth 2 as H3, depth 3 as H4 (no deeper). **Titles carry no
-numbers**: the theme numbers headings. A section's heading is generated from the outline; it is not a block.
+numbers**: the theme numbers headings, so a title may not even start with a count (「14 個模型…」 fails). A section's heading is generated from the outline; it is not a block.
 
 ## `glossary`
 
 `{term, defined_in, first_used_in?}`. `defined_in` is a block id. The validator fails if the term shows up in an
-earlier block than its definition. Terms on the reader's "no need to explain" list are exempt.
+earlier block than its definition, and figure `alt` text and captions count as a use. Terms on the reader's "no need to explain" list are exempt.
 
 ## `ledger` (zh plan)
 
@@ -106,5 +106,6 @@ introduces no number that `article.md` lacks (except single digits, or when mark
 
 Same `meta` (written natively: title, description, hook, takeaways, cover labels), same `outline` ids and depths,
 same block ids, order, types, layers, origins, ledger citations, figure ids and fold nesting; no `ledger` array (it
-lives in the zh plan). Per block, the multiset of numbers must equal the zh block's. `validate_plan.py <en> --zh
+lives in the zh plan). Per block, the multiset of numbers must equal the zh block's (a number with a magnitude unit
+compares by value: 270 億 = 27B). `validate_plan.py <en> --zh
 <zh>` checks all of this. See `en-transcreation.md`.

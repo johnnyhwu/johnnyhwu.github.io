@@ -321,7 +321,7 @@ The idea is to have a teacher that has peeked at the answer write out its reason
 {{< fold title="Training details: how teacher reasoning is sampled, and the LoRA settings" tone="info" >}}
 Each question appears once in each A/B order; each is called a view. The teacher writes one reasoning passage per view at temperature 1.0, up to 3,072 tokens; a passage is kept only if its reasoning block is well formed and at least 32 tokens long, and a question enters training only if both of its views are kept.
 
-LoRA settings: rank 16, \( \alpha = 32 \), about 7,970 × 10⁴ trainable parameters, roughly two hours of training per half on a single A100 80GB.
+LoRA settings: rank 16, \( \alpha = 32 \), about 79.7M trainable parameters, roughly two hours of training per half on a single A100 80GB.
 {{< /fold >}}
 
 The left half of Figure 6 is this distillation: the reasoning of a teacher that saw the correct candidate is taught to a student that sees only the question. Training has two stages. In stage one, the teacher writes its reasoning after seeing the answer, the student predicts the next word at every position of that reasoning, and the gap between the two distributions is the loss. In stage two, the student switches to its own reasoning and is trained only at the final A/B choice position, against the correct answer. The right half involves a separate, fixed agent that actually carries out the task, covered later.
@@ -330,7 +330,7 @@ The left half of Figure 6 is this distillation: the reasoning of a teacher that 
 
 ### Why learn the reasoning, and with what loss: forward KL
 
-Why learn the reasoning rather than the label directly? Each question has just one binary label and no intermediate reasoning. The paper's argument: fine-tune on labels alone and the model memorises answers without learning judgment. The underlying reason (general knowledge, not from the paper): each student trains on only about 195 questions while the model has 27B parameters (270 × 10⁸); when the loss sits on a single answer token, the easiest path is to memorise which surface features of a question map to which answer. Reasoning adds a few hundred tokens per question to fit, making it harder to lower the loss by memorising surface features alone. Note that the paper includes no labels-only comparison; this is the paper's argument.
+Why learn the reasoning rather than the label directly? Each question has just one binary label and no intermediate reasoning. The paper's argument: fine-tune on labels alone and the model memorises answers without learning judgment. The underlying reason (general knowledge, not from the paper): each student trains on only about 195 questions while the model has 27B parameters; when the loss sits on a single answer token, the easiest path is to memorise which surface features of a question map to which answer. Reasoning adds a few hundred tokens per question to fit, making it harder to lower the loss by memorising surface features alone. Note that the paper includes no labels-only comparison; this is the paper's argument.
 
 The loss is forward KL. [KL divergence](../dpo/) measures how different two probability distributions are: 0 when they are identical, larger the more they differ. At every position \( t \) of the teacher's written reasoning, both models read the same preceding text and each predicts the next token; the more their guesses differ, the bigger the loss, and training pulls the student's guesses toward the teacher's. As a formula:
 

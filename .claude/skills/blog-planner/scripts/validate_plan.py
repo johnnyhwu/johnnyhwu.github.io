@@ -8,8 +8,10 @@ It checks structure and fidelity mechanically, so the Reviewers can spend their 
   - numbers: every number in article.md appears in the post (or its line is waived by a decision); an editorial
     block may not introduce a new number unless it is marked `illustrative`
   - glossary: a defined term is not used before the block that defines it
+  - paper link: a paper-intro post links its paper (warning)
   - hygiene: no `$` imbalance, no hand-numbered headings, no half-width punctuation in zh text, no CJK in en text
-  - parity (en): same block ids, types, ledger refs, figures and per-block numbers as the zh plan
+  - parity (en): same block ids, types, ledger refs, figures and per-block numbers as the zh plan (numbers with a
+    magnitude unit compare by value: 270億 = 27B = 27 billion)
 
 Usage:
   validate_plan.py <post.zh.json> --article <article.md> --manifest <image-manifest.json> [--stage skeleton|draft]
@@ -242,6 +244,9 @@ def check_blocks(r, plan, by_id, nodes, article, manifest_ids, stage):
         if iid not in fig_ids:
             r.err(f"article.md references {iid} but no figure block uses it")
     check_glossary(r, plan, order, glossary_skip)
+    if plan.get("meta", {}).get("section") == "paper-intro" and "](http" not in L.plan_text(plan):
+        r.warn("paper-intro post links to no paper: carry article.md's `**來源**` line into the opening section, "
+               "or tell the author it is missing")
     return seen
 
 
@@ -368,8 +373,8 @@ def check_parity(r, zh, en):
         ec = [c["id"] for c in e.get("children", [])]
         if zc != ec:
             r.err(f"{bid}: fold children differ between zh and en")
-        z_nums = Counter(L.num_tokens("\n".join(L.block_text(z, with_code=False))))
-        e_nums = Counter(L.num_tokens("\n".join(L.block_text(e, with_code=False))))
+        z_nums = Counter(L.num_tokens("\n".join(L.block_text(z, with_code=False)), scaled=True))
+        e_nums = Counter(L.num_tokens("\n".join(L.block_text(e, with_code=False)), scaled=True))
         if z_nums != e_nums:
             r.err(f"{bid}: numbers differ between zh {sorted(z_nums.elements())} and en {sorted(e_nums.elements())}")
     zo = [(n["id"], d) for n, d in L.outline_nodes(zh.get("outline", []))]

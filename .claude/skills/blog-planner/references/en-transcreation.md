@@ -10,7 +10,9 @@ Chinese leaves value on the table.
 - `outline`: same ids, depths and order (the titles are yours).
 - `blocks`: same ids, order, `type`, `section`, `layer`, `origin`, `ledger` citations, `manifest_id`, `tone`,
   `kind`, fold nesting. No block added, none dropped, none moved.
-- **Numbers**: each block carries exactly the numbers its zh twin carries.
+- **Numbers**: each block carries exactly the numbers its zh twin carries. Write magnitudes the English way (27B,
+  79.7M, 45K): the check compares them by value, so 270 億 and 27B match. Never force the Chinese grouping
+  ("270 × 10⁸").
 - Substance: every claim, its strength and its caveats. A hedge stays a hedge ("probably", "the paper does not
   say"); the Writer's "my guess" paragraphs stay labelled as guesses.
 
@@ -39,7 +41,8 @@ python3 .claude/skills/blog-planner/scripts/validate_plan.py plans/<slug>/post.e
   --zh plans/<slug>/post.zh.json --article <article.md> --manifest <manifest>
 ```
 
-Then one **fresh Reader** (`reviewer-reader.md`, the same fixed prompt) reads the English title, description and
+Read your English once yourself, start to end, for broken sentences before anyone else does. Then one **fresh
+Reader** (`reviewer-reader.md`, the same fixed prompt) reads the English title, description and
 first screen only (make a short view yourself: the title, description and first three blocks) and answers questions
 1 and 2. A "no" on clicking, or a stall in the first screen, is fixed before handing over. The English body does not
 get a second full review: the zh plan was reviewed, parity is mechanical, and the validator catches drift in numbers

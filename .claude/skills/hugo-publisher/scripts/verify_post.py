@@ -211,7 +211,7 @@ def check_full_width_punctuation(text, label, warnings):
             f"{label}: {len(hits)} half-width , ; : ? ! spot(s) in Chinese text -- "
             "use full-width ，；：？！ instead, including in title/description and "
             "shortcode attributes this skill authors itself (see hugo-conventions.md's "
-            "full-width-punctuation section). " + " | ".join(hits[:5])
+            "rendering rules). " + " | ".join(hits[:5])
         )
 
 
