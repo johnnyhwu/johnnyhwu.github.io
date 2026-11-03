@@ -1,0 +1,3497 @@
+{
+ "schema": "post-plan/1",
+ "source": {
+  "article": "AI-Research/done/published/Subagent-Fold/article.md",
+  "manifest": "plans/subagent-fold/empty-manifest.json",
+  "root": "AI-Research"
+ },
+ "meta": {
+  "section": "ai-concept",
+  "slug": "subagent-fold",
+  "tags": [
+   "Single-Agent",
+   "Multi-Agent",
+   "Evaluation"
+  ],
+  "title": "該不該拆 Subagent？Anthropic 談把多 Agent 折回單一 Agent Loop",
+  "title_alts": [
+   "該不該拆 Subagent？Anthropic 談把多 Agent 折回單一 Agent Loop",
+   "把 Subagent 折回主 Agent Loop：漸進式揭露、Skills 與分階段遷移",
+   "多 Agent 架構的隱形成本：每次交接都在掉資訊"
+  ],
+  "description": "企業 agent 常是每個團隊一個 subagent，再疊一個 orchestrator，但每次交接都是一次有損摘要。整理 Anthropic 的做法：單一 agent loop 搭配按需載入的 skills 與 tools、用 eval 分階段折疊，以及 Conway's law 為什麼讓 agent 長成組織圖。",
+  "reader": {
+   "persona": "用過 ChatGPT 或 Claude、聽過 AI agent，想知道 agent 系統該怎麼切分的工程師或產品人，不一定做過多 agent 架構",
+   "promise": "讀完能說出多 subagent 架構為什麼會掉資訊、單一 loop 加 skills 與 tools 長什麼樣、怎麼用 eval 一步步折過去，並能用一個問題檢查自己的 agent 邊界是不是組織圖的投影",
+   "assumes": [
+    "prompt"
+   ]
+  },
+  "takeaways": [
+   {
+    "id": "t1",
+    "text": "每一條 subagent 邊界都是一次有損的 context 交接，而這些邊界常常只是組織圖的投影（Conway's law），不是技術上非切不可。",
+    "memory_hook": "「如果整個系統只由一個團隊負責，這條邊界還會存在嗎？」"
+   },
+   {
+    "id": "t2",
+    "text": "目標架構是一個模型、一個 context window 的單一 loop：知識寫成按需載入的 skill，能力做成 tool，絕對不能違反的規則寫進 tool 的程式碼而不是 prompt。",
+    "memory_hook": "要判斷的交給模型或 skill，不能違反的寫進 tool，固定步驟留給程式碼"
+   },
+   {
+    "id": "t3",
+    "text": "用 eval 分階段折：先把 subagent 當 tool、再合併高耦合的、最後一次折一個；逐題看翻轉、每題多跑幾次，折疊版分數比較差才保留 subagent。",
+    "memory_hook": "總分一樣是 15 題，也可能藏著兩題不能錯的退步"
+   }
+  ],
+  "hook": {
+   "kind": "scenario",
+   "text": "客人問「這筆訂單能不能退？發票怎麼處理？」退貨 subagent 讀完訂單，回報「可退貨」，這句話完全正確；但發票已經開立、要先作廢，這件事不在它的任務範圍，所以沒寫進摘要，主 agent 永遠不會知道。Anthropic 認為，這種「沒人做錯、資訊卻掉了」的交接，正是多 subagent 架構最根本的問題。"
+  },
+  "running_example": {
+   "id": "ex-cs",
+   "desc": "一個電商客服 agent：退貨、物流、發票三個團隊的能力，從各自一個 subagent 折回單一 loop（文章自己的客服例子，串起各節）"
+  },
+  "cover_brief": {
+   "metaphor": "左邊幾條細流各自經過一個窄口（每個窄口漏掉一點水），匯到上層；右邊是一個閉合的環，環邊有一排卡片目錄，只有被抽出的一兩張卡片展開進入環內。對比：多次有損交接 vs 單一 loop 按需載入",
+   "labels": [
+    {
+     "text": "subagent",
+     "ledger": "L08"
+    },
+    {
+     "text": "single loop",
+     "ledger": "L11"
+    },
+    {
+     "text": "skills",
+     "ledger": "L14"
+    },
+    {
+     "text": "tools",
+     "ledger": "L14"
+    }
+   ]
+  },
+  "seo": {
+   "queries": [
+    "agentic loop",
+    "agent loop",
+    "subagent",
+    "conway's law"
+   ],
+   "notes": "GSC 90 天：subagent、conway 零曝光；agentic loop / agent loop 的曝光落在 ai-concept/claude-code（71 次曝光，排名 7.6），是內部連結目標。沒有既有文章鎖定 subagent 折疊這個主題，不會互搶。Chrome 未連線，搜尋結果頁檢查略過。"
+  }
+ },
+ "outline": [
+  {
+   "id": "s1",
+   "title": "一個沒說錯、卻漏掉發票的 subagent",
+   "role": "hook",
+   "goal": "知道這篇在回答什麼問題、為什麼值得讀",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s2",
+   "title": "多 subagent 架構為什麼會出問題",
+   "role": "context",
+   "goal": "說得出五種失敗模式，以及其中最根本的有損交接",
+   "serves": [
+    "t1"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s2a",
+     "title": "五種失敗模式",
+     "role": "context",
+     "goal": "認得多 agent 架構的典型症狀",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s2b",
+     "title": "最根本的問題：每次交接都是一次有損摘要",
+     "role": "mechanism",
+     "goal": "能用發票例子解釋為什麼摘要會掉資訊",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "title": "目標架構：單一 loop 加上漸進式揭露",
+   "role": "mechanism",
+   "goal": "畫得出單一 loop，說得出原本的元件各搬去哪",
+   "serves": [
+    "t2"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s3a",
+     "title": "漸進式揭露：平常只放目錄，需要才載入",
+     "role": "mechanism",
+     "goal": "解釋 skill 與 tool search 如何讓知識不必塞進一個 prompt",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3b",
+     "title": "為什麼比拆 subagent 好",
+     "role": "evidence",
+     "goal": "說得出三個理由與各自的證據",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3c",
+     "title": "Loop 怎麼運作：寫計畫的就是執行的",
+     "role": "mechanism",
+     "goal": "知道模型與 harness 各負責什麼",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3d",
+     "title": "原本的元件搬去哪",
+     "role": "mechanism",
+     "goal": "能用一條規則決定一段邏輯該放模型、skill、tool 還是程式碼",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "怎麼折：用 eval 把關的分階段遷移",
+   "role": "mechanism",
+   "goal": "說得出遷移的三個階段，以及為什麼要逐題看翻轉",
+   "serves": [
+    "t3"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s4a",
+     "title": "先建 eval",
+     "role": "mechanism",
+     "goal": "知道 eval 的兩層分工與起步規模",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s4b",
+     "title": "三種做法，依序進行",
+     "role": "mechanism",
+     "goal": "說得出每個階段做什麼、還沒解決什麼",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s4c",
+     "title": "總分一樣，也可能藏著退步",
+     "role": "evidence",
+     "goal": "理解為什麼要逐題比對、每題多跑幾次",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "title": "沒有各自的 agent 之後，團隊要負責什麼",
+   "role": "mechanism",
+   "goal": "知道團隊改貢獻什麼、tool 該怎麼設計、skill 怎麼不氾濫",
+   "serves": [
+    "t2"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s5a",
+     "title": "Tool、skill、知識庫怎麼選",
+     "role": "mechanism",
+     "goal": "能判斷一份能力或知識該放哪種載體",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s5b",
+     "title": "Tool 的設計：依意圖分組，規則寫在程式碼裡",
+     "role": "mechanism",
+     "goal": "說得出意圖分組、前置條件與權限檢查三個做法",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s5c",
+     "title": "Skills 怎麼維護、不氾濫",
+     "role": "mechanism",
+     "goal": "知道 skill 的負責人與去留怎麼決定",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "title": "值得帶走的觀念：Conway's law",
+   "role": "takeaway",
+   "goal": "能解釋 agent 為什麼會長成組織圖，並用一個問題檢查邊界",
+   "serves": [
+    "t1"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s6a",
+     "title": "這個定律從哪來、為什麼成立",
+     "role": "context",
+     "goal": "說得出定律成立的三步推理",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s6b",
+     "title": "放到 agent 上為什麼特別傷",
+     "role": "mechanism",
+     "goal": "分辨 API 邊界與 context 邊界的差別",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s6c",
+     "title": "多切一個 agent 之前先問一句",
+     "role": "takeaway",
+     "goal": "會用檢查問題判斷一條邊界該不該留",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s6d",
+     "title": "要改的往往是組織，不只是架構",
+     "role": "takeaway",
+     "goal": "知道團隊擁有的單位要怎麼換",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "title": "這些主張有多扎實",
+   "role": "caveat",
+   "goal": "拿去說服團隊前，知道哪些數字只是單一案例或沒交代細節",
+   "serves": [
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s8",
+   "title": "結論",
+   "role": "takeaway",
+   "goal": "帶走三個重點，知道下次設計 agent 時先做什麼",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s9",
+   "title": "深入：折疊 subagent 時要 eval 的五個面向",
+   "role": "deep-dive",
+   "goal": "準備動手折疊時，知道要量什麼、出什麼題、怎麼比、怎麼判斷、誰維護",
+   "serves": [
+    "t3"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s9a",
+     "title": "量什麼",
+     "role": "deep-dive",
+     "goal": "分得清結果、過程、效率三類指標",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9b",
+     "title": "題目要涵蓋什麼",
+     "role": "deep-dive",
+     "goal": "知道哪兩類題目一定要有",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9c",
+     "title": "怎麼比",
+     "role": "deep-dive",
+     "goal": "知道公平比較的四條規則",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9d",
+     "title": "怎麼判斷要留 subagent",
+     "role": "deep-dive",
+     "goal": "分得清主規則、輔助訊號與要另外判斷的一項",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9e",
+     "title": "誰維護 eval",
+     "role": "deep-dive",
+     "goal": "知道 eval 怎麼持續跑下去",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  }
+ ],
+ "glossary": [
+  {
+   "term": "subagent",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "orchestrator",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "context window",
+   "defined_in": "s3.b0"
+  },
+  {
+   "term": "skill",
+   "defined_in": "s3.b0"
+  },
+  {
+   "term": "harness",
+   "defined_in": "s2a.b2"
+  },
+  {
+   "term": "漸進式揭露",
+   "defined_in": "s3a.b1"
+  },
+  {
+   "term": "tool search",
+   "defined_in": "s3a.b5"
+  },
+  {
+   "term": "specialist",
+   "defined_in": "s3c.b3"
+  },
+  {
+   "term": "entity resolution",
+   "defined_in": "s3d.b2"
+  },
+  {
+   "term": "eval",
+   "defined_in": "s2a.b1"
+  },
+  {
+   "term": "golden examples",
+   "defined_in": "s4a.b1"
+  },
+  {
+   "term": "baseline",
+   "defined_in": "s4b.b2"
+  },
+  {
+   "term": "MCP",
+   "defined_in": "s4b.b5"
+  },
+  {
+   "term": "DRI",
+   "defined_in": "s5c.b2"
+  },
+  {
+   "term": "Conway's law",
+   "defined_in": "s1.b4"
+  },
+  {
+   "term": "rubric",
+   "defined_in": "s7.b4"
+  },
+  {
+   "term": "task-completion",
+   "defined_in": "s7.b4"
+  }
+ ],
+ "ledger": [
+  {
+   "id": "L01",
+   "kind": "nav",
+   "src": {
+    "lines": [
+     1,
+     1
+    ]
+   },
+   "gist": "NO-MANIFEST 註記：圖都是描述性的 mermaid",
+   "layer": "none",
+   "section": null,
+   "dest": []
+  },
+  {
+   "id": "L02",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     5,
+     5
+    ]
+   },
+   "gist": "來源：Anthropic 文章（Diane Sarkis，2026-10-22）與連結",
+   "layer": "support",
+   "section": "s1",
+   "dest": [
+    "s1.b9"
+   ]
+  },
+  {
+   "id": "L03",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     9,
+     9
+    ]
+   },
+   "gist": "常見架構是每團隊一個 subagent 加 orchestrator；主張折回單一 loop，skills 與 tools 只放目錄按需載入",
+   "layer": "main",
+   "section": "s1",
+   "dest": [
+    "s1.b2",
+    "s3.b0"
+   ]
+  },
+  {
+   "id": "L04",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     11,
+     11
+    ]
+   },
+   "gist": "核心理由：邊界是有損交接、常是組織圖投影（Conway's law）；三種仍該保留 subagent 的情況",
+   "layer": "main",
+   "section": "s1",
+   "dest": [
+    "s1.b4",
+    "s1.b5",
+    "s6c.b2",
+    "s6c.b3"
+   ]
+  },
+  {
+   "id": "L05",
+   "kind": "nav",
+   "src": {
+    "lines": [
+     13,
+     13
+    ]
+   },
+   "gist": "本文路線：四個問題、Conway、eval 詳解、證據缺口",
+   "layer": "none",
+   "section": null,
+   "dest": [
+    "s1.b7"
+   ]
+  },
+  {
+   "id": "L06",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     15,
+     15
+    ]
+   },
+   "gist": "標記慣例：（推論）（自編）（一般知識），未標為文章內容",
+   "layer": "support",
+   "section": "s1",
+   "dest": [
+    "s1.b9"
+   ]
+  },
+  {
+   "id": "L07",
+   "kind": "table",
+   "src": {
+    "lines": [
+     21,
+     29
+    ]
+   },
+   "gist": "五種失敗模式表；延遲列含客戶案例約快 2 倍（單一案例）與 harness 定義",
+   "layer": "main",
+   "section": "s2a",
+   "dest": [
+    "s2a.b1",
+    "s2a.b2"
+   ]
+  },
+  {
+   "id": "L08",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     33,
+     33
+    ]
+   },
+   "gist": "最根本是第一項：subagent 回傳自己寫的摘要，主 agent 看不到省略了什麼",
+   "layer": "main",
+   "section": "s2b",
+   "dest": [
+    "s2b.b1"
+   ]
+  },
+  {
+   "id": "L09",
+   "kind": "example",
+   "src": {
+    "lines": [
+     35,
+     49
+    ]
+   },
+   "gist": "（自編）退貨與發票例子，圖 1 兩種架構資訊流對比",
+   "layer": "main",
+   "section": "s2b",
+   "dest": [
+    "s2b.b2",
+    "s2b.b3",
+    "s2b.b4"
+   ]
+  },
+  {
+   "id": "L10",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     51,
+     51
+    ]
+   },
+   "gist": "退貨 agent 沒做錯，發票不在任務範圍所以沒進摘要；邊界來源留給 Conway 一節",
+   "layer": "main",
+   "section": "s2b",
+   "dest": [
+    "s2b.b5"
+   ]
+  },
+  {
+   "id": "L11",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     57,
+     57
+    ]
+   },
+   "gist": "目標：一個模型一個 context window，loop 反覆呼叫工具、看結果、決定下一步",
+   "layer": "main",
+   "section": "s3",
+   "dest": [
+    "s3.b1"
+   ]
+  },
+  {
+   "id": "L12",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     61,
+     61
+    ]
+   },
+   "gist": "漸進式揭露定義：先看名稱加一行描述，需要才載入全文",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b1"
+   ]
+  },
+  {
+   "id": "L13",
+   "kind": "example",
+   "src": {
+    "lines": [
+     63,
+     79
+    ]
+   },
+   "gist": "（自編）「我的訂單到哪了？」圖 2：只載入物流 skill 與查訂單 tool",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b2",
+    "s3a.b3",
+    "s3a.b3c"
+   ]
+  },
+  {
+   "id": "L14",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     81,
+     84
+    ]
+   },
+   "gist": "套在兩種東西：skill（做事說明）與 tool search（工具定義延遲載入）",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b4",
+    "s3a.b5"
+   ]
+  },
+  {
+   "id": "L15",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     86,
+     86
+    ]
+   },
+   "gist": "拆 subagent 的主要理由（prompt 太長）在按需載入後不成立",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b6"
+   ]
+  },
+  {
+   "id": "L16",
+   "kind": "table",
+   "src": {
+    "lines": [
+     90,
+     96
+    ]
+   },
+   "gist": "三個理由：共享 context、防止膨脹、模型變強",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b1",
+    "s3b.b2"
+   ]
+  },
+  {
+   "id": "L17",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     98,
+     100
+    ]
+   },
+   "gist": "共享 context 的證據：多個企業部署中單一 agent 加 skills「經常」較好、成本延遲「常常」較低",
+   "layer": "support",
+   "section": "s3b",
+   "dest": [
+    "s3b.b3",
+    "s3b.b4"
+   ]
+  },
+  {
+   "id": "L18",
+   "kind": "number",
+   "src": {
+    "lines": [
+     101,
+     101
+    ]
+   },
+   "gist": "Claude Code system prompt 縮減超過 80%，包含但不全是漸進式揭露的功勞",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b3",
+    "s3b.b4"
+   ]
+  },
+  {
+   "id": "L19",
+   "kind": "nav",
+   "src": {
+    "lines": [
+     103,
+     103
+    ]
+   },
+   "gist": "證據強度見後文",
+   "layer": "none",
+   "section": null,
+   "dest": [
+    "s3b.b5"
+   ]
+  },
+  {
+   "id": "L20",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     105,
+     105
+    ]
+   },
+   "gist": "從 Opus 4.5 起模型能在單一 loop 處理更多；死板多 agent 結構反而限制新模型",
+   "layer": "support",
+   "section": "s3b",
+   "dest": [
+    "s3b.b6"
+   ]
+  },
+  {
+   "id": "L21",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     107,
+     107
+    ]
+   },
+   "gist": "沒有門檻，用症狀與 eval 取代；（推論）較弱模型能折的較少",
+   "layer": "support",
+   "section": "s3b",
+   "dest": [
+    "s3b.b7"
+   ]
+  },
+  {
+   "id": "L22",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     111,
+     122
+    ]
+   },
+   "gist": "圖 3 loop 流程：計畫、tool calls、harness 執行、決定、上限",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b2",
+    "s3c.b2c"
+   ]
+  },
+  {
+   "id": "L23",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     124,
+     124
+    ]
+   },
+   "gist": "寫計畫的模型就是執行的模型；orchestrator 中 planner 交給 specialist 難改",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b3"
+   ]
+  },
+  {
+   "id": "L24",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     126,
+     126
+    ]
+   },
+   "gist": "寫入閘門未定義，（推論）修改資料前的檢查或核准",
+   "layer": "support",
+   "section": "s3c",
+   "dest": [
+    "s3c.b4"
+   ]
+  },
+  {
+   "id": "L25",
+   "kind": "table",
+   "src": {
+    "lines": [
+     130,
+     140
+    ]
+   },
+   "gist": "元件搬家表：router、規則程式碼、流程、硬限制、查記憶、entity resolution、機械式處理",
+   "layer": "main",
+   "section": "s3d",
+   "dest": [
+    "s3d.b1",
+    "s3d.b2"
+   ]
+  },
+  {
+   "id": "L26",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     142,
+     142
+    ]
+   },
+   "gist": "entity resolution 定義（一般知識）；resuming a clarification 的理解是推論",
+   "layer": "support",
+   "section": "s3d",
+   "dest": [
+    "s3d.b2",
+    "s3d.b3"
+   ]
+  },
+  {
+   "id": "L27",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     144,
+     144
+    ]
+   },
+   "gist": "硬限制寫進 tool：prompt 只是請，程式碼直接擋並回傳訊息",
+   "layer": "main",
+   "section": "s3d",
+   "dest": [
+    "s3d.b4"
+   ]
+  },
+  {
+   "id": "L28",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     146,
+     146
+    ]
+   },
+   "gist": "判斷規則：判斷給模型或 skill，不能違反的寫進 tool，機械步驟給程式碼",
+   "layer": "main",
+   "section": "s3d",
+   "dest": [
+    "s3d.b5"
+   ]
+  },
+  {
+   "id": "L29",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     152,
+     152
+    ]
+   },
+   "gist": "一次改一件事、每步 eval、由分數決定",
+   "layer": "main",
+   "section": "s4",
+   "dest": [
+    "s4.b1"
+   ]
+  },
+  {
+   "id": "L30",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     156,
+     156
+    ]
+   },
+   "gist": "eval 兩層；起步 10 個 golden examples",
+   "layer": "main",
+   "section": "s4a",
+   "dest": [
+    "s4a.b1"
+   ]
+  },
+  {
+   "id": "L31",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     160,
+     170
+    ]
+   },
+   "gist": "圖 4 分階段遷移流程",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b7",
+    "s4b.b7c"
+   ]
+  },
+  {
+   "id": "L32",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     172,
+     172
+    ]
+   },
+   "gist": "（推論）把三種做法讀成依序階段",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b1"
+   ]
+  },
+  {
+   "id": "L33",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     174,
+     174
+    ]
+   },
+   "gist": "A：subagent 當 tool，取得 baseline、統一回應格式、full handoff 例外",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b2"
+   ]
+  },
+  {
+   "id": "L34",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     176,
+     176
+    ]
+   },
+   "gist": "A 沒解決：各自 prompt/owner/eval、有損摘要、巢狀 loop 延遲",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b3"
+   ]
+  },
+  {
+   "id": "L35",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     178,
+     178
+    ]
+   },
+   "gist": "B：合併高耦合 specialist，從生產流量找",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b4"
+   ]
+  },
+  {
+   "id": "L36",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     180,
+     180
+    ]
+   },
+   "gist": "C：一次一個，prompt 改 skill、API 改 MCP tool，有無各跑 eval",
+   "layer": "main",
+   "section": "s4b",
+   "dest": [
+    "s4b.b5"
+   ]
+  },
+  {
+   "id": "L37",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     182,
+     182
+    ]
+   },
+   "gist": "原文措辭沒說是選項或階段；採階段讀法的依據",
+   "layer": "fold",
+   "section": "s4b",
+   "dest": [
+    "s4b.b9"
+   ]
+  },
+  {
+   "id": "L38",
+   "kind": "example",
+   "src": {
+    "lines": [
+     186,
+     194
+    ]
+   },
+   "gist": "（自編）20 題 eval，15 題對 15 題但第 3、7 題翻轉",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b1",
+    "s4c.b2",
+    "s4c.b3"
+   ]
+  },
+  {
+   "id": "L39",
+   "kind": "example",
+   "src": {
+    "lines": [
+     196,
+     196
+    ]
+   },
+   "gist": "示範客服 agent：延遲下降但沒問物流 specialist；兩次執行只出現一次",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b4"
+   ]
+  },
+  {
+   "id": "L40",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     198,
+     198
+    ]
+   },
+   "gist": "教訓：資訊看起來夠用時會跳步驟；每題多跑、每條串接都要有題目",
+   "layer": "main",
+   "section": "s4c",
+   "dest": [
+    "s4c.b5"
+   ]
+  },
+  {
+   "id": "L41",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     204,
+     204
+    ]
+   },
+   "gist": "團隊改貢獻 skills/tools/知識庫；小型中央團隊擁有 system prompt 與品質並審核",
+   "layer": "main",
+   "section": "s5",
+   "dest": [
+    "s5.b2"
+   ]
+  },
+  {
+   "id": "L42",
+   "kind": "table",
+   "src": {
+    "lines": [
+     208,
+     212
+    ]
+   },
+   "gist": "三種載體表：MCP tool、skill、知識庫",
+   "layer": "main",
+   "section": "s5a",
+   "dest": [
+    "s5a.b1",
+    "s5a.b2"
+   ]
+  },
+  {
+   "id": "L43",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     214,
+     214
+    ]
+   },
+   "gist": "知識庫兩種放法；避免程式碼先檢索再貼；（推論）讀不讀交給模型",
+   "layer": "support",
+   "section": "s5a",
+   "dest": [
+    "s5a.b3"
+   ]
+  },
+  {
+   "id": "L44",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     216,
+     216
+    ]
+   },
+   "gist": "口訣：做事拿資料用 tool，怎麼做用 skill，偶爾查放知識庫",
+   "layer": "main",
+   "section": "s5a",
+   "dest": [
+    "s5a.b4"
+   ]
+  },
+  {
+   "id": "L45",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     220,
+     220
+    ]
+   },
+   "gist": "依意圖分組；超過 30 到 50 個 tool 準確度下降（未說模型與任務）；tool search 延遲載入",
+   "layer": "main",
+   "section": "s5b",
+   "dest": [
+    "s5b.b1"
+   ]
+  },
+  {
+   "id": "L46",
+   "kind": "table",
+   "src": {
+    "lines": [
+     222,
+     225
+    ]
+   },
+   "gist": "（自編）一支 API 一個 tool vs track_order",
+   "layer": "support",
+   "section": "s5b",
+   "dest": [
+    "s5b.b2"
+   ]
+  },
+  {
+   "id": "L47",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     227,
+     227
+    ]
+   },
+   "gist": "前置條件寫進 tool，缺少時回傳指示；硬性前置條件要少",
+   "layer": "main",
+   "section": "s5b",
+   "dest": [
+    "s5b.b3"
+   ]
+  },
+  {
+   "id": "L48",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     229,
+     239
+    ]
+   },
+   "gist": "圖 5（自編）refund 被擋、先 verify_identity 再退款",
+   "layer": "main",
+   "section": "s5b",
+   "dest": [
+    "s5b.b4",
+    "s5b.b4c"
+   ]
+  },
+  {
+   "id": "L49",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     241,
+     241
+    ]
+   },
+   "gist": "權限檢查寫進 tool，同一 loop 服務不同權限使用者",
+   "layer": "main",
+   "section": "s5b",
+   "dest": [
+    "s5b.b5"
+   ]
+  },
+  {
+   "id": "L50",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     243,
+     243
+    ]
+   },
+   "gist": "遷移期間 tool 可包住未折的 subagent（做法 A）",
+   "layer": "support",
+   "section": "s5b",
+   "dest": [
+    "s5b.b6"
+   ]
+  },
+  {
+   "id": "L51",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     247,
+     251
+    ]
+   },
+   "gist": "氾濫可能以 skill 形式重演；DRI、Claude 做粗活、依使用量與成本刪",
+   "layer": "main",
+   "section": "s5c",
+   "dest": [
+    "s5c.b1",
+    "s5c.b2"
+   ]
+  },
+  {
+   "id": "L52",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     253,
+     253
+    ]
+   },
+   "gist": "對應指令 /skill-creator、/skill-doctor 等，以官方文件為準",
+   "layer": "support",
+   "section": "s5c",
+   "dest": [
+    "s5c.b3"
+   ]
+  },
+  {
+   "id": "L53",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     255,
+     255
+    ]
+   },
+   "gist": "skill 描述沒有寫作規則，用 eval 反覆調到追上原 subagent",
+   "layer": "support",
+   "section": "s5c",
+   "dest": [
+    "s5c.b4"
+   ]
+  },
+  {
+   "id": "L54",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     261,
+     261
+    ]
+   },
+   "gist": "Conway's law 定義；agent 架構成組織圖複製品",
+   "layer": "main",
+   "section": "s6",
+   "dest": [
+    "s6.b1"
+   ]
+  },
+  {
+   "id": "L55",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     265,
+     265
+    ]
+   },
+   "gist": "1968 年 Melvin Conway；微服務常見、agent 領域少見（一般知識）；文章當診斷工具",
+   "layer": "support",
+   "section": "s6a",
+   "dest": [
+    "s6a.b1"
+   ]
+  },
+  {
+   "id": "L56",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     267,
+     273
+    ]
+   },
+   "gist": "成立的三步（一般知識加推論）：只能改自己的、跨團隊成本高、只為自己優化",
+   "layer": "main",
+   "section": "s6a",
+   "dest": [
+    "s6a.b2",
+    "s6a.b3",
+    "s6a.b4"
+   ]
+  },
+  {
+   "id": "L57",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     277,
+     277
+    ]
+   },
+   "gist": "一般軟體是 API 邊界資料完整；agent 是 context 邊界、有損交接",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b1"
+   ]
+  },
+  {
+   "id": "L58",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     279,
+     285
+    ]
+   },
+   "gist": "圖 6 組織圖投影成 agent 架構",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b2",
+    "s6b.b2c"
+   ]
+  },
+  {
+   "id": "L59",
+   "kind": "example",
+   "src": {
+    "lines": [
+     287,
+     287
+    ]
+   },
+   "gist": "十幾個 specialist 的客服 agent：語氣難一致、延遲傷體驗",
+   "layer": "main",
+   "section": "s6b",
+   "dest": [
+    "s6b.b3"
+   ]
+  },
+  {
+   "id": "L60",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     291,
+     294
+    ]
+   },
+   "gist": "檢查問題與兩種答案",
+   "layer": "main",
+   "section": "s6c",
+   "dest": [
+    "s6c.b1"
+   ]
+  },
+  {
+   "id": "L61",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     298,
+     298
+    ]
+   },
+   "gist": "改變團隊擁有的單位，組織邊界換了系統才不會被拉回",
+   "layer": "main",
+   "section": "s6d",
+   "dest": [
+    "s6d.b1"
+   ]
+  },
+  {
+   "id": "L62",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     304,
+     311
+    ]
+   },
+   "gist": "圖 7 四步 eval 流程與五個面向的對應",
+   "layer": "appendix",
+   "section": "s9",
+   "dest": [
+    "s9.b1",
+    "s9.b2",
+    "s9.b2c"
+   ]
+  },
+  {
+   "id": "L63",
+   "kind": "table",
+   "src": {
+    "lines": [
+     315,
+     322
+    ]
+   },
+   "gist": "量什麼：結果、過程、效率的指標與時機",
+   "layer": "appendix",
+   "section": "s9a",
+   "dest": [
+    "s9a.b1"
+   ]
+  },
+  {
+   "id": "L64",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     324,
+     324
+    ]
+   },
+   "gist": "rubric 與 task-completion 文章沒區分，（推論）的分法與例子",
+   "layer": "appendix",
+   "section": "s9a",
+   "dest": [
+    "s9a.b2"
+   ]
+  },
+  {
+   "id": "L65",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     328,
+     329
+    ]
+   },
+   "gist": "題目：每條串接、每條不能違反的規則",
+   "layer": "appendix",
+   "section": "s9b",
+   "dest": [
+    "s9b.b1"
+   ]
+  },
+  {
+   "id": "L66",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     333,
+     336
+    ]
+   },
+   "gist": "怎麼比：有無各跑、逐題翻轉、每題多次、一次改一件",
+   "layer": "appendix",
+   "section": "s9c",
+   "dest": [
+    "s9c.b1"
+   ]
+  },
+  {
+   "id": "L67",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     340,
+     341
+    ]
+   },
+   "gist": "主規則與三個輔助訊號",
+   "layer": "appendix",
+   "section": "s9d",
+   "dest": [
+    "s9d.b1"
+   ]
+  },
+  {
+   "id": "L68",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     342,
+     342
+    ]
+   },
+   "gist": "（推論）平行乾淨 context 是架構需求，要另外判斷",
+   "layer": "appendix",
+   "section": "s9d",
+   "dest": [
+    "s9d.b1"
+   ]
+  },
+  {
+   "id": "L69",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     346,
+     347
+    ]
+   },
+   "gist": "兩層分工與起步規模；用時間戳記錄事件重播成 eval",
+   "layer": "appendix",
+   "section": "s9e",
+   "dest": [
+    "s9e.b1"
+   ]
+  },
+  {
+   "id": "L70",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     353,
+     361
+    ]
+   },
+   "gist": "證據強度表：2 倍單一案例、「經常」無數字、80% 不全是揭露、模型門檻、30 到 50 個 tool",
+   "layer": "main",
+   "section": "s7",
+   "dest": [
+    "s7.b1",
+    "s7.b2"
+   ]
+  },
+  {
+   "id": "L71",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     363,
+     371
+    ]
+   },
+   "gist": "做法沒交代清楚的七處",
+   "layer": "main",
+   "section": "s7",
+   "dest": [
+    "s7.b3",
+    "s7.b4"
+   ]
+  },
+  {
+   "id": "L72",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     377,
+     381
+    ]
+   },
+   "gist": "結論三段：根本問題與解法、遷移、組織與檢查問題",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b1",
+    "s8.b2",
+    "s8.b3"
+   ]
+  }
+ ],
+ "blocks": [
+  {
+   "id": "s1.b1",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "hook",
+   "text": "客人問客服 agent：「這筆訂單能不能退？發票怎麼處理？」系統把問題轉給專管退貨的小 agent。它讀完訂單原文，回報一句「可退貨」，這句話完全正確。可是這張訂單的發票已經開立、要先作廢；發票不在它的任務範圍，所以沒寫進回報，負責回答客人的那個 agent 永遠不會知道。沒有人做錯事，資訊卻在交接時掉了。（這是為了說明而設計的情境，後面會一直用到它。）"
+  },
+  {
+   "id": "s1.b2",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L03"
+   ],
+   "text": "這種「交接」在企業的 agent 系統裡到處都是。所謂 agent，是一個會反覆呼叫工具、看結果、再決定下一步的 LLM 程式。企業裡的 agent 很常長成這樣：每個團隊各做一個 subagent（被上層叫去處理某一件子任務的 agent），平台團隊再疊一個 orchestrator（負責把問題分派給各個 subagent 的上層 agent）。Anthropic 最近一篇文章主張，這種架構很多時候可以折回單一 agent loop。"
+  },
+  {
+   "id": "s1.b4",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "text": "核心理由是：每一條 subagent 邊界都是一次有損的 context（模型當下看得到的全部資訊）交接，而這些邊界常常只是組織圖的投影，不是技術上非切不可。這就是 Conway's law：系統結構會複製設計它的組織的溝通結構，後面有一整節專門談它。"
+  },
+  {
+   "id": "s1.b5",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "text": "當然也不是全部都要折。文章列了三種仍該保留 subagent 的情況，後面〈多切一個 agent 之前先問一句〉會逐一舉例。"
+  },
+  {
+   "id": "s1.b7",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [
+    "L05"
+   ],
+   "purpose": "signpost",
+   "text": "接下來先看多 subagent 架構為什麼會出問題，再看文章想要的單一 loop 長什麼樣、怎麼一步步折過去、團隊之後負責什麼，最後談 agent 為什麼會長成組織圖，以及文章證據上的缺口。"
+  },
+  {
+   "id": "s1.b9",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L02",
+    "L06"
+   ],
+   "text": "原文：[Building agents: When to fold subagents into your main agent loop](https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop)（Anthropic，Diane Sarkis，2026 年 10 月 22 日）。文中標（推論）的是筆者在文章之外的推斷，標（自編）的是為了說明而設計的情境，標（一般知識）的是業界通用的背景知識；沒有標的都是文章內容。"
+  },
+  {
+   "id": "s2.b1",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "signpost",
+   "text": "先從問題講起：「每個團隊各做一個 subagent，再疊一個 orchestrator」看起來最省事，為什麼文章認為它常常不值得？"
+  },
+  {
+   "id": "s2a.b1",
+   "section": "s2a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L07"
+   ],
+   "text": "這種架構實際跑起來，複雜度會一路往上堆。文章列了五種失敗模式（表中的 eval 是一組固定的測試題，用來替 agent 打分）："
+  },
+  {
+   "id": "s2a.b2",
+   "section": "s2a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L07"
+   ],
+   "headers": [
+    "失敗模式",
+    "發生了什麼"
+   ],
+   "rows": [
+    [
+     "Context 管理",
+     "要決定 agent 之間交換哪些資訊，來回傳遞時細節會掉"
+    ],
+    [
+     "Subagent 氾濫",
+     "每個團隊各出一個，最後有大量功能重疊、沒有標準、沒有負責人的 subagent"
+    ],
+    [
+     "Frankenprompt",
+     "每個團隊往 system prompt 加一句，規則互相衝突，語氣也不一致"
+    ],
+    [
+     "Eval 過度局部",
+     "各團隊只為自己的子任務調分數，沒人維護整體，決策依據是被稀釋過的分數"
+    ],
+    [
+     "延遲",
+     "多層架構本身就拉長時間。有個客戶把多 agent harness（包在模型外面、負責執行工具與設上限的程式）換成單一 loop，執行時間約快 2 倍（單一案例，見〈這些主張有多扎實〉）"
+    ]
+   ]
+  },
+  {
+   "id": "s2b.b1",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L08"
+   ],
+   "text": "五項裡最根本的是第一項。Subagent 做完事，回傳給主 agent 的是它自己寫的摘要，不是原始資料；摘要省略了什麼，主 agent 完全看不到。"
+  },
+  {
+   "id": "s2b.b2",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "回到開頭的例子（自編）。使用者問：「這筆訂單能不能退？發票怎麼處理？」同一個問題，在兩種架構下的資訊流是這樣："
+  },
+  {
+   "id": "s2b.b3",
+   "section": "s2b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "headers": [
+    "",
+    "拆成 subagent",
+    "單一 loop"
+   ],
+   "rows": [
+    [
+     "誰讀訂單原文",
+     "退貨 agent 讀完訂單原文",
+     "主 agent 自己讀訂單原文"
+    ],
+    [
+     "主 agent 拿到什麼",
+     "只有摘要：可退貨",
+     "原文，看得見發票狀態"
+    ],
+    [
+     "結果",
+     "主 agent 不知道發票已開立、需先作廢",
+     "回答時一併處理作廢"
+    ]
+   ]
+  },
+  {
+   "id": "s2b.b4",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "圖 1 — 同一個問題在兩種架構下的資訊流：差別在於摘要由別人寫，主 agent 拿不到被省略的細節。（自編例子）"
+  },
+  {
+   "id": "s2b.b5",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L10"
+   ],
+   "text": "退貨 agent 沒有做錯事，「可退貨」本身是對的。問題是發票狀態不在它的任務範圍內，所以沒進摘要。這些交接邊界是從哪裡來的，〈值得帶走的觀念：Conway's law〉會回頭講。"
+  },
+  {
+   "id": "s2.b2",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "小結：多 subagent 架構的毛病很多，但最根本的是每次交接都經過一份別人寫的摘要，被省略的細節就此消失。"
+  },
+  {
+   "id": "s3.b1",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L11"
+   ],
+   "purpose": "signpost",
+   "text": "問題清楚了，再看文章想要的樣子：在 loop 裡反覆「呼叫工具、看結果、決定下一步」，知識和工具平常只放目錄，需要時才載入。"
+  },
+  {
+   "id": "s3.b0",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L03"
+   ],
+   "text": "具體來說是一個模型、一個 context window（模型一次能看到的全部內容，包含指令、對話紀錄與工具回傳的結果）。領域知識寫成 skills（寫給 agent 看的做事說明），能力做成 tools（agent 可以呼叫的功能，例如查訂單），兩者平常都只放一份目錄。這一節分四步看：怎麼按需載入、為什麼比拆 subagent 好、loop 怎麼跑，以及原本的元件搬去哪。"
+  },
+  {
+   "id": "s3a.b1",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L12"
+   ],
+   "text": "漸進式揭露（progressive disclosure）的意思是：agent 一開始只看到每個 skill 和 tool 的名稱加一行描述，真正需要時才把全文或完整定義載入 context。"
+  },
+  {
+   "id": "s3a.b2",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "text": "用同一個客服例子（自編），這次使用者問「我的訂單到哪了？」："
+  },
+  {
+   "id": "s3a.b3",
+   "section": "s3a",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "q",
+     "label": "使用者：我的訂單到哪了？"
+    },
+    {
+     "id": "ctx",
+     "label": "一開始就在 context（很短）：skill 目錄、tool 目錄、精簡的 system prompt"
+    },
+    {
+     "id": "l1",
+     "label": "物流 skill 全文"
+    },
+    {
+     "id": "l2",
+     "label": "查訂單 tool"
+    },
+    {
+     "id": "n1",
+     "label": "退貨 skill、發票 skill：這次沒用到，不占 context"
+    }
+   ],
+   "edges": [
+    {
+     "from": "q",
+     "to": "ctx"
+    },
+    {
+     "from": "ctx",
+     "to": "l1",
+     "label": "模型判斷後載入"
+    },
+    {
+     "from": "l1",
+     "to": "l2",
+     "label": "需要時呼叫"
+    },
+    {
+     "from": "l2",
+     "to": "n1",
+     "label": "其餘留在目錄"
+    }
+   ]
+  },
+  {
+   "id": "s3a.b3c",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "text": "圖 2 — 漸進式揭露：skill 目錄只有名稱加一行描述，tool 目錄只有名稱加簡述；只有這次被用到的 skill 和 tool 會進入 context。（自編例子）"
+  },
+  {
+   "id": "s3a.b4",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "text": "這個概念套在兩種東西上："
+  },
+  {
+   "id": "s3a.b5",
+   "section": "s3a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "ordered": false,
+   "items": [
+    "**Skill**：寫給 agent 看的做事說明，包含步驟、規則與判斷方式。原本寫在各個 subagent prompt 裡的專業知識，就搬到這裡。",
+    "**Tool search**：同一個想法套用在工具上，工具定義延遲到需要時才搜尋並載入。"
+   ]
+  },
+  {
+   "id": "s3a.b6",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L15"
+   ],
+   "text": "當初拆 subagent 的主要理由，是「所有專業知識塞進一個 prompt 會太長」。知識改成按需載入之後，這個理由就不成立了。"
+  },
+  {
+   "id": "s3b.b1",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "文章給了三個理由："
+  },
+  {
+   "id": "s3b.b2",
+   "section": "s3b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "headers": [
+    "理由",
+    "內容"
+   ],
+   "rows": [
+    [
+     "共享 context",
+     "前面每一步的原始結果都在同一個視窗裡，agent 能自己把它們串起來（圖 1 的發票狀態就是例子）"
+    ],
+    [
+     "防止 context 膨脹",
+     "知識放在按需載入的 skill，不必一次塞進 prompt"
+    ],
+    [
+     "模型變強了",
+     "一個 loop 能管的事變多，不需要 harness 替模型拆步驟"
+    ]
+   ]
+  },
+  {
+   "id": "s3b.b3",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L17",
+    "L18"
+   ],
+   "text": "前兩個理由各配了一份證據："
+  },
+  {
+   "id": "s3b.b4",
+   "section": "s3b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L17",
+    "L18"
+   ],
+   "ordered": false,
+   "items": [
+    "**共享 context**：多個企業部署的比較中，單一 agent 加 skills 在品質上「經常」勝過單一大 prompt 與 subagent 設計，成本與延遲也「常常」比較低。",
+    "**防止 context 膨脹**：Claude Code 針對較強的模型，把 system prompt 縮減了超過 80%。這個縮減「包含」漸進式揭露的效果，但不全是它的功勞（文章沒說其餘來自哪裡）。"
+   ]
+  },
+  {
+   "id": "s3b.b5",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "editorial",
+   "ledger": [
+    "L19"
+   ],
+   "text": "這兩份證據有多扎實，〈這些主張有多扎實〉會回頭檢查：前者沒有數字，後者是 Claude Code 自己的經驗。"
+  },
+  {
+   "id": "s3b.b6",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L20"
+   ],
+   "text": "第三個理由，文章的說法是：從 Opus 4.5 起，模型能在單一 loop 裡處理的事比多數團隊預期得多。近期的模型會邊做邊交代進度、檢查自己的結果，讓部分 harness 設計變得多餘。每出一代新模型，就能把更多決策從 harness 移到模型身上；過於死板的多 agent 結構，反而常常是新模型發揮不出來的原因。"
+  },
+  {
+   "id": "s3b.b7",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L21"
+   ],
+   "text": "那模型要多強才能折？文章沒有給門檻，而是用症狀和 eval 取代門檻：折疊後分數比較差才保留 subagent，再搭配開頭提到的三個保留條件判斷（context 膨脹、需要平行乾淨的 context、選錯工具或指令衝突，詳見〈多切一個 agent 之前先問一句〉）。較弱的模型會更早出現這些症狀，流程依然適用，只是能折進去的 subagent 比較少（推論）。"
+  },
+  {
+   "id": "s3c.b1",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "知道了 context 裡放什麼，再看 loop 本身怎麼轉。這裡的 harness 指包在模型外面的程式；決策都由模型做，harness 只負責執行工具與設上限："
+  },
+  {
+   "id": "s3c.b2",
+   "section": "s3c",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L22"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "p",
+     "label": "模型寫計畫（寫在 context，可隨時改）"
+    },
+    {
+     "id": "t",
+     "label": "模型輸出一批 tool calls"
+    },
+    {
+     "id": "h",
+     "label": "harness 平行執行，原始結果直接回傳"
+    },
+    {
+     "id": "b",
+     "label": "harness 上限：回合預算、成本預算、寫入閘門；超出預算也會停"
+    },
+    {
+     "id": "d",
+     "label": "模型決定下一步"
+    },
+    {
+     "id": "u",
+     "label": "問使用者"
+    },
+    {
+     "id": "a",
+     "label": "回答並結束（可選：再跑目標或驗證檢查）"
+    }
+   ],
+   "edges": [
+    {
+     "from": "p",
+     "to": "t"
+    },
+    {
+     "from": "t",
+     "to": "h"
+    },
+    {
+     "from": "h",
+     "to": "b",
+     "label": "受限於"
+    },
+    {
+     "from": "b",
+     "to": "d"
+    },
+    {
+     "from": "d",
+     "to": "t",
+     "label": "再跑一批"
+    },
+    {
+     "from": "d",
+     "to": "u",
+     "label": "缺資訊"
+    },
+    {
+     "from": "d",
+     "to": "a",
+     "label": "足夠"
+    }
+   ]
+  },
+  {
+   "id": "s3c.b2c",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L22"
+   ],
+   "text": "圖 3 — 單一 loop 的運作：決策都由模型做，harness 只負責執行與設上限。"
+  },
+  {
+   "id": "s3c.b3",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L23"
+   ],
+   "text": "和 orchestrator 架構最大的差別是：寫計畫的模型，就是執行計畫的模型。在 orchestrator 架構裡，planner 寫好計畫交給 specialist（負責單一領域的 subagent）執行，中途發現不對很難改；在單一 loop 裡，模型每看到一批新結果，就能當場修改計畫。"
+  },
+  {
+   "id": "s3c.b4",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L24"
+   ],
+   "text": "圖中的寫入閘門（write gate）文章沒有定義，可以理解成修改資料前的檢查或核准（推論）。"
+  },
+  {
+   "id": "s3d.b1",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L25"
+   ],
+   "text": "折成單一 loop 之後，多 agent 架構裡的各種元件不會憑空消失，而是各自找到新的家。表中第一列的 router 與意圖分類器，指的是先判斷「這個問題該交給哪個 subagent」的元件，也就是分派工作的那一環（一般知識）："
+  },
+  {
+   "id": "s3d.b2",
+   "section": "s3d",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L25",
+    "L26"
+   ],
+   "headers": [
+    "原本的元件",
+    "搬去哪",
+    "理由"
+   ],
+   "rows": [
+    [
+     "router、意圖分類器",
+     "模型讀目錄，自己挑 skill 和 tool",
+     "選擇本身就是模型擅長的判斷（推論；文章只說 router 被折進主 loop）"
+    ],
+    [
+     "依規則改寫計畫的程式碼",
+     "不需要了",
+     "模型每一步自己決定"
+    ],
+    [
+     "步驟順序、領域流程",
+     "skills",
+     "這是「團隊怎麼做事」的知識"
+    ],
+    [
+     "硬限制（驗證、核准閘門）",
+     "tools 內部",
+     "必須百分之百遵守，不能靠模型記得"
+    ],
+    [
+     "對話中途才需要的事（例如查記憶）",
+     "tools",
+     "需要時才呼叫"
+    ],
+    [
+     "便宜、幾乎每次都用到的東西（例如 entity resolution，把口語說法對應到具體訂單）",
+     "程式碼預先載入",
+     "不值得讓模型每次都決定一遍"
+    ],
+    [
+     "機械式處理（組 API 請求、解析串流、問完使用者後接回流程）",
+     "程式碼，包在 tool 裡",
+     "固定步驟"
+    ]
+   ]
+  },
+  {
+   "id": "s3d.b3",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L26"
+   ],
+   "text": "表中兩個詞補充一下。Entity resolution 是把使用者口中的「上週那張單」對應到系統裡具體的訂單 ID（一般知識）。「問完使用者後接回流程」原文是 resuming a clarification，文章沒有解釋，這裡的理解是推論。"
+  },
+  {
+   "id": "s3d.b4",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L27"
+   ],
+   "text": "「硬限制放進 tool」值得多說一句：規則寫在 prompt 裡，只是「請」模型遵守；寫在 tool 的程式碼裡，則是條件不符時直接擋下，並回傳模型看得懂的訊息。具體做法見〈Tool 的設計：依意圖分組，規則寫在程式碼裡〉的圖 5。"
+  },
+  {
+   "id": "s3d.b5",
+   "section": "s3d",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L28"
+   ],
+   "tone": "tip",
+   "title": "一條判斷規則",
+   "text": "需要判斷的交給模型或 skill，絕對不能違反的寫進 tool 程式碼，固定的機械式步驟留給一般程式碼。"
+  },
+  {
+   "id": "s3.b2",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "小結：單一 loop 靠漸進式揭露解決「prompt 太長」，讓模型自己寫計畫、自己改計畫；原本散在各 subagent 的東西，依「要判斷、不能違反、固定步驟」分別搬進 skill、tool 和程式碼。"
+  },
+  {
+   "id": "s4.b1",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L29"
+   ],
+   "purpose": "signpost",
+   "text": "目標架構清楚了，接著是最實際的問題：已經有一堆 subagent 在跑，要怎麼搬過去？遷移的原則是一次只改一件事，每一步都用 eval 確認沒有退步。要不要折，由分數決定，不由直覺決定。"
+  },
+  {
+   "id": "s4a.b1",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L30"
+   ],
+   "text": "Eval 分兩層：中央團隊維護一套端到端 eval，各團隊上線 skill 時，附上只測該 skill 的小 eval。起步用 10 個 golden examples（人工確認過正確答案的範例）就夠了。要量哪些指標、題目要涵蓋什麼、怎麼比較、怎麼判斷去留，整理在文末的〈深入：折疊 subagent 時要 eval 的五個面向〉。"
+  },
+  {
+   "id": "s4b.b1",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L32"
+   ],
+   "text": "文章給了三種做法。這裡把它們讀成依序進行的階段（推論；文章沒有明說，依據見本節最後的摺疊區）："
+  },
+  {
+   "id": "s4b.b2",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L33"
+   ],
+   "text": "**A. 把 subagent 當 tool 呼叫。** 主 agent 把 subagent 當成一個工具呼叫，自己持續握著和使用者的對話。好處是不必改寫 subagent，就能先拿到 baseline（之後每一步拿來比較的基準分數）；同時可以統一各 subagent 的回應格式，讓主 agent 拿真實資料去核對 subagent 的結論。只有在 subagent 必須親自和使用者對話時，才讓它直接接手整段對話（full handoff）。"
+  },
+  {
+   "id": "s4b.b3",
+   "section": "s4b",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L34"
+   ],
+   "tone": "warning",
+   "title": "做法 A 還沒解決的事",
+   "text": "每個 specialist 仍有自己的 prompt、owner 與 eval；回傳的仍然是有損摘要；每次呼叫都是多一層巢狀 loop，延遲還在。"
+  },
+  {
+   "id": "s4b.b4",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L35"
+   ],
+   "text": "**B. 合併 domain agents。** 從使用量最大的開始，把會串接彼此輸出、碰同一份資料、常被一起呼叫的 specialist 合併。怎麼找出這種組合？看生產流量：如果很大一部分流量是「specialist 1 做完，接著叫 specialist 2」，這兩個就是緊密耦合的一對。"
+  },
+  {
+   "id": "s4b.b5",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L36"
+   ],
+   "text": "**C. 折成 skills 加 tools。** 一次一個：subagent 的 prompt 改寫成 skill，它呼叫的 API 改成 MCP tool（MCP 是 Model Context Protocol，讓 agent 透過統一介面呼叫外部工具的協定；一般知識）。有和沒有這個 subagent 分別跑一輪 eval，再決定去留。"
+  },
+  {
+   "id": "s4b.b6",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "串起來就是這樣一條流水線，最後只留下折疊後會退步的 subagent："
+  },
+  {
+   "id": "s4b.b7",
+   "section": "s4b",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L31"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "e",
+     "label": "建立 eval"
+    },
+    {
+     "id": "a",
+     "label": "A. subagent 當 tool：不改寫，取得 baseline"
+    },
+    {
+     "id": "b",
+     "label": "B. 合併高耦合的 subagent：數量變少"
+    },
+    {
+     "id": "c",
+     "label": "C. 一次折一個：prompt 改成 skill，API 改成 MCP tool"
+    },
+    {
+     "id": "g",
+     "label": "折疊版分數比較差？"
+    },
+    {
+     "id": "k",
+     "label": "保留該 subagent"
+    },
+    {
+     "id": "f",
+     "label": "留在主 loop，換下一個"
+    }
+   ],
+   "edges": [
+    {
+     "from": "e",
+     "to": "a"
+    },
+    {
+     "from": "a",
+     "to": "b"
+    },
+    {
+     "from": "b",
+     "to": "c"
+    },
+    {
+     "from": "c",
+     "to": "g"
+    },
+    {
+     "from": "g",
+     "to": "k",
+     "label": "是"
+    },
+    {
+     "from": "g",
+     "to": "f",
+     "label": "否"
+    }
+   ]
+  },
+  {
+   "id": "s4b.b7c",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L31"
+   ],
+   "text": "圖 4 — 分階段遷移：每一步都有 eval 把關，最後只留下折疊後會退步的 subagent。"
+  },
+  {
+   "id": "s4b.b8",
+   "section": "s4b",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "tone": "info",
+   "title": "為什麼讀成「依序的階段」而不是三選一？",
+   "children": [
+    {
+     "id": "s4b.b9",
+     "section": "s4b",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L37"
+     ],
+     "text": "文章原話是可以「合併、當 tool 呼叫，或用 skills 和 tools 取代」，沒有明說三者是三選一的選項，還是依序進行的階段。採分階段讀法的依據是：文章稱 A 為好的第一步，而且那一節講的就是分階段遷移。"
+    }
+   ]
+  },
+  {
+   "id": "s4c.b1",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "text": "每一步都要比分數，但比的方式有講究：折疊後不能只看總分，要逐題比對，哪些任務從通過變失敗，哪些從失敗變通過。假設 eval 共 20 題（自編）："
+  },
+  {
+   "id": "s4c.b2",
+   "section": "s4c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "illustrative": true,
+   "headers": [
+    "",
+    "折疊前",
+    "折疊後"
+   ],
+   "rows": [
+    [
+     "通過題數（共 20 題）",
+     "15",
+     "15"
+    ],
+    [
+     "題號 3、7",
+     "通過",
+     "失敗"
+    ],
+    [
+     "題號 11、18",
+     "失敗",
+     "通過"
+    ]
+   ]
+  },
+  {
+   "id": "s4c.b3",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "text": "總分一樣是 15 題，但如果題號 3、7 這兩題是絕對不能錯的流程，總分就把退步藏起來了。"
+  },
+  {
+   "id": "s4c.b4",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L39"
+   ],
+   "text": "文章給了一個實例。一個示範用的客服 agent，把一個 subagent 折進另一個之後，延遲下降了，但一個原本通過的流程壞掉：主 agent 手上已經有查訂單的 tool，就自己回答了，沒有去問物流 specialist 實際的送達日期。而且這個失誤在兩次執行中只出現一次，只跑一次很可能根本抓不到。"
+  },
+  {
+   "id": "s4c.b5",
+   "section": "s4c",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L40"
+   ],
+   "tone": "note",
+   "title": "教訓",
+   "text": "模型手上的資訊「看起來夠用」時，會跳過原本設計好的步驟。所以每題要多跑幾次，而且每一條會一起執行的串接都要有題目（見文末〈題目要涵蓋什麼〉）。"
+  },
+  {
+   "id": "s4.b2",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "小結：先建 eval，再依序「當 tool、合併、一次折一個」；每一步逐題看翻轉、每題多跑幾次，折疊版分數比較差才保留 subagent。"
+  },
+  {
+   "id": "s5.b1",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "signpost",
+   "text": "架構折成一個之後，原本各做一個 subagent 的團隊不會消失。他們要做什麼？"
+  },
+  {
+   "id": "s5.b2",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L41"
+   ],
+   "text": "沒有各自的 agent 之後，團隊的角色變了：各團隊不再擁有一個 agent，而是貢獻 skills、tools 或知識庫。一個小型中央團隊擁有 system prompt 與端到端品質，每個新的 skill、tool、eval 上線前都要經過它審核。中央團隊要刻意保持小，迭代才快，協調成本才低。"
+  },
+  {
+   "id": "s5a.b1",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L42"
+   ],
+   "text": "團隊貢獻的東西有三種載體，用客服例子（自編）對照："
+  },
+  {
+   "id": "s5a.b2",
+   "section": "s5a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L42"
+   ],
+   "headers": [
+    "載體",
+    "適合放什麼",
+    "例子（自編）"
+   ],
+   "rows": [
+    [
+     "MCP tool",
+     "要執行動作、讀即時資料，或要回傳固定格式的結果",
+     "查訂單狀態、送出退款"
+    ],
+    [
+     "Skill",
+     "團隊「怎麼做事」：步驟、規則、判斷方式",
+     "退貨流程與例外判斷"
+    ],
+    [
+     "知識庫",
+     "偶爾才需要的參考資料：政策、指標定義、產品規格",
+     "退貨政策全文"
+    ]
+   ]
+  },
+  {
+   "id": "s5a.b3",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L43"
+   ],
+   "text": "知識庫有兩種放法：放在搜尋或查詢 tool 後面，讓模型自己呼叫；或者當成參考檔案放進 skill。文章要求避免的是「由程式碼先檢索，再直接貼進 prompt」。理由文章在這裡沒說，合理的解讀是：讀不讀、讀哪一段，應該交給模型按需決定（推論）。"
+  },
+  {
+   "id": "s5a.b4",
+   "section": "s5a",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L44"
+   ],
+   "tone": "tip",
+   "title": "一句話記",
+   "text": "要做事或拿資料用 tool，要知道怎麼做用 skill，偶爾查一下的放知識庫。"
+  },
+  {
+   "id": "s5b.b1",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L45"
+   ],
+   "text": "**依使用者意圖分組，不要一支 API 一個 tool。** System prompt 裡的 tool 定義超過 30 到 50 個，工具選擇的準確度通常會下降（文章沒說是哪個模型、哪類任務的觀察）。不常用的 tool，再用 tool search 延遲載入。"
+  },
+  {
+   "id": "s5b.b2",
+   "section": "s5b",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L46"
+   ],
+   "headers": [
+    "做法",
+    "tool 長什麼樣（自編）",
+    "模型要做的選擇"
+   ],
+   "rows": [
+    [
+     "一支 API 一個 tool",
+     "`get_order`、`get_shipment`、`get_carrier_status`",
+     "自己判斷要串哪幾個、按什麼順序"
+    ],
+    [
+     "依意圖分組",
+     "`track_order`，內部依序呼叫三支 API",
+     "只要判斷使用者想追包裹"
+    ]
+   ]
+  },
+  {
+   "id": "s5b.b3",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L47"
+   ],
+   "text": "**前置條件寫進 tool。** 如果 Y 需要 X 的輸出，就由 Y 的 tool 自己檢查，缺少時回傳一段模型能照著做的指示。硬性前置條件要盡量少，只保留真正必要的。以退款為例（自編）："
+  },
+  {
+   "id": "s5b.b4",
+   "section": "s5b",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L48"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "r1",
+     "label": "模型呼叫 refund（訂單 A）"
+    },
+    {
+     "id": "x",
+     "label": "refund tool 回覆：尚未驗證身分，請先呼叫 verify_identity"
+    },
+    {
+     "id": "v",
+     "label": "模型呼叫 verify_identity"
+    },
+    {
+     "id": "r2",
+     "label": "模型再呼叫 refund（訂單 A）"
+    },
+    {
+     "id": "ok",
+     "label": "refund tool 回覆：退款已送出"
+    }
+   ],
+   "edges": [
+    {
+     "from": "r1",
+     "to": "x"
+    },
+    {
+     "from": "x",
+     "to": "v"
+    },
+    {
+     "from": "v",
+     "to": "r2"
+    },
+    {
+     "from": "r2",
+     "to": "ok"
+    }
+   ]
+  },
+  {
+   "id": "s5b.b4c",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L48"
+   ],
+   "text": "圖 5 — 前置條件寫在 tool 裡：規則不靠模型記得，而是由 tool 的程式碼擋下並指路。（自編例子）"
+  },
+  {
+   "id": "s5b.b5",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L49"
+   ],
+   "text": "**權限檢查寫進 tool。** 每個 tool 自己檢查呼叫者能看什麼、能做什麼，不行就回傳一句白話的拒絕。這樣同一個 loop 就能服務不同權限的使用者，不必每個權限等級各做一個 agent。"
+  },
+  {
+   "id": "s5b.b6",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L50"
+   ],
+   "text": "遷移期間，tool 也可以用來包住還沒折進去的 subagent，也就是〈三種做法，依序進行〉裡的做法 A。"
+  },
+  {
+   "id": "s5c.b1",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L51"
+   ],
+   "text": "Subagent 拆掉之後，「氾濫」這個問題很可能換成 skill 的形式重演。文章的做法："
+  },
+  {
+   "id": "s5c.b2",
+   "section": "s5c",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L51"
+   ],
+   "ordered": false,
+   "items": [
+    "每個團隊指定一位 DRI（Directly Responsible Individual，直接負責人，來自管理領域的用語）負責自己的 skill，確保寫得好、不和其他 skill 重疊，並附上 eval。",
+    "維護責任交還給寫 skill 的人，粗重的工作則交給 Claude：用專門的 skill 去建立、測試、刪減其他 skill。",
+    "依使用量與成本資料決定去留，沒人用的 skill 就刪掉。"
+   ]
+  },
+  {
+   "id": "s5c.b3",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L52"
+   ],
+   "text": "Anthropic 提供了對應的指令，涵蓋建立與整理 skill（`/skill-creator`）、查看成本與使用頻率（`/skill-doctor`）、建 eval、找出為舊模型寫的指令、對著 eval 反覆改進描述，以及成本優化。實際名稱與用法以官方文件為準。"
+  },
+  {
+   "id": "s5c.b4",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L53"
+   ],
+   "text": "至於 skill 的描述要怎麼寫，才會在對的時機被觸發？文章沒有給寫作規則，而是用 eval 反覆調整描述，直到折疊版的分數追上或超過原本的 subagent。"
+  },
+  {
+   "id": "s5.b3",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "小結：團隊從「擁有一個 agent」改成貢獻 tool、skill 或知識庫；tool 依意圖分組，前置條件和權限寫在 tool 的程式碼裡；每個 skill 有人負責、有 eval，沒人用就刪。"
+  },
+  {
+   "id": "s6.b1",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L54"
+   ],
+   "purpose": "signpost",
+   "text": "回到開頭留下的問題：那些交接邊界是從哪裡來的？這是整篇文章裡最能脫離 agent 單獨帶走的觀念。Conway's law 說：設計系統的組織，做出來的系統結構會複製組織自己的溝通結構。Agent 架構變成組織圖的複製品，就是這個定律在 agent 上的表現。"
+  },
+  {
+   "id": "s6a.b1",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L55"
+   ],
+   "text": "Conway's law 由 Melvin Conway 在 1968 年提出，屬於軟體工程與組織設計領域，在討論微服務該怎麼切分時很常見，在 AI agent 領域則還少見（一般知識）。文章是把它當成真正的診斷工具在用，不是借個名詞來裝飾。"
+  },
+  {
+   "id": "s6a.b2",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "text": "它為什麼成立，可以拆成三步（一般知識加推論）："
+  },
+  {
+   "id": "s6a.b3",
+   "section": "s6a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "ordered": true,
+   "items": [
+    "每個團隊只能輕鬆修改自己擁有的部分。",
+    "跨團隊的介面要協調，成本很高，所以系統邊界自然落在團隊邊界上。",
+    "每個團隊只為自己那一塊負責，也就只為那一塊優化，例如寫只測自己子任務的 eval（也就是前面五種失敗模式裡的「Eval 過度局部」）。"
+   ]
+  },
+  {
+   "id": "s6a.b4",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "text": "結果是：系統邊界依「誰負責什麼」劃分，而不是依技術需求劃分。"
+  },
+  {
+   "id": "s6b.b1",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L57"
+   ],
+   "text": "一般軟體的團隊邊界會變成 API 邊界，資料還能完整傳過去。Agent 的邊界卻是 context 的邊界，每一條團隊邊界都變成一次有損的摘要交接，就像圖 1 裡那張沒被提到的發票。"
+  },
+  {
+   "id": "s6b.b2",
+   "section": "s6b",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "o",
+     "label": "組織：退貨團隊、物流團隊、發票團隊"
+    },
+    {
+     "id": "a",
+     "label": "各自做一個 agent，再疊一個 orchestrator"
+    },
+    {
+     "id": "x",
+     "label": "每一條團隊邊界 = 一次 context 交接 = 一次資訊流失"
+    }
+   ],
+   "edges": [
+    {
+     "from": "o",
+     "to": "a"
+    },
+    {
+     "from": "a",
+     "to": "x"
+    }
+   ]
+  },
+  {
+   "id": "s6b.b2c",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "text": "圖 6 — 組織圖投影成 agent 架構，團隊邊界變成資訊流失點。"
+  },
+  {
+   "id": "s6b.b3",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L59"
+   ],
+   "text": "文章的例子：一家公司的客服 agent 底下有十幾個 specialist subagent，品牌語氣難以保持一致，延遲也傷害了使用者體驗。"
+  },
+  {
+   "id": "s6c.b1",
+   "section": "s6c",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L60"
+   ],
+   "tone": "question",
+   "title": "多切一個 agent 之前，先問",
+   "text": "「如果整個系統只由一個團隊負責，這條邊界還會存在嗎？」\n\n- **會存在**：代表有技術理由，例如可量測的 context 膨脹、需要平行且乾淨的 context、工具太多選不準。這種邊界可以留。\n- **不會存在**：這條邊界只是組織圖的投影，應該改掉。"
+  },
+  {
+   "id": "s6c.b2",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "text": "開頭提過，文章列了三種仍該保留 subagent 的情況。用例子說明（例子皆為自編）："
+  },
+  {
+   "id": "s6c.b3",
+   "section": "s6c",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "ordered": false,
+   "items": [
+    "**context 膨脹，造成可量測的退化**。例如（自編）一個 agent 折進太多 skill 與工具結果後，eval 分數明顯下滑。",
+    "**需要平行執行、而且各自乾淨的 context**。例如（自編）同時調查幾個互不相關的方向，每個方向都要讀大量文件；混在同一個 context 裡會互相干擾，分給幾個 subagent 各自讀、各自回報比較合適。",
+    "**agent 選不對工具，或指令互相衝突**。例如（自編）退款與換貨兩組規則寫法互相矛盾，折在一起後 agent 反覆用錯規則。"
+   ]
+  },
+  {
+   "id": "s6d.b1",
+   "section": "s6d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L61"
+   ],
+   "text": "文章不是叫團隊消失，而是改變團隊擁有的單位，也就是〈沒有各自的 agent 之後，團隊要負責什麼〉講的分工。它在這裡多補了一層理由：組織邊界換了，系統邊界才不會被慢慢拉回原狀。"
+  },
+  {
+   "id": "s6.b2",
+   "section": "s6d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "小結：一個合理的解釋是，團隊只改得動、也只優化自己那一塊，agent 就跟著長成組織圖；放到 agent 上，每條團隊邊界都是一次掉資訊的交接。所以光改架構不夠，團隊擁有的單位也要跟著換。"
+  },
+  {
+   "id": "s7.b1",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L70"
+   ],
+   "text": "這篇文章的方向很有說服力，但幾個關鍵數字和做法的細節交代得不完整，拿去說服團隊或照做之前要心裡有數："
+  },
+  {
+   "id": "s7.b2",
+   "section": "s7",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L70"
+   ],
+   "headers": [
+    "主張",
+    "文章給的證據",
+    "缺了什麼"
+   ],
+   "rows": [
+    [
+     "單一 loop 執行時間約快 2 倍",
+     "一個客戶的案例",
+     "單一案例，比較條件沒說明"
+    ],
+    [
+     "單一 agent 加 skills 品質「經常」較好、成本延遲「常常」較低",
+     "多個企業部署的比較",
+     "沒有數字、任務或模型資訊"
+    ],
+    [
+     "Claude Code 的 system prompt 縮減超過 80%",
+     "Claude Code 自己的經驗",
+     "縮減「包含」漸進式揭露，不全是它的功勞"
+    ],
+    [
+     "模型夠強就能折",
+     "從 Opus 4.5 起的觀察",
+     "沒有跨模型比較，也沒有「多強才夠」的門檻"
+    ],
+    [
+     "tool 超過 30 到 50 個準確度下降",
+     "觀察",
+     "沒說是哪個模型、哪類任務"
+    ]
+   ]
+  },
+  {
+   "id": "s7.b3",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L71"
+   ],
+   "text": "還有幾處做法沒交代清楚，上文已經標出筆者的推論："
+  },
+  {
+   "id": "s7.b4",
+   "section": "s7",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L71"
+   ],
+   "ordered": false,
+   "items": [
+    "**寫入閘門**沒有定義（〈Loop 怎麼運作：寫計畫的就是執行的〉）。",
+    "**resuming a clarification** 沒有解釋（〈原本的元件搬去哪〉）。",
+    "**三種遷移做法**是選項還是階段，沒有明說（〈三種做法，依序進行〉）。",
+    "**知識庫為什麼不能由程式碼先檢索再貼進 prompt**，理由在那一段沒說（〈Tool、skill、知識庫怎麼選〉）。",
+    "**兩種替 eval 打分的方式**：rubric（依評分標準替最終回覆打分）與 task-completion（任務完成率）沒有明確區分；筆者對兩者界線的推論見文末〈量什麼〉。",
+    "**每題要跑幾次才夠**，文章沒說。",
+    "**怎麼用時間戳重播成 eval**：文章建議內部系統難以重播時，在重要事件上記錄時間戳，之後重播成 eval（文末〈誰維護 eval〉），但沒說明怎麼做；推論是用時間戳還原當下的系統狀態再重跑。"
+   ]
+  },
+  {
+   "id": "s8.b1",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L72"
+   ],
+   "text": "多 subagent 架構的根本問題，是每條邊界都是一次有損的 context 交接，而這些邊界常常只是組織圖的投影。解法是單一 loop 加上漸進式揭露：知識寫成按需載入的 skill，能力做成 tool，硬限制和權限檢查寫進 tool 的程式碼裡，而不是寫在 prompt 裡拜託模型遵守。"
+  },
+  {
+   "id": "s8.b2",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L72"
+   ],
+   "text": "遷移要分階段：先建 eval，再把 subagent 當 tool 呼叫取得 baseline，接著合併高耦合的 subagent，最後一次折一個，只有折疊版分數比較差時才保留。比較時要逐題看翻轉、每題多跑幾次，因為模型在資訊「看起來夠用」時會跳過步驟。"
+  },
+  {
+   "id": "s8.b3",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L72"
+   ],
+   "text": "組織面上，團隊從擁有 agent 改成擁有 skills 和 tools，由小型中央團隊守住 system prompt 與端到端品質。下次想多切一個 agent 時，先問一句：如果只有一個團隊負責，這條邊界還會存在嗎？"
+  },
+  {
+   "id": "s8.b4",
+   "section": "s8",
+   "type": "callout",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "tone": "success",
+   "title": "讀完可以做的三件事",
+   "text": "- **檢查**：把現有 agent 架構圖和組織圖並排，標出每一條「只因為不同團隊負責」才存在的邊界。\n- **先量**：還沒有 eval 就先別折；從少量人工確認過答案的題目開始，涵蓋每一條會串接的流程。\n- **存疑**：拿「快 2 倍」「縮減超過 80%」去說服別人之前，記得它們是單一案例和自家經驗。"
+  },
+  {
+   "id": "s9.b1",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "text": "這一節給準備動手的讀者。每折一個 subagent，就跑一次同樣的四步流程。下面五個小節裡，前四個對應流程中的步驟（〈怎麼比〉橫跨兩步）："
+  },
+  {
+   "id": "s9.b2",
+   "section": "s9",
+   "type": "diagram",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "a",
+     "label": "準備題目（題目要涵蓋什麼）"
+    },
+    {
+     "id": "b",
+     "label": "有、無該 subagent 各跑一輪（怎麼比）"
+    },
+    {
+     "id": "c",
+     "label": "逐面向比較（量什麼、怎麼比）"
+    },
+    {
+     "id": "d",
+     "label": "決定留或折（怎麼判斷要留 subagent）"
+    }
+   ],
+   "edges": [
+    {
+     "from": "a",
+     "to": "b"
+    },
+    {
+     "from": "b",
+     "to": "c"
+    },
+    {
+     "from": "c",
+     "to": "d"
+    }
+   ]
+  },
+  {
+   "id": "s9.b2c",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "text": "圖 7 — 折疊一個 subagent 的 eval 流程。〈誰維護 eval〉不在流程內，而是讓流程能持續跑下去的前提。"
+  },
+  {
+   "id": "s9a.b1",
+   "section": "s9a",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L63"
+   ],
+   "headers": [
+    "類別",
+    "要回答的問題",
+    "指標",
+    "何時用"
+   ],
+   "rows": [
+    [
+     "結果",
+     "最後的回覆好不好",
+     "Rubric 評分：依評分標準給最終回覆打分",
+     "全程"
+    ],
+    [
+     "結果",
+     "事情有沒有真的辦成",
+     "Task-completion（任務完成率）",
+     "比較架構時最重要"
+    ],
+    [
+     "過程",
+     "有沒有分派給對的 subagent",
+     "Routing accuracy（路由準確率）",
+     "折疊前"
+    ],
+    [
+     "過程",
+     "有沒有載入對的 skill、呼叫對的 tool",
+     "選擇正確率",
+     "折疊後"
+    ],
+    [
+     "過程",
+     "該走的步驟有沒有走完",
+     "串接題目（見下一小節）",
+     "折疊後"
+    ],
+    [
+     "效率",
+     "有沒有變快、變便宜",
+     "每任務延遲、每任務成本",
+     "全程"
+    ]
+   ]
+  },
+  {
+   "id": "s9a.b2",
+   "section": "s9a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L64"
+   ],
+   "text": "Rubric 和 task-completion 的差別文章沒有明確定義。可以這樣分（推論）：rubric 看回答寫得好不好，task-completion 看事情有沒有辦成。回答寫得漂亮、退款卻沒送出，rubric 可能給高分，task-completion 則判失敗。"
+  },
+  {
+   "id": "s9b.b1",
+   "section": "s9b",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L65"
+   ],
+   "ordered": false,
+   "items": [
+    "生產環境中每一條會一起執行的 agent 串接都要有題目。這是抓「跳過步驟」的關鍵，〈總分一樣，也可能藏著退步〉裡那個沒去問物流 specialist 的客服 agent 就是這種失誤。",
+    "Agent 絕對不能違反的每一條規則，都要有對應的題目。"
+   ]
+  },
+  {
+   "id": "s9c.b1",
+   "section": "s9c",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "ordered": false,
+   "items": [
+    "有和沒有該 subagent 分別跑一輪，其他條件固定。",
+    "逐題看翻轉，不只看總分（20 題的例子見〈總分一樣，也可能藏著退步〉）。",
+    "每題跑不只一次，偶發的失誤才抓得到。",
+    "一次只改一件事。"
+   ]
+  },
+  {
+   "id": "s9d.b1",
+   "section": "s9d",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L67",
+    "L68"
+   ],
+   "ordered": false,
+   "items": [
+    "**主規則**：折疊版分數比較差，才保留 subagent。",
+    "**輔助訊號**：context 膨脹造成可量測的退化、選不對工具、prompt 指令互相衝突，這三者都能從〈量什麼〉的指標看出來。",
+    "**另外判斷的一項**：需要平行且乾淨的 context 是架構需求，不是 eval 分數能反映的，要另外判斷（推論；文章只是把它和另外兩個條件並列）。"
+   ]
+  },
+  {
+   "id": "s9e.b1",
+   "section": "s9e",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L69"
+   ],
+   "ordered": false,
+   "items": [
+    "兩層分工（中央團隊的端到端 eval 加各團隊的小 eval）與起步規模（10 個 golden examples），見〈先建 eval〉。",
+    "內部系統難以重播、使用者互動難以模擬時，可以在重要事件上記錄時間戳，之後拿來重播成針對性的 eval。"
+   ]
+  }
+ ],
+ "decisions": [
+  {
+   "id": "D1",
+   "kind": "folded",
+   "ledger": "L37",
+   "why": "「三種做法是選項還是階段」的原文措辭與讀法依據是推論的佐證，放進摺疊區；推論本身（L32）留在主線，證據缺口一節也再提一次。",
+   "needs_human": true
+  },
+  {
+   "id": "D2",
+   "kind": "folded",
+   "ledger": "L64",
+   "why": "rubric 與 task-completion 的區分是推論，隨 eval 詳解放進文末深入一節；證據缺口一節（主線）也列出這一處。",
+   "needs_human": true
+  },
+  {
+   "id": "D3",
+   "kind": "folded",
+   "ledger": "L68",
+   "why": "「平行乾淨 context 要另外判斷」是推論，隨 eval 詳解放進文末深入一節。",
+   "needs_human": true
+  },
+  {
+   "id": "D4",
+   "kind": "moved",
+   "ledger": "L70",
+   "why": "〈證據強度與文章沒交代的地方〉從 eval 詳解之後移到結論之前，讓只讀到結論的讀者也看得到限制。",
+   "needs_human": false
+  },
+  {
+   "id": "D5",
+   "kind": "moved",
+   "ledger": "L62",
+   "why": "〈折疊時要 eval 的面向〉整節移到結論之後當深入附錄；主線的〈怎麼折〉已講到原則與實例。",
+   "needs_human": false
+  },
+  {
+   "id": "D6",
+   "kind": "reworded",
+   "ledger": "L09",
+   "why": "圖 1 的 mermaid subgraph 對比改成表格（計畫格式只支援 flow/tree/mindmap 圖），內容不變。",
+   "needs_human": false
+  },
+  {
+   "id": "D7",
+   "kind": "reworded",
+   "ledger": "L48",
+   "why": "圖 5 的 sequence diagram 改成 flow 圖（計畫格式沒有 sequence diagram），四個步驟不變。",
+   "needs_human": false
+  }
+ ]
+}

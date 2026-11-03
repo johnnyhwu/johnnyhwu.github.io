@@ -1,0 +1,5 @@
+[
+ {"block": "s3.b0", "zh": "context window", "en": "context window", "target": "../context-engineering/"},
+ {"block": "s3b.b4", "zh": "Claude Code", "en": "Claude Code", "target": "../claude-code/"},
+ {"block": "s3c.b1", "zh": "harness", "en": "harness", "target": "../harness-engineering/"}
+]
