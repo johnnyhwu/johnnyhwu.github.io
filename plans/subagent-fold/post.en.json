@@ -1,0 +1,2309 @@
+{
+ "schema": "post-plan/1",
+ "source": {
+  "article": "AI-Research/done/published/Subagent-Fold/article.md",
+  "manifest": "plans/subagent-fold/empty-manifest.json",
+  "root": "AI-Research"
+ },
+ "meta": {
+  "section": "ai-concept",
+  "slug": "subagent-fold",
+  "tags": [
+   "Single-Agent",
+   "Multi-Agent",
+   "Evaluation"
+  ],
+  "title": "When to Fold Subagents Into One Agent Loop",
+  "description": "Every handoff between subagents is a lossy summary. Anthropic's case for one agent loop with on-demand skills and tools, a staged eval-gated migration, and Conway's law.",
+  "reader": {
+   "persona": "Engineers and product people who have used ChatGPT or Claude and heard of AI agents, and want to know how an agent system should be split up; no multi-agent experience needed",
+   "promise": "Explain why a multi-subagent setup loses information, what a single loop with skills and tools looks like, how to fold subagents in step by step behind evals, and use one question to check whether an agent boundary is just a copy of the org chart",
+   "assumes": [
+    "prompt"
+   ]
+  },
+  "takeaways": [
+   {
+    "id": "t1",
+    "text": "Every subagent boundary is a lossy context handoff, and many of those boundaries exist only because the org chart has them (Conway's law), not because the problem needs them.",
+    "memory_hook": "\"If one team owned the whole system, would this boundary still exist?\""
+   },
+   {
+    "id": "t2",
+    "text": "The target is one model, one context window, one loop: knowledge becomes skills loaded on demand, capabilities become tools, and rules that must never break live in tool code, not in the prompt.",
+    "memory_hook": "Judgment goes to the model or a skill, hard rules go into tools, fixed steps stay in code"
+   },
+   {
+    "id": "t3",
+    "text": "Fold in stages behind evals: wrap subagents as tools, merge the tightly coupled ones, then fold one at a time. Compare question by question, run each question more than once, and keep a subagent only if the folded version scores worse.",
+    "memory_hook": "The same total of 15 can hide two regressions that must never happen"
+   }
+  ],
+  "hook": {
+   "kind": "scenario",
+   "text": "A customer asks: can I return this order, and what happens to the invoice? The returns subagent reads the order and reports \"returnable\", which is true. But the invoice was already issued and must be voided first. That is outside the subagent's job, so it never makes the summary, and the main agent never finds out. Anthropic argues this kind of handoff, where nobody is wrong and information still disappears, is the root problem of multi-subagent systems."
+  },
+  "running_example": {
+   "id": "ex-cs",
+   "desc": "A support agent for an online store: returns, shipping and invoicing, first as one subagent per team, then folded into a single loop (the article's own support example, threaded through every section)"
+  },
+  "cover_brief": {
+   "metaphor": "Left: several thin streams each pass through a narrow gap that leaks a little, merging upward. Right: one closed loop with a row of catalog cards on its rim; only one or two cards are pulled out and opened inside the loop. Lossy handoffs versus one loop loading on demand",
+   "labels": [
+    {
+     "text": "subagent",
+     "ledger": "L08"
+    },
+    {
+     "text": "single loop",
+     "ledger": "L11"
+    },
+    {
+     "text": "skills",
+     "ledger": "L14"
+    },
+    {
+     "text": "tools",
+     "ledger": "L14"
+    }
+   ]
+  },
+  "seo": {
+   "queries": [
+    "agentic loop",
+    "agent loop",
+    "subagent",
+    "conway's law"
+   ],
+   "notes": "GSC 90 days: zero impressions for subagent and conway; agentic loop / agent loop impressions land on ai-concept/claude-code (71 impressions, position 7.6), an internal link target. No existing post targets folding subagents. Results-page check skipped (Chrome not connected)."
+  }
+ },
+ "outline": [
+  {
+   "id": "s1",
+   "title": "A subagent that was right, and still lost the invoice",
+   "role": "hook",
+   "goal": "Know what question the post answers and why it is worth reading",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s2",
+   "title": "Why multi-subagent systems go wrong",
+   "role": "context",
+   "goal": "Name the five failure modes and the root one, the lossy handoff",
+   "serves": [
+    "t1"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s2a",
+     "title": "Five failure modes",
+     "role": "context",
+     "goal": "Recognize the typical symptoms of multi-agent systems",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s2b",
+     "title": "The root problem: every handoff is a lossy summary",
+     "role": "mechanism",
+     "goal": "Use the invoice example to explain why summaries lose information",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "title": "The target: one loop plus progressive disclosure",
+   "role": "mechanism",
+   "goal": "Sketch the single loop and say where each old component goes",
+   "serves": [
+    "t2"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s3a",
+     "title": "Progressive disclosure: a catalog first, the full text on demand",
+     "role": "mechanism",
+     "goal": "Explain how skills and tool search keep knowledge out of one giant prompt",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3b",
+     "title": "Why it beats splitting into subagents",
+     "role": "evidence",
+     "goal": "Name the three reasons and the evidence behind each",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3c",
+     "title": "How the loop runs: the planner is the executor",
+     "role": "mechanism",
+     "goal": "Know what the model does and what the harness does",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3d",
+     "title": "Where the old components go",
+     "role": "mechanism",
+     "goal": "Use one rule to place logic in the model, a skill, a tool or code",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "How to fold: a staged migration gated by evals",
+   "role": "mechanism",
+   "goal": "Name the three migration stages and why to compare question by question",
+   "serves": [
+    "t3"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s4a",
+     "title": "Build the evals first",
+     "role": "mechanism",
+     "goal": "Know the two eval layers and the starting size",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s4b",
+     "title": "Three approaches, in order",
+     "role": "mechanism",
+     "goal": "Say what each stage does and what it still leaves unsolved",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s4c",
+     "title": "The same total score can hide a regression",
+     "role": "evidence",
+     "goal": "Understand why to compare per question and run each question several times",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "title": "What teams own once they no longer own an agent",
+   "role": "mechanism",
+   "goal": "Know what teams contribute, how to design tools and how to keep skills from sprawling",
+   "serves": [
+    "t2"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s5a",
+     "title": "Tool, skill or knowledge base?",
+     "role": "mechanism",
+     "goal": "Decide which form a capability or piece of knowledge belongs in",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s5b",
+     "title": "Tool design: group by intent, enforce rules in code",
+     "role": "mechanism",
+     "goal": "Name intent grouping, preconditions and permission checks",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s5c",
+     "title": "Keeping skills maintained and from sprawling",
+     "role": "mechanism",
+     "goal": "Know who owns a skill and how its fate is decided",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "title": "The idea to keep: Conway's law",
+   "role": "takeaway",
+   "goal": "Explain why agents grow into org charts, and check a boundary with one question",
+   "serves": [
+    "t1"
+   ],
+   "recap": true,
+   "children": [
+    {
+     "id": "s6a",
+     "title": "Where the law comes from and why it holds",
+     "role": "context",
+     "goal": "Give the three-step reasoning behind the law",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s6b",
+     "title": "Why it hurts more for agents",
+     "role": "mechanism",
+     "goal": "Tell an API boundary from a context boundary",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s6c",
+     "title": "One question before you split off another agent",
+     "role": "takeaway",
+     "goal": "Use the check question to decide whether a boundary stays",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s6d",
+     "title": "Often it's the org, not just the architecture, that has to change",
+     "role": "takeaway",
+     "goal": "Know how the unit a team owns should change",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "title": "How solid are these claims?",
+   "role": "caveat",
+   "goal": "Know which numbers are single cases or lack detail before using them",
+   "serves": [
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s8",
+   "title": "Conclusion",
+   "role": "takeaway",
+   "goal": "Leave with the three points and a first thing to do",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s9",
+   "title": "Deep dive: five things to evaluate when folding a subagent",
+   "role": "deep-dive",
+   "goal": "Know what to measure, test, compare, decide and maintain when folding",
+   "serves": [
+    "t3"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s9a",
+     "title": "What to measure",
+     "role": "deep-dive",
+     "goal": "Tell outcome, process and efficiency metrics apart",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9b",
+     "title": "What the questions must cover",
+     "role": "deep-dive",
+     "goal": "Know the two kinds of questions that must exist",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9c",
+     "title": "How to compare",
+     "role": "deep-dive",
+     "goal": "Know the four rules of a fair comparison",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9d",
+     "title": "When to keep a subagent",
+     "role": "deep-dive",
+     "goal": "Tell the main rule, the supporting signals and the separate judgment apart",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s9e",
+     "title": "Who maintains the evals",
+     "role": "deep-dive",
+     "goal": "Know how the evals keep running",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  }
+ ],
+ "glossary": [
+  {
+   "term": "subagent",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "orchestrator",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "context window",
+   "defined_in": "s3.b0"
+  },
+  {
+   "term": "skill",
+   "defined_in": "s3.b0"
+  },
+  {
+   "term": "harness",
+   "defined_in": "s2a.b2"
+  },
+  {
+   "term": "progressive disclosure",
+   "defined_in": "s3a.b1"
+  },
+  {
+   "term": "tool search",
+   "defined_in": "s3a.b5"
+  },
+  {
+   "term": "specialist",
+   "defined_in": "s3c.b3"
+  },
+  {
+   "term": "entity resolution",
+   "defined_in": "s3d.b2"
+  },
+  {
+   "term": "eval",
+   "defined_in": "s2a.b1"
+  },
+  {
+   "term": "golden examples",
+   "defined_in": "s4a.b1"
+  },
+  {
+   "term": "baseline",
+   "defined_in": "s4b.b2"
+  },
+  {
+   "term": "MCP",
+   "defined_in": "s4b.b5"
+  },
+  {
+   "term": "DRI",
+   "defined_in": "s5c.b2"
+  },
+  {
+   "term": "Conway's law",
+   "defined_in": "s1.b4"
+  },
+  {
+   "term": "rubric",
+   "defined_in": "s7.b4"
+  },
+  {
+   "term": "task-completion",
+   "defined_in": "s7.b4"
+  }
+ ],
+ "blocks": [
+  {
+   "id": "s1.b1",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "hook",
+   "text": "A customer asks the support agent: \"Can I return this order? What happens to the invoice?\" The system hands the question to a small agent that only handles returns. It reads the order and reports back one line: \"returnable\". That is correct. But this order's invoice has already been issued and must be voided first. Invoices are outside the returns agent's job, so the fact never makes it into the report, and the agent answering the customer never learns it. Nobody made a mistake, and information still got lost in the handoff. (This is a made-up scenario; the post keeps coming back to it.)"
+  },
+  {
+   "id": "s1.b2",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L03"
+   ],
+   "text": "Handoffs like this are everywhere in company agent systems. An agent here means an LLM program that repeatedly calls tools, looks at the results and decides what to do next. A typical enterprise setup looks like this: every team builds its own subagent (an agent that a higher-level agent calls to handle one subtask), and a platform team stacks an orchestrator on top (the higher-level agent that routes each question to the right subagent). A recent Anthropic article argues that, much of the time, this setup can be folded back into a single agent loop."
+  },
+  {
+   "id": "s1.b4",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "text": "The core reason: every subagent boundary is a lossy handoff of context (everything the model can see at that moment), and many of those boundaries are just a projection of the org chart, not something the problem requires. That is Conway's law: a system's structure copies the communication structure of the organization that designed it. A whole section below is devoted to it."
+  },
+  {
+   "id": "s1.b5",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "text": "Not everything should be folded, though. The article lists three situations where a subagent is still worth keeping; the section \"One question before you split off another agent\" gives an example of each."
+  },
+  {
+   "id": "s1.b7",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [
+    "L05"
+   ],
+   "purpose": "signpost",
+   "text": "First we look at why multi-subagent systems go wrong. Then at the single loop the article wants, how to fold your way there step by step, and what teams own afterwards. Finally, why agents end up shaped like org charts, and where the article's evidence is thin."
+  },
+  {
+   "id": "s1.b9",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L02",
+    "L06"
+   ],
+   "text": "Source: [Building agents: When to fold subagents into your main agent loop](https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop) (Anthropic, Diane Sarkis, 2026-10-22). Throughout this post, \"(my inference)\" marks the writer's reasoning beyond the article, \"(made-up)\" marks scenarios invented to explain a point, and \"(general knowledge)\" marks common industry background; everything unmarked comes from the article."
+  },
+  {
+   "id": "s2.b1",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "signpost",
+   "text": "Start with the problem. \"Each team builds a subagent, then stack an orchestrator on top\" looks like the easiest path. Why does the article think it often isn't worth it?"
+  },
+  {
+   "id": "s2a.b1",
+   "section": "s2a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L07"
+   ],
+   "text": "Once this setup is running, complexity keeps piling up. The article lists five failure modes (an eval, in the table, is a fixed set of test questions used to score an agent):"
+  },
+  {
+   "id": "s2a.b2",
+   "section": "s2a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L07"
+   ],
+   "headers": [
+    "Failure mode",
+    "What happens"
+   ],
+   "rows": [
+    [
+     "Context management",
+     "Someone has to decide what information agents exchange, and details drop out as it passes back and forth"
+    ],
+    [
+     "Subagent sprawl",
+     "Every team ships one, and you end up with many overlapping subagents with no standards and no owner"
+    ],
+    [
+     "Frankenprompt",
+     "Every team adds a line to the system prompt; the rules conflict and the tone is inconsistent"
+    ],
+    [
+     "Over-local evals",
+     "Each team tunes the score for its own subtask, nobody maintains the whole, and decisions rest on diluted scores"
+    ],
+    [
+     "Latency",
+     "Layered architectures are slow by nature. One customer replaced a multi-agent harness (the program wrapped around the model that runs tools and sets limits) with a single loop and saw runs about 2 times faster (a single case; see \"How solid are these claims?\")"
+    ]
+   ]
+  },
+  {
+   "id": "s2b.b1",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L08"
+   ],
+   "text": "Of the five, the first is the root. When a subagent finishes, it hands the main agent a summary it wrote itself, not the raw data, and the main agent has no way to see what the summary left out."
+  },
+  {
+   "id": "s2b.b2",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "Back to the opening example (made-up). The user asks: \"Can I return this order? What happens to the invoice?\" Here is how the information flows in the two designs:"
+  },
+  {
+   "id": "s2b.b3",
+   "section": "s2b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "headers": [
+    "",
+    "Split into subagents",
+    "Single loop"
+   ],
+   "rows": [
+    [
+     "Who reads the order",
+     "The returns agent reads the full order",
+     "The main agent reads the full order itself"
+    ],
+    [
+     "What the main agent gets",
+     "Only a summary: returnable",
+     "The raw order, invoice status included"
+    ],
+    [
+     "Outcome",
+     "The main agent doesn't know the invoice was issued and must be voided first",
+     "The answer covers voiding the invoice too"
+    ]
+   ]
+  },
+  {
+   "id": "s2b.b4",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "Figure 1 — The same question in two designs: the difference is who writes the summary, and the main agent never sees the details that were left out. (Made-up example)"
+  },
+  {
+   "id": "s2b.b5",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L10"
+   ],
+   "text": "The returns agent did nothing wrong; \"returnable\" is true. The invoice status was simply outside its task, so it never entered the summary. Where these handoff boundaries come from is the subject of \"The idea to keep: Conway's law\"."
+  },
+  {
+   "id": "s2.b2",
+   "section": "s2b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "In short: multi-subagent systems have many problems, but the root one is that every handoff passes through a summary someone else wrote, and whatever it leaves out is gone."
+  },
+  {
+   "id": "s3.b1",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L11"
+   ],
+   "purpose": "signpost",
+   "text": "With the problem clear, here is what the article wants instead: a loop that repeatedly calls tools, looks at the results and decides the next step, with knowledge and tools kept as a catalog and loaded only when needed."
+  },
+  {
+   "id": "s3.b0",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L03"
+   ],
+   "text": "Concretely: one model, one context window (everything the model can see at once: instructions, conversation history and tool results). Domain knowledge is written as skills (how-to instructions written for the agent), capabilities become tools (functions the agent can call, such as looking up an order), and normally only a catalog of each is loaded. This section takes four steps: loading on demand, why it beats subagents, how the loop runs, and where the old components go."
+  },
+  {
+   "id": "s3a.b1",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L12"
+   ],
+   "text": "Progressive disclosure means the agent starts out seeing only each skill's and tool's name plus a one-line description, and loads the full text or full definition into context only when it actually needs it."
+  },
+  {
+   "id": "s3a.b2",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "text": "Same support example (made-up), but this time the user asks \"Where is my order?\":"
+  },
+  {
+   "id": "s3a.b3",
+   "section": "s3a",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "q",
+     "label": "User: Where is my order?"
+    },
+    {
+     "id": "ctx",
+     "label": "In context from the start (short): skill catalog, tool catalog, a lean system prompt"
+    },
+    {
+     "id": "l1",
+     "label": "Shipping skill, full text"
+    },
+    {
+     "id": "l2",
+     "label": "Order lookup tool"
+    },
+    {
+     "id": "n1",
+     "label": "Returns skill, invoice skill: not used this time, take no context"
+    }
+   ],
+   "edges": [
+    {
+     "from": "q",
+     "to": "ctx"
+    },
+    {
+     "from": "ctx",
+     "to": "l1",
+     "label": "loaded after the model decides"
+    },
+    {
+     "from": "l1",
+     "to": "l2",
+     "label": "called when needed"
+    },
+    {
+     "from": "l2",
+     "to": "n1",
+     "label": "the rest stays in the catalog"
+    }
+   ]
+  },
+  {
+   "id": "s3a.b3c",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "text": "Figure 2 — Progressive disclosure: the skill catalog holds names plus one-line descriptions, the tool catalog names plus short summaries; only the skills and tools used this time enter the context. (Made-up example)"
+  },
+  {
+   "id": "s3a.b4",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "text": "The idea applies to two things:"
+  },
+  {
+   "id": "s3a.b5",
+   "section": "s3a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "ordered": false,
+   "items": [
+    "**Skill**: how-to instructions for the agent, covering steps, rules and how to make judgment calls. The expertise that used to live in each subagent's prompt moves here.",
+    "**Tool search**: the same idea applied to tools. Tool definitions are searched for and loaded only when needed."
+   ]
+  },
+  {
+   "id": "s3a.b6",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L15"
+   ],
+   "text": "The main reason to split into subagents in the first place was \"all that expertise in one prompt would be too long\". Once knowledge loads on demand, that reason no longer holds."
+  },
+  {
+   "id": "s3b.b1",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "The article gives three reasons:"
+  },
+  {
+   "id": "s3b.b2",
+   "section": "s3b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "headers": [
+    "Reason",
+    "What it means"
+   ],
+   "rows": [
+    [
+     "Shared context",
+     "The raw results of every earlier step sit in the same window, so the agent can connect them itself (the invoice status in Figure 1 is an example)"
+    ],
+    [
+     "No context bloat",
+     "Knowledge sits in skills loaded on demand instead of being stuffed into the prompt up front"
+    ],
+    [
+     "Models got stronger",
+     "One loop can handle more, so the harness no longer has to break the work into steps for the model"
+    ]
+   ]
+  },
+  {
+   "id": "s3b.b3",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L17",
+    "L18"
+   ],
+   "text": "The first two reasons each come with a piece of evidence:"
+  },
+  {
+   "id": "s3b.b4",
+   "section": "s3b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L17",
+    "L18"
+   ],
+   "ordered": false,
+   "items": [
+    "**Shared context**: in comparisons across several enterprise deployments, a single agent with skills \"often\" beat both one big prompt and subagent designs on quality, and was \"frequently\" cheaper and faster too.",
+    "**No context bloat**: Claude Code cut its system prompt by more than 80% for stronger models. The cut \"includes\" the effect of progressive disclosure but isn't all its doing (the article doesn't say where the rest came from)."
+   ]
+  },
+  {
+   "id": "s3b.b5",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "editorial",
+   "ledger": [
+    "L19"
+   ],
+   "text": "How solid that evidence is gets checked later, in \"How solid are these claims?\": the first has no numbers, and the second is Claude Code's own experience."
+  },
+  {
+   "id": "s3b.b6",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L20"
+   ],
+   "text": "On the third reason, the article says that starting with Opus 4.5, models can handle far more in a single loop than most teams expect. Recent models report progress as they go and check their own results, which makes parts of the harness redundant. Each new model generation lets more decisions move from the harness to the model, and an overly rigid multi-agent structure is often what keeps a new model from showing what it can do."
+  },
+  {
+   "id": "s3b.b7",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L21"
+   ],
+   "text": "So how strong does a model have to be before you fold? The article gives no threshold. It replaces one with symptoms and evals: keep a subagent only if the folded version scores worse, and weigh that against the three keep-a-subagent situations from the opening (context bloat, a need for parallel clean contexts, wrong tool choices or conflicting instructions; see \"One question before you split off another agent\"). Weaker models will show those symptoms sooner; the process still applies, just with fewer subagents that can be folded in (my inference)."
+  },
+  {
+   "id": "s3c.b1",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Now that we know what sits in the context, here is how the loop itself turns. The harness here is the program wrapped around the model; the model makes every decision, and the harness only runs tools and sets limits:"
+  },
+  {
+   "id": "s3c.b2",
+   "section": "s3c",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L22"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "p",
+     "label": "Model writes a plan (in context, revisable)"
+    },
+    {
+     "id": "t",
+     "label": "Model outputs a batch of tool calls"
+    },
+    {
+     "id": "h",
+     "label": "Harness runs them in parallel, returns raw results"
+    },
+    {
+     "id": "b",
+     "label": "Limits: turn and cost budgets, write gates; stop if over budget"
+    },
+    {
+     "id": "d",
+     "label": "Model decides the next step"
+    },
+    {
+     "id": "u",
+     "label": "Ask the user"
+    },
+    {
+     "id": "a",
+     "label": "Answer and stop (optional: goal or verification checks)"
+    }
+   ],
+   "edges": [
+    {
+     "from": "p",
+     "to": "t"
+    },
+    {
+     "from": "t",
+     "to": "h"
+    },
+    {
+     "from": "h",
+     "to": "b",
+     "label": "within"
+    },
+    {
+     "from": "b",
+     "to": "d"
+    },
+    {
+     "from": "d",
+     "to": "t",
+     "label": "run another batch"
+    },
+    {
+     "from": "d",
+     "to": "u",
+     "label": "missing info"
+    },
+    {
+     "from": "d",
+     "to": "a",
+     "label": "enough"
+    }
+   ]
+  },
+  {
+   "id": "s3c.b2c",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L22"
+   ],
+   "text": "Figure 3 — How the single loop runs: the model makes the decisions, the harness only executes and sets limits."
+  },
+  {
+   "id": "s3c.b3",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L23"
+   ],
+   "text": "The biggest difference from an orchestrator design: the model that writes the plan is the model that carries it out. In an orchestrator design, a planner writes the plan and hands it to a specialist (a subagent responsible for one domain), and fixing the plan midway is hard. In a single loop, the model can revise the plan on the spot every time a new batch of results comes back."
+  },
+  {
+   "id": "s3c.b4",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L24"
+   ],
+   "text": "The article doesn't define the write gate in the figure; read it as a check or approval before data is changed (my inference)."
+  },
+  {
+   "id": "s3d.b1",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L25"
+   ],
+   "text": "Folding into a single loop doesn't make the parts of a multi-agent system vanish; each finds a new home. The router and intent classifier in the first row are the components that first decide \"which subagent should get this question\", the dispatching step (general knowledge):"
+  },
+  {
+   "id": "s3d.b2",
+   "section": "s3d",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L25",
+    "L26"
+   ],
+   "headers": [
+    "Old component",
+    "Where it goes",
+    "Why"
+   ],
+   "rows": [
+    [
+     "Router, intent classifier",
+     "The model reads the catalog and picks skills and tools itself",
+     "Choosing is exactly the kind of judgment models are good at (my inference; the article only says the router is folded into the main loop)"
+    ],
+    [
+     "Code that rewrites the plan by rules",
+     "Not needed",
+     "The model decides each step itself"
+    ],
+    [
+     "Step order, domain workflows",
+     "Skills",
+     "This is knowledge about \"how the team does things\""
+    ],
+    [
+     "Hard constraints (validation, approval gates)",
+     "Inside tools",
+     "They must be followed without exception, not left to the model's memory"
+    ],
+    [
+     "Things needed only mid-conversation (such as memory lookup)",
+     "Tools",
+     "Called only when needed"
+    ],
+    [
+     "Cheap things used almost every time (such as entity resolution, mapping a casual reference to a specific order)",
+     "Preloaded by code",
+     "Not worth having the model decide every time"
+    ],
+    [
+     "Mechanical work (building API requests, parsing streams, picking the flow back up after asking the user)",
+     "Code, wrapped in a tool",
+     "Fixed steps"
+    ]
+   ]
+  },
+  {
+   "id": "s3d.b3",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L26"
+   ],
+   "text": "Two terms from the table, briefly. Entity resolution maps something like \"that order from last week\" to a concrete order ID in the system (general knowledge). \"Picking the flow back up after asking the user\" is the article's \"resuming a clarification\"; the article doesn't explain it, and this reading is my inference."
+  },
+  {
+   "id": "s3d.b4",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L27"
+   ],
+   "text": "\"Put hard constraints in tools\" deserves one more sentence. A rule in the prompt only *asks* the model to comply; a rule in the tool's code blocks the call when conditions aren't met and returns a message the model can act on. Figure 5 in \"Tool design: group by intent, enforce rules in code\" shows how."
+  },
+  {
+   "id": "s3d.b5",
+   "section": "s3d",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L28"
+   ],
+   "tone": "tip",
+   "title": "One rule of thumb",
+   "text": "Anything that needs judgment goes to the model or a skill, anything that must never be violated goes into tool code, and fixed mechanical steps stay in ordinary code."
+  },
+  {
+   "id": "s3.b2",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "In short: the single loop solves \"the prompt is too long\" with progressive disclosure, and lets the model write and revise its own plan. What used to be scattered across subagents moves into skills, tools and code, sorted by \"needs judgment, must never break, fixed steps\"."
+  },
+  {
+   "id": "s4.b1",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L29"
+   ],
+   "purpose": "signpost",
+   "text": "With the target clear, the practical question: you already have a pile of subagents running, so how do you get there? The principle is to change one thing at a time and confirm with evals at every step that nothing regressed. Whether to fold is decided by scores, not by gut feeling."
+  },
+  {
+   "id": "s4a.b1",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L30"
+   ],
+   "text": "Evals come in two layers: a central team maintains one end-to-end eval suite, and each team ships every skill with a small eval that tests only that skill. To start, 10 golden examples (examples whose correct answers a person has checked) are enough. What to measure, what the questions should cover, how to compare and how to decide what stays are collected at the end, in \"Deep dive: five things to evaluate when folding a subagent\"."
+  },
+  {
+   "id": "s4b.b1",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L32"
+   ],
+   "text": "The article offers three approaches. This post reads them as stages done in order (my inference; the article doesn't say so explicitly, and the reasoning is in the collapsed note at the end of this section):"
+  },
+  {
+   "id": "s4b.b2",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L33"
+   ],
+   "text": "**A. Call the subagent as a tool.** The main agent calls a subagent as one of its tools and keeps holding the conversation with the user. The upside is that you get a baseline (the score every later step is compared against) without rewriting any subagent. You can also standardize the subagents' response format, so the main agent can check a subagent's conclusion against real data. Only when a subagent has to talk to the user directly does it take over the whole conversation (a full handoff)."
+  },
+  {
+   "id": "s4b.b3",
+   "section": "s4b",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L34"
+   ],
+   "tone": "warning",
+   "title": "What approach A still doesn't fix",
+   "text": "Each specialist still has its own prompt, owner and evals; what comes back is still a lossy summary; and every call adds another nested loop, so the latency stays."
+  },
+  {
+   "id": "s4b.b4",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L35"
+   ],
+   "text": "**B. Merge domain agents.** Starting with the most heavily used, merge specialists that chain each other's outputs, touch the same data or are usually called together. How do you find those pairs? Look at production traffic: if a large share of it is \"specialist 1 finishes, then calls specialist 2\", those two are a tightly coupled pair."
+  },
+  {
+   "id": "s4b.b5",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L36"
+   ],
+   "text": "**C. Fold into skills plus tools.** One at a time: rewrite the subagent's prompt as a skill and turn the APIs it calls into MCP tools (MCP is the Model Context Protocol, a standard interface that lets agents call external tools; general knowledge). Run the evals once with and once without that subagent, then decide whether it stays."
+  },
+  {
+   "id": "s4b.b6",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Put together, it is a pipeline that ends with only the subagents that regress when folded:"
+  },
+  {
+   "id": "s4b.b7",
+   "section": "s4b",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L31"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "e",
+     "label": "Build evals"
+    },
+    {
+     "id": "a",
+     "label": "A. Subagent as a tool: no rewrite, get a baseline"
+    },
+    {
+     "id": "b",
+     "label": "B. Merge tightly coupled subagents: fewer of them"
+    },
+    {
+     "id": "c",
+     "label": "C. Fold one at a time: prompt becomes a skill, API becomes an MCP tool"
+    },
+    {
+     "id": "g",
+     "label": "Does the folded version score worse?"
+    },
+    {
+     "id": "k",
+     "label": "Keep that subagent"
+    },
+    {
+     "id": "f",
+     "label": "Leave it in the main loop, move to the next"
+    }
+   ],
+   "edges": [
+    {
+     "from": "e",
+     "to": "a"
+    },
+    {
+     "from": "a",
+     "to": "b"
+    },
+    {
+     "from": "b",
+     "to": "c"
+    },
+    {
+     "from": "c",
+     "to": "g"
+    },
+    {
+     "from": "g",
+     "to": "k",
+     "label": "yes"
+    },
+    {
+     "from": "g",
+     "to": "f",
+     "label": "no"
+    }
+   ]
+  },
+  {
+   "id": "s4b.b7c",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L31"
+   ],
+   "text": "Figure 4 — A staged migration: evals gate every step, and only subagents that regress when folded are kept."
+  },
+  {
+   "id": "s4b.b8",
+   "section": "s4b",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "tone": "info",
+   "title": "Why read these as ordered stages rather than a choice of three?",
+   "children": [
+    {
+     "id": "s4b.b9",
+     "section": "s4b",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L37"
+     ],
+     "text": "The article's own words are that you can \"merge, call as a tool, or replace with skills and tools\"; it doesn't say whether these are three alternatives or stages in sequence. The staged reading rests on two things: the article calls A a good first step, and that part of the article is about a staged migration."
+    }
+   ]
+  },
+  {
+   "id": "s4c.b1",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "text": "Every step compares scores, but how you compare matters. Don't look only at the total after folding: compare question by question, checking which tasks went from pass to fail and which from fail to pass. Suppose the eval has 20 questions (made-up):"
+  },
+  {
+   "id": "s4c.b2",
+   "section": "s4c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "illustrative": true,
+   "headers": [
+    "",
+    "Before folding",
+    "After folding"
+   ],
+   "rows": [
+    [
+     "Passed (out of 20)",
+     "15",
+     "15"
+    ],
+    [
+     "Questions 3 and 7",
+     "Pass",
+     "Fail"
+    ],
+    [
+     "Questions 11 and 18",
+     "Fail",
+     "Pass"
+    ]
+   ]
+  },
+  {
+   "id": "s4c.b3",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "text": "The total is 15 either way, but if questions 3 and 7 are workflows that must never fail, the total has hidden a regression."
+  },
+  {
+   "id": "s4c.b4",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L39"
+   ],
+   "text": "The article gives a real instance. In a demo support agent, after one subagent was folded into another, latency went down, but a workflow that used to pass broke: the main agent already had an order lookup tool, so it answered on its own instead of asking the shipping specialist for the actual delivery date. And the failure showed up in only one of two runs, so a single run could easily have missed it."
+  },
+  {
+   "id": "s4c.b5",
+   "section": "s4c",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L40"
+   ],
+   "tone": "note",
+   "title": "The lesson",
+   "text": "When the information in hand \"looks good enough\", the model skips steps it was designed to take. That's why each question should run several times, and every chain of agents that runs together needs its own questions (see \"What the questions must cover\" at the end)."
+  },
+  {
+   "id": "s4.b2",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "In short: build evals first, then go in order (as a tool, merge, fold one at a time); at every step check which questions flipped, run each question several times, and keep a subagent only if the folded version scores worse."
+  },
+  {
+   "id": "s5.b1",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "signpost",
+   "text": "Once the architecture is folded into one, the teams that each built a subagent don't disappear. So what do they do?"
+  },
+  {
+   "id": "s5.b2",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L41"
+   ],
+   "text": "Without agents of their own, teams change roles: instead of owning an agent, each team contributes skills, tools or knowledge bases. A small central team owns the system prompt and end-to-end quality, and reviews every new skill, tool and eval before it ships. The central team should stay deliberately small, so it iterates fast and coordination stays cheap."
+  },
+  {
+   "id": "s5a.b1",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L42"
+   ],
+   "text": "What teams contribute comes in three forms, shown here with the support example (made-up):"
+  },
+  {
+   "id": "s5a.b2",
+   "section": "s5a",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L42"
+   ],
+   "headers": [
+    "Form",
+    "Best for",
+    "Example (made-up)"
+   ],
+   "rows": [
+    [
+     "MCP tool",
+     "Taking actions, reading live data, or returning results in a fixed format",
+     "Look up order status, submit a refund"
+    ],
+    [
+     "Skill",
+     "\"How the team does things\": steps, rules, judgment calls",
+     "The returns process and its exceptions"
+    ],
+    [
+     "Knowledge base",
+     "Reference material needed only occasionally: policies, metric definitions, product specs",
+     "The full returns policy"
+    ]
+   ]
+  },
+  {
+   "id": "s5a.b3",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L43"
+   ],
+   "text": "A knowledge base can go in one of two places: behind a search or lookup tool the model calls itself, or as a reference file inside a skill. What the article says to avoid is \"code retrieves first, then pastes the result straight into the prompt\". It doesn't give the reason here; a reasonable reading is that whether to read, and which part, should be the model's call, made on demand (my inference)."
+  },
+  {
+   "id": "s5a.b4",
+   "section": "s5a",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L44"
+   ],
+   "tone": "tip",
+   "title": "In one line",
+   "text": "To do something or fetch data, use a tool; to know how to do it, use a skill; for the occasional lookup, use a knowledge base."
+  },
+  {
+   "id": "s5b.b1",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L45"
+   ],
+   "text": "**Group tools by user intent, not one tool per API.** Once a system prompt holds more than 30 to 50 tool definitions, tool-selection accuracy usually drops (the article doesn't say which models or tasks this was observed on). Rarely used tools can be deferred with tool search."
+  },
+  {
+   "id": "s5b.b2",
+   "section": "s5b",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L46"
+   ],
+   "headers": [
+    "Approach",
+    "What the tools look like (made-up)",
+    "What the model has to decide"
+   ],
+   "rows": [
+    [
+     "One tool per API",
+     "`get_order`, `get_shipment`, `get_carrier_status`",
+     "Which ones to chain, and in what order"
+    ],
+    [
+     "Grouped by intent",
+     "`track_order`, which calls the three APIs in order internally",
+     "Only that the user wants to track a package"
+    ]
+   ]
+  },
+  {
+   "id": "s5b.b3",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L47"
+   ],
+   "text": "**Put preconditions inside tools.** If Y needs X's output, Y's tool checks for it and, when it's missing, returns an instruction the model can follow. Keep hard preconditions to a minimum, only the ones that are truly necessary. Take refunds as an example (made-up):"
+  },
+  {
+   "id": "s5b.b4",
+   "section": "s5b",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L48"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "r1",
+     "label": "Model calls refund (order A)"
+    },
+    {
+     "id": "x",
+     "label": "Refund tool replies: identity not verified, call verify_identity first"
+    },
+    {
+     "id": "v",
+     "label": "Model calls verify_identity"
+    },
+    {
+     "id": "r2",
+     "label": "Model calls refund (order A) again"
+    },
+    {
+     "id": "ok",
+     "label": "Refund tool replies: refund submitted"
+    }
+   ],
+   "edges": [
+    {
+     "from": "r1",
+     "to": "x"
+    },
+    {
+     "from": "x",
+     "to": "v"
+    },
+    {
+     "from": "v",
+     "to": "r2"
+    },
+    {
+     "from": "r2",
+     "to": "ok"
+    }
+   ]
+  },
+  {
+   "id": "s5b.b4c",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L48"
+   ],
+   "text": "Figure 5 — Preconditions live in the tool: the rule doesn't depend on the model remembering it; the tool's code blocks the call and points the way. (Made-up example)"
+  },
+  {
+   "id": "s5b.b5",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L49"
+   ],
+   "text": "**Put permission checks inside tools.** Each tool checks what the caller may see and do, and returns a plain-language refusal if not. That way one loop can serve users with different permissions, instead of one agent per permission level."
+  },
+  {
+   "id": "s5b.b6",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L50"
+   ],
+   "text": "During the migration, a tool can also wrap a subagent that hasn't been folded in yet, which is approach A in \"Three approaches, in order\"."
+  },
+  {
+   "id": "s5c.b1",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L51"
+   ],
+   "text": "Once subagents are gone, \"sprawl\" may well come back in the form of skills. What the article recommends:"
+  },
+  {
+   "id": "s5c.b2",
+   "section": "s5c",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L51"
+   ],
+   "ordered": false,
+   "items": [
+    "Each team names a DRI (Directly Responsible Individual, a management term for the one person accountable) for its skills, who makes sure they're well written, don't overlap with other skills, and come with evals.",
+    "Maintenance goes back to whoever wrote the skill, while the heavy lifting goes to Claude: dedicated skills that create, test and prune other skills.",
+    "Usage and cost data decide what stays; skills nobody uses get deleted."
+   ]
+  },
+  {
+   "id": "s5c.b3",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L52"
+   ],
+   "text": "Anthropic provides matching commands for creating and tidying skills (`/skill-creator`), checking cost and usage frequency (`/skill-doctor`), building evals, finding instructions written for older models, iterating on descriptions against evals, and cost optimization. Check the official docs for the exact names and usage."
+  },
+  {
+   "id": "s5c.b4",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L53"
+   ],
+   "text": "And how should a skill's description be written so it triggers at the right moment? The article gives no writing rules; instead it tunes the description against evals until the folded version matches or beats the original subagent."
+  },
+  {
+   "id": "s5.b3",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "In short: teams stop owning agents and contribute tools, skills or knowledge bases; tools are grouped by intent, with preconditions and permissions enforced in their code; every skill has an owner and evals, and gets deleted if nobody uses it."
+  },
+  {
+   "id": "s6.b1",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L54"
+   ],
+   "purpose": "signpost",
+   "text": "Back to the question left open at the start: where do those handoff boundaries come from? This is the idea in the article that travels furthest beyond agents. Conway's law says the organization that designs a system ends up with a system whose structure copies its own communication structure. An agent architecture that turns into a replica of the org chart is this law showing up in agents."
+  },
+  {
+   "id": "s6a.b1",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L55"
+   ],
+   "text": "Melvin Conway proposed the law in 1968. It belongs to software engineering and organization design, comes up often when people debate how to split microservices, and is still rare in AI agent discussions (general knowledge). The article uses it as a real diagnostic tool, not as a borrowed label."
+  },
+  {
+   "id": "s6a.b2",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "text": "Why it holds can be broken into three steps (general knowledge plus my inference):"
+  },
+  {
+   "id": "s6a.b3",
+   "section": "s6a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "ordered": true,
+   "items": [
+    "Each team can easily change only the parts it owns.",
+    "Interfaces between teams need coordination, which is expensive, so system boundaries naturally land on team boundaries.",
+    "Each team is responsible only for its own piece, so it optimizes only that piece, for example by writing evals that test only its own subtask (the \"over-local evals\" from the five failure modes)."
+   ]
+  },
+  {
+   "id": "s6a.b4",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "text": "The result: system boundaries follow \"who owns what\", not technical need."
+  },
+  {
+   "id": "s6b.b1",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L57"
+   ],
+   "text": "In ordinary software, team boundaries become API boundaries, and data still passes through intact. An agent's boundaries are context boundaries, so every team boundary becomes a lossy summary handoff, like the unmentioned invoice in Figure 1."
+  },
+  {
+   "id": "s6b.b2",
+   "section": "s6b",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "o",
+     "label": "Organization: returns team, shipping team, invoicing team"
+    },
+    {
+     "id": "a",
+     "label": "Each builds an agent, with an orchestrator on top"
+    },
+    {
+     "id": "x",
+     "label": "Every team boundary = a context handoff = lost information"
+    }
+   ],
+   "edges": [
+    {
+     "from": "o",
+     "to": "a"
+    },
+    {
+     "from": "a",
+     "to": "x"
+    }
+   ]
+  },
+  {
+   "id": "s6b.b2c",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "text": "Figure 6 — The org chart projected onto the agent architecture: team boundaries become points where information is lost."
+  },
+  {
+   "id": "s6b.b3",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L59"
+   ],
+   "text": "The article's example: one company's support agent sat on top of a dozen or so specialist subagents; the brand voice was hard to keep consistent, and latency hurt the user experience."
+  },
+  {
+   "id": "s6c.b1",
+   "section": "s6c",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L60"
+   ],
+   "tone": "question",
+   "title": "Before splitting off another agent, ask",
+   "text": "\"If one team owned the whole system, would this boundary still exist?\"\n\n- **Yes**: there is a technical reason, such as measurable context bloat, a need for parallel clean contexts, or too many tools to choose from accurately. That boundary can stay.\n- **No**: the boundary is just a projection of the org chart and should go."
+  },
+  {
+   "id": "s6c.b2",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "text": "As mentioned at the start, the article lists three situations where a subagent is still worth keeping. Here they are with examples (all made-up):"
+  },
+  {
+   "id": "s6c.b3",
+   "section": "s6c",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04"
+   ],
+   "ordered": false,
+   "items": [
+    "**Context bloat that causes measurable degradation.** For example (made-up), after too many skills and tool results are folded into one agent, its eval scores drop noticeably.",
+    "**A need for parallel work with separate, clean contexts.** For example (made-up), investigating several unrelated directions at once, each requiring a lot of reading; mixed into one context they interfere with each other, so giving each to its own subagent to read and report back works better.",
+    "**The agent picks the wrong tools, or instructions conflict.** For example (made-up), the refund rules and the exchange rules are written in contradictory ways, and once folded together the agent keeps applying the wrong set."
+   ]
+  },
+  {
+   "id": "s6d.b1",
+   "section": "s6d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L61"
+   ],
+   "text": "The article isn't telling teams to disappear; it changes the unit a team owns, which is the division of labor described in \"What teams own once they no longer own an agent\". Here it adds one more reason: change the org boundaries, or the system boundaries slowly drift back to where they were."
+  },
+  {
+   "id": "s6.b2",
+   "section": "s6d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "purpose": "recap",
+   "text": "In short: one reasonable explanation is that teams can only change, and only optimize, their own piece, so the agent grows into the shape of the org chart; with agents, every team boundary is a handoff that loses information. That's why changing the architecture isn't enough; what teams own has to change too."
+  },
+  {
+   "id": "s7.b1",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L70"
+   ],
+   "text": "The article's direction is persuasive, but several key numbers and practical details are under-specified. Keep that in mind before using them to convince your team or following them to the letter:"
+  },
+  {
+   "id": "s7.b2",
+   "section": "s7",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L70"
+   ],
+   "headers": [
+    "Claim",
+    "Evidence given",
+    "What's missing"
+   ],
+   "rows": [
+    [
+     "A single loop runs about 2 times faster",
+     "One customer's case",
+     "A single case; the comparison conditions aren't described"
+    ],
+    [
+     "A single agent with skills is \"often\" better on quality and \"frequently\" cheaper and faster",
+     "Comparisons across several enterprise deployments",
+     "No numbers, tasks or model details"
+    ],
+    [
+     "Claude Code's system prompt shrank by more than 80%",
+     "Claude Code's own experience",
+     "The cut \"includes\" progressive disclosure but isn't all its doing"
+    ],
+    [
+     "Strong enough models can be folded",
+     "Observations starting with Opus 4.5",
+     "No cross-model comparison and no threshold for \"strong enough\""
+    ],
+    [
+     "Accuracy drops past 30 to 50 tools",
+     "Observation",
+     "Doesn't say which models or tasks"
+    ]
+   ]
+  },
+  {
+   "id": "s7.b3",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L71"
+   ],
+   "text": "A few practices are also left unclear; the writer's inferences are marked where they appear above:"
+  },
+  {
+   "id": "s7.b4",
+   "section": "s7",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L71"
+   ],
+   "ordered": false,
+   "items": [
+    "**The write gate** is never defined (\"How the loop runs: the planner is the executor\").",
+    "**Resuming a clarification** is never explained (\"Where the old components go\").",
+    "**The three migration approaches**: whether they are alternatives or stages isn't stated (\"Three approaches, in order\").",
+    "**Why a knowledge base shouldn't be retrieved by code and pasted into the prompt**: the reason isn't given in that passage (\"Tool, skill or knowledge base?\").",
+    "**Two ways of scoring an eval**: rubric (scoring the final reply against grading criteria) and task-completion (the task completion rate) aren't clearly distinguished; the writer's inference about where the line falls is in \"What to measure\" at the end.",
+    "**How many runs per question are enough**: the article doesn't say.",
+    "**How to replay timestamps as evals**: the article suggests that when internal systems are hard to replay, you log timestamps at key events and later replay them as evals (\"Who maintains the evals\" at the end), but doesn't explain how; my inference is that the timestamps are used to restore the system state at that moment and rerun."
+   ]
+  },
+  {
+   "id": "s8.b1",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L72"
+   ],
+   "text": "The root problem with multi-subagent systems is that every boundary is a lossy context handoff, and many of those boundaries are just projections of the org chart. The fix is a single loop plus progressive disclosure: knowledge written as skills loaded on demand, capabilities as tools, and hard constraints and permission checks enforced in tool code rather than written into the prompt as a request."
+  },
+  {
+   "id": "s8.b2",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L72"
+   ],
+   "text": "The migration is staged: build evals first, call subagents as tools to get a baseline, merge the tightly coupled ones, then fold one at a time, keeping a subagent only when the folded version scores worse. When comparing, check which questions flipped and run each question several times, because the model skips steps when the information \"looks good enough\"."
+  },
+  {
+   "id": "s8.b3",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L72"
+   ],
+   "text": "On the organizational side, teams go from owning agents to owning skills and tools, with a small central team guarding the system prompt and end-to-end quality. Next time you want to split off another agent, ask first: if one team owned it all, would this boundary still exist?"
+  },
+  {
+   "id": "s8.b4",
+   "section": "s8",
+   "type": "callout",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "tone": "success",
+   "title": "Three things to do after reading",
+   "text": "- **Check**: put your agent architecture diagram next to your org chart and mark every boundary that exists only because different teams own each side.\n- **Measure first**: don't fold before you have evals; start with a small set of questions whose answers a person has checked, covering every chained workflow.\n- **Stay skeptical**: before using \"2 times faster\" or \"cut by more than 80%\" to persuade anyone, remember they come from a single case and from Anthropic's own product."
+  },
+  {
+   "id": "s9.b1",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "text": "This section is for readers ready to get hands-on. For every subagent you fold, run the same four-step process. Of the five subsections below, the first four map to steps in the process (\"How to compare\" spans two steps):"
+  },
+  {
+   "id": "s9.b2",
+   "section": "s9",
+   "type": "diagram",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "a",
+     "label": "Prepare questions (What the questions must cover)"
+    },
+    {
+     "id": "b",
+     "label": "Run with and without the subagent (How to compare)"
+    },
+    {
+     "id": "c",
+     "label": "Compare dimension by dimension (What to measure, How to compare)"
+    },
+    {
+     "id": "d",
+     "label": "Decide: keep or fold (When to keep a subagent)"
+    }
+   ],
+   "edges": [
+    {
+     "from": "a",
+     "to": "b"
+    },
+    {
+     "from": "b",
+     "to": "c"
+    },
+    {
+     "from": "c",
+     "to": "d"
+    }
+   ]
+  },
+  {
+   "id": "s9.b2c",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "text": "Figure 7 — The eval process for folding one subagent. \"Who maintains the evals\" isn't a step; it's what keeps the process running."
+  },
+  {
+   "id": "s9a.b1",
+   "section": "s9a",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L63"
+   ],
+   "headers": [
+    "Category",
+    "Question it answers",
+    "Metric",
+    "When"
+   ],
+   "rows": [
+    [
+     "Outcome",
+     "Is the final reply good?",
+     "Rubric scoring: grade the final reply against criteria",
+     "Throughout"
+    ],
+    [
+     "Outcome",
+     "Did the task actually get done?",
+     "Task-completion (task completion rate)",
+     "Most important when comparing architectures"
+    ],
+    [
+     "Process",
+     "Was the question routed to the right subagent?",
+     "Routing accuracy",
+     "Before folding"
+    ],
+    [
+     "Process",
+     "Were the right skills loaded and the right tools called?",
+     "Selection accuracy",
+     "After folding"
+    ],
+    [
+     "Process",
+     "Were all required steps taken?",
+     "Chain questions (see the next subsection)",
+     "After folding"
+    ],
+    [
+     "Efficiency",
+     "Is it faster and cheaper?",
+     "Latency per task, cost per task",
+     "Throughout"
+    ]
+   ]
+  },
+  {
+   "id": "s9a.b2",
+   "section": "s9a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L64"
+   ],
+   "text": "The article doesn't clearly define the difference between rubric and task-completion. One way to split them (my inference): rubric judges how well the answer is written, task-completion judges whether the thing got done. A beautifully written answer where the refund was never submitted might score high on the rubric and still fail task-completion."
+  },
+  {
+   "id": "s9b.b1",
+   "section": "s9b",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L65"
+   ],
+   "ordered": false,
+   "items": [
+    "Every chain of agents that runs together in production needs questions. This is the key to catching skipped steps; the support agent that never asked the shipping specialist, in \"The same total score can hide a regression\", is exactly this kind of failure.",
+    "Every rule the agent must never break needs a matching question."
+   ]
+  },
+  {
+   "id": "s9c.b1",
+   "section": "s9c",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "ordered": false,
+   "items": [
+    "Run once with and once without the subagent, holding everything else fixed.",
+    "Check which questions flipped, not just the total (the 20-question example is in \"The same total score can hide a regression\").",
+    "Run each question more than once, so occasional failures get caught.",
+    "Change one thing at a time."
+   ]
+  },
+  {
+   "id": "s9d.b1",
+   "section": "s9d",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L67",
+    "L68"
+   ],
+   "ordered": false,
+   "items": [
+    "**Main rule**: keep a subagent only if the folded version scores worse.",
+    "**Supporting signals**: context bloat that causes measurable degradation, wrong tool choices, conflicting prompt instructions; all three show up in the metrics in \"What to measure\".",
+    "**One thing judged separately**: a need for parallel clean contexts is an architectural requirement that eval scores can't reflect, so it has to be judged on its own (my inference; the article simply lists it alongside the other two conditions)."
+   ]
+  },
+  {
+   "id": "s9e.b1",
+   "section": "s9e",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L69"
+   ],
+   "ordered": false,
+   "items": [
+    "The two-layer split (the central team's end-to-end evals plus each team's small evals) and the starting size (10 golden examples): see \"Build the evals first\".",
+    "When internal systems are hard to replay and user interactions hard to simulate, log timestamps at key events and later replay them as targeted evals."
+   ]
+  }
+ ],
+ "decisions": [
+  {
+   "id": "D1",
+   "kind": "folded",
+   "ledger": "L37",
+   "why": "「三種做法是選項還是階段」的原文措辭與讀法依據是推論的佐證，放進摺疊區；推論本身（L32）留在主線，證據缺口一節也再提一次。",
+   "needs_human": true
+  },
+  {
+   "id": "D2",
+   "kind": "folded",
+   "ledger": "L64",
+   "why": "rubric 與 task-completion 的區分是推論，隨 eval 詳解放進文末深入一節；證據缺口一節（主線）也列出這一處。",
+   "needs_human": true
+  },
+  {
+   "id": "D3",
+   "kind": "folded",
+   "ledger": "L68",
+   "why": "「平行乾淨 context 要另外判斷」是推論，隨 eval 詳解放進文末深入一節。",
+   "needs_human": true
+  },
+  {
+   "id": "D4",
+   "kind": "moved",
+   "ledger": "L70",
+   "why": "〈證據強度與文章沒交代的地方〉從 eval 詳解之後移到結論之前，讓只讀到結論的讀者也看得到限制。",
+   "needs_human": false
+  },
+  {
+   "id": "D5",
+   "kind": "moved",
+   "ledger": "L62",
+   "why": "〈折疊時要 eval 的面向〉整節移到結論之後當深入附錄；主線的〈怎麼折〉已講到原則與實例。",
+   "needs_human": false
+  },
+  {
+   "id": "D6",
+   "kind": "reworded",
+   "ledger": "L09",
+   "why": "圖 1 的 mermaid subgraph 對比改成表格（計畫格式只支援 flow/tree/mindmap 圖），內容不變。",
+   "needs_human": false
+  },
+  {
+   "id": "D7",
+   "kind": "reworded",
+   "ledger": "L48",
+   "why": "圖 5 的 sequence diagram 改成 flow 圖（計畫格式沒有 sequence diagram），四個步驟不變。",
+   "needs_human": false
+  }
+ ]
+}
