@@ -1,0 +1,5 @@
+[
+ {"block": "s1.b1", "zh": "harness", "en": "harness", "target": "../../ai-concept/harness-engineering/"},
+ {"block": "s2.b1", "zh": "context management（context 管理）", "en": "context management", "target": "../../ai-concept/context-engineering/"},
+ {"block": "s12a.b7", "zh": "MemGPT", "en": "MemGPT", "target": "../memgpt/"}
+]
