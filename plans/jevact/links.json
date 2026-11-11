@@ -1,0 +1,5 @@
+[
+ {"block": "s2.b3", "zh": "生成式 LLM-as-judge", "en": "generative LLM-as-judge", "target": "../llm-as-a-verifier/"},
+ {"block": "s5.b2", "zh": "原版決策模型 Jev", "en": "the original decision model from TypeSafe AI", "target": "../../ai-concept/jev-overview/"},
+ {"block": "s11.b1", "zh": "AUROC", "en": "AUROC", "target": "../jev-as-a-judge/"}
+]

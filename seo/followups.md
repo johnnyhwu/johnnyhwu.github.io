@@ -16,7 +16,6 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 
 | Due | Kind | Item | How |
 |---|---|---|---|
-| 2026-11-11 | post | `paper-intro/skillzip`: impressions, position, CTR | post check |
 | 2026-11-16 | post | `paper-intro/llm-as-a-verifier`: impressions, position, CTR vs the baseline (zh 24 impressions at position 4.7 to 6.4, en 2 at 7.5, 0 clicks, from 2026-07-28 to 2026-10-26) | post check; only name queries so far, so under about 30 impressions means record it and do not tweak the title |
 | 2026-11-16 | post | `paper-intro/procedural-graphs`: impressions, position, CTR | post check; the name had no site demand at publish time, so under about 30 impressions means record it and do not tweak the title |
 | 2026-11-17 | post | `paper-intro/context-language-models` (PR opened 2026-11-10): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs; pre-publish Chrome results-page check was skipped (extension not loaded); GSC had no data for clm, context language model or compaction |
@@ -29,11 +28,14 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 | 2026-12-01 | post | `paper-intro/context-language-models`: impressions, position, CTR | post check; no site demand for the paper name at publish time (context demand lands on memgpt, agentic-context-engineering and context-engineering), so under about 30 impressions means record it and do not tweak the title |
 | 2026-11-27 | experiment | A6 English-title batch (6 pages): first readout, 28 days after 2026-10-30 | `reports/2026-10-23-title-batch-baseline.md` explains how to read it; if the six pages have under about 60 clicks, wait for the next row |
 | 2026-12-25 | experiment | A6 English-title batch: 56-day readout and decision on the other ~90 titles | same report; a flat result means drop the remaining titles |
+| 2026-11-18 | post | `paper-intro/jevact` (PR opened 2026-11-11): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs |
+| 2026-12-02 | post | `paper-intro/jevact`: impressions, position, CTR | post check; no site demand for JevAct at publish time (Jev demand lands on `ai-concept/jev-overview`), so under about 30 impressions means record it and do not tweak the title |
 
 ## Done
 
 | Done | Kind | Item | Result |
 |---|---|---|---|
+| 2026-11-11 | post | `paper-intro/skillzip`: impressions, position, CTR | 2026-10-21 to 2026-11-11: zh 101 impressions, 3 clicks (CTR 3.0%), position 6.4; en 121 impressions, 0 clicks, position 6.8. Over 100 impressions at position under 10 with en CTR 0, so the en title qualifies for its one adjustment; only 9 impressions show a query (skillzip, skill zip). Not changed in this session: a title change is its own PR, on the author's go-ahead |
 | 2026-11-10 | post | `paper-intro/evoontology` indexed and crawled check | zh and en both PASS, submitted and indexed, last crawled 2026-10-28 |
 | 2026-11-10 | post | `paper-intro/tasteful-agent` indexed and crawled check | zh and en both PASS, submitted and indexed, last crawled 2026-11-03 |
 | 2026-11-10 | post | `ai-concept/subagent-fold` indexed and crawled check | zh and en both PASS, submitted and indexed, last crawled 2026-11-03 (zh) and 2026-11-04 (en) |
