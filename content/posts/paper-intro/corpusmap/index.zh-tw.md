@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 讓 agent 在大型文件庫裡用 find、grep 找答案，是現在很常見的做法。問題是文件庫只是一堆平放的檔案，agent 就算找到一份相關文件，也得不到「它跟其他哪些文件有關」的任何線索，每一題都得從頭摸索一遍。
 
-CorpusMap（論文 *Follow the Entities: A Corpus Map for Agentic Search*，KAIST 與 Microsoft，arXiv 2609.37226）的做法，是離線把文件之間「誰跟誰有關」先算好：把反覆出現的人、專案、事件解析成實體，每個實體寫成一頁 Entity Page，再連到所有提到它的文件。查詢時 agent 沿著這些連結跳，不必每題重新發現同樣的關係。這篇文章依序講問題、方法、實驗，最後收進幾個值得獨立帶走的概念。
+CorpusMap（論文 *Follow the Entities: A Corpus Map for Agentic Search*，KAIST 與 Microsoft，[arXiv 2609.37226](https://arxiv.org/abs/2609.37226)）的做法，是離線把文件之間「誰跟誰有關」先算好：把反覆出現的人、專案、事件解析成實體，每個實體寫成一頁 Entity Page，再連到所有提到它的文件。查詢時 agent 沿著這些連結跳，不必每題重新發現同樣的關係。這篇文章依序講問題、方法、實驗，最後收進幾個值得獨立帶走的概念。
 
 {{< admonition abstract "重點摘要（TL;DR）" >}}
 - **問題**：關鍵文件常常字面搜不到（例如會議記錄只寫專案內部代號），而且同樣的摸索每題重做一次。

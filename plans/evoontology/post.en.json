@@ -442,7 +442,7 @@
    "ledger": [
     "L001"
    ],
-   "text": "*EvoOntology: A Self-Evolving Ontology Layer for Data Agents* (arXiv:2609.15779v1, from a team at Renmin University of China, 9/2026) takes this on by inserting a knowledge layer (an ontology) between the agent and the data. The agent can query it, and it patches itself based on how it gets used."
+   "text": "*EvoOntology: A Self-Evolving Ontology Layer for Data Agents* ([arXiv:2609.15779v1](https://arxiv.org/abs/2609.15779), from a team at Renmin University of China, 9/2026) takes this on by inserting a knowledge layer (an ontology) between the agent and the data. The agent can query it, and it patches itself based on how it gets used."
   },
   {
    "id": "s1.b3",

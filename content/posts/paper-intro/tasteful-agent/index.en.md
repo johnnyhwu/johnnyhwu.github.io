@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 Picture an agent fixing some code. It has two reasonable-looking ways to do it: change a shared helper function that other code relies on, or make the change only at the one place that needs it. (The real case, from the paper: adding a stand-in value for missing metadata in an Ansible tool.) Both look perfectly reasonable when written. The difference only shows once the tests run: the first breaks 3 existing unit tests, the second passes all 28.
 
-When an LLM agent works on a long task, mid-task decisions like this one (which hypothesis to test first, which implementation to build on) often decide whether it succeeds. The Tasteful Agent paper calls the ability to make good decisions over a long task "taste". The trouble is that today's benchmarks only check whether the agent finished. Nobody measures the quality of the decisions themselves.
+When an LLM agent works on a long task, mid-task decisions like this one (which hypothesis to test first, which implementation to build on) often decide whether it succeeds. [The Tasteful Agent paper](https://arxiv.org/abs/2609.25804) calls the ability to make good decisions over a long task "taste". The trouble is that today's benchmarks only check whether the agent finished. Nobody measures the quality of the decisions themselves.
 
 The paper's way of measuring it is cheap. Agents often attempt the same task several times, and the attempts head in different directions partway through, one ending well and one badly. Hide everything after the split, ask a model which direction to take, and the recorded outcome is the answer. No human labelling is needed.
 

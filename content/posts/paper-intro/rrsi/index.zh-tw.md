@@ -23,7 +23,7 @@ url: "paper-intro/:contentbasename"
 
 讓一個 LLM 自動修改 agent 的 [harness](../../ai-concept/harness-engineering/)（模型以外的提示詞、控制流程、工具介面、記憶與 context 管理），再用任務分數當回饋反覆迭代，是這一兩年很熱門的做法。問題是每一輪都拿同一批有限的題目評分，進化用題目的分數會一路上升，換到沒看過的 benchmark，進步卻縮水甚至消失。
 
-Google Cloud AI Research 的 RRSI（*Regularized Recursive Self-Improvement of Agent Harnesses*，arXiv 2609.24972v2）想管住這件事。它不限制 harness 能改什麼，而是管「怎麼提出修改」和「哪些修改可以被留下」，用一整包規則降低過擬合。
+Google Cloud AI Research 的 RRSI（*Regularized Recursive Self-Improvement of Agent Harnesses*，[arXiv 2609.24972v2](https://arxiv.org/abs/2609.24972)）想管住這件事。它不限制 harness 能改什麼，而是管「怎麼提出修改」和「哪些修改可以被留下」，用一整包規則降低過擬合。
 
 這篇文章分成兩塊。前半依論文順序講問題、方法、實驗與評價，我的判斷是研究價值偏低，工程參考價值中等偏上。後半是九個延伸概念。其中適應性資料重用、贏家詛咒、L0 / L1 / L2 正則化、雜訊帶等脫離這篇論文也成立，是我覺得最值得留下來的部分，其餘幾個則是這篇論文留下的疑點。
 

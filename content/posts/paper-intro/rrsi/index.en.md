@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 Letting an LLM automatically rewrite an agent's [harness](../../ai-concept/harness-engineering/) (everything outside the model: prompts, control flow, tool interfaces, memory and context management), then using task scores as feedback to iterate, has become a popular recipe over the past year or two. The catch is that every round is scored on the same limited set of tasks. The score on the evolution tasks climbs steadily, but on benchmarks the system has never seen, the gain shrinks or vanishes.
 
-RRSI (*Regularized Recursive Self-Improvement of Agent Harnesses*, arXiv 2609.24972v2) from Google Cloud AI Research tries to rein this in. It does not restrict what a harness may change. It governs how modifications are proposed and which ones are allowed to stay, using a bundle of rules to reduce overfitting.
+RRSI (*Regularized Recursive Self-Improvement of Agent Harnesses*, [arXiv 2609.24972v2](https://arxiv.org/abs/2609.24972)) from Google Cloud AI Research tries to rein this in. It does not restrict what a harness may change. It governs how modifications are proposed and which ones are allowed to stay, using a bundle of rules to reduce overfitting.
 
 This article has two halves. The first follows the paper's order: the problem, the method, the experiments and an evaluation. My verdict is low research value and medium-to-high engineering reference value. The second half is nine extension concepts. Adaptive data reuse, the winner's curse, L0 / L1 / L2 regularization and the noise band hold up independently of this paper, and I think they are the part most worth keeping. The rest are open questions the paper leaves behind.
 

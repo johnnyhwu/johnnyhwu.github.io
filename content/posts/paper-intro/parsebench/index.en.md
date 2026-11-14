@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-PDF parsing is going through a subtle change: the parsed content used to be read by people, and increasingly it is fed straight to an AI agent that makes decisions from it. The paper *ParseBench: A Document Parsing Benchmark for AI Agents* responds to that change by redesigning how parsing is scored.
+PDF parsing is going through a subtle change: the parsed content used to be read by people, and increasingly it is fed straight to an AI agent that makes decisions from it. The paper [*ParseBench: A Document Parsing Benchmark for AI Agents*](https://arxiv.org/abs/2604.08538) responds to that change by redesigning how parsing is scored.
 
 It is not a new parsing model, and not even a new parsing method. What it proposes is a **new way of scoring** how well "PDF to structured content" is done. The authors are from the LlamaIndex / LlamaParse team, and the paper also crowns their own LlamaParse the winner, which I come back to later.
 

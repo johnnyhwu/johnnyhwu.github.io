@@ -660,7 +660,7 @@
     "L001",
     "L006"
    ],
-   "text": "When an LLM agent works on a long task, mid-task decisions like this one (which hypothesis to test first, which implementation to build on) often decide whether it succeeds. The Tasteful Agent paper calls the ability to make good decisions over a long task \"taste\". The trouble is that today's benchmarks only check whether the agent finished. Nobody measures the quality of the decisions themselves."
+   "text": "When an LLM agent works on a long task, mid-task decisions like this one (which hypothesis to test first, which implementation to build on) often decide whether it succeeds. [The Tasteful Agent paper](https://arxiv.org/abs/2609.25804) calls the ability to make good decisions over a long task \"taste\". The trouble is that today's benchmarks only check whether the agent finished. Nobody measures the quality of the decisions themselves."
   },
   {
    "id": "s1.b3",

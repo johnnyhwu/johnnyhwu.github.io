@@ -32,7 +32,7 @@ AWS 全名為 Amazon Web Service，是 Amazon 旗下的雲端運算平台，提�
 
 {{< image src="aws-ai-services-overview.jpeg" alt="AWS AI Services 的 13 個應用領域與各自代表服務的一覽圖。" caption="AWS 所提供的 AI Services 一覽 [source: AWS Machine Learning Foundation Course on Udacity]" >}}
 
-如上圖所示，AWS 的 AI Services 依使用情境分成 13 個應用領域。它最大的價值在於：開發者不需要自己走完一遍「機器學習五步驟」（[定義問題](../define-problem/)、[準備資料](../prepare-dataset/)、[訓練模型](../model-training/)、[評估模型](../model-evaluate/)、[模型推論](../model-inference/)），就能直接把 AI 的能力接進自己的應用程式裡。模型是 AWS 訓練好的，你要做的只是準備輸入、接收輸出。
+如上圖所示，AWS 的 AI Services 依使用情境分成 13 個應用領域。它最大的價值在於：開發者不需要自己走完一遍「機器學習五步驟」（[定義問題](../../ai-concept/define-problem/)、[準備資料](../../ai-concept/prepare-dataset/)、[訓練模型](../../ai-concept/model-training/)、[評估模型](../../ai-concept/model-evaluate/)、[模型推論](../../ai-concept/model-inference/)），就能直接把 AI 的能力接進自己的應用程式裡。模型是 AWS 訓練好的，你要做的只是準備輸入、接收輸出。
 
 說白了，這一層適合的情境是「我的問題別人已經解過了」。如果你的需求是語音轉文字、人臉偵測、商品推薦這類通用任務，自己從頭訓練模型多半不划算；反過來說，如果問題和你的業務資料高度綁定，那才需要往下一層的 ML Services 走。
 

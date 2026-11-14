@@ -8,7 +8,7 @@ It checks structure and fidelity mechanically, so the Reviewers can spend their 
   - numbers: every number in article.md appears in the post (or its line is waived by a decision); an editorial
     block may not introduce a new number unless it is marked `illustrative`
   - glossary: a defined term is not used before the block that defines it
-  - paper link: a paper-intro post links its paper (warning)
+  - paper link: a paper-intro post links its paper (error, unless meta.paper_link_missing gives the reason)
   - hygiene: no `$` imbalance, no hand-numbered headings, no half-width punctuation in zh text, no CJK in en text
   - parity (en): same block ids, types, ledger refs, figures and per-block numbers as the zh plan (numbers with a
     magnitude unit compare by value: 270億 = 27B = 27 billion)
@@ -244,9 +244,16 @@ def check_blocks(r, plan, by_id, nodes, article, manifest_ids, stage):
         if iid not in fig_ids:
             r.err(f"article.md references {iid} but no figure block uses it")
     check_glossary(r, plan, order, glossary_skip)
-    if plan.get("meta", {}).get("section") == "paper-intro" and "](http" not in L.plan_text(plan):
-        r.warn("paper-intro post links to no paper: carry article.md's `**來源**` line into the opening section, "
-               "or tell the author it is missing")
+    meta = plan.get("meta", {})
+    if meta.get("section") == "paper-intro" and "](http" not in L.plan_text(plan):
+        why = meta.get("paper_link_missing")
+        if isinstance(why, str) and why.strip():
+            r.warn(f"paper-intro post links to no paper (meta.paper_link_missing: {why.strip()}); "
+                   "say so in the brief and the PR")
+        else:
+            r.err("paper-intro post links to no paper: carry article.md's `**來源**` line into the opening "
+                  "section, or link the arXiv id (planner-guide.md §5); if no source exists, set "
+                  "meta.paper_link_missing to the reason")
     return seen
 
 

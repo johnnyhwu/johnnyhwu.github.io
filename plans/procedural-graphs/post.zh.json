@@ -3274,7 +3274,7 @@
       "ledger": [
         "L001"
       ],
-      "text": "這篇整理 Google 的論文 *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents*（arXiv 2609.09153v1，2026 年九月）。它的做法分兩半："
+      "text": "這篇整理 Google 的論文 *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents*（[arXiv 2609.09153v1](https://arxiv.org/abs/2609.09153)，2026 年九月）。它的做法分兩半："
     },
     {
       "id": "s1.b3",

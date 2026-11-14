@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 請 AI agent 幫你處理一個要走很多步的任務。前半段它做得好好的，到了後半段，卻又去查一遍前面已經查過的資料，或是把兩個工具的呼叫順序弄反。如果事先把「接下來該做什麼」畫成一張流程圖，每一步只挑出腳邊那一小段，轉成一句提醒交給它，它還會迷路嗎？Google 的這篇論文就是這樣做的，答案是：多半有幫助，但有代價，也有幾個地方沒幫上忙。
 
-這篇整理 Google 的論文 *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents*（arXiv 2609.09153v1，2026 年九月）。它的做法分兩半：
+這篇整理 Google 的論文 *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents*（[arXiv 2609.09153v1](https://arxiv.org/abs/2609.09153)，2026 年九月）。它的做法分兩半：
 
 - **推論時**（agent 實際在做事）：把 agent 的「做事流程」存成一張可編輯的有向圖（節點是步驟，箭頭指向下一步）。每一步只取 agent 目前所在位置附近的一小段，由另一個 LLM 翻成提示。
 - **離線時**（事先準備、改進這張圖）：讓一個 LLM 負責修改這張圖；改得有沒有用，交給獨立的驗證集（一組沒拿去訓練的題目）決定。

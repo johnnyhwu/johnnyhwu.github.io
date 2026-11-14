@@ -33,7 +33,7 @@ My overall verdict on the paper is high engineering value and medium-to-low rese
 
 ## Paper Overview and Overall Assessment
 
-The paper is "Self-Evolving Search Index" (arXiv 2609.19656v1), from Yonsei University and Samsung Research, published in September 2026. The core idea is to let the "index" used for retrieval evolve on its own. An LLM called the Optimizer does three things: it diagnoses the index's defects, repairs only the broken part, and applies a revision only after validating that it helps. A second component, the Query Simulator, actively generates queries that have not been asked yet but plausibly will be, so the index does not merely react to known problems.
+The paper is "Self-Evolving Search Index" ([arXiv 2609.19656v1](https://arxiv.org/abs/2609.19656)), from Yonsei University and Samsung Research, published in September 2026. The core idea is to let the "index" used for retrieval evolve on its own. An LLM called the Optimizer does three things: it diagnoses the index's defects, repairs only the broken part, and applies a revision only after validating that it helps. A second component, the Query Simulator, actively generates queries that have not been asked yet but plausibly will be, so the index does not merely react to known problems.
 
 **Engineering value is high**, for four reasons:
 

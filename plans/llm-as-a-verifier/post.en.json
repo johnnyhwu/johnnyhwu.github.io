@@ -432,7 +432,7 @@
    "ledger": [
     "L001"
    ],
-   "text": "This post covers *LLM-as-a-Verifier* (arXiv 2607.05391v2, Stanford / UC Berkeley / NVIDIA). Scoring one LLM's output with another LLM is now close to standard practice: ask the model for an integer from 1 to 5, then use that integer to rank, filter, or serve as a reward (the training signal given to a model). The paper points out a gap few people notice. At the token position where the model writes the score (a token is the smallest unit of text a model handles), it actually produces a **full probability distribution**, meaning \"how likely each score is\". The standard recipe keeps only the most likely one (an operation called argmax) and discards the rest. The information was never missing; the decoding strategy throws it away."
+   "text": "This post covers *LLM-as-a-Verifier* ([arXiv 2607.05391v2](https://arxiv.org/abs/2607.05391), Stanford / UC Berkeley / NVIDIA). Scoring one LLM's output with another LLM is now close to standard practice: ask the model for an integer from 1 to 5, then use that integer to rank, filter, or serve as a reward (the training signal given to a model). The paper points out a gap few people notice. At the token position where the model writes the score (a token is the smallest unit of text a model handles), it actually produces a **full probability distribution**, meaning \"how likely each score is\". The standard recipe keeps only the most likely one (an operation called argmax) and discards the rest. The information was never missing; the decoding strategy throws it away."
   },
   {
    "id": "s1.b3",

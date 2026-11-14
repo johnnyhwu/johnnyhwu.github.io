@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-PDF 解析（parsing）這件事最近有一個微妙的變化：以前解析出來的內容是給人看的，現在越來越常是直接餵給 AI agent 去做決策的。這篇論文《ParseBench: A Document Parsing Benchmark for AI Agents》就是針對這個變化，重新設計了一套評分方式。
+PDF 解析（parsing）這件事最近有一個微妙的變化：以前解析出來的內容是給人看的，現在越來越常是直接餵給 AI agent 去做決策的。這篇論文[《ParseBench: A Document Parsing Benchmark for AI Agents》](https://arxiv.org/abs/2604.08538)就是針對這個變化，重新設計了一套評分方式。
 
 它不是新的解析模型，甚至也不是新的解析方法——它提出的是**新的評分方式**，用來衡量「PDF 轉結構化內容」這件事做得好不好。作者來自 LlamaIndex／LlamaParse 團隊，論文裡也拿自家的 LlamaParse 打了個第一名，這點後面會回頭談。
 
