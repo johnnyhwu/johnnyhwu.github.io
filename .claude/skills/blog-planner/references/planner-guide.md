@@ -117,8 +117,13 @@ name any that are unreadable there (many panels, tiny text). Tell the author wit
 
 **The paper link.** A paper's `article.md` opens with a `**來源**：` line (title, link, institutions). It is a
 ledger item like any other: put it as a short `support` paragraph at the end of the opening section, after the hook
-(「論文：[title](link)（…）」 / "Paper: [title](link) (…)"). If `article.md` has none, say so in the brief; the
-validator warns, and nothing else will link the paper.
+(「論文：[title](link)（…）」 / "Paper: [title](link) (…)"). If that line has no link, use an arXiv id the
+article states, or else the id in the source PDF's **file name** in the topic directory (`2608.11079v2.pdf`;
+`ls` it, never open it): link `https://arxiv.org/abs/<id without version>` (an ACL Anthology id such as
+`2024.eacl-long.163` links `https://aclanthology.org/<id>/`) and record in `decisions[]` where the id came from.
+Only if there is no id at all, set `meta.paper_link_missing` to the reason and say so in the brief. The validator
+fails a paper-intro plan with neither a link nor that reason: nothing else in the pipeline links the paper, and
+a walkthrough that does not cite its paper reads as thin to readers and to search engines.
 
 ## 6. Decisions to record
 

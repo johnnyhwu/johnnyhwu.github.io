@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## Introduction
 
-RAGU is a GraphRAG engine that a team from ITMO University put on arXiv in July 2026, shipped alongside a 7B extraction model called Meno-Lite-0.1. Both are open source (`pip install graph_ragu`, MIT licensed). The paper's claim is that splitting knowledge-graph "extraction" and "consolidation" into two separate stages yields a cleaner graph and more complete retrieval.
+RAGU is a GraphRAG engine that a team from ITMO University [put on arXiv](https://arxiv.org/abs/2607.11683) in July 2026, shipped alongside a 7B extraction model called Meno-Lite-0.1. Both are open source (`pip install graph_ragu`, MIT licensed). The paper's claim is that splitting knowledge-graph "extraction" and "consolidation" into two separate stages yields a cleaner graph and more complete retrieval.
 
 This article is not just about what RAGU does, but about what is left once you take its experimental design apart. The conclusion is a little counterintuitive: the paper's own research contribution is thin, but buried in its data tables is a number very few people are willing to publish — **the net contribution of the entire GraphRAG stack, relative to building no graph at all and doing pure vector retrieval, is only 1.2 to 4.3 percentage points**. That number is worth more than anything the paper set out to prove.
 

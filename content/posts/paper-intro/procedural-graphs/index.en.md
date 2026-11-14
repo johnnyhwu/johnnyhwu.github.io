@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 Ask an AI agent to handle a task that takes many steps. The first half goes fine. Then, near the end, it looks up something it already looked up, or calls two tools in the wrong order. What if you drew "what to do next" as a flowchart ahead of time? At each step the agent would get only the small piece around where it stands, rewritten by another model as a one-line reminder. Would it still get lost? That is roughly what the Google paper behind this post builds, and it goes further: it also lets an LLM edit the flowchart. The answer is that it mostly helps, but it costs an extra LLM call at every step, and in a few places it does not help at all.
 
-This post covers Google's paper *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents* (arXiv 2609.09153v1, September 2026). The method has two halves:
+This post covers Google's paper *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents* ([arXiv 2609.09153v1](https://arxiv.org/abs/2609.09153), September 2026). The method has two halves:
 
 - **While the agent works** (inference time): the agent's workflow is stored as an editable directed graph (nodes are steps, arrows point to what can come next). At each step, only the small piece of the graph around the agent's current position is taken, and another LLM turns it into a hint.
 - **Before the agent works** (offline, while the graph is being improved): one LLM edits the graph, and an independent validation set (a batch of questions that were not used for training) decides whether the edit helped.

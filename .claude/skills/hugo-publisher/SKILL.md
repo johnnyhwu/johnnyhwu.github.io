@@ -101,12 +101,16 @@ For a topic `<Topic>` with slug `<slug>`:
    ```bash
    python3 .claude/skills/hugo-publisher/scripts/verify_post.py content/posts/<section>/<slug>
    .claude/skills/hugo-publisher/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
+   python3 .claude/skills/hugo-publisher/scripts/check_links.py .tools/public
    .claude/skills/hugo-publisher/scripts/node.sh .claude/skills/hugo-publisher/scripts/check_layout.js <section>/<slug>
    ```
 
    - `verify_post.py` is the fast net (both files, front matter, image `src`s, leftovers, SEO lengths, headings,
      links, widths, zh/en structural parity).
    - A real build is required for a new post (`references/hugo-build.md`).
+   - `check_links.py` resolves every internal link and image in every built post against the build output, so a
+     wrong relative path (`../<slug>/` to a post in another section) fails here instead of going live as a 404.
+     It checks the whole site, not just this post: fix any break it reports, or list it in the PR.
    - `check_layout.js` renders both languages at 1280 px and 390 px (KaTeX runs client-side); exit 2 means layout
      was NOT checked, so say so instead of reporting a pass.
    - Post with a `diagram` block: also `check_mermaid.js <section>/<slug> --shots .tools/shots`, then look at one
@@ -170,7 +174,7 @@ Details for each item live in `references/hugo-conventions.md`; this is only the
   present: a real cover the source shipped, or (default) a generated one in a style distinct from
   `generated-covers.md`, described honestly in the PR, with its register row added.
 - No rendered file edited by hand (re-rendering gives identical files).
-- `verify_post.py` clean (warnings reviewed), a real `hugo.sh` build inspected, `check_layout.js` passed via
+- `verify_post.py` clean (warnings reviewed), a real `hugo.sh` build inspected, `check_links.py` clean, `check_layout.js` passed via
   `node.sh` (or the PR says why it could not run), plus the mermaid and fold checks where the post has those blocks.
 - Internal links added through `links.json` where genuinely applicable, or the PR says why none.
 - The `seo` skill's follow-up rows added (and its skipped pre-publish checks reported).

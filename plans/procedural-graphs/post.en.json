@@ -379,7 +379,7 @@
       "ledger": [
         "L001"
       ],
-      "text": "This post covers Google's paper *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents* (arXiv 2609.09153v1, September 2026). The method has two halves:"
+      "text": "This post covers Google's paper *Procedural Graphs: Self-Evolving Execution Structures for LLM Agents* ([arXiv 2609.09153v1](https://arxiv.org/abs/2609.09153), September 2026). The method has two halves:"
     },
     {
       "id": "s1.b3",
