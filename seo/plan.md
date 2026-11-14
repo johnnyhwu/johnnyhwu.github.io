@@ -113,6 +113,9 @@ at most about +3-6% of clicks even if it works; clicks are concentrated (top 10 
   ranks around 20. Inference (not proven): a comparison/overview page that links all of them
   would capture broader queries and strengthen internal links.
 - Needs: the author's agreement on scope; content comes via the AI-Research pipeline.
+- 2026-11-14 (F8): queries that land on two or more of our posts split "agent memory" into three
+  clusters, not one: memory systems (mem0, memgpt, langmem, mirix), self-evolving skills (skillopt,
+  skillzip, wikiskill, ctx2skill), and context engineering. A hub, if any, is per cluster.
 
 ### B2. Merge or rewrite the two AWS posts. `todo`
 - `aws-ml-service` and `aws-ai-service` compete for the same queries, at position 27-65.
@@ -145,6 +148,58 @@ at most about +3-6% of clicks even if it works; clicks are concentrated (top 10 
 ### C4. Spot-check mobile experience. `todo` (low confidence)
 - Mobile is 13% of impressions, unusually low. Could simply be a desktop-heavy technical audience.
 - Needs PageSpeed Insights / CrUX; not available through GSC.
+- 2026-11-14: keyless PSI quota is exhausted; a free API key is needed. A lab run on `self-index`
+  (1.3 MB PNG cover) gave LCP 20.5 s on simulated slow 4G; see F5. CLS is 0 on post pages.
+
+## F. From the claude-seo review (2026-11-14)
+
+Studied `AgriciDaniel/claude-seo` v2.6.0 and ran its checks against our build and the live site. Not
+installed: it writes a global `~/.claude/skills/seo` (name clash with ours), stores API keys in plain
+text in `settings.json`, and `flow sync` pulls prompt text from a remote repo at run time. Its 0-100
+scores, 1,500-word floor, FAQ blocks, llms.txt, Indexing API and character-count title limits (wrong
+for CJK) are not adopted. Verified already fine: JSON-LD on all 294 posts, canonical/hreflang/x-default
+on 300 pages, alt text, CLS 0, 404/301 behaviour, sitemap in both languages.
+
+### F1. Broken internal links. `done` (PR #96)
+- 12 live 404s from `../<slug>/` links across sections (vllm-agentic-serving, aws-ai-service).
+- Prevented by `hugo-publisher/scripts/check_links.py`, run on the built site in Step 4.
+
+### F2. Paper-intro posts that do not link their paper. `doing` (PR #96)
+- 25 of 75 had none; 19 linked. Left: clam, erl, intent-sim, mrag, table-rag (no source) and
+  cerebras-rag (a blog post, maybe misfiled in paper-intro). `validate_plan.py` now errors on it.
+
+### F3. About page and author identity. `decide`
+- `/about/` is a 404 (menu entry commented out); JSON-LD `publisher` is an Organization named after a
+  person; Person has no `sameAs`; the empty `/en/authors/` is in the sitemap.
+- The site publishes several LLM-assisted, machine-translated posts a week, which is what Google's
+  scaled-content policy looks at. An About page that says who writes it and how posts are produced,
+  plus `sameAs` links, is the strongest trust signal still missing. Needs the author's own words.
+
+### F4. Large image previews. `done` (this PR) / covers `todo`
+- Added `max-image-preview:large` site-wide (`layouts/partials/head/link.html`).
+- 160 of 294 covers are under 1200 px wide, which Google wants for large previews. New covers are
+  1800 px; old ones would need regenerating.
+
+### F5. Image weight. `todo`
+- 107 MB of images; covers are PNG, `self-index` is 1.3 MB (LCP 20.5 s in a slow-4G lab run).
+- Do: a cover size gate in Step 4 and WebP output. Uncertain payoff: mobile is 13% of impressions.
+
+### F6. Monthly movers check. `doing` (added to the `seo` skill's site-wide step)
+- `compare_search_periods` found drops `followups.md` did not track (28 d vs previous 28 d, to
+  2026-11-11): `jev-overview` clicks 34 -> 9, `dream-rsi` 20 -> 2 at a similar position, en
+  `wikiskill` impressions 1,042 -> 239. Not yet explained.
+
+### F7. Free data sources. `decide`: see D.
+
+### F8. Pipeline rules. `todo`
+- Concept posts open with a one-sentence "X is ..." definition.
+- Record the SERP's dominant result type in `meta.seo` at P1.
+- Find topic clusters from GSC queries that land on several of our posts (no SERP scraping).
+- 17 posts have no inbound contextual link from another post; add them through `links.json`.
+
+### F9. Moved publish dates on `dropout` and `backpropagation`. `decide`
+- Commit 20d5102 moved them into 2026 on purpose. Google treats date changes without content change as
+  fake freshness. Option: restore the original `date` and move only `lastmod`.
 
 ## D. Needs data GSC does not have
 
@@ -153,7 +208,13 @@ at most about +3-6% of clicks even if it works; clicks are concentrated (top 10 
 | Why is US ranking weak (backlinks, authority)? | Backlink tool (Ahrefs/Semrush) |
 | Which uncovered topics have demand? | Google Trends / keyword tool |
 | What do visitors do after landing? | Google Analytics |
-| Core Web Vitals | PageSpeed Insights / CrUX |
+| Core Web Vitals | PageSpeed Insights / CrUX (free API key; keyless quota is used up) |
+
+Free options found 2026-11-14 (none set up yet; each needs the author's account):
+- Analytics is off (`config/_default/params.toml`, `analytics` block). The theme supports GoatCounter,
+  Umami and Cloudflare Web Analytics, which are cookie-less and free; Plausible is paid.
+- Bing Webmaster Tools imports the site from GSC and shows backlinks; Ahrefs Webmaster Tools is free
+  for a verified own site. Either answers C1's backlink question.
 
 ## E. Open questions
 
