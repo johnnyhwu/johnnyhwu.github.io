@@ -3,6 +3,8 @@
 One line per change made because of `plan.md`. Newest first. Format:
 `YYYY-MM-DD | plan item | what changed | URLs/files | PR`
 
+2026-11-14 | F4, F6, plan | Added `max-image-preview:large` site-wide; added section F (claude-seo review) to plan.md and the monthly movers check to the seo skill | layouts/partials/head/link.html, seo/plan.md, .claude/skills/seo/SKILL.md | this PR
+2026-11-14 | F1, F2 | Fixed 12 broken cross-section links; linked 19 papers; added check_links.py and made a missing paper link a validate_plan error | content/posts/..., plans/..., .claude/skills/{hugo-publisher,blog-planner}/ | PR #96
 2026-10-27 | publish | Re-published `paper-intro/wikiskill` from a new plan (old bundle deleted and re-rendered: new zh and en title and description, restructured body, regenerated cover, internal link to skillopt); URL and date (2026-09-02) unchanged, lastmod moved. Baseline (2026-07-29 to 2026-10-26): zh 61 clicks / 600 impressions / position 5.9, en 23 clicks / 1653 impressions / CTR 1.4% / position 7.3 | content/posts/paper-intro/wikiskill/, plans/wikiskill/ | this PR
 2026-10-26 | publish | Re-published `paper-intro/llm-as-a-verifier` from a new plan (new zh and en title and description, restructured body, regenerated cover); date unchanged, lastmod moved | content/posts/paper-intro/llm-as-a-verifier/, plans/llm-as-a-verifier/ | this PR
 2026-10-26 | process | SEO workflow: `seo` skill, `followups.md` queue + SessionStart hook, short rules in CLAUDE.md and hugo-paper-post; en title cap 52 in verify_post.py and hugo-conventions; seo/ and .mcp.json now committed | .claude/skills/seo/, .claude/settings.json, CLAUDE.md, .github/workflows/hugo.yaml, .gitignore | this PR

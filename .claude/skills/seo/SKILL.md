@@ -87,6 +87,13 @@ how many posts were published in between (new posts alone move clicks), save a n
 `seo/reports/` (never edit an old report), update statuses in `plan.md`, and add the next row to
 `followups.md`. State the window, property and tool for every conclusion; label inferences.
 
+Each monthly `site` row also runs a **movers check**: `compare_search_periods` by page, last 28 days
+vs the 28 before, on `sc-domain:datasciocean.com`. List pages whose clicks fell by half or more
+(at least 10 clicks before) or whose impressions fell by half or more (at least 300 before), and
+whether the position moved too (same position with fewer clicks is a SERP or demand change, not
+ours). Add a `post` row for any mover not already in `followups.md`; do not change a page from this
+check alone.
+
 ## Guardrails
 
 - Property for analysis `sc-domain:datasciocean.com`; URL Inspection needs `https://datasciocean.com/`.
