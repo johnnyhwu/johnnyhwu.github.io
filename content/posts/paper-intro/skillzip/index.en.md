@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "Skill Files Bloat as Agents Self-Evolve: Inside SkillZip's Fix"
+title: "SkillZip: Shrinking Agent Skill Files With No Evals"
 date: 2026-10-21
-lastmod: 2026-10-21
+lastmod: 2026-11-14
 draft: false
 description: "Self-evolving agents only ever append to their skill files. SkillZip merges the repetition with no task-based validation, shrinking them 31.2% on average, with caveats."
 featuredImage: "featured-image.png"
