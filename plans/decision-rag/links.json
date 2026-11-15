@@ -1,0 +1,5 @@
+[
+ {"block": "s1.b2", "zh": "Jev 1.13", "en": "Jev 1.13", "target": "../../ai-concept/jev-overview/"},
+ {"block": "s3f.b1", "zh": "機率門檻", "en": "probability threshold", "target": "../adaptive-k/"},
+ {"block": "s4c.b4", "zh": "通用決策模型", "en": "a general decision model", "target": "../jevact/"}
+]
