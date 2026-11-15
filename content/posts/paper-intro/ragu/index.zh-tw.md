@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-RAGU 是 ITMO University 團隊在 2026 年 7 月放上 arXiv 的 GraphRAG 引擎，附帶一個 7B 的抽取模型 Meno-Lite-0.1，兩者都開源（`pip install graph_ragu`，MIT 授權）。論文的主張是：把知識圖的「抽取」跟「整併」拆成兩個階段，圖會更乾淨，檢索也會更完整。
+RAGU 是 ITMO University 團隊在 2026 年 7 月[放上 arXiv](https://arxiv.org/abs/2607.11683)的 GraphRAG 引擎，附帶一個 7B 的抽取模型 Meno-Lite-0.1，兩者都開源（`pip install graph_ragu`，MIT 授權）。論文的主張是：把知識圖的「抽取」跟「整併」拆成兩個階段，圖會更乾淨，檢索也會更完整。
 
 這篇文章要談的不只是它做了什麼，而是把它的實驗設計拆開來看之後剩下什麼。結論會有點反直覺：RAGU 論文本身的研究貢獻很薄，但它的數據表裡藏著一個很少有人願意發表的數字——**整套 GraphRAG 相對於「什麼圖都不建、純向量檢索」的淨貢獻，只有 1.2 到 4.3 個百分點**。這個數字比論文想證明的任何一件事都有價值。
 

@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 Ask a [data agent](../../ai-concept/openai-data-agent/) (an AI agent that follows natural-language instructions to work on messy, mixed data: database tables, CSVs, documents, logs) a question like "Why did cost rise last month?" The answer may be scattered across several tables, or buried in a document. But the agent knows nothing in advance about what the data actually looks like: what the columns are called, how tables should be joined (linked through a shared column). So it has to feel its way through the data from scratch on every task.
 
-*EvoOntology: A Self-Evolving Ontology Layer for Data Agents* (arXiv:2609.15779v1, from a team at Renmin University of China, 9/2026) takes this on by inserting a knowledge layer (an ontology) between the agent and the data. The agent can query it, and it patches itself based on how it gets used.
+*EvoOntology: A Self-Evolving Ontology Layer for Data Agents* ([arXiv:2609.15779v1](https://arxiv.org/abs/2609.15779), from a team at Renmin University of China, 9/2026) takes this on by inserting a knowledge layer (an ontology) between the agent and the data. The agent can query it, and it patches itself based on how it gets used.
 
 The core of that layer is an ontology. Think of it as structured domain knowledge: which business concepts exist, which database column each one maps to, which rules govern their use, all linked together as a graph. How this differs from a traditional ontology or a knowledge graph is covered in the extended reading at the end.
 

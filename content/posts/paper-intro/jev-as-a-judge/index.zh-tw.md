@@ -20,7 +20,7 @@ url: "paper-intro/:contentbasename"
 
 ## 前言
 
-用 LLM 當判官（[LLM-as-a-judge](../llm-as-a-verifier/)）幫模型輸出打分數，已經是評測的預設做法。問題是強的推理判官（例如 GPT-6）又貴又慢，便宜的判官又不知道自己什麼時候會錯。這篇文章讀的是 *JEV-as-a-Judge: Accept When Confident, Escalate When Unsure*（Li、Miao、Krishnan、Padman，卡內基美隆大學，arXiv 2609.26550v3，2026 年 9 月）。它想問的是：讓便宜的判官先判，信心夠高就直接採用，信心不夠才轉給強判官，能不能用小得多的成本換到接近強判官的準確度？
+用 LLM 當判官（[LLM-as-a-judge](../llm-as-a-verifier/)）幫模型輸出打分數，已經是評測的預設做法。問題是強的推理判官（例如 GPT-6）又貴又慢，便宜的判官又不知道自己什麼時候會錯。這篇文章讀的是 *JEV-as-a-Judge: Accept When Confident, Escalate When Unsure*（Li、Miao、Krishnan、Padman，卡內基美隆大學，[arXiv 2609.26550v3](https://arxiv.org/abs/2609.26550)，2026 年 9 月）。它想問的是：讓便宜的判官先判，信心夠高就直接採用，信心不夠才轉給強判官，能不能用小得多的成本換到接近強判官的準確度？
 
 這篇論文是第三方評測，不是提出新方法。串接分流和選門檻都是既有做法，它的價值在於把整套流程事先凍結，再拿沒看過的題目驗收，並誠實攤出哪裡成立、哪裡不成立。答案大致是：在答案能從文字直接讀出的任務上成立，在難任務上，只要門檻選對，準確度不掉，但省得很少。
 

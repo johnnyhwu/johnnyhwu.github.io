@@ -29,7 +29,7 @@ url: "paper-intro/:contentbasename"
 
 如果你讓一個 agent 去做投影片、算 Excel、搭 3D 場景這類「創作型」任務，它常常卡住的地方不是不知道事實，而是不知道「該怎麼做」——用哪個工具模式、任務怎麼拆、中間該檢查什麼、出錯了怎麼救。這種程序性知識，現有的技能庫大多靠人工寫，或是從 agent 自己的操作記錄裡挖（例如 [SkillOpt](../skillopt/)、[WikiSkill](../wikiskill/)），唯獨「教學影片」——人類學這類軟體操作最自然的素材——幾乎沒被系統性用上。
 
-Resource2Skill（Microsoft Research，arXiv 2606.29538）想解決的就是這件事：把教學影片、程式碼庫、文章、參考成品這四種資源，自動蒸餾成一個 agent 能高效檢索、執行的階層式技能庫（Skill Wiki）。論文在 7 個創作領域、4 個模型上量到平均 11.9 個百分點的提升，也贏過 [Claude Code](../../ai-concept/claude-code/)、Codex 這類現成 [harness](../../ai-concept/harness-engineering/)。
+Resource2Skill（Microsoft Research，[arXiv 2606.29538](https://arxiv.org/abs/2606.29538)）想解決的就是這件事：把教學影片、程式碼庫、文章、參考成品這四種資源，自動蒸餾成一個 agent 能高效檢索、執行的階層式技能庫（Skill Wiki）。論文在 7 個創作領域、4 個模型上量到平均 11.9 個百分點的提升，也贏過 [Claude Code](../../ai-concept/claude-code/)、Codex 這類現成 [harness](../../ai-concept/harness-engineering/)。
 
 先講判斷：這篇論文的**研究價值偏低**——核心的檢索與選擇機制是既有元件的組合，不是新方法；**工程參考價值中低，而且有明顯缺口**——系統骨架（schema、驗收流程、執行介面）值得參考，但論文對「怎麼從原始資料蒸餾成技能」這個最關鍵的技術細節寫得非常單薄，沒辦法照抄出一套完整流程。
 
