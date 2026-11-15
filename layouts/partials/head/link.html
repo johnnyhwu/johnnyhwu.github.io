@@ -73,3 +73,7 @@
     {{ $js := resources.Get "js/sw.js" | js.Build $options }}
     {{ $_ := $js.RelPermalink }}
 {{- end -}}
+
+{{- /* Let Google show a large cover thumbnail in results and Discover. Google merges this with the theme's
+       <meta name="robots" content="noodp"> in baseof.html (multiple robots tags are combined). */ -}}
+<meta name="robots" content="max-image-preview:large">
