@@ -31,6 +31,8 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 | 2026-12-25 | experiment | A6 English-title batch: 56-day readout and decision on the other ~90 titles | same report; a flat result means drop the remaining titles |
 | 2026-11-18 | post | `paper-intro/jevact` (PR opened 2026-11-11): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs |
 | 2026-12-02 | post | `paper-intro/jevact`: impressions, position, CTR | post check; no site demand for JevAct at publish time (Jev demand lands on `ai-concept/jev-overview`), so under about 30 impressions means record it and do not tweak the title |
+| 2026-11-22 | post | `paper-intro/jev-mem` (PR opened 2026-11-15, post dated 2026-11-13): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs; pre-publish Chrome results-page check was skipped (no browser tool in the session) |
+| 2026-12-06 | post | `paper-intro/jev-mem`: impressions, position, CTR | post check; no site demand for Jev-Mem at publish time (memory demand lands on mem0, memgpt, mirix, mem-rl; RRF on cerebras-rag), so under about 30 impressions means record it and do not tweak the title |
 
 ## Done
 

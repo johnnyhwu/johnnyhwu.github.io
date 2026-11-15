@@ -1,0 +1,6 @@
+[
+ {"block": "s1.b1", "zh": "長期記憶", "en": "long-term memory", "target": "../memgpt/"},
+ {"block": "s5b.b3", "zh": "認知心理學的記憶分類", "en": "the psychology of memory", "target": "../mirix/"},
+ {"block": "s9a.b1", "zh": "LoCoMo", "en": "LoCoMo", "target": "../mem0/"},
+ {"block": "s11c.b1", "zh": "向量加關鍵字的混合檢索", "en": "hybrid search combining vectors and keywords", "target": "../cerebras-rag/"}
+]
