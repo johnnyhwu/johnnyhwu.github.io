@@ -1,0 +1,3585 @@
+{
+ "schema": "post-plan/1",
+ "source": {
+  "article": "AI-Research/done/published/Jev-Mem/article.md",
+  "manifest": "AI-Research/done/published/Jev-Mem/assets/image-manifest.json",
+  "root": "AI-Research"
+ },
+ "meta": {
+  "section": "paper-intro",
+  "slug": "jev-mem",
+  "date": "2026-11-13",
+  "tags": [
+   "Agent Memory",
+   "Large Language Model",
+   "Retrieval-Augmented Generation"
+  ],
+  "title": "Jev-Mem: Tiny Scorer, 8.9x Faster Agent Memory",
+  "description": "Jev-Mem hands every memory decision of an AI agent to a small scoring model. Memory builds 8.9x faster than MAGMA, and most of the accuracy gain is on one question type.",
+  "reader": {
+   "persona": "A newcomer to AI who has used or heard of LLM agents and RAG and roughly knows what retrieval is, but not embeddings, graph structures, BM25 or LoCoMo",
+   "promise": "Afterwards you can explain which judgments Jev-Mem hands to a small model, the four edge kinds of its memory graph, the four write steps, how reading plans, expands and stops; where the experiments show it is faster, more accurate and actually worse; and how to merge two retrieval result lists yourself with RRF",
+   "assumes": [
+    "agent",
+    "prompt",
+    "token",
+    "benchmark",
+    "JSON",
+    "Python",
+    "RAG"
+   ]
+  },
+  "takeaways": [
+   {
+    "id": "T1",
+    "text": "Jev-Mem hands every judgment in the memory system (which edges to build, which to follow, which neighbours to keep, when to stop) to Jev, a small model that only outputs 0-to-1 scores; the big LLM only writes the final answer. Each sentence written costs at most two Jev calls, no matter how big memory gets",
+    "memory_hook": "The small model fills in yes/no questions; the big model writes the essay"
+   },
+   {
+    "id": "T2",
+    "text": "Against MAGMA, the same authors' earlier system with the same architecture, memory builds about 8.9x faster, query latency drops 37% and the overall score rises from 0.700 to 0.777, mostly from adversarial questions; but there is only one test set (LoCoMo), no ablation, and temporal questions actually lose slightly",
+    "memory_hook": "1404 seconds down to 158"
+   },
+   {
+    "id": "T3",
+    "text": "RRF is useful beyond this paper: when merging several retrieval result lists, use ranks, not scores; k = 60 makes ranking near the top of several lists worth more than ranking first in one",
+    "memory_hook": "Ranks add up; scores don't"
+   }
+  ],
+  "hook": {
+   "kind": "tension",
+   "text": "An agent with long-term memory makes a string of small judgments every time it stores a sentence or answers a question: what does this relate to, where should I look, is this enough? Having a big LLM write out each answer is slow and expensive, and hard-coded rules are too rigid. Jev-Mem turns every judgment into a yes/no question for Jev, a small model that only outputs scores. Compared with MAGMA, the same authors' earlier memory system, building memory gets about 8.9x faster and the overall score rises, but most of the gain comes from one type of question."
+  },
+  "running_example": {
+   "id": "mira-bicycle",
+   "desc": "The paper's appendix example: the question \"When did Mira buy a new bicycle, and why?\", with memories m1 (\"my old bicycle broke\") and m2 (said on 5/16: \"I bought a new bicycle yesterday because my old one broke\"); the made-up examples for routing, scoring, stopping and the further details all reuse this question"
+  },
+  "cover_brief": {
+   "metaphor": "A memory web of sentence nodes crossed by edges in four colours; a small judge lights up nodes outward round by round along the edges, each node carrying only a single 0-to-1 gauge; the last lit ring flows into a large pen (System Two) that writes the answer",
+   "labels": [
+    {
+     "text": "System One",
+     "ledger": "L008"
+    },
+    {
+     "text": "0 → 1",
+     "ledger": "L002"
+    },
+    {
+     "text": "8.9×",
+     "ledger": "L003"
+    },
+    {
+     "text": "RRF",
+     "ledger": "L052"
+    }
+   ]
+  },
+  "seo": {
+   "queries": [
+    "jev-mem (no impressions in 90 days)",
+    "jev (impressions on ai-concept/jev-overview)",
+    "memory queries (mem0, memgpt, mirix, mem-rl)",
+    "rrf rag (paper-intro/cerebras-rag)"
+   ],
+   "notes": "GSC: no Jev-Mem impressions on the site; Jev queries go to ai-concept/jev-overview, agent-memory queries to mem0, memgpt, mirix and mem-rl, RRF queries to cerebras-rag; all are link targets, with no competing post for the same query. The Google results-page check was skipped: no browser tool in this session."
+  }
+ },
+ "outline": [
+  {
+   "id": "s1",
+   "title": "An agent's memory hides a string of small judgments",
+   "role": "hook",
+   "goal": "The reader can explain: An agent's memory hides a string of small judgments",
+   "serves": [
+    "T1",
+    "T2",
+    "T3"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s2",
+   "title": "The answer is always just yes/no or a score",
+   "role": "context",
+   "goal": "The reader can explain: The answer is always just yes/no or a score",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s3",
+   "title": "System One judges, System Two answers",
+   "role": "mechanism",
+   "goal": "The reader can explain: System One judges, System Two answers",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s3a",
+     "title": "Jev doesn't write; it answers a batch of yes/no questions",
+     "role": "mechanism",
+     "goal": "The reader can explain: Jev doesn't write; it answers a batch of yes/no questions",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "What the memory looks like: one node per sentence, plus four kinds of edges",
+   "role": "mechanism",
+   "goal": "The reader can explain: What the memory looks like: one node per sentence, plus four kinds of edges",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s4a",
+     "title": "What edges are for: bringing causes and consequences along",
+     "role": "mechanism",
+     "goal": "The reader can explain: What edges are for: bringing causes and consequences along",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s4b",
+     "title": "One observation and the whole memory, in symbols",
+     "role": "mechanism",
+     "goal": "The reader can explain: One observation and the whole memory, in symbols",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s4c",
+     "title": "How each kind of edge is built",
+     "role": "mechanism",
+     "goal": "The reader can explain: How each kind of edge is built",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "title": "Writing: a fixed Jev cost per sentence",
+   "role": "mechanism",
+   "goal": "The reader can explain: Writing: a fixed Jev cost per sentence",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s5a",
+     "title": "Keep everything, choose later",
+     "role": "mechanism",
+     "goal": "The reader can explain: Keep everything, choose later",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s5b",
+     "title": "Give each sentence type scores",
+     "role": "mechanism",
+     "goal": "The reader can explain: Give each sentence type scores",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s5c",
+     "title": "Cheap rules pick the candidates first",
+     "role": "mechanism",
+     "goal": "The reader can explain: Cheap rules pick the candidates first",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s5d",
+     "title": "Jev decides whether to build edges",
+     "role": "mechanism",
+     "goal": "The reader can explain: Jev decides whether to build edges",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s5e",
+     "title": "Consolidating every so often",
+     "role": "mechanism",
+     "goal": "The reader can explain: Consolidating every so often",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "title": "Reading, part 1: plan the search before setting out",
+   "role": "mechanism",
+   "goal": "The reader can explain: Reading, part 1: plan the search before setting out",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s6a",
+     "title": "Routing: which edges to open",
+     "role": "mechanism",
+     "goal": "The reader can explain: Routing: which edges to open",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s6b",
+     "title": "Budget: how many neighbours each edge kind may visit",
+     "role": "mechanism",
+     "goal": "The reader can explain: Budget: how many neighbours each edge kind may visit",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s6c",
+     "title": "Depth: how many hops at most",
+     "role": "mechanism",
+     "goal": "The reader can explain: Depth: how many hops at most",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "title": "Reading, part 2: start from the anchors and expand round by round",
+   "role": "mechanism",
+   "goal": "The reader can explain: Reading, part 2: start from the anchors and expand round by round",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s7a",
+     "title": "Anchors: where the search starts",
+     "role": "mechanism",
+     "goal": "The reader can explain: Anchors: where the search starts",
+     "serves": [
+      "T1",
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s7b",
+     "title": "What happens in one round",
+     "role": "mechanism",
+     "goal": "The reader can explain: What happens in one round",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s7c",
+     "title": "How a neighbour's total score is computed",
+     "role": "mechanism",
+     "goal": "The reader can explain: How a neighbour's total score is computed",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s7d",
+     "title": "Nudging newer memories up",
+     "role": "mechanism",
+     "goal": "The reader can explain: Nudging newer memories up",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "title": "Reading, part 3: stop when the evidence is enough, or when searching more won't help",
+   "role": "mechanism",
+   "goal": "The reader can explain: Reading, part 3: stop when the evidence is enough, or when searching more won't help",
+   "serves": [
+    "T1"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s9",
+   "title": "Experiments: much faster than MAGMA, with the accuracy gain mostly on adversarial questions",
+   "role": "evidence",
+   "goal": "The reader can explain: Experiments: much faster than MAGMA, with the accuracy gain mostly on adversarial questions",
+   "serves": [
+    "T2"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s9a",
+     "title": "Understanding the metrics first",
+     "role": "evidence",
+     "goal": "The reader can explain: Understanding the metrics first",
+     "serves": [
+      "T2"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s9b",
+     "title": "The cleanest comparison: MAGMA vs. Jev-Mem",
+     "role": "evidence",
+     "goal": "The reader can explain: The cleanest comparison: MAGMA vs. Jev-Mem",
+     "serves": [
+      "T2"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s10",
+   "title": "Limitations to know before you use it",
+   "role": "caveat",
+   "goal": "The reader can explain: Limitations to know before you use it",
+   "serves": [
+    "T2"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s11",
+   "title": "A trick worth keeping: RRF looks at ranks, not scores",
+   "role": "takeaway",
+   "goal": "The reader can explain: A trick worth keeping: RRF looks at ranks, not scores",
+   "serves": [
+    "T3"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s11a",
+     "title": "What problem it solves",
+     "role": "takeaway",
+     "goal": "The reader can explain: What problem it solves",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s11b",
+     "title": "Why it works",
+     "role": "takeaway",
+     "goal": "The reader can explain: Why it works",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s11c",
+     "title": "How to use it",
+     "role": "takeaway",
+     "goal": "The reader can explain: How to use it",
+     "serves": [
+      "T3"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s12",
+   "title": "Wrapping up: three things to remember",
+   "role": "takeaway",
+   "goal": "The reader can explain: Wrapping up: three things to remember",
+   "serves": [
+    "T1",
+    "T2",
+    "T3"
+   ],
+   "recap": "",
+   "children": []
+  },
+  {
+   "id": "s13",
+   "title": "Further details",
+   "role": "deep-dive",
+   "goal": "The reader can explain: Further details",
+   "serves": [
+    "T1",
+    "T2"
+   ],
+   "recap": "",
+   "children": [
+    {
+     "id": "s13a",
+     "title": "Entity edges vs. semantic edges",
+     "role": "deep-dive",
+     "goal": "The reader can explain: Entity edges vs. semantic edges",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s13b",
+     "title": "Are the type scores used at all?",
+     "role": "deep-dive",
+     "goal": "The reader can explain: Are the type scores used at all?",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s13c",
+     "title": "Entity extraction and temporal edges",
+     "role": "deep-dive",
+     "goal": "The reader can explain: Entity extraction and temporal edges",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s13d",
+     "title": "Edge-building conditions and edge scores",
+     "role": "deep-dive",
+     "goal": "The reader can explain: Edge-building conditions and edge scores",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s13e",
+     "title": "Consolidation only checks every twentieth sentence",
+     "role": "deep-dive",
+     "goal": "The reader can explain: Consolidation only checks every twentieth sentence",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s13f",
+     "title": "How tickets are spent",
+     "role": "deep-dive",
+     "goal": "The reader can explain: How tickets are spent",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s13g",
+     "title": "What Jev's input looks like",
+     "role": "deep-dive",
+     "goal": "The reader can explain: What Jev's input looks like",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    },
+    {
+     "id": "s13h",
+     "title": "How Jev decides whether to keep searching",
+     "role": "deep-dive",
+     "goal": "The reader can explain: How Jev decides whether to keep searching",
+     "serves": [
+      "T1"
+     ],
+     "recap": "",
+     "children": []
+    }
+   ]
+  }
+ ],
+ "glossary": [
+  {
+   "term": "Jev",
+   "defined_in": "s1.b1"
+  },
+  {
+   "term": "MAGMA",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "LoCoMo",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "adversarial",
+   "defined_in": "s1.b2"
+  },
+  {
+   "term": "RRF",
+   "defined_in": "s1.b3"
+  },
+  {
+   "term": "System One",
+   "defined_in": "s3.b1"
+  },
+  {
+   "term": "System Two",
+   "defined_in": "s3.b1"
+  },
+  {
+   "term": "anchor",
+   "defined_in": "s3.b5"
+  },
+  {
+   "term": "Noul",
+   "defined_in": "s3a.b1"
+  },
+  {
+   "term": "embedding",
+   "defined_in": "s4b.b3"
+  },
+  {
+   "term": "vector index",
+   "defined_in": "s4b.b6"
+  },
+  {
+   "term": "keyword index",
+   "defined_in": "s4b.b6"
+  },
+  {
+   "term": "pre-filter",
+   "defined_in": "s5c.b3"
+  },
+  {
+   "term": "need score",
+   "defined_in": "s6.b1"
+  },
+  {
+   "term": "frontier",
+   "defined_in": "s7b.b1"
+  },
+  {
+   "term": "beam width",
+   "defined_in": "s7b.b1"
+  },
+  {
+   "term": "ablation",
+   "defined_in": "s9.b1"
+  },
+  {
+   "term": "LLM-as-a-Judge",
+   "defined_in": "s9a.b1"
+  },
+  {
+   "term": "BM25",
+   "defined_in": "s11a.b1"
+  }
+ ],
+ "blocks": [
+  {
+   "id": "s1.b1",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L002"
+   ],
+   "text": "An agent with long-term memory makes a string of small judgments every time it stores a sentence or answers a question. Which older memories does this sentence relate to? Where should I look? Is what I found enough? Asking a big LLM to write out each answer is slow and expensive; hard-coded rules are too rigid. **Jev-Mem**, from Jiang, Li and Li at UT Dallas, makes a simple bet: hand every one of these judgments to **Jev**, a small model that only outputs a score from 0 to 1, and let the big LLM do nothing but write the final answer.",
+   "purpose": "hook"
+  },
+  {
+   "id": "s1.b2",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L003",
+    "L047"
+   ],
+   "text": "The comparison point is **MAGMA**, an earlier memory system by the same authors and the strongest competitor in the experiments. On **LoCoMo** (a test set of very long, multi-session conversations), Jev-Mem builds its memory about 8.9× faster, answers each question with 37% less latency, and lifts the overall score from 0.700 to 0.777. Most of that gain, though, comes from one kind of question, the **adversarial** ones: they ask about something never said in the conversation, and the right answer is \"I don't know\"."
+  },
+  {
+   "id": "s1.b3",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L003"
+   ],
+   "text": "We'll start with the problem and the big picture, then look at what the memory is made of, how it is written, and how it is read (plan the search, expand outward, decide when to stop), followed by the experiments and the limitations. Last comes a trick that is useful far beyond this paper: **RRF** (Reciprocal Rank Fusion: when merging several search result lists, look only at ranks, not scores). Implementation details mentioned along the way are collected in \"Further details\" at the end.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s1.b4",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L001",
+    "L003"
+   ],
+   "text": "Paper: [Jev-Mem: System-One-Controlled Agentic Memory for Efficient AI Agents](https://arxiv.org/abs/2609.23986) (UT Dallas, 2026/09). The authors released code: [libingzheren/Jev-Mem](https://github.com/libingzheren/Jev-Mem)."
+  },
+  {
+   "id": "s1.b5",
+   "section": "s1",
+   "type": "callout",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L004"
+   ],
+   "tone": "info",
+   "title": "How sources are marked",
+   "text": "Unmarked statements come from the paper. \"(from the code)\" marks implementation details and settings from the official repo and its config file `config/jev_mem.json` that the paper does not state. \"(inference)\" marks the note author's own judgment, which neither the paper nor the code states directly. \"(made-up)\" marks examples or numbers constructed for explanation. \"(general knowledge)\" marks background that is not from the paper."
+  },
+  {
+   "id": "s2.b1",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L005"
+   ],
+   "text": "Spelled out in full, those judgments also include \"what kind of memory is this?\" and \"which of the results is most useful?\". They have one thing in common: the answer is a yes/no or a score, not a piece of text."
+  },
+  {
+   "id": "s2.b2",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L006"
+   ],
+   "text": "Existing systems handle these judgments in roughly two ways:"
+  },
+  {
+   "id": "s2.b3",
+   "section": "s2",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L006"
+   ],
+   "headers": [
+    "Approach",
+    "Strength",
+    "Weakness"
+   ],
+   "rows": [
+    [
+     "Hard-coded rules",
+     "Fast",
+     "Rigid"
+    ],
+    [
+     "Let a big LLM generate text, then parse it",
+     "Understands meaning",
+     "Slow, expensive"
+    ]
+   ]
+  },
+  {
+   "id": "s2.b4",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L007"
+   ],
+   "text": "Worse, these judgments sit right on the path the user is waiting on: every extra big-LLM call is another wait. So the paper sets out to answer three questions:"
+  },
+  {
+   "id": "s2.b5",
+   "section": "s2",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L007"
+   ],
+   "items": [
+    "How can a small model run through both writing and reading?",
+    "Does letting a weak model control memory hurt final accuracy?",
+    "What memory structure and retrieval process suit this kind of lightweight control?"
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s2.b6",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: there are many judgments, they sit on the user's waiting path, and each answer is just a score. That is exactly the kind of work a score-only small model can take over.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s3.b1",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L008"
+   ],
+   "text": "**Jev-Mem has three layers: Jev makes every judgment, and is called System One; in the middle sits the shared memory; the big LLM only writes the final answer, and is called System Two.** The names come from dual-process theory in cognitive psychology; here they only borrow the metaphor of fast intuitive judgment versus slow deliberate thought."
+  },
+  {
+   "id": "s3.b2",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L008"
+   ],
+   "text": "Below is the paper's architecture overview. The top band is writing: a new sentence comes in, Jev judges it, and it is stored. The middle band is the memory itself. The bottom band is reading: starting from the question, Jev keeps deciding where to look, what to keep and whether it has enough, and only then hands over to System Two to answer."
+  },
+  {
+   "id": "s3.b3",
+   "section": "s3",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L008",
+    "L009"
+   ],
+   "manifest_id": "img-002",
+   "alt": "Jev-Mem architecture diagram in three bands. Top band, writing: a new observation goes through Jev typing, a search for related older memories and Jev judging relations, and is then stored. Middle band, the shared memory layer: sentences linked by four kinds of edges (semantic, temporal, causal, entity) over a shared set of search indexes, with a periodic consolidation loop beside it. Bottom band, reading: the question goes through Jev deciding which edges to follow, finds starting points, then repeatedly checks the evidence, expands outward and has Jev score what it finds, and once it stops hands over to System Two to produce the answer.",
+   "caption": "Figure 1 — Jev-Mem at a glance: writing on top, shared memory in the middle, reading at the bottom",
+   "role": "overview",
+   "paper_label": "Figure 2"
+  },
+  {
+   "id": "s3.b4",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L009"
+   ],
+   "text": "The whole flow can be read as two columns joined by the memory:"
+  },
+  {
+   "id": "s3.b5",
+   "section": "s3",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L009"
+   ],
+   "headers": [
+    "",
+    "Left column: writing",
+    "Right column: reading"
+   ],
+   "rows": [
+    [
+     "What it does",
+     "Take in a sentence, pick out related older memories, connect relations",
+     "Plan the search, find starting points (anchors), expand outward round by round"
+    ],
+    [
+     "Jev calls",
+     "At most 2 per sentence written",
+     "At most 2 per round (stop check, scoring)"
+    ],
+    [
+     "Shape",
+     "A straight line",
+     "After scoring, loop back to \"is the evidence enough?\"; only when it is does System Two get the evidence"
+    ]
+   ]
+  },
+  {
+   "id": "s3.b6",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L009"
+   ],
+   "text": "How anchors are chosen comes in \"Reading, part two\"; the details are in the writing section and the three reading sections."
+  },
+  {
+   "id": "s3a.b1",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L010"
+   ],
+   "text": "Jev does not generate text. Each call gives it a \"state\" (for example, the question and the evidence so far) and a batch of questions. Each yes/no question, which the paper calls a **Noul**, consists of an instruction, a true condition and a false condition, and Jev returns a score in $[0, 1]$. When exactly one option must be picked, a multiple-choice question (**Choice**) is used instead, returning the chosen option and the distribution. All questions about the same state are asked at once, and since no text is generated, there is nothing to parse. What an actual input looks like is in \"What Jev's input looks like\" at the end."
+  },
+  {
+   "id": "s3a.b2",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Think of it this way: a big LLM is like being asked to write an essay and then digging the answer out of it; Jev is an answer sheet of yes/no questions where each one is filled in directly with a score."
+  },
+  {
+   "id": "s3a.b3",
+   "section": "s3a",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L011"
+   ],
+   "tone": "warning",
+   "title": "A score is not a confidence level",
+   "text": "The paper's main text calls these scores \"probabilities\", but Appendix B.1 says plainly that they are not guaranteed to be calibrated. So thresholds you'll see later, such as 0.60 and 0.95, are engineering settings; do not read them as \"60% sure\"."
+  },
+  {
+   "id": "s3a.b4",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: Jev only answers batches of yes/no questions and the big LLM only writes the answer; the scores are engineering numbers compared against thresholds, not confidence levels.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s4.b1",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L012"
+   ],
+   "text": "**The memory is a graph: one sentence per node, stored once; nodes are linked by four kinds of edges, and one pair of nodes can have several kinds at once.** \"Graph\" here means the data structure: **nodes** are points (here, sentences) and edges are lines connecting two points. Edges are for this: once one memory is found, follow its edges to bring related memories along with it."
+  },
+  {
+   "id": "s4a.b1",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L013"
+   ],
+   "text": "Appendix B of the paper uses an example that this post keeps returning to. The question is \"When did Mira buy a new bicycle, and why?\", and memory holds two sentences:"
+  },
+  {
+   "id": "s4a.b2",
+   "section": "s4a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L013"
+   ],
+   "items": [
+    "m1: \"Mira: My old bicycle broke.\"",
+    "m2 (said on 5/16): \"Mira: I bought a new bicycle yesterday because my old one broke.\""
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s4a.b3",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L013"
+   ],
+   "text": "The question looks a lot like m2, so similarity alone finds it. m1 comes along by following the causal edge and entity edge built when the memories were written."
+  },
+  {
+   "id": "s4a.b4",
+   "section": "s4a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L014"
+   ],
+   "text": "(inference) Causal edges are only built when cause and effect are visible in the text (see \"Edge-building conditions and edge scores\" at the end), and sentences that state a cause usually mention the same thing, so they are easy to find by similarity anyway. So the value of edges is mainly \"bring the causes and consequences along\", not \"find sentences that similarity cannot find at all\"."
+  },
+  {
+   "id": "s4b.b1",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L015"
+   ],
+   "text": "First, what a sentence looks like when it is stored. The paper writes one observation as three things: content, timestamp and source (the paper's Eq. 4):"
+  },
+  {
+   "id": "s4b.b2",
+   "section": "s4b",
+   "type": "formula",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L015"
+   ],
+   "latex": "o_t = (x_t,\\ \\tau_t,\\ \\mu_t)",
+   "intuition": "s4b.b1"
+  },
+  {
+   "id": "s4b.b3",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L015"
+   ],
+   "text": "$x_t$ is the content. $\\tau_t$ is the timestamp, which records when the sentence was said, not necessarily when the event happened: m2 above was said on 5/16, but it says \"yesterday\", so the purchase actually happened on 5/15. $\\mu_t$ is the source; the paper does not spell out its fields. Each node also stores an **embedding** (a list of numbers representing a sentence, so that sentences with similar meaning get similar vectors), a list of entities (the people, places and so on the sentence mentions) and four type scores."
+  },
+  {
+   "id": "s4b.b4",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L016"
+   ],
+   "text": "The whole memory is four things: all the nodes, one list per kind of edge, plus two \"indexes\", the entry points used to find memories when reading (the paper's Eqs. 5 and 6):"
+  },
+  {
+   "id": "s4b.b5",
+   "section": "s4b",
+   "type": "formula",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L016"
+   ],
+   "latex": "\\mathcal{M}_t = \\big(V_t,\\ \\{E^g_t\\}_{g\\in\\mathcal{G}},\\ I^{\\text{vec}}_t,\\ I^{\\text{lex}}_t\\big),\\quad \\mathcal{G}=\\{\\text{semantic},\\ \\text{temporal},\\ \\text{causal},\\ \\text{entity}\\}",
+   "intuition": "s4b.b4"
+  },
+  {
+   "id": "s4b.b6",
+   "section": "s4b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L016"
+   ],
+   "text": "$V_t$ is the list of nodes; $E^g_t$ is the list of edges of kind $g$, one list for each of the four kinds; $I^{\\text{vec}}_t$ is the **vector index** (finds sentences with similar meaning via embeddings), and $I^{\\text{lex}}_t$ is the **keyword index** (finds sentences that use the same words). In data-structure terms: a set of nodes, four adjacency lists (one per relation, recording which nodes each node links to), and two indexes."
+  },
+  {
+   "id": "s4c.b1",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L017"
+   ],
+   "text": "What the four kinds of edges mean and how they are built:"
+  },
+  {
+   "id": "s4c.b2",
+   "section": "s4c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L017"
+   ],
+   "headers": [
+    "Edge",
+    "Meaning",
+    "How it's built"
+   ],
+   "rows": [
+    [
+     "Semantic",
+     "The two sentences are about the same specific topic or fact",
+     "Jev judges"
+    ],
+    [
+     "Causal",
+     "One sentence causes or explains the other; directional",
+     "Jev judges, one question per direction"
+    ],
+    [
+     "Entity",
+     "They mention the same thing or person",
+     "Same name: a rule; different spelling: ask Jev"
+    ],
+    [
+     "Temporal",
+     "Adjacent in time; does not imply a relation",
+     "A rule (from the code)"
+    ]
+   ]
+  },
+  {
+   "id": "s4c.b3",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L017"
+   ],
+   "text": "Entity and semantic edges are easy to confuse; see \"Entity edges vs. semantic edges\" at the end. How entities are extracted and how temporal edges are linked is in \"Entity extraction and temporal edges\"."
+  },
+  {
+   "id": "s4c.b4",
+   "section": "s4c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: memory is a graph whose nodes hold the original sentences and whose four kinds of edges bring related memories along. Semantic and causal edges rely on Jev; temporal edges and same-name entity edges rely on rules.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s5.b1",
+   "section": "s5",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L018"
+   ],
+   "text": "**For each new sentence: keep it → score its type → let rules pick at most 10 candidates → judge and build edges. At most 2 Jev calls per sentence, a number that does not grow as memory grows.** This is the top band of the architecture figure. **Candidates** are the older memories most likely to relate to the new sentence, the ones worth comparing carefully."
+  },
+  {
+   "id": "s5.b2",
+   "section": "s5",
+   "type": "diagram",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L018"
+   ],
+   "kind": "flow",
+   "direction": "TD",
+   "nodes": [
+    {
+     "id": "A",
+     "label": "Take in the new sentence"
+    },
+    {
+     "id": "B",
+     "label": "Jev scores its type (first call)"
+    },
+    {
+     "id": "C",
+     "label": "Rules pick candidate older memories"
+    },
+    {
+     "id": "D",
+     "label": "Jev decides which edges to build (second call)"
+    }
+   ],
+   "edges": [
+    {
+     "from": "A",
+     "to": "B"
+    },
+    {
+     "from": "B",
+     "to": "C"
+    },
+    {
+     "from": "C",
+     "to": "D"
+    }
+   ]
+  },
+  {
+   "id": "s5a.b1",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L019"
+   ],
+   "text": "The appendix settings switch off the \"should this be stored?\" filter: every non-empty sentence becomes a node. The reasoning: some remarks look unimportant now, and only a later question reveals that they matter. \"Selection\" moves to edge-building and reading, so if Jev judges wrongly, the worst case is a missing edge; the sentence itself is still there."
+  },
+  {
+   "id": "s5b.b1",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L020"
+   ],
+   "text": "This is Jev's first call (the paper's Eq. 7): four yes/no questions asked at once, asking whether the sentence looks like \"an event that happened\", \"a general fact\", \"steps for doing something\" or \"a personal preference\":"
+  },
+  {
+   "id": "s5b.b2",
+   "section": "s5b",
+   "type": "formula",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L020"
+   ],
+   "latex": "t(v) = \\big(t_{\\text{episodic}},\\ t_{\\text{semantic}},\\ t_{\\text{procedural}},\\ t_{\\text{preference}}\\big)",
+   "intuition": "s5b.b1"
+  },
+  {
+   "id": "s5b.b3",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L020"
+   ],
+   "text": "The names come from the psychology of memory, but here they are just four yes/no labels, and all four can be high at once. \"semantic\" here means \"general fact\" and has nothing to do with semantic edges. These scores are computed and then never used; see \"Are the type scores used at all?\" at the end."
+  },
+  {
+   "id": "s5c.b1",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L021"
+   ],
+   "text": "Next: which older memories should the new sentence be compared with? Comparing with all of them is too expensive, so cheap signals first give every older memory a rough score, and only the top $K_w = 10$ become **candidates** (the paper's Eq. 8):"
+  },
+  {
+   "id": "s5c.b2",
+   "section": "s5c",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L021"
+   ],
+   "latex": "C(v) = \\operatorname{TopK}_{u\\in V_t}\\ s_{\\text{cand}}(v,u)",
+   "intuition": "s5c.b1"
+  },
+  {
+   "id": "s5c.b3",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L021"
+   ],
+   "text": "This is a two-stage \"rough **pre-filter**, then careful ranking\" design: rules roughly pick 10, then Jev looks at those 10 closely. The benefit is a fixed Jev cost per sentence; the price is that an older memory the pre-filter misses can never get an edge."
+  },
+  {
+   "id": "s5c.b4",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L022"
+   ],
+   "text": "(from the code) The pre-filter score $s_{\\text{cand}}$ adds up four signals:"
+  },
+  {
+   "id": "s5c.b5",
+   "section": "s5c",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L022"
+   ],
+   "headers": [
+    "Signal",
+    "Points"
+   ],
+   "rows": [
+    [
+     "Vector similarity",
+     "2 × similarity (only for the top 10 of the vector search)"
+    ],
+    [
+     "Shared entity",
+     "2 points"
+    ],
+    [
+     "Keyword overlap ratio",
+     "at most 1"
+    ],
+    [
+     "Closeness in time",
+     "0.25 ÷ (1 + days apart)"
+    ]
+   ]
+  },
+  {
+   "id": "s5c.b6",
+   "section": "s5c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L022"
+   ],
+   "text": "A side effect: any two sentences from the same speaker get the same +2 for a shared entity (each sentence is stored as \"[Mira]: …\", so the speaker's name is always extracted as an entity; see \"Entity extraction and temporal edges\" at the end)."
+  },
+  {
+   "id": "s5d.b1",
+   "section": "s5d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L023"
+   ],
+   "text": "This is Jev's second call (the paper's Eq. 9). The semantic and two-way causal questions between the new memory and its 10 candidates (plus entity aliases when needed) go out as one batch, and an edge is built only when the score reaches the threshold:"
+  },
+  {
+   "id": "s5d.b2",
+   "section": "s5d",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L023"
+   ],
+   "latex": "P(g \\mid v, u) \\ge \\theta_{\\text{rel}} = 0.60",
+   "intuition": "s5d.b1"
+  },
+  {
+   "id": "s5d.b3",
+   "section": "s5d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L023"
+   ],
+   "text": "In words: Jev's score for \"new sentence $v$ and candidate $u$ have relation of kind $g$\" must be at least 0.60 to build that edge. Same-name entity edges and adjacent-in-time edges are built directly by rules. The full conditions are in \"Edge-building conditions and edge scores\" at the end."
+  },
+  {
+   "id": "s5e.b1",
+   "section": "s5e",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L024"
+   ],
+   "text": "Every 20 writes, a consolidation pass runs on the 20th sentence and its candidates only, and the original sentences are always kept. Jev answers two sets of questions:"
+  },
+  {
+   "id": "s5e.b3",
+   "section": "s5e",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L024"
+   ],
+   "items": [
+    "Are they duplicates, contradictory, outdated, or worth an extra link?",
+    "What to do: pick one of \"keep separate / merge / generalize / unsure\"."
+   ]
+  },
+  {
+   "id": "s5e.b4",
+   "section": "s5e",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L024"
+   ],
+   "text": "Only when the merge or generalize score is ≥ 0.85, the contradiction score is < 0.85, and the system has a **summarizer** (a separately attached LLM that writes several sentences up as one summary) is it asked to write a new entry. Why only the 20th sentence is checked is in \"Consolidation only checks every twentieth sentence\" at the end."
+  },
+  {
+   "id": "s5e.b5",
+   "section": "s5e",
+   "type": "callout",
+   "layer": "support",
+   "origin": "editorial",
+   "ledger": [],
+   "illustrative": true,
+   "tone": "example",
+   "title": "For example",
+   "text": "Suppose that on the 20th write, Mira's sentence \"my old bike broke down\" has among its candidates her earlier \"my old bicycle broke\". If Jev judges them duplicates, picks \"merge\", the score clears the threshold, and a summarizer is attached, the summarizer writes a new merged entry; the two original sentences stay in memory."
+  },
+  {
+   "id": "s5e.b2",
+   "section": "s5e",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: writing is a straight line with at most two Jev calls per sentence; the price of that fixed cost is that older memories the pre-filter misses can never get an edge.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s6.b1",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L025"
+   ],
+   "text": "**Before searching outward, Jev looks only at the question and decides three things at once: which kinds of edges to open (routing), how many neighbours each kind may visit (budget), and how many hops to go at most (depth).** They are produced in that order: routing picks the edges, the budget is split by **need scores** (how strongly Jev judges that this question needs that kind of edge), and depth comes last. A \"neighbour\" here is another node joined to a given node by an edge."
+  },
+  {
+   "id": "s6a.b1",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L026"
+   ],
+   "text": "Jev gives each kind of edge a need score for \"does this question need this kind of edge?\", and the edge kind is opened if the score reaches the threshold (the paper's Eq. 12):"
+  },
+  {
+   "id": "s6a.b2",
+   "section": "s6a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L026"
+   ],
+   "latex": "p_g(q) \\ge \\theta_{\\text{act}} = 0.10",
+   "intuition": "s6a.b1"
+  },
+  {
+   "id": "s6a.b3",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L026"
+   ],
+   "text": "Each kind is judged on its own, so a question like \"when did she buy it, and why?\" can open both temporal and causal edges (multi-label). MAGMA, by contrast, could only pick one intent label (WHY or WHEN). On the other hand, for a question like \"what does she like to eat?\", the temporal and causal need scores might be only 0.05, so those edges are not followed."
+  },
+  {
+   "id": "s6a.b4",
+   "section": "s6a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L036"
+   ],
+   "text": "During routing, Jev also gives a \"does this question care about recency?\" score $r(q)$, which is only used later in \"Nudging newer memories up\"."
+  },
+  {
+   "id": "s6b.b1",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027"
+   ],
+   "text": "Think of the budget as \"tickets for visiting neighbours\": each time you follow an edge to look at a neighbour, you tear off one ticket of that edge kind. There are $B = 80$ tickets in total. Each opened edge kind is guaranteed 1, and the rest are shared out in proportion to the need scores (the paper's Eqs. 13 and 14):"
+  },
+  {
+   "id": "s6b.b2",
+   "section": "s6b",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027"
+   ],
+   "latex": "b_g = m + \\operatorname{LRound}_g\\Big[(B - m\\,|A|)\\cdot \\frac{p_g^{\\gamma}}{\\sum_{j\\in A} p_j^{\\gamma}}\\Big]",
+   "intuition": "s6b.b1"
+  },
+  {
+   "id": "s6b.b3",
+   "section": "s6b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027"
+   ],
+   "items": [
+    "$B = 80$ is the total number of tickets.",
+    "$A$ is the set of opened edge kinds, and $|A|$ is how many there are.",
+    "$m = 1$ is the guaranteed minimum.",
+    "$\\gamma = 1$ means plain proportional sharing; above 1 concentrates tickets on high-scoring edges.",
+    "$\\operatorname{LRound}$ is largest-remainder rounding: drop the fractions first, then hand the missing tickets to the edges with the largest fractional parts, so the total is exactly $B$."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s6b.b4",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L027"
+   ],
+   "text": "Why split into four piles? Temporal and entity edges are built by rules and are dense; in a single pile they would drown out causal edges, which are sparse but crucial."
+  },
+  {
+   "id": "s6b.b5",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L028"
+   ],
+   "text": "(made-up) With all four edge kinds open and scores summing to 2.85, 80 − 4 = 76 tickets remain after the minimums:",
+   "illustrative": true
+  },
+  {
+   "id": "s6b.b6",
+   "section": "s6b",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L028"
+   ],
+   "headers": [
+    "Edge",
+    "Score",
+    "76 × score ÷ 2.85",
+    "Fraction dropped",
+    "Top-up",
+    "Plus minimum"
+   ],
+   "rows": [
+    [
+     "Semantic",
+     "0.50",
+     "13.33",
+     "13",
+     "0",
+     "14"
+    ],
+    [
+     "Temporal",
+     "0.90",
+     "24.00",
+     "24",
+     "0",
+     "25"
+    ],
+    [
+     "Causal",
+     "0.85",
+     "22.67",
+     "22",
+     "+1",
+     "24"
+    ],
+    [
+     "Entity",
+     "0.60",
+     "16.00",
+     "16",
+     "0",
+     "17"
+    ]
+   ],
+   "illustrative": true
+  },
+  {
+   "id": "s6b.b7",
+   "section": "s6b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L028"
+   ],
+   "text": "After dropping fractions the total is 75, 1 short, so the extra ticket goes to the causal edge, which has the largest fraction (0.67). What the 80 stands for and how tickets are spent: see \"How tickets are spent\" at the end.",
+   "illustrative": true
+  },
+  {
+   "id": "s6c.b1",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L029"
+   ],
+   "text": "Depth is 8 × the multi-hop need score $h(q)$ (how many hand-offs it takes to reach the answer), rounded up and clamped between 1 and 8 (the paper's Eq. 15):"
+  },
+  {
+   "id": "s6c.b2",
+   "section": "s6c",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L029"
+   ],
+   "latex": "D(q) = \\min\\Big\\{D_{\\max},\\ \\max\\big(1,\\ \\lceil D_{\\max}\\, h(q)\\rceil\\big)\\Big\\},\\quad D_{\\max} = 8",
+   "intuition": "s6c.b1"
+  },
+  {
+   "id": "s6c.b3",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L029"
+   ],
+   "text": "For example, $h(q)$ of 0.05 gives 1 hop, 0.40 gives 4, and 1.00 gives 8. This is only a ceiling: the stop check or running out of tickets ends the search earlier."
+  },
+  {
+   "id": "s6c.b6",
+   "section": "s6c",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "Why 8 hops are never actually reached",
+   "children": [
+    {
+     "id": "s6c.b6.c1",
+     "section": "s6c",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L030"
+     ],
+     "text": "(inference, from the config numbers) Anchors are capped at 30, evidence at 60, and each round adds at most 10, so when the anchors are full there is room for only about 3 rounds; under this config, Eq. 15's ceiling of 8 hops is never actually reached."
+    }
+   ]
+  },
+  {
+   "id": "s6c.b5",
+   "section": "s6c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: before setting out, and looking only at the question, Jev decides which edges to open, how many tickets each gets and how deep to go.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s7.b1",
+   "section": "s7",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L031"
+   ],
+   "text": "**Start from the anchors and repeat each round: \"follow edges to neighbours → Jev scores them → keep only the top 10\", until it is time to stop.** This is the loop in the bottom band of the architecture figure."
+  },
+  {
+   "id": "s7a.b1",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L032"
+   ],
+   "text": "**Anchors** are where the search starts. The vector index and the keyword index each produce a ranking, the two are merged with RRF (ranks only, $k = 60$; how it works is in \"A trick worth keeping: RRF looks at ranks, not scores\" below), and the top results become the anchors, the starting evidence (the paper's Eq. 16). (from the code) At most 30 anchors are taken."
+  },
+  {
+   "id": "s7b.b1",
+   "section": "s7b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L033"
+   ],
+   "items": [
+    "Run the stop check first (see \"Reading, part three\"); stop if there is enough.",
+    "From the **frontier** (the nodes added in the previous round), follow the opened edges to neighbours not yet found; every link followed costs one ticket of that edge kind. A neighbour reached by several links is kept only once.",
+    "One Jev call gives every neighbour 4 scores (the input is shown in \"What Jev's input looks like\" at the end).",
+    "Combine them into a total, sort, and add the top 10 to the evidence (how many survive each round is called the **beam width**); they become the new frontier."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s7b.b2",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L033"
+   ],
+   "text": "Once it stops, the top $K$ pieces of evidence by total score go to System Two; (from the code) $K$ is 40."
+  },
+  {
+   "id": "s7c.b1",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L034"
+   ],
+   "text": "A neighbour's total score is a weighted average of five terms (the paper's Eq. 23). In order: how similar it is to the question; whether it contains a fact the answer needs; whether the edge it came through is useful, multiplied by that edge kind's need score; whether it brings new information; and the average of the edge score stored at write time and \"does it support the current evidence\". The table below explains each symbol:"
+  },
+  {
+   "id": "s7c.b2",
+   "section": "s7c",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L034"
+   ],
+   "latex": "s(v \\mid q, E_d) = \\frac{1}{\\sum_{i=1}^{5}\\lambda_i}\\Big[\\lambda_1 z_v + \\lambda_2 a_v + \\lambda_3\\, p_g(q)\\,\\ell_v + \\lambda_4 n_v + \\lambda_5 \\tfrac{\\pi_e + c_v}{2}\\Big]",
+   "intuition": "s7c.b1"
+  },
+  {
+   "id": "s7c.b3",
+   "section": "s7c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L034"
+   ],
+   "headers": [
+    "Symbol",
+    "Meaning",
+    "Computed by"
+   ],
+   "rows": [
+    [
+     "$z$",
+     "Term one: vector similarity between question and neighbour",
+     "Rule"
+    ],
+    [
+     "$a$",
+     "Term two: does the neighbour contain a fact the answer needs?",
+     "Jev"
+    ],
+    [
+     "$p$",
+     "Term three (times $\\ell$): need score of the edge kind it came through (computed during routing)",
+     "Jev (routing)"
+    ],
+    [
+     "$\\ell$",
+     "Term three (times $p$): is the link it came through useful?",
+     "Jev"
+    ],
+    [
+     "$n$",
+     "Term four: does it bring information not yet in the evidence?",
+     "Jev"
+    ],
+    [
+     "$\\pi$",
+     "Term five (averaged with $c$): the score stored on this edge at write time (see \"Edge-building conditions and edge scores\" at the end)",
+     "Stored at write time"
+    ],
+    [
+     "$c$",
+     "Term five (averaged with $\\pi$): does it support the current evidence?",
+     "Jev"
+    ],
+    [
+     "$\\lambda_1$ to $\\lambda_5$",
+     "(from the code) weights of the five terms: 0.25, 0.35, 0.15, 0.15, 0.10, summing to 1",
+     "Config"
+    ]
+   ]
+  },
+  {
+   "id": "s7c.b4",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L035"
+   ],
+   "text": "(made-up) Back to \"when did she buy it, and why?\": B arrives along a causal edge; C arrives along a temporal edge and is just nearby small talk.",
+   "illustrative": true
+  },
+  {
+   "id": "s7c.b5",
+   "section": "s7c",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L035"
+   ],
+   "headers": [
+    "Term (weight)",
+    "B score",
+    "B weighted",
+    "C score",
+    "C weighted"
+   ],
+   "rows": [
+    [
+     "$z$ (0.25)",
+     "0.60",
+     "0.150",
+     "0.55",
+     "0.138"
+    ],
+    [
+     "$a$ (0.35)",
+     "0.90",
+     "0.315",
+     "0.20",
+     "0.070"
+    ],
+    [
+     "$p \\times \\ell$ (0.15)",
+     "0.85 × 0.80",
+     "0.102",
+     "0.90 × 0.30",
+     "0.041"
+    ],
+    [
+     "$n$ (0.15)",
+     "0.70",
+     "0.105",
+     "0.60",
+     "0.090"
+    ],
+    [
+     "$(\\pi + c) \\div 2$ (0.10)",
+     "(0.90 + 0.80) ÷ 2",
+     "0.085",
+     "(0.50 + 0.30) ÷ 2",
+     "0.040"
+    ],
+    [
+     "Total",
+     "",
+     "0.757",
+     "",
+     "0.378"
+    ]
+   ],
+   "illustrative": true
+  },
+  {
+   "id": "s7c.b6",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L035"
+   ],
+   "text": "Most of the gap comes from $a$ (does it contain a fact the answer needs), the most heavily weighted term; this is also where the need score $p$ from routing gets multiplied into the total."
+  },
+  {
+   "id": "s7d.b1",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L036"
+   ],
+   "text": "If the question cares about recency (a high $r(q)$ from routing), newer neighbours get a small nudge (the paper's Eqs. 24 and 25):"
+  },
+  {
+   "id": "s7d.b2",
+   "section": "s7d",
+   "type": "formula",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L036"
+   ],
+   "latex": "s_e(v) = \\frac{s(v) + 0.1\\,r(q)\\,\\rho_v}{1 + 0.1\\,r(q)}",
+   "intuition": "s7d.b1"
+  },
+  {
+   "id": "s7d.b3",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L036"
+   ],
+   "text": "Freshness $\\rho_v$ = 1 ÷ (1 + days older than the reference). The reference time $\\tau^*$ (from the code) is \"the newest time among the current evidence\". Freshness is weighted by $0.1\\,r(q)$, at most about 9% of the score: truly just a nudge."
+  },
+  {
+   "id": "s7d.b4",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: each round follows edges to neighbours, has Jev score them and keeps only the top 10; the heaviest weight in the total goes to \"does it contain a fact the answer needs\".",
+   "purpose": "recap"
+  },
+  {
+   "id": "s8.b1",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L037"
+   ],
+   "text": "**Before each round, Jev looks at the question and the evidence in hand and gives four scores; it stops if \"the evidence is enough\" or \"searching more won't help\", and otherwise keeps expanding.** The first check happens before any expansion, so if the anchors alone are enough, no edge is followed at all."
+  },
+  {
+   "id": "s8.b2",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L038"
+   ],
+   "text": "The four scores for round $d$ (the paper's Eqs. 17 to 20):"
+  },
+  {
+   "id": "s8.b3",
+   "section": "s8",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L038"
+   ],
+   "headers": [
+    "Score",
+    "Asks"
+   ],
+   "rows": [
+    [
+     "$s_d$",
+     "Is the evidence sufficient (every needed fact is backed by a memory)?"
+    ],
+    [
+     "$u_d$",
+     "Could another round fill a gap or resolve a contradiction?"
+    ],
+    [
+     "$m_d$",
+     "Is necessary evidence still missing?"
+    ],
+    [
+     "$c_d$",
+     "Is there an unresolved contradiction?"
+    ]
+   ]
+  },
+  {
+   "id": "s8.b4",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L039"
+   ],
+   "text": "Two stopping rules (the paper's Eqs. 21 and 22), with $\\theta_{\\text{suff}} = 0.95$ and $\\theta_{\\text{cont}} = 0.15$ (shared by $m$, $c$ and $u$). Rule one: the evidence is clearly sufficient, nothing is missing and nothing contradicts, so stop. Rule two: searching more can't fill anything, so stop too."
+  },
+  {
+   "id": "s8.b5",
+   "section": "s8",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L039"
+   ],
+   "latex": "s_d \\ge \\theta_{\\text{suff}}\\ \\wedge\\ m_d < \\theta_{\\text{cont}}\\ \\wedge\\ c_d < \\theta_{\\text{cont}} \\ \\Rightarrow\\ \\text{stop: enough}",
+   "intuition": "s8.b4"
+  },
+  {
+   "id": "s8.b6",
+   "section": "s8",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L039"
+   ],
+   "latex": "u_d < \\theta_{\\text{cont}} \\ \\Rightarrow\\ \\text{stop: no use}",
+   "intuition": "s8.b4"
+  },
+  {
+   "id": "s8.b7",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L039"
+   ],
+   "text": "The two rules complement each other: the first guards against \"finding too little\", the second against \"never stopping\", so the search doesn't pile up more and more distractions. How $u$ can be judged without seeing the next round is in \"How Jev decides whether to keep searching\" at the end."
+  },
+  {
+   "id": "s8.b8",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L040"
+   ],
+   "text": "Besides these two, there is a third way to stop: hitting a hard cap (Appendix B.5). Depth, nodes, edges checked, Jev calls, time and tickets all have caps. Only if none of the three triggers does the search go back to another round of \"Reading, part two\"."
+  },
+  {
+   "id": "s8.b14",
+   "section": "s8",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "The full list of hard caps",
+   "children": [
+    {
+     "id": "s8.b14.c1",
+     "section": "s8",
+     "type": "list",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L040"
+     ],
+     "items": [
+      "Depth: 8 hops",
+      "Nodes: 60",
+      "Edges checked: 2400",
+      "Jev calls: 16",
+      "15 seconds",
+      "All four ticket piles used up"
+     ],
+     "ordered": false
+    }
+   ]
+  },
+  {
+   "id": "s8.b10",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L041"
+   ],
+   "text": "(made-up) How the stop check plays out for one question:",
+   "illustrative": true
+  },
+  {
+   "id": "s8.b11",
+   "section": "s8",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L041"
+   ],
+   "headers": [
+    "When",
+    "$s$",
+    "$m$",
+    "$c$",
+    "$u$",
+    "Result"
+   ],
+   "rows": [
+    [
+     "Round zero (only \"the old bike broke\")",
+     "0.60",
+     "0.70",
+     "0.00",
+     "0.80",
+     "Not enough, worth searching → expand"
+    ],
+    [
+     "Round one (adds \"bought a new bike\")",
+     "0.97",
+     "0.05",
+     "0.02",
+     "0.10",
+     "Stop: enough"
+    ],
+    [
+     "Alternative round one (nothing relevant found)",
+     "0.70",
+     "0.40",
+     "0.00",
+     "0.10",
+     "Stop: no use"
+    ]
+   ],
+   "illustrative": true
+  },
+  {
+   "id": "s8.b12",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L042"
+   ],
+   "text": "Also, for time questions, the evidence sent to Jev marks each timestamp as \"when it was said\" and attaches the time words in the sentence, so the conversation date isn't mistaken for the event date (like m2's \"yesterday\")."
+  },
+  {
+   "id": "s8.b13",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: one rule guards against finding too little, one against never stopping, and hard caps catch everything else.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s9.b1",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L043"
+   ],
+   "text": "**Compared with MAGMA, which has the same architecture, Jev-Mem builds memory about 8.9× faster, cuts query latency by 37% and gains +0.077 overall; most of the accuracy gain comes from adversarial questions.** Know the scope of the evaluation up front: the paper has only two tables, no **ablation study** (removing one component at a time to see how much the score drops), a single test set (LoCoMo), and gpt-4o-mini as the answer-writing model."
+  },
+  {
+   "id": "s9a.b1",
+   "section": "s9a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L044"
+   ],
+   "items": [
+    "**LoCoMo**: a test set of very long, multi-session conversations, with five question types (multi-hop, temporal, open-domain, single-hop, adversarial). Adversarial questions ask about things never said in the conversation, and the right answer is \"I don't know\". (general knowledge; the paper does not explain the question types)",
+    "**LLM-as-a-Judge**: another LLM judges whether an answer matches the reference answer. It measures the **final answer**, not retrieval on its own.",
+    "**Build time**: total seconds to turn a whole conversation into memory.",
+    "**Query latency**: average seconds per question, from retrieval to answer."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s9a.b2",
+   "section": "s9a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L044"
+   ],
+   "text": "The two original tables are below: Table 1 is accuracy, Table 2 is speed. Don't worry if they're hard to read; the next section pulls out the MAGMA and Jev-Mem rows."
+  },
+  {
+   "id": "s9a.b3",
+   "section": "s9a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L045"
+   ],
+   "manifest_id": "img-003",
+   "alt": "Table comparing each method's LLM-as-a-Judge scores on LoCoMo for multi-hop, temporal, open-domain, single-hop and adversarial questions, plus the overall score.",
+   "caption": "Table 1 — Accuracy of each method on LoCoMo (LLM-as-a-Judge, answer model gpt-4o-mini)",
+   "role": "evidence",
+   "paper_label": "Table 1"
+  },
+  {
+   "id": "s9a.b4",
+   "section": "s9a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L046"
+   ],
+   "manifest_id": "img-004",
+   "alt": "Table comparing each method's total memory build time and average query latency, in seconds.",
+   "caption": "Table 2 — Memory build time and query latency of each method",
+   "role": "evidence",
+   "paper_label": "Table 2"
+  },
+  {
+   "id": "s9b.b1",
+   "section": "s9b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L047"
+   ],
+   "text": "MAGMA is the same authors' earlier system and the strongest competitor. (from the code) Jev-Mem is built on top of MAGMA, with the control layer swapped for Jev. So this gap is the closest thing to the method's own contribution. The table below is compiled from Table 1 and Table 2:"
+  },
+  {
+   "id": "s9b.b2",
+   "section": "s9b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L048"
+   ],
+   "headers": [
+    "Item",
+    "MAGMA",
+    "Jev-Mem",
+    "Difference"
+   ],
+   "rows": [
+    [
+     "Overall",
+     "0.700",
+     "0.777",
+     "+0.077"
+    ],
+    [
+     "Adversarial",
+     "0.742",
+     "0.962",
+     "+0.220"
+    ],
+    [
+     "Open-domain",
+     "0.517",
+     "0.618",
+     "+0.101"
+    ],
+    [
+     "Multi-hop",
+     "0.528",
+     "0.623",
+     "+0.095"
+    ],
+    [
+     "Single-hop",
+     "0.776",
+     "0.802",
+     "+0.026"
+    ],
+    [
+     "Temporal",
+     "0.650",
+     "0.637",
+     "−0.013"
+    ],
+    [
+     "Build time (s)",
+     "1404",
+     "158",
+     "about 8.9× faster"
+    ],
+    [
+     "Query latency (s)",
+     "1.47",
+     "0.93",
+     "−36.7%"
+    ]
+   ]
+  },
+  {
+   "id": "s9b.b3",
+   "section": "s9b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [
+    "L048"
+   ],
+   "text": "Speed is the headline: storing a whole conversation drops from 1404 seconds to 158. On accuracy, adversarial questions alone gain 0.220, more than any of the other four types; temporal questions actually lose slightly."
+  },
+  {
+   "id": "s9b.b4",
+   "section": "s9b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L049"
+   ],
+   "text": "Three things to keep in mind when reading this table:"
+  },
+  {
+   "id": "s9b.b5",
+   "section": "s9b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L049",
+    "L050",
+    "L084"
+   ],
+   "items": [
+    "The \"6.6×\" in the paper's abstract is measured against the fastest-building other system, Nemori (1044 seconds), not against MAGMA, which shares the architecture.",
+    "The main text says \"tied for best on temporal questions at 0.650\", but in Table 1 Jev-Mem scores 0.637, below MAGMA's 0.650. Going by the table, it loses on temporal questions.",
+    "(inference) The big jump on adversarial questions may come from the stopping rule requiring evidence to be \"sufficient, complete and consistent\" before stopping, which makes it less likely to force an answer out of irrelevant memories. Then again, when memory holds no answer at all, the \"worth searching more\" score may stay high, so the search may only stop at a hard cap (see \"How Jev decides whether to keep searching\" at the end)."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s9b.b6",
+   "section": "s9b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: about 8.9× faster to build and 37% lower latency, with the overall score up 0.077, mostly from adversarial questions; temporal questions actually lose slightly.",
+   "purpose": "recap"
+  },
+  {
+   "id": "s10.b1",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L051"
+   ],
+   "text": "These limitations are scattered through the sections; here they are in one place, to help you decide whether to use the method. First, the ones that affect how to read the results:"
+  },
+  {
+   "id": "s10.b2",
+   "section": "s10",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L051",
+    "L084"
+   ],
+   "items": [
+    "**Thin evaluation.** One test set (LoCoMo), two tables, no ablation study, so there is no way to tell how much each component contributes.",
+    "**Uncalibrated scores.** Jev's scores are not guaranteed to be calibrated, and every threshold is an engineering setting (see \"Jev doesn't write; it answers a batch of yes/no questions\").",
+    "**Text and table disagree.** The \"tied for best\" claim on temporal questions does not match Table 1 (see \"The cleanest comparison: MAGMA vs. Jev-Mem\").",
+    "**Unexplained hyperparameters.** How the budget of 80 was chosen, and which config file in the repo produced Table 1 and Table 2 (from the code: the repo has two), the paper does not say (see \"How tickets are spent\" at the end).",
+    "**Unknown value of consolidation.** There is no run with consolidation switched off (see \"Consolidation only checks every twentieth sentence\" at the end).",
+    "**When memory holds no answer, \"worth searching more\" may stay high.** (inference) The search can then only stop at a hard cap; the paper also doesn't report how often each stopping rule fires (see \"How Jev decides whether to keep searching\" at the end)."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s10.b3",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Then the implementation details worth knowing before you change the code:"
+  },
+  {
+   "id": "s10.b4",
+   "section": "s10",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L051",
+    "L070",
+    "L078",
+    "L081"
+   ],
+   "items": [
+    "**What the pre-filter misses is lost for good.** Older memories outside the top 10 candidates can never get semantic, causal or entity edges (see \"Cheap rules pick the candidates first\").",
+    "**Type scores go unused.** (from the code) Picking candidates, judging relations and scoring during reading never use them; (inference) of the two Jev calls per sentence, one produces output that affects nothing downstream (what goes to System Two and consolidation were not checked; see \"Are the type scores used at all?\" at the end).",
+    "**Rule-built edges are broad.** (from the code) Entity edges roughly mean \"same speaker\" and temporal edges mean \"adjacent in time\" (see \"Entity extraction and temporal edges\" at the end).",
+    "**8 hops are never reached.** (inference, from the config numbers) At most about 3 rounds (see \"Depth: how many hops at most\").",
+    "**Causal edges only catch stated causes.** (inference) They never infer a hidden reason between two sentences (see \"Edge-building conditions and edge scores\" at the end).",
+    "**Temporal tickets run out first.** (inference) Temporal edges are dense, and two adjacent sentences often share several temporal links (see \"How tickets are spent\" at the end).",
+    "**\"How deep to go\" is really decided by rules.** Why depth is passed to Jev, the paper doesn't explain; (inference) what actually controls depth is the hop and node caps (see \"What Jev's input looks like\" at the end)."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s11.b1",
+   "section": "s11",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L052"
+   ],
+   "text": "**When merging several retrieval result lists, ignore each list's scores and look only at ranks: each list gives a few points by rank, add them up, and re-sort.** Jev-Mem uses it to merge the vector-index and keyword-index results when choosing anchors (the paper's Eq. 16), but the trick is useful well beyond this paper."
+  },
+  {
+   "id": "s11a.b1",
+   "section": "s11a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L053"
+   ],
+   "text": "Different retrievers score on different scales. Vector search gives a similarity from 0 to 1; keyword search (for example **BM25**, a classic algorithm that scores by how often query words appear) can range from 0 to several dozen. Add them directly and the larger-scale list drowns out the other; ranks are always 1, 2, 3…, so they are comparable by nature. RRF works like this: in each list, an item at a given rank gets 1 ÷ ($k$ + rank) points, and an item's points from all the lists are added up:"
+  },
+  {
+   "id": "s11a.b2",
+   "section": "s11a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L053"
+   ],
+   "latex": "\\text{RRF}(d) = \\sum_{r \\in R,\\ d \\in r} \\frac{1}{k + \\text{rank}_r(d)},\\qquad k = 60",
+   "intuition": "s11a.b1"
+  },
+  {
+   "id": "s11a.b3",
+   "section": "s11a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L053"
+   ],
+   "text": "$d$ is one candidate; $R$ is the set of result lists, and only the lists that contain $d$ are summed; $\\text{rank}_r(d)$ starts at 1; a list that does not contain it contributes 0."
+  },
+  {
+   "id": "s11b.b1",
+   "section": "s11b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L054"
+   ],
+   "items": [
+    "It uses only ranks, so score scales and distributions don't matter: no normalization, no training.",
+    "Taking the reciprocal makes higher ranks count more, and low ranks fade towards zero.",
+    "$k$ narrows the gaps between the top few ranks."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s11b.b2",
+   "section": "s11b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L055"
+   ],
+   "text": "Here is the last point computed straight from $1/(k + \\text{rank})$ (the numbers are from the formula, scaled so that first place is 1):"
+  },
+  {
+   "id": "s11b.b3",
+   "section": "s11b",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L055"
+   ],
+   "headers": [
+    "Rank",
+    "$k = 0$",
+    "$k = 60$"
+   ],
+   "rows": [
+    [
+     "1",
+     "1.000",
+     "1.000"
+    ],
+    [
+     "2",
+     "0.500",
+     "0.984"
+    ],
+    [
+     "3",
+     "0.333",
+     "0.968"
+    ],
+    [
+     "5",
+     "0.200",
+     "0.938"
+    ],
+    [
+     "10",
+     "0.100",
+     "0.871"
+    ]
+   ]
+  },
+  {
+   "id": "s11b.b4",
+   "section": "s11b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L055"
+   ],
+   "text": "With $k = 0$, second place is worth only half of first place, so first place dominates; with $k = 60$, the top 10 are nearly equal. So the effect of $k = 60$ is: **ranking near the top in several lists is worth more than ranking first in one.**"
+  },
+  {
+   "id": "s11b.b5",
+   "section": "s11b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L056"
+   ],
+   "text": "(made-up) X is ranked first in the vector list only; Y is ranked second in both lists:",
+   "illustrative": true
+  },
+  {
+   "id": "s11b.b6",
+   "section": "s11b",
+   "type": "table",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L056"
+   ],
+   "headers": [
+    "$k$",
+    "X",
+    "Y",
+    "Winner"
+   ],
+   "rows": [
+    [
+     "0",
+     "1/1 = 1.000",
+     "1/2 + 1/2 = 1.000",
+     "Tie"
+    ],
+    [
+     "60",
+     "1/61 = 0.0164",
+     "1/62 + 1/62 = 0.0323",
+     "Y, about twice X"
+    ]
+   ],
+   "illustrative": true
+  },
+  {
+   "id": "s11c.b1",
+   "section": "s11c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L057"
+   ],
+   "text": "Where it fits: hybrid search combining vectors and keywords, merging results after rewriting one question into several versions, and merging results from several embedding models. Take the top N from each list before fusing, with ranks counted from 1."
+  },
+  {
+   "id": "s11c.b2",
+   "section": "s11c",
+   "type": "code",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L057"
+   ],
+   "lang": "python",
+   "code": "def rrf(result_lists, k=60):\n    scores = {}\n    for results in result_lists:            # each retrieval result list\n        for rank, doc_id in enumerate(results, start=1):\n            scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank)\n    return sorted(scores, key=scores.get, reverse=True)"
+  },
+  {
+   "id": "s11c.b3",
+   "section": "s11c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L058"
+   ],
+   "text": "The price is losing the size of the scores: whether a list's top result is \"extremely relevant\" or \"barely relevant\" looks the same under RRF."
+  },
+  {
+   "id": "s11c.b4",
+   "section": "s11c",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L059"
+   ],
+   "text": "(general knowledge) RRF was proposed by Cormack, Clarke and Büttcher at SIGIR 2009, and $k = 60$ is the value the original paper recommends."
+  },
+  {
+   "id": "s11c.b5",
+   "section": "s11c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "Recap: when merging retrieval results, ranks can be added and scores can't; $k$ makes \"near the top everywhere\" beat \"first in one place\".",
+   "purpose": "recap"
+  },
+  {
+   "id": "s12.b1",
+   "section": "s12",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L085"
+   ],
+   "text": "The whole post boils down to three things:"
+  },
+  {
+   "id": "s12.b2",
+   "section": "s12",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L085"
+   ],
+   "items": [
+    "**Small model judges, big model answers.** When writing, rules first pick at most 10 candidates and Jev only judges whether those pairs get semantic or causal edges, while entity and temporal edges are built by rules; when reading, Jev first plans the search (which edges, how many neighbours each, how many hops), then expands from the anchors round by round, scoring and keeping only the top 10 each round and checking whether the evidence is enough. Jev only outputs scores from 0 to 1; the big LLM only writes the final answer.",
+    "**Much faster, with the accuracy gain concentrated in adversarial questions.** Against MAGMA: about 8.9× faster to build, 37% lower latency, overall score 0.700 → 0.777, mostly from adversarial questions; but the evaluation uses one test set and no ablation, and temporal questions actually lose slightly.",
+    "**RRF is worth taking with you.** When merging several retrieval result lists, look at ranks, not scores."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s12.b4",
+   "section": "s12",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "And back to the three questions raised in \"The answer is always just yes/no or a score\": the small model runs both writing and reading through \"a state plus a batch of yes/no questions\"; on LoCoMo, letting a weak model control memory did not drag down the overall score, with only temporal questions slightly worse; and the structure that suits this kind of control is a memory graph of nodes and four edge kinds, paired with a read process of \"plan, expand round by round, decide when to stop\"."
+  },
+  {
+   "id": "s12.b3",
+   "section": "s12",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "What you can do with this: if you're building agent memory or RAG, check how many steps in your pipeline only need a yes/no or a score; those steps are candidates for a small scoring model. And when merging vector and keyword search results, you can use the few lines of RRF above as they are. As for Jev-Mem itself, until more test sets and ablation studies appear, treat it as a direction worth trying rather than a settled result."
+  },
+  {
+   "id": "s13.b1",
+   "section": "s13",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L060"
+   ],
+   "text": "The eight topics below are the implementation details the main text points to; read whichever interest you.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s13a.b1",
+   "section": "s13a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L061"
+   ],
+   "text": "**An entity edge asks \"do the two sentences mention the same thing or person?\"; a semantic edge asks \"are the two sentences about the same specific matter?\".** The two are independent, and all four combinations can occur."
+  },
+  {
+   "id": "s13a.b2",
+   "section": "s13a",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L061"
+   ],
+   "headers": [
+    "",
+    "Entity edge",
+    "Semantic edge"
+   ],
+   "rows": [
+    [
+     "How it's built",
+     "Exactly the same entity name → built by a rule; different spelling → ask Jev \"is this the same thing?\"",
+     "Ask Jev for every pair"
+    ],
+    [
+     "False condition",
+     "No shared thing or person",
+     "Only shares generic conversational wording, no specific shared topic"
+    ]
+   ]
+  },
+  {
+   "id": "s13a.b3",
+   "section": "s13a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L062"
+   ],
+   "text": "(made-up) The easiest to confuse are the two combinations with only one kind:",
+   "illustrative": true
+  },
+  {
+   "id": "s13a.b4",
+   "section": "s13a",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L062"
+   ],
+   "headers": [
+    "Combination",
+    "Example"
+   ],
+   "rows": [
+    [
+     "Entity edge, no semantic edge",
+     "\"[Mira]: My old bicycle broke.\" and \"[Mira]: I love pizza.\": the same speaker, talking about two different things"
+    ],
+    [
+     "Semantic edge, no entity edge",
+     "Two different speakers both discussing the office and school closures for the same typhoon, with no shared capitalized name in their sentences"
+    ]
+   ],
+   "illustrative": true
+  },
+  {
+   "id": "s13a.b5",
+   "section": "s13a",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L063"
+   ],
+   "text": "What counts as an \"entity\" is not defined in the paper; the appendix example lists both Mira and bicycle as entities, but (from the code) only capitalized words are actually picked up (see \"Entity extraction and temporal edges\")."
+  },
+  {
+   "id": "s13b.b1",
+   "section": "s13b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L064"
+   ],
+   "text": "**The type scores are computed and stored, but never used when finding candidates, judging relations or scoring during reading; they would suit a bonus, not a filter.**"
+  },
+  {
+   "id": "s13b.b2",
+   "section": "s13b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L064"
+   ],
+   "text": "(from the code) Where they are and aren't used:"
+  },
+  {
+   "id": "s13b.b3",
+   "section": "s13b",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L064"
+   ],
+   "headers": [
+    "Step",
+    "Uses type scores?",
+    "Basis"
+   ],
+   "rows": [
+    [
+     "Writing: picking candidates",
+     "No",
+     "The pre-filter only uses vectors, shared entities, keywords and time"
+    ],
+    [
+     "Writing: judging relations / Reading: routing, scoring, stopping",
+     "No",
+     "Nodes sent to Jev carry only id, content, time and entities"
+    ],
+    [
+     "Reading: total score (Eq. 23)",
+     "No",
+     "None of the five terms involves type"
+    ],
+    [
+     "What goes to System Two; consolidation",
+     "Not checked",
+     "The note author did not review these two parts of the code"
+    ]
+   ]
+  },
+  {
+   "id": "s13b.b4",
+   "section": "s13b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L065"
+   ],
+   "text": "The paper only says the scores are \"annotated on the node\". (inference) It is a placeholder field; the cost is that of the two Jev calls per write, one produces output that affects nothing downstream."
+  },
+  {
+   "id": "s13b.b5",
+   "section": "s13b",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L066"
+   ],
+   "text": "So could they be used to filter candidates, comparing only with older memories of the same type? Not as a hard filter, for three reasons:"
+  },
+  {
+   "id": "s13b.b6",
+   "section": "s13b",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L066"
+   ],
+   "items": [
+    "**It would miss cross-type relations.** (made-up) \"I hate traffic jams\" (a preference) and \"I've started cycling to work\" (an event) have a valuable causal edge between them, and a same-type filter would never compare this pair.",
+    "**Types are scores, not labels.** A sentence can be both an event and a preference, so \"same type\" would need yet another threshold.",
+    "**The pre-filter's job is not to miss things.** Whatever it misses can never get an edge; adding a hard filter only misses more."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s13b.b7",
+   "section": "s13b",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L066"
+   ],
+   "headers": [
+    "Approach",
+    "Effect",
+    "Risk"
+   ],
+   "rows": [
+    [
+     "The paper: ignore type",
+     "Never misses anything because of type",
+     "Type scores go unused"
+    ],
+    [
+     "Same type only",
+     "More focused candidates",
+     "Misses every cross-type causal or preference relation"
+    ],
+    [
+     "Small bonus for same type",
+     "Same type first, other types still have a chance",
+     "The bonus size needs tuning"
+    ]
+   ]
+  },
+  {
+   "id": "s13c.b1",
+   "section": "s13c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L067"
+   ],
+   "text": "**Entities and temporal edges both come from cheap fixed rules, and both link broadly: an entity edge roughly means \"same speaker\", a temporal edge means \"adjacent in time\".** The paper is vague on both; what follows is from the code."
+  },
+  {
+   "id": "s13c.b2",
+   "section": "s13c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L067"
+   ],
+   "text": "**Entity extraction** is not Jev and not an LLM but a regular-expression rule (matching fixed text patterns): it takes words that start with a capital letter, are longer than 2 characters and are not on a list of common words, plus the pattern \"I'm X\", up to 5 of them. If the caller supplies its own entity list, that list is used instead, but the LoCoMo runs don't supply one. This has two side effects:"
+  },
+  {
+   "id": "s13c.b3",
+   "section": "s13c",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L067"
+   ],
+   "items": [
+    "Each sentence is stored as \"[Mira]: …\", so the speaker's name is always picked up, and sentences by the same speaker almost always share an entity edge (still only within the 10 candidates).",
+    "Lowercase \"bicycle\" is missed, and capitalized sentence-initial words are wrongly picked up. (made-up) \"[Mira]: Yesterday I went to Paris.\" yields Mira, Yesterday and Paris."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s13c.b4",
+   "section": "s13c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L068"
+   ],
+   "text": "**Temporal edges** link to unrelated sentences: the rule ignores content and is not limited to the 10 candidates. The two rules:"
+  },
+  {
+   "id": "s13c.b5",
+   "section": "s13c",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L068"
+   ],
+   "headers": [
+    "Rule",
+    "Condition",
+    "Direction"
+   ],
+   "rows": [
+    [
+     "Sequence",
+     "The immediately preceding sentence in the same conversation",
+     "One edge each way"
+    ],
+    [
+     "Proximity",
+     "Up to 9 sentences back, with a time gap ≤ 24 hours",
+     "Old → new"
+    ]
+   ]
+  },
+  {
+   "id": "s13c.b6",
+   "section": "s13c",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L068"
+   ],
+   "text": "On LoCoMo this is even more pronounced: every sentence in a session carries the same session date as its timestamp, so the time gap is 0 and a new sentence almost always links to the previous 9. So a temporal edge means \"close in time\", useful for ordering a timeline and finding context; whether to follow it is decided by routing, and sentences reached that way still have to pass Jev's scoring to stay. The main text's line that \"timestamp order directly builds temporal relations\" is too loose: two sentences two days apart that are not adjacent get no temporal edge."
+  },
+  {
+   "id": "s13d.b1",
+   "section": "s13d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L069"
+   ],
+   "text": "**Semantic, causal and entity-alias edges are judged by Jev, only between the new memory and its 10 candidates, with a threshold of 0.60; same-name entities and adjacency in time are handled by rules. Every edge stores a score $\\pi$ when it is built, which is used again when scoring during reading.** Based on Appendix B.2 and the code."
+  },
+  {
+   "id": "s13d.b2",
+   "section": "s13d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L069"
+   ],
+   "text": "The precondition is candidate status, which only affects semantic, causal and entity edges: a new memory is compared only with the top 10 of the pre-filter (the pre-filter formula is in \"Cheap rules pick the candidates first\")."
+  },
+  {
+   "id": "s13d.b3",
+   "section": "s13d",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L069"
+   ],
+   "headers": [
+    "Edge",
+    "Must be a candidate?",
+    "Judged by",
+    "Condition",
+    "Direction",
+    "Stored $\\pi$"
+   ],
+   "rows": [
+    [
+     "Semantic",
+     "Yes",
+     "Jev",
+     "\"The two sentences are about the same specific topic\" ≥ 0.60",
+     "New → candidate",
+     "Jev's score at the time (0.60 to 1)"
+    ],
+    [
+     "Causal: candidate causes new",
+     "Yes",
+     "Jev",
+     "≥ 0.60, and the text itself must support causality; mere sequence or same speaker doesn't count",
+     "Candidate → new",
+     "Same as above"
+    ],
+    [
+     "Causal: new causes candidate",
+     "Yes",
+     "Jev",
+     "Same as above, asked as a separate question",
+     "New → candidate",
+     "Same as above"
+    ],
+    [
+     "Entity: same name",
+     "Yes",
+     "Rule",
+     "Any entity in the two lists is exactly the same",
+     "New → candidate",
+     "Fixed 1.0"
+    ],
+    [
+     "Entity: alias",
+     "Yes",
+     "Jev",
+     "Only when no entity matches, ask \"is this the same thing?\", ≥ 0.60",
+     "New → candidate",
+     "Jev's score at the time"
+    ],
+    [
+     "Temporal: sequence",
+     "No",
+     "Rule",
+     "The immediately preceding sentence in the same conversation",
+     "One edge each way",
+     "0.5 filled in at read time"
+    ],
+    [
+     "Temporal: proximity",
+     "No",
+     "Rule",
+     "Up to 9 sentences back, with a time gap ≤ 24 hours",
+     "Old → new",
+     "0.5 filled in at read time"
+    ]
+   ]
+  },
+  {
+   "id": "s13d.b4",
+   "section": "s13d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L070"
+   ],
+   "text": "(inference) Causal edges only catch causality that is \"visible in the text\"; they never infer a hidden reason between two sentences. For what that implies, see \"What edges are for: bringing causes and consequences along\"."
+  },
+  {
+   "id": "s13d.b5",
+   "section": "s13d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L071"
+   ],
+   "text": "A small implementation gap: temporal proximity edges actually store a weight that grows the closer the sentences are, but the reading code looks for a different field name, finds nothing, and fills in 0.5 every time. As a result, in the fifth term of the scoring formula, $(\\pi + c)/2$, an entity edge ($\\pi = 1.0$) always beats a temporal edge ($\\pi = 0.5$) by 0.25, which after the weight of 0.10 is a fixed 0.025 added to the total."
+  },
+  {
+   "id": "s13d.b6",
+   "section": "s13d",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L072"
+   ],
+   "text": "How $\\pi$ travels to the reading side (the paper's example, made-up scores): when m2 is written, Jev scores \"m1 causes m2\" at 0.90 ≥ 0.60, so a causal edge is built and 0.90 is stored on it. When reading later walks from m1 along this edge to m2, the $\\pi$ in the scoring formula's fifth term is 0.90.",
+   "illustrative": true
+  },
+  {
+   "id": "s13e.b1",
+   "section": "s13e",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L073"
+   ],
+   "text": "**Why twenty, and why only one sentence is checked, the paper never explains; the code checks only that one sentence and its candidates on writes 20, 40, 60….**"
+  },
+  {
+   "id": "s13e.b2",
+   "section": "s13e",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L073"
+   ],
+   "text": "The appendix only says \"every 20 successful writes, evaluate candidate pairs once\", which can be read two ways, and the wording can't settle it:"
+  },
+  {
+   "id": "s13e.b3",
+   "section": "s13e",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L073"
+   ],
+   "headers": [
+    "Reading",
+    "What gets checked",
+    "Average extra cost per sentence"
+   ],
+   "rows": [
+    [
+     "A (what the code does)",
+     "Only the 20th sentence and its candidates",
+     "About 0.05 Jev calls"
+    ],
+    [
+     "B",
+     "All 20 sentences",
+     "About 1 Jev call"
+    ]
+   ]
+  },
+  {
+   "id": "s13e.b4",
+   "section": "s13e",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L074"
+   ],
+   "items": [
+    "(inference) The low frequency is about cost. Doing it for every sentence would raise the Jev calls per write from at most 2 to 3, and write speed is exactly this paper's selling point.",
+    "Under reading A, only about 1/20 of sentences are ever consolidated, and which ones depends on the order they were written, not on which need it most.",
+    "The paper has no run with consolidation switched off, and doesn't say whether a summarizer was attached during the experiments, so this mechanism's contribution to accuracy is unknown."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s13f.b1",
+   "section": "s13f",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L075"
+   ],
+   "text": "**80 is a fixed, hand-set hyperparameter; the paper doesn't say how it was chosen and runs no sensitivity test. Tickets are spent only when going from an already-found node to a not-yet-found one, and they are spent per link.**"
+  },
+  {
+   "id": "s13f.b2",
+   "section": "s13f",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L075"
+   ],
+   "text": "80 counts \"at most 80 candidate neighbours proposed\", shared across all rounds; it is not 80 edges and not a number of Jev calls. There is also a separate cap of \"at most 2400 edges checked\". (from the code) The appendix's numbers match the config file `jev_mem.json`, but the code's built-in defaults differ:"
+  },
+  {
+   "id": "s13f.b3",
+   "section": "s13f",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L075"
+   ],
+   "headers": [
+    "Parameter",
+    "Appendix / jev_mem.json",
+    "Code's built-in default"
+   ],
+   "rows": [
+    [
+     "Total budget $B$",
+     "80",
+     "20"
+    ],
+    [
+     "Concentration $\\gamma$",
+     "1.0",
+     "1.5"
+    ],
+    [
+     "Activation threshold",
+     "0.10",
+     "0.15"
+    ],
+    [
+     "Max hops",
+     "8",
+     "5"
+    ]
+   ]
+  },
+  {
+   "id": "s13f.b4",
+   "section": "s13f",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L076"
+   ],
+   "text": "The repo also has a `jev_mem_accuracy.json` (same budget of 80, different thresholds); the paper doesn't say which one produced Table 1 and Table 2. (inference) 80 doesn't scale with memory size, so it is the first number to retune when moving to a larger memory."
+  },
+  {
+   "id": "s13f.b5",
+   "section": "s13f",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L077"
+   ],
+   "text": "**Ticket rules** (from the code): list every link of a frontier node (outgoing and incoming), and check them one by one:"
+  },
+  {
+   "id": "s13f.b6",
+   "section": "s13f",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L077"
+   ],
+   "items": [
+    "The other end has already been found → skip, no ticket.",
+    "This edge kind is out of tickets → skip.",
+    "Otherwise spend 1 ticket of that edge kind and put the other end on the to-be-scored list (being on the list doesn't count as \"found\")."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s13f.b7",
+   "section": "s13f",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L077"
+   ],
+   "text": "(made-up) Frontier node A has four links all pointing to B. Each of the four costs a ticket, but B appears only once on the to-be-scored list (keeping the highest-scoring link). In other words, tickets are spent per link, not per neighbour. By contrast, if B was an anchor from the start, all four links are skipped and no ticket is spent.",
+   "illustrative": true
+  },
+  {
+   "id": "s13f.b8",
+   "section": "s13f",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L078"
+   ],
+   "text": "(inference) This explains why temporal tickets always run out first: temporal edges are dense to begin with, and two adjacent sentences often have 2 to 3 temporal links between them, so each temporal neighbour visited can eat several tickets."
+  },
+  {
+   "id": "s13g.b1",
+   "section": "s13g",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L079"
+   ],
+   "text": "**Each call = one shared \"state\" plus a batch of questions; each question's instruction names the state field to look at, and each question gets one number back.** Think of a reading test: one passage with several questions, each saying \"see paragraph so-and-so\". Appendix B.1 explains that question ids are only internal identifiers the model never sees, so the location has to be written into the instruction."
+  },
+  {
+   "id": "s13g.b2",
+   "section": "s13g",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L079"
+   ],
+   "text": "Take one candidate-scoring call as an example (the paper's Appendix B.4 example: the evidence already holds m1, and the search follows a causal edge to m2; structure from the code, values made up):"
+  },
+  {
+   "id": "s13g.b3",
+   "section": "s13g",
+   "type": "code",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L079"
+   ],
+   "lang": "json",
+   "illustrative": true,
+   "code": "{\n  \"query\": \"When did Mira buy a new bicycle, and why?\",\n  \"evidence\": [\n    {\"id\": \"m1\", \"content\": \"Mira: My old bicycle broke.\",\n     \"timestamp\": \"2024-05-14 10:00\", \"entities\": [\"Mira\"]}\n  ],\n  \"candidates\": [\n    {\"id\": \"m2\",\n     \"content\": \"Mira: I bought a new bicycle yesterday because my old one broke.\",\n     \"timestamp\": \"2024-05-16 10:00\", \"entities\": [\"Mira\"],\n     \"graph\": \"causal\", \"source_id\": \"m1\", \"target_id\": \"m2\",\n     \"relation\": {\"sub_type\": \"caused_by\", \"probability\": 0.9}}\n  ]\n}"
+  },
+  {
+   "id": "s13g.b4",
+   "section": "s13g",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L079"
+   ],
+   "headers": [
+    "Question",
+    "Instruction",
+    "Fields used",
+    "Jev's answer (made-up)"
+   ],
+   "rows": [
+    [
+     "`candidate_0_relevance` ($a$)",
+     "Does `candidates[0].content` contain a fact the query needs?",
+     "Question + neighbour content",
+     "0.93"
+    ],
+    [
+     "`candidate_0_relation_usefulness` ($\\ell$)",
+     "Does this edge (kind and direction) connect the evidence to information useful for the query?",
+     "Question + link info + evidence",
+     "0.88"
+    ],
+    [
+     "`candidate_0_new_information` ($n$)",
+     "Does it add answer-relevant detail not already in the evidence?",
+     "Question + neighbour content + evidence",
+     "0.81"
+    ],
+    [
+     "`candidate_0_supports_current_evidence` ($c$)",
+     "Can it independently corroborate query-relevant claims in the evidence?",
+     "Question + neighbour content + evidence",
+     "0.74"
+    ]
+   ],
+   "illustrative": true
+  },
+  {
+   "id": "s13g.b5",
+   "section": "s13g",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L079"
+   ],
+   "text": "With several neighbours, the `candidates` list grows and the questions become `candidate_1_…`, `candidate_2_…`, still sent once and returned once. Of the four questions, only $a$ compares the question with the neighbour; the other three compare the neighbour with the current evidence, so the same neighbour gets different scores when the evidence differs."
+  },
+  {
+   "id": "s13g.b6",
+   "section": "s13g",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L080"
+   ],
+   "text": "What each of the three reading calls sees:"
+  },
+  {
+   "id": "s13g.b7",
+   "section": "s13g",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L080"
+   ],
+   "headers": [
+    "Call",
+    "Input"
+   ],
+   "rows": [
+    [
+     "Routing",
+     "The question only"
+    ],
+    [
+     "Candidate scoring",
+     "Question + top 40 pieces of evidence + all neighbours this round"
+    ],
+    [
+     "Stop check",
+     "Question + top 40 pieces of evidence + current depth"
+    ]
+   ]
+  },
+  {
+   "id": "s13g.b8",
+   "section": "s13g",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L081"
+   ],
+   "text": "**Why depth is also passed in, the paper doesn't explain.** It is indeed part of the stop-check state, but all four stop questions name only the query and the evidence, and none asks to look at depth. There are two readings that can't be told apart: either it is background for Jev, nudging it to stop once deep, or it is only recorded and has no effect. The one place in the code where depth clearly affects a decision is the default answer when a Jev call fails: \"not enough\" at depth zero, \"enough\" after that. (inference) \"How deep to go\" is really controlled by rules (the hop and node caps), not by Jev."
+  },
+  {
+   "id": "s13h.b1",
+   "section": "s13h",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L082"
+   ],
+   "text": "**Jev can't see the next round's neighbours; it judges only from \"question + evidence in hand\". So this question really asks \"can you name what's still missing?\", not \"can the memory store find it?\".** Appendix B.5's criteria: true means you can point to a specific missing fact or contradiction and more memories might fill it; false means there is no gap you can point to any more, or more memories are unlikely to help."
+  },
+  {
+   "id": "s13h.b2",
+   "section": "s13h",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L082"
+   ],
+   "text": "An analogy: a detective going through their notes. They don't know what's in the next room, but they can see they \"know who did it, but not why\", so they decide another search is worthwhile; if the notes are complete, or they can't even say what's missing, they stop searching."
+  },
+  {
+   "id": "s13h.b3",
+   "section": "s13h",
+   "type": "paragraph",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L083"
+   ],
+   "text": "(made-up) Same question, \"when did she buy it, and why?\":",
+   "illustrative": true
+  },
+  {
+   "id": "s13h.b4",
+   "section": "s13h",
+   "type": "table",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L083"
+   ],
+   "headers": [
+    "Evidence in hand",
+    "Visible gap",
+    "$u$"
+   ],
+   "rows": [
+    [
+     "Only \"bought a new bicycle yesterday\"",
+     "Has \"when\", missing \"why\"",
+     "High, e.g. 0.80"
+    ],
+    [
+     "\"Bought a new bike\" plus \"because the old one broke\"",
+     "No gap",
+     "Low, e.g. 0.05"
+    ]
+   ],
+   "illustrative": true
+  },
+  {
+   "id": "s13h.b5",
+   "section": "s13h",
+   "type": "list",
+   "layer": "appendix",
+   "origin": "source",
+   "ledger": [
+    "L084"
+   ],
+   "items": [
+    "(inference) When the memory has no answer at all (a question about something never discussed), Jev can still see \"what's missing\", so $u$ stays high and only the caps can stop the search.",
+    "(inference) $u$ heavily overlaps with $m$ (missing evidence); the only difference is that $u$ adds \"could searching more fill it?\", which Jev has no way of knowing. The paper doesn't report how often each stopping rule fires, so it's impossible to tell what $u$ actually adds."
+   ],
+   "ordered": false
+  }
+ ],
+ "decisions": [
+  {
+   "id": "D01",
+   "kind": "folded",
+   "ledger": "L065",
+   "why": "(see zh plan) D01",
+   "needs_human": true
+  },
+  {
+   "id": "D02",
+   "kind": "folded",
+   "ledger": "L070",
+   "why": "(see zh plan) D02",
+   "needs_human": true
+  },
+  {
+   "id": "D03",
+   "kind": "folded",
+   "ledger": "L074",
+   "why": "(see zh plan) D03",
+   "needs_human": true
+  },
+  {
+   "id": "D04",
+   "kind": "folded",
+   "ledger": "L076",
+   "why": "(see zh plan) D04",
+   "needs_human": true
+  },
+  {
+   "id": "D05",
+   "kind": "folded",
+   "ledger": "L078",
+   "why": "(see zh plan) D05",
+   "needs_human": true
+  },
+  {
+   "id": "D06",
+   "kind": "folded",
+   "ledger": "L081",
+   "why": "(see zh plan) D06",
+   "needs_human": true
+  },
+  {
+   "id": "D07",
+   "kind": "folded",
+   "ledger": "L084",
+   "why": "(see zh plan) D07",
+   "needs_human": true
+  },
+  {
+   "id": "D90",
+   "kind": "moved",
+   "ledger": "L052",
+   "why": "(see zh plan) D90",
+   "needs_human": false
+  },
+  {
+   "id": "D91",
+   "kind": "moved",
+   "ledger": "L085",
+   "why": "(see zh plan) D91",
+   "needs_human": false
+  },
+  {
+   "id": "D92",
+   "kind": "moved",
+   "ledger": "L008",
+   "why": "(see zh plan) D92",
+   "needs_human": false
+  },
+  {
+   "id": "D93",
+   "kind": "folded",
+   "ledger": "L030",
+   "needs_human": true,
+   "why": "(see zh plan) D93"
+  }
+ ]
+}
