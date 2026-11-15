@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 如果你研究過 automatic prompt optimization（自動優化 prompt 的技術），大概會發現這個領域最近的方法一個比一個複雜：維護一整池候選 prompt、做 beam search、做 Pareto 篩選。GEPA 就是這類方法的代表。
 
-Purdue 大學這篇論文《Naive Prompt Optimization》問了一個看似天真的問題：如果餵給負責改寫 prompt 的「teacher model」更豐富的回饋——不只是一個總分，而是完整的執行過程加上每題分數——再配一個夠強的 teacher，是不是根本不用搜索、只維護「一條路線」的 prompt 修訂，也能打平甚至打贏那些複雜方法？他們把這個做法叫做 **NPO（Naive Prompt Optimization）**。
+Purdue 大學這篇論文[《Naive Prompt Optimization》](https://arxiv.org/abs/2608.27266)問了一個看似天真的問題：如果餵給負責改寫 prompt 的「teacher model」更豐富的回饋——不只是一個總分，而是完整的執行過程加上每題分數——再配一個夠強的 teacher，是不是根本不用搜索、只維護「一條路線」的 prompt 修訂，也能打平甚至打贏那些複雜方法？他們把這個做法叫做 **NPO（Naive Prompt Optimization）**。
 
 先把結論說在前面：這篇論文本身的方法論貢獻並不高，NPO 說穿了是既有技術 OPRO 的小幅修改，而且它「用更少執行次數打贏 GEPA」這個賣點，本身藏著一個沒處理乾淨的漏洞（後面會細講）。但論文在「怎麼公平比較不同方法」這件事上做得很紮實——配對隨機種子、約束解碼——這套實驗設計本身的可遷移價值，比 NPO 這個方法還要高。這篇文章會照這個比重來寫：方法本身講清楚，但花更多篇幅在這套實驗方法論上。
 

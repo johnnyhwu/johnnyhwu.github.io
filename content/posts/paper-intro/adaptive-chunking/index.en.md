@@ -24,7 +24,7 @@ Anyone who has built a RAG (Retrieval-Augmented Generation) system has probably 
 
 The problem is often not in retrieval or generation at all. It's in the very first, most easily overlooked step: splitting a document into chunks before it ever reaches the vector database.
 
-That is exactly what this paper is about. If document chunking is done badly, nothing downstream can fix it. A bad split means the knowledge granularity stored in the vector database is wrong from the start — the retriever can't pull a complete, precise context, and no matter how strong the downstream LLM is, it's still "garbage in, garbage out."
+That is exactly what [this paper](https://arxiv.org/abs/2603.25333) is about. If document chunking is done badly, nothing downstream can fix it. A bad split means the knowledge granularity stored in the vector database is wrong from the start — the retriever can't pull a complete, precise context, and no matter how strong the downstream LLM is, it's still "garbage in, garbage out."
 
 ### Three old chunking problems that were never really solved
 

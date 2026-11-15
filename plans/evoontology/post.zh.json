@@ -2989,7 +2989,7 @@
    "ledger": [
     "L001"
    ],
-   "text": "*EvoOntology: A Self-Evolving Ontology Layer for Data Agents*（arXiv:2609.15779v1，Renmin University of China 的團隊，2026 年 9 月）的做法，是在 agent 與資料之間插入一層可以被查詢、而且會根據使用經驗自我修補的知識層。"
+   "text": "*EvoOntology: A Self-Evolving Ontology Layer for Data Agents*（[arXiv:2609.15779v1](https://arxiv.org/abs/2609.15779)，Renmin University of China 的團隊，2026 年 9 月）的做法，是在 agent 與資料之間插入一層可以被查詢、而且會根據使用經驗自我修補的知識層。"
   },
   {
    "id": "s1.b3",

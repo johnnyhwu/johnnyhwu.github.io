@@ -33,7 +33,7 @@ url: "paper-intro/:contentbasename"
 
 ## 論文速覽與整體評價
 
-論文是〈Self-Evolving Search Index〉（arXiv 2609.19656v1），來自 Yonsei University 與 Samsung Research，2026 年 9 月發表。核心想法是讓檢索用的「索引」自己進化。一個稱為 Optimizer 的 LLM 負責三件事：診斷索引的缺陷、只修有問題的部分、驗證修訂有效才套用。另一個稱為 Query Simulator 的元件，則主動生成「還沒被問過、但可能會被問」的查詢，讓索引不只對已知問題做反應。
+論文是〈Self-Evolving Search Index〉（[arXiv 2609.19656v1](https://arxiv.org/abs/2609.19656)），來自 Yonsei University 與 Samsung Research，2026 年 9 月發表。核心想法是讓檢索用的「索引」自己進化。一個稱為 Optimizer 的 LLM 負責三件事：診斷索引的缺陷、只修有問題的部分、驗證修訂有效才套用。另一個稱為 Query Simulator 的元件，則主動生成「還沒被問過、但可能會被問」的查詢，讓索引不只對已知問題做反應。
 
 **工程價值高**，原因有四：
 

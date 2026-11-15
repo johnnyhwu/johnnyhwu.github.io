@@ -22,7 +22,7 @@ url: "paper-intro/:contentbasename"
 
 問 [data agent](../../ai-concept/openai-data-agent/)（一種根據自然語言指令，去操作資料庫表格、CSV、文件、log 這類異質資料的 AI agent）一個問題：「上個月成本為什麼上漲？」答案可能散在好幾張表，甚至夾在文件裡。但 agent 事前完全不知道這些資料實際長什麼樣子：欄位叫什麼、表和表怎麼 join（依共同欄位把幾張表接起來），每個任務都得從頭摸一遍。
 
-*EvoOntology: A Self-Evolving Ontology Layer for Data Agents*（arXiv:2609.15779v1，Renmin University of China 的團隊，2026 年 9 月）的做法，是在 agent 與資料之間插入一層可以被查詢、而且會根據使用經驗自我修補的知識層。
+*EvoOntology: A Self-Evolving Ontology Layer for Data Agents*（[arXiv:2609.15779v1](https://arxiv.org/abs/2609.15779)，Renmin University of China 的團隊，2026 年 9 月）的做法，是在 agent 與資料之間插入一層可以被查詢、而且會根據使用經驗自我修補的知識層。
 
 這一層的核心是 ontology（本體）。先把它理解成一份結構化的領域知識：有哪些業務概念、每個概念對應到資料庫的哪個欄位、使用這些概念要遵守什麼規則，再用「圖」把概念之間的關係連起來。它和傳統 ontology、knowledge graph 的差別，文末的延伸閱讀會細講。
 
