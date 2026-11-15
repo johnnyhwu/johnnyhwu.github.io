@@ -1,8 +1,8 @@
 ---
 # weight: 1
-title: "JevAct 解析：AI agent 動手前的決策閘門，增益其實多來自程式檢查"
+title: "JevAct：讓 AI Agent 三思而後行的執行前閘門"
 date: 2026-11-11
-lastmod: 2026-11-11
+lastmod: 2026-11-15
 draft: false
 description: "LLM agent 最怕訂錯票、太早放棄。IBM 的 JevAct 在 agent 執行前加一道閘門：把政策事先編成程式檢查與 yes/no 題，交給便宜的 Kev 決策模型判斷，只在有把握時擋下。本文拆解它的機制，以及實驗裡增益多來自程式、101 個錯誤呼叫有 42 個抓不到的真相。"
 featuredImage: "featured-image.png"

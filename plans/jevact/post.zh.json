@@ -13,7 +13,7 @@
    "LLM-as-a-Judge",
    "Uncertainty Estimation"
   ],
-  "title": "JevAct 解析：AI agent 動手前的決策閘門，增益其實多來自程式檢查",
+  "title": "JevAct：讓 AI Agent 三思而後行的執行前閘門",
   "title_alts": [
    "JevAct 解析：AI agent 動手前的決策閘門，增益其實多來自程式檢查",
    "agent 訂錯票之前先攔下：JevAct 用 Kev 決策模型做執行前驗證",
