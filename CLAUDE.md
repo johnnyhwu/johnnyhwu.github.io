@@ -17,13 +17,14 @@ with, follow and remember, **without dropping any detail**; Step 4 publishes it.
 | 4 | Publisher — renders the plan into the bilingual Hugo bundle, makes the cover and internal links, verifies, opens the PR, moves the topic to `done/published/` | **Yes** | `.claude/skills/hugo-publisher/` (cover: `.claude/skills/canvas-design/`) |
 
 If you're publishing anything in this repo from an `AI-Research` topic directory, you are doing Steps 3 and 4.
-They run as one task, with a pause for the author at the Step 3 skeleton.
+They run as one task. At the Step 3 skeleton the author sees a brief, but the work goes on without waiting
+unless a serious issue needs their decision.
 
 ## What to do when the user says...
 
 | User says (roughly) | Do this |
 |---|---|
-| "發佈 `<Topic>`" / "產生 `<Topic>` 文章" / "publish `<Topic>`" / "把 `<Topic>` 發布成 Hugo post" | Run Step 3 then Step 4 as one task on `done/unpublished/<Topic>/` in `johnnyhwu/AI-Research`: **`blog-planner`** through the skeleton, then **stop and show the author the brief** and wait; after approval continue (draft, Reviewers, English plan), then **`hugo-publisher`**. If the Reviewers deadlock, stop and ask (the skill lists the triggers). |
+| "發佈 `<Topic>`" / "產生 `<Topic>` 文章" / "publish `<Topic>`" / "把 `<Topic>` 發布成 Hugo post" | Run Step 3 then Step 4 as one task on `done/unpublished/<Topic>/` in `johnnyhwu/AI-Research`: **`blog-planner`** through the skeleton, **show the author the brief and continue on your own recommendations without waiting** (draft, Reviewers, English plan), then **`hugo-publisher`**. Stop and ask only for a serious issue the author must decide (`blog-planner` P2 lists them) or a Reviewer deadlock (the skill lists the triggers). |
 | "有哪些文章可以發布？" / "what's ready to publish?" | List `done/unpublished/` in `AI-Research`. That directory *is* the publishing queue — every topic in it has an `article.md` and no Hugo post yet. |
 | "讓 `<Topic>` 更好讀" / "redo `<Topic>` for readability", or any change to what an *existing* post says or how it is organised | Step 3 on `done/published/<Topic>/` (the plan is regenerated; the live post keeps its URL and `date`), then Step 4. |
 | Fixing an existing post's images, front matter, layout, links or translation typos (no change to what it says) | `hugo-publisher` only. The plan JSON is the source: fix a typo there (both languages) and re-render; never edit `index.*.md` by hand. |
