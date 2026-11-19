@@ -1,0 +1,6 @@
+[
+ {"block": "s2.b3", "zh": "Claude Code", "en": "Claude Code", "target": "../../ai-concept/claude-code/"},
+ {"block": "s7.b1", "zh": "寫小程式", "en": "writes small programs", "target": "../context-language-models/"},
+ {"block": "s10.b14", "zh": "harness", "en": "harnesses", "target": "../../ai-concept/harness-engineering/"},
+ {"block": "s11.b1", "zh": "上下文", "en": "context", "target": "../../ai-concept/context-engineering/"}
+]
