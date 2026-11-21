@@ -2,7 +2,7 @@
 # weight: 1
 title: "Is Bash All You Need? A Shell Beats Typed Tools"
 date: 2026-11-19
-lastmod: 2026-11-19
+lastmod: 2026-11-21
 draft: false
 description: "Should an enterprise AI agent get typed tools or a bash shell? In a controlled test of five interfaces, the shell scored higher with 19% to 72% fewer tokens."
 featuredImage: "featured-image.png"
@@ -29,32 +29,20 @@ How big is the gap? Compared with typed tools only, Bash scored 21.8 to 24.5 per
 One of the compromises is **PTC** (Programmatic Tool Calling): the model writes a short program, and that program can only call the predefined tools. It used fewer tokens than typed tools alone, scored about the same, and lost to Bash overall.
 
 {{< admonition warning "Trust the direction, discount the size" >}}
-TheAgentCompany's 60 typed tools were designed by the paper's authors, so Bash's advantage is mixed up with "how good is this particular tool set". Bash's high scores were also measured under extra guardrails (grading scripts blocked, coworker data encrypted). In one line: **this is an empirical comparison whose direction you can use but whose size you should not copy over.**
+TheAgentCompany's 60 typed tools were designed by the paper's authors, so Bash's advantage is mixed up with "how good is this particular tool set". Bash's high scores were also measured under extra guardrails (grading scripts blocked, coworker data encrypted).
 {{< /admonition >}}
 
 The paper's practical advice is conditional: if you can isolate arbitrary code execution, use Bash; if compliance limits you to a fixed tool catalog, use PTC.
-
-Below we first look at how the experiment was set up, the answer to each of its three questions and why Bash won, then judge how far the evidence can be trusted, and finish with a rule for choosing. A few habits of judgment that hold beyond this paper are collected in the sections after the conclusion.
 
 Paper: [Is Bash All You Need? An Empirical Study of Tool Interfaces for Enterprise Digital Worker Agents](https://arxiv.org/abs/2609.11999) (Microsoft, CMU; arXiv 2609.11999v1, 2026-09-10). The paper proposes no new method; its value is putting five interfaces into one controlled setting.
 
 ## How should an enterprise agent get its tools? Two paths, two costs
 
-First, the problem itself: there is little controlled evidence on how an enterprise agent should act on its environment. This paper fills that gap with two enterprise-work benchmarks. Here are the terms that keep coming back.
+An agent is a system that has a large language model (LLM) loop through "think → call a tool → read the result" until the task is done, rereading the whole conversation so far on every turn. The tool interface it gets decides what it can do, how safe it is and how much it costs; the paper measures "how much" by token counts and estimated dollar cost. The APEX-Agents environment below serves its applications through MCP servers: MCP (Model Context Protocol) is a standard way to wrap outside services as tools a model can call (general knowledge, not from the paper).
 
-| Term | Meaning | Character |
-| --- | --- | --- |
-| Agent | A system that has a large language model (LLM) loop through "think → call a tool → read the result" until the task is done | Rereads the whole conversation so far on every turn |
-| Tool interface | How the agent acts on its environment (service APIs, files, applications) | Decides what the agent can do, how safe it is and how much it costs |
-| Typed tool | A function with a predefined name and parameter format, such as `gitlab_create_issue`, called one at a time | Safe and controllable, can only do what it is authorized to do, but one action is one call |
-| Bash (shell) | Just a command line; the model writes its own commands and can chain several actions in one go, for example with a **pipe** (`\\|`, which feeds one command's output into the next) | Maximum flexibility, but arbitrary execution needs separate isolation and access control |
-| PTC (Programmatic Tool Calling) | The model writes a short Python program that can only call the predefined typed tools; it can loop and chain, but cannot reach a shell | In between: keeps a fixed tool catalog but can still batch |
-| MCP (general knowledge, not from the paper) | Model Context Protocol, a standard way to wrap outside services as tools a model can call | The paper's APEX-Agents environment serves its applications through MCP servers |
-| Token | The unit a model reads and writes, and is billed by | The paper measures "how expensive" by token counts and estimated dollar cost |
-
-- **Coding already has precedents**: among coding agents, mini-SWE-agent gets only bash, while Live-SWE-agent builds its own tools and once topped SWE-bench Verified (a leaderboard for coding agents).
-- **Enterprise products follow both paths**: the Anthropic and OpenAI APIs offer PTC (limited to a fixed tool catalog); [Claude Code](../../ai-concept/claude-code/), Codex CLI and Microsoft Copilot Studio (built on GitHub Copilot CLI) take the shell route.
-- **The gap**: enterprise work means switching between applications, talking to coworkers and doing professional analysis, which is unlike writing code, and controlled shell-versus-typed-tools comparisons in this setting are rare, so practitioners have no evidence to choose by. A concurrent paper, Patel et al. 2026 (*The Bitter Lesson of Tool Calling*), compared PTC with ordinary JSON tool calling but left the shell out.
+- Coding already has precedents: among coding agents, mini-SWE-agent gets only bash, while Live-SWE-agent builds its own tools and once topped SWE-bench Verified (a leaderboard for coding agents).
+- Enterprise products follow both paths: the Anthropic and OpenAI APIs offer PTC (limited to a fixed tool catalog); [Claude Code](../../ai-concept/claude-code/), Codex CLI and Microsoft Copilot Studio (built on GitHub Copilot CLI) take the shell route.
+- The gap: enterprise work means switching between applications, talking to coworkers and doing professional analysis, which is unlike writing code, and controlled shell-versus-typed-tools comparisons in this setting are rare, so practitioners have no evidence to choose by. A concurrent paper, Patel et al. 2026 (*The Bitter Lesson of Tool Calling*), compared PTC with ordinary JSON tool calling but left the shell out.
 
 Each side has a cost:
 
@@ -63,17 +51,11 @@ Each side has a cost:
 | Benefit | One step can do many actions | Exposes only authorized functions; safe and controllable |
 | Cost | Arbitrary execution needs control over the environment and access scope | Every action is its own call, and the overhead adds up |
 
-{{< admonition info "How sources are labelled in this post" >}}
-Experimental setup and results without a label come from the paper. The opening verdict ("trust the direction, discount the size"), the assessment in "How much should you trust this evidence?", the conclusion section's summary and the habits in the going-deeper sections are the note author's views. "My inference" marks the note author's guess, not a claim by the paper's authors; "made-up example" marks scenarios and numbers invented for illustration; "general knowledge" marks background from outside the paper. Where the paper says nothing, the post says "the paper does not say".
-{{< /admonition >}}
-
-The paper has no separate "challenges" section. The three questions below were assembled from its Introduction and Method (my framing, not the paper's own sections), and the results follow them:
+The three questions below are my framing, assembled from the paper's Introduction and Method; the results follow them:
 
 1. **Q1**: Can a shell alone beat typed tools alone?
 2. **Q2**: Does adding typed tools on top of the shell, or letting the agent build reusable tools, help further?
 3. **Q3**: How does PTC, the compromise, perform?
-
-Recap: one path buys flexibility, the other buys control. Next, how the authors put both, plus the compromise between them, into one controlled setting.
 
 ## A fair test: same model, same tasks, only the agent's hands change
 
@@ -87,11 +69,11 @@ The figure below shows how the five interfaces are built from shell execution, t
 
 | Interface | What the agent has | What is special |
 | --- | --- | --- |
-| Tool-only | Typed tools only | Every action is a separate call; this is the baseline |
-| Bash | A shell only | Can chain several actions into one call with pipes and loops |
+| Tool-only | Typed tools only | Every action is a separate call; this is the baseline. Exposes only authorized functions, so it is safe and controllable |
+| Bash | A shell only | Can chain several actions into one call with a **pipe** (`\\|`, which feeds one command's output into the next) and loops; maximum flexibility, but arbitrary execution needs separate isolation and access control |
 | Bash+Tool | A shell plus typed tools | Both available; the agent picks |
 | Bash+Synthesis | A shell plus a persistent folder | The prompt encourages the agent to turn common steps into reusable scripts that later tasks call directly, to cut the cost of rediscovery; tasks run in sequence and the folder persists |
-| PTC | The model writes Python that can only call typed tools | Can loop, chain and run in parallel, but has no shell and no other way to touch the environment |
+| PTC | The model writes Python that can only call typed tools | In between: keeps a fixed tool catalog but can still loop, chain and batch in parallel; it has no shell and no other way to touch the environment |
 
 Only Bash+Synthesis and PTC get extra interface-specific prompt instructions; the others share the same base prompt.
 
@@ -136,15 +118,15 @@ The two benchmark environments are shown below: TheAgentCompany has 4 self-hoste
 | Grading | A Python checkpoint program per task | An LLM judge checks the final reply and workspace file changes item by item against a **rubric** (a scoring guide) |
 | Environment version | Reliability bugs in the coworker simulation (dropped messages, early exits, stale state) were patched, for every interface alike | Pinned to the 2026-06 environment snapshot (Archipelago, 9 MCP servers), avoiding the paid financial-data APIs of newer versions |
 
-The row to remember is where the typed tools come from. The paper lists both tool sets in its appendix; TheAgentCompany's 60 were designed by the paper's authors, grouped by service in the table below.
+{{< fold title="The two benchmarks' tool lists (the paper's Table 7 and Table 8)" tone="info" >}}
+The paper lists both tool sets in its appendix. TheAgentCompany's 60, grouped by service:
 
-{{< image src="table7.png" alt="TheAgentCompany's 60 typed tools grouped by service, covering the workspace, Rocket.Chat, ownCloud, GitLab and Plane; each row is a service and its function names." caption="Table 1 — TheAgentCompany's 60 typed tools, by service (Source: original paper, Table 7.)" >}}
+{{< image src="table7.png" alt="TheAgentCompany's 60 typed tools grouped by service, covering the workspace, Rocket.Chat, ownCloud, GitLab and Plane; each row is a service and its function names." caption="Table 7 — TheAgentCompany's 60 typed tools, by service (Source: original paper, Table 7.)" >}}
 
 APEX-Agents' 20 tools come with the benchmark. Apart from the file-system server, each server pairs one "action-dispatch tool" with one "schema tool".
 
-{{< image src="table8.png" alt="APEX-Agents' 20 typed tools listed by 8 non-shell servers: calendar, chat, documents, file system, mail, PDF, spreadsheets and slides." caption="Table 2 — APEX-Agents' 20 typed tools across 8 non-shell servers (Source: original paper, Table 8.)" >}}
-
-Recap: one benchmark's typed tools were built by the paper's authors, the other's came with the benchmark. That difference matters later, when we judge how far to trust the results.
+{{< image src="table8.png" alt="APEX-Agents' 20 typed tools listed by 8 non-shell servers: calendar, chat, documents, file system, mail, PDF, spreadsheets and slides." caption="Table 8 — APEX-Agents' 20 typed tools across 8 non-shell servers (Source: original paper, Table 8.)" >}}
+{{< /fold >}}
 
 ### Agents game the grader: Bash's scores come with extra guardrails
 
@@ -167,15 +149,9 @@ The tables that follow use these metrics:
 | Paired score gap (pp) | For the same task and model, subtract one interface's score from the other's, then average over tasks | The net gap between two interfaces; pp means percentage points |
 | 95% bootstrap **confidence interval** | Resample the paired tasks repeatedly, recompute the mean gap, and see how spread out the results are; for now, read it as "roughly the range this gap falls in" | How uncertain the gap is; details in a going-deeper section at the end |
 
-Recap: same model, same tasks, only the interface changes; to compare two interfaces, look at the paired score gap and its confidence interval. Next, the answers to the three questions.
-
 ## Bash versus Tool-only: all four settings point the same way
 
-The bottom line first: across both models and both benchmarks, Bash scored higher than Tool-only and used fewer tokens; adding things on top of Bash brought no gain; PTC saved tokens but held scores flat and lost to Bash overall. All three answers come from two summary tables: Table 3 is the full set of results for 5 interfaces × 2 models × 2 benchmarks (the paper's Table 1), and Table 4 holds the paired score gaps (the paper's Table 9). Every comparison below is read cell by cell from these two.
-
-{{< image src="table1.png" alt="Full results table for five interfaces on two models and two benchmarks: score, pass rate, token types, cost per task and time per task, with 95% bootstrap confidence intervals on score and pass rate." caption="Table 3 — Full results for the five interfaces. Score and pass rate carry 95% bootstrap confidence intervals; token columns are per-task means in thousands, input includes cache reads, and total is input plus output (Source: original paper, Table 1.)" >}}
-
-Plotting score against total tokens (tokens on a log scale), up and to the left is better:
+The answers to Q1 to Q3 are all read cell by cell from two of the paper's summary tables: Table 1 holds the full results for 5 interfaces × 2 models × 2 benchmarks, and Table 9 the paired score gaps. First, score plotted against total tokens (log scale); up and to the left is better:
 
 {{< image src="figure3.png" alt="Scatter plots of score against total tokens per task, TheAgentCompany on the left and APEX-Agents on the right; logos mark the models, fills mark the interfaces, and vertical bars show 95% confidence intervals." caption="Figure 3 — Score versus total tokens per task (tokens on a log scale) (Source: original paper, Figure 3.)" >}}
 
@@ -188,24 +164,32 @@ Q1 is the simplest comparison: swap Tool-only for Bash and keep everything else.
 | APEX-Agents / Opus-4.8 | 41.1% → 48.5% | 24.2% → 30.0% | 397k → 215k | 0.73 → 0.48 |
 | APEX-Agents / GPT-5.5 | 39.8% → 44.6% | 23.3% → 28.3% | 328k → 176k | 0.52 → 0.40 |
 
+*Table 1 — Excerpt: Tool-only versus Bash in all four settings (Excerpt from the original paper, Table 1.)*
+
 All four settings move the same way: scores up, tokens and cost down. The "+21.8 to +24.5 pp" and "+4.8 to +7.4 pp" from the opening are the score column of this table, subtracted cell by cell.
 
-**Does it hold up statistically?** The table below gives the mean score gap computed over paired tasks (from Table 4). TheAgentCompany's +24.6 pp is slightly above the cell-by-cell range above (top of 24.5); the two are computed differently, and the paper does not explain the small mismatch.
+{{< fold title="Original table: full results for all five interfaces (the paper's Table 1)" tone="info" >}}
+{{< image src="table1.png" alt="Full results table for five interfaces on two models and two benchmarks: score, pass rate, token types, cost per task and time per task, with 95% bootstrap confidence intervals on score and pass rate." caption="Table 1 — Full results for the five interfaces. Score and pass rate carry 95% bootstrap confidence intervals; token columns are per-task means in thousands, input includes cache reads, and total is input plus output (Source: original paper, Table 1.)" >}}
+{{< /fold >}}
+
+**Does it hold up statistically?** The table below gives the mean score gap computed over paired tasks (from Table 9). TheAgentCompany's +24.6 pp is slightly above the cell-by-cell range above (top of 24.5); the two are computed differently, and the paper does not explain the small mismatch.
 
 | Benchmark | Bash − Tool-only | 95% confidence interval | Wins / ties / losses (tasks) |
 | --- | --- | --- | --- |
 | TheAgentCompany (348 task-model pairs) | +24.6 pp | [+20.6, +29.0] | 161 / 172 / 15 |
 | APEX-Agents (960 pairs) | +6.2 pp | [+3.6, +8.7] | 220 / 596 / 144 |
 
-{{< image src="table9.png" alt="Table of mean paired score differences for each pair of interfaces: number of paired tasks, mean difference with 95% confidence interval, and win, tie and loss counts." caption="Table 4 — Paired score gaps between interfaces; positive favours the first, brackets give the 95% bootstrap confidence interval (Source: original paper, Table 9.)" >}}
+*Table 9 — Excerpt: paired score gap of Bash over Tool-only (Excerpt from the original paper, Table 9.)*
 
-Neither interval includes 0, so within this data the direction "Bash is better" is quite stable. Still, on APEX-Agents Bash lost on 144 pairs; overall it simply won more pairs than it lost. The authors' reading is that flexible execution helps coding and cross-application work more than domain reasoning (they phrase it as "may").
+Neither interval includes 0, so within this data the direction "Bash is better" is quite stable. Still, on APEX-Agents Bash lost on 144 pairs; overall it simply won more pairs than it lost. The authors suggest that flexible execution may help coding and cross-application work more than domain reasoning.
+
+{{< fold title="Original table: paired score gaps for every pair of interfaces (the paper's Table 9)" tone="info" >}}
+{{< image src="table9.png" alt="Table of mean paired score differences for each pair of interfaces: number of paired tasks, mean difference with 95% confidence interval, and win, tie and loss counts." caption="Table 9 — Paired score gaps between interfaces; positive favours the first, brackets give the 95% bootstrap confidence interval (Source: original paper, Table 9.)" >}}
+{{< /fold >}}
 
 {{< admonition warning "Where to discount" >}}
 TheAgentCompany's Tool-only runs on the authors' self-built tool set, so +24.6 pp mixes "the limits of typed tools" with "how good this tool set is", and the paper does not separate them. APEX-Agents' tools came with the benchmark, so +6.2 pp is relatively clean (my inference).
 {{< /admonition >}}
-
-Recap: the answer to Q1 is "yes, in all four settings"; but the biggest win is on exactly the benchmark whose baseline the authors built themselves.
 
 ## Adding tools on top of Bash adds tokens, not points
 
@@ -215,6 +199,8 @@ Q2 asks: once there is a shell, does adding more help? The table gives score gap
 | --- | --- | --- |
 | Bash+Tool − Bash (typed tools added) | −0.6 pp [−3.0, +1.9] | −0.2 pp [−2.4, +1.9] |
 | Bash+Synthesis − Bash (self-made scripts added) | −1.6 pp [−3.6, +0.3] | −0.2 pp [−2.4, +2.0] |
+
+*Table 9 — Excerpt: paired score gaps from adding things on top of Bash (Excerpt from the original paper, Table 9.)*
 
 All four intervals cross 0: no detectable difference. But "not detected" is not "proven absent": given how wide these intervals are, the experiment can only rule out benefits larger than about 2 to 3 pp; smaller effects are beyond what it can measure. A going-deeper section at the end explains this with a bathroom-scale analogy.
 
@@ -227,9 +213,9 @@ Tokens and cost after adding things (each cell is total tokens / cost per task i
 | APEX-Agents / Opus-4.8 | 215k / 0.48 | 396k / 0.60 | 237k / 0.50 |
 | APEX-Agents / GPT-5.5 | 176k / 0.40 | 257k / 0.42 | 228k / 0.44 |
 
-Of the eight cells, only Bash+Synthesis on TheAgentCompany / Opus-4.8 is cheaper than plain Bash, which the paper itself lists as the one exception; everywhere else tokens go up.
+*Table 1 — Excerpt: tokens and cost after adding things on top of Bash (Excerpt from the original paper, Table 1.)*
 
-Recap: adding typed tools or self-made tools on top of the shell left scores unchanged within what could be detected, and mostly cost more tokens.
+Of the eight cells, only Bash+Synthesis on TheAgentCompany / Opus-4.8 is cheaper than plain Bash, which the paper itself lists as the one exception; everywhere else tokens go up.
 
 ## PTC saves tokens, but the score does not follow
 
@@ -242,108 +228,106 @@ Q3 looks at the compromise, PTC. Swapping Tool-only for PTC (left of the arrow i
 | APEX-Agents / Opus-4.8 | 41.1% → 40.1% | 397k → 337k | 0.73 → 0.61 |
 | APEX-Agents / GPT-5.5 | 39.8% → 37.8% | 328k → 256k | 0.52 → 0.48 |
 
-Tokens drop in all four cells, but only the first shows a clear score gain; the rest are flat or slightly down. The paired gaps (Table 4) agree:
+*Table 1 — Excerpt: Tool-only versus PTC in all four settings (Excerpt from the original paper, Table 1.)*
 
-- **PTC − Tool-only**: +3.5 pp [+0.8, +6.2] on TheAgentCompany, −1.5 pp [−3.9, +0.9] on APEX-Agents.
-- **Bash − PTC**: +21.2 pp [+17.0, +25.5] and +7.7 pp [+5.2, +10.2]; neither interval includes 0, so Bash is clearly better.
-- **Tokens**: PTC beats Bash only on TheAgentCompany / GPT-5.5 (242k versus 377k).
+Tokens drop in all four cells, but only the first shows a clear score gain; the rest are flat or slightly down. The paired gaps (Table 9) agree:
 
-**Why does PTC save tokens?** Table 5 (the paper's Table 6) breaks down how much PTC batches and how its tokens change (difference from Tool-only):
+- PTC − Tool-only: +3.5 pp [+0.8, +6.2] on TheAgentCompany, −1.5 pp [−3.9, +0.9] on APEX-Agents.
+- Bash − PTC: +21.2 pp [+17.0, +25.5] and +7.7 pp [+5.2, +10.2]; neither interval includes 0, so Bash is clearly better.
+- Tokens: PTC beats Bash only on TheAgentCompany / GPT-5.5 (242k versus 377k).
+
+**Why does PTC save tokens?** Table 6 breaks down how much PTC batches and how its tokens change (difference from Tool-only; cache reads are the repeated prefix billed at a lower rate):
 
 | Benchmark | Calls per execution | Change in calls | Change in uncached input tokens | Change in cache-read tokens | Change in output tokens |
 | --- | --- | --- | --- | --- | --- |
 | TheAgentCompany | 2.0 | −4.0 | −97.6k | −86.8k | +0.2k |
 | APEX-Agents | 2.0 | −3.0 | −45.4k | −44.0k | −0.4k |
 
-{{< image src="table6.png" alt="Table of PTC batching and token efficiency, one row per benchmark: typed calls per PTC execution, and differences from Tool-only in tool calls, uncached input, cache-read and output tokens." caption="Table 5 — PTC batching and token efficiency (difference from Tool-only, paired by task and model) (Source: original paper, Table 6.)" width="75%" >}}
+*Table 6 — PTC batching and token efficiency (difference from Tool-only, paired by task and model) (Source: original paper, Table 6.)*
 
-Batching is modest (only 2 calls per execution on average), yet input and cache-read tokens fall a lot while output barely moves. The authors' explanation: intermediate results stay inside the program and only the selected output returns to the model, so the context carried into later turns is shorter, just as the GitLab example returned 20 titles out of 500. The paper says "may" and did not test it; the derivation is in a going-deeper section at the end.
+Batching is modest (only 2 calls per execution on average), yet input and cache-read tokens fall a lot while output barely moves. The authors suggest, without testing it, that this is because intermediate results stay inside the program and only the selected output returns to the model, so the context carried into later turns is shorter, as when the earlier made-up GitLab example returned 20 titles out of 500. A going-deeper section at the end derives the mechanism.
 
-**PTC has the lowest tool-call success rate** (Table 6): only 65.2% on TheAgentCompany versus about 92% for the other interfaces; 86.2% on APEX-Agents versus about 88% to 91%. The authors guess that "coordinating calls and handling intermediate failures inside a program is harder", without testing it further.
+**PTC has the lowest tool-call success rate** (Table 2): only 65.2% on TheAgentCompany versus about 92% for the other interfaces; 86.2% on APEX-Agents versus about 88% to 91%. The authors guess that "coordinating calls and handling intermediate failures inside a program is harder", without testing it further.
 
 {{< admonition note "Part of PTC's loss to Bash may be catalog coverage (my inference)" >}}
 PTC can only call functions in a fixed tool catalog, and TheAgentCompany's self-built catalog covers only task-relevant APIs (Appendix B.1). So the Bash − PTC gap mixes "how PTC works" with "what the catalog can reach", and the paper does not separate them.
 {{< /admonition >}}
 
-Recap: PTC really does save tokens, but the score does not follow and the gap to Bash is large; part of that gap may be the tool catalog rather than PTC itself (my inference).
-
 ## Why Bash does better: agents use the shell to write small programs
 
 The three questions settled who wins; this section asks why. Two of the extra experiments, tool use and shell usage, point the same way: given a shell, the agent does not run one command at a time but [writes small programs](../context-language-models/) that chain several actions into one call. The two most direct numbers: over 94% of shell calls are composed (with pipes, loops, multiple lines and so on), and on TheAgentCompany, exact repeat calls make up 16.2% of calls under Tool-only but only 0.3% under Bash.
 
-- **Tool use (Table 6)**: on TheAgentCompany, call-content tokens are 9.0k for Bash versus 19.6k for Tool-only, and repeat calls are 16.2% for Tool-only versus 0.3% for Bash; on APEX-Agents, the median number of calls is 7.5 for Bash versus 13.0 for Tool-only. The authors' explanation: the shell can merge repeated actions into one call.
-- **Shell usage (Table 7, Figure 4)**: over 94% of shell calls are composed; TheAgentCompany leans toward short commands plus HTTP requests, APEX-Agents toward long inline Python. Bash is not just running single commands; it is used to write small programs.
-- **The shell under Bash+Tool (Table 7)**: with typed tools available, the remaining shell calls did not get more reliable. Failure rates for Bash+Tool versus plain Bash are 10.8% versus 7.9% (TheAgentCompany) and 9.3% versus 4.4% (APEX-Agents). Adding typed tools only means less shell use; what remains is no better.
-- **Self-made tools (Table 8, Table 9)**: Opus-4.8 created 21 tools on TheAgentCompany, 12 of which were used again in later tasks; for tasks that called a self-made tool, the mean score gap against plain Bash was −0.6 pp (TheAgentCompany) and +0.1 pp (APEX-Agents), and on APEX-Agents the median token count was 31.4k higher. This data shows no value from self-made tools.
-- **Task complexity (Figure 5)**: Bash's advantage on TheAgentCompany is largest for medium-length tasks; on APEX-Agents, both improve more in the high-call bins; PTC's confidence intervals mostly cross 0. The evidence is weak; do not treat it as a conclusion.
+- **Tool use (Table 2)**: on TheAgentCompany, call-content tokens are 9.0k for Bash versus 19.6k for Tool-only; on APEX-Agents, the median number of calls is 7.5 for Bash versus 13.0 for Tool-only. The authors' explanation: the shell can merge repeated actions into one call.
+- **Shell usage (Table 3, Figure 5)**: TheAgentCompany leans toward short commands plus HTTP requests, APEX-Agents toward long inline Python. Bash is not just running single commands; it is used to write small programs.
+- **The shell under Bash+Tool (Table 3)**: with typed tools available, the remaining shell calls did not get more reliable. Failure rates for Bash+Tool versus plain Bash are 10.8% versus 7.9% (TheAgentCompany) and 9.3% versus 4.4% (APEX-Agents). Adding typed tools only means less shell use; what remains is no better.
+- **Self-made tools (Table 4, Table 5)**: Opus-4.8 created 21 tools on TheAgentCompany, 12 of which were used again in later tasks; for tasks that called a self-made tool, the mean score gap against plain Bash was −0.6 pp (TheAgentCompany) and +0.1 pp (APEX-Agents), and on APEX-Agents the median token count was 31.4k higher. This data shows no value from self-made tools.
+- **Task complexity (Figure 4)**: Bash's advantage on TheAgentCompany is largest for medium-length tasks; on APEX-Agents, both improve more in the high-call bins; PTC's confidence intervals mostly cross 0. The evidence is weak; do not treat it as a conclusion.
 - **Scores by domain (Figure 6)**: in every domain, Bash ≥ Bash+Tool ≥ Tool-only; the gap is largest in software engineering, and corporate law is barely affected by the interface. The interface matters most for coding and cross-system work, least for legal judgment.
 
 {{< fold title="Original tables and figures: tool use, shell usage, self-made tools, task complexity, domains" tone="info" >}}
 First, tool-use statistics: number of calls, tokens in call content, success rate, and the share of exact repeat calls.
 
-{{< image src="table2.png" alt="Tool-use statistics for each interface: tool calls per task, tool-related tokens, call success rate, and the share of exact repeat calls." caption="Table 6 — Tool-use statistics by interface. \"Tool tokens\" is the median of call-name, argument and result tokens; it is not billed usage and excludes context and cache effects (Source: original paper, Table 2.)" width="75%" >}}
+{{< image src="table2.png" alt="Tool-use statistics for each interface: tool calls per task, tool-related tokens, call success rate, and the share of exact repeat calls." caption="Table 2 — Tool-use statistics by interface. \"Tool tokens\" is the median of call-name, argument and result tokens; it is not billed usage and excludes context and cache effects (Source: original paper, Table 2.)" width="75%" >}}
 
 Next, shell statistics. "Composed" means a call containing pipes, logical operators, substitution, control flow, multiple lines and similar markers; failure and retry look at whether, after a shell call errors, the next call reuses the same command.
 
-{{< image src="table3.png" alt="Shell statistics for each interface: commands per call, lines of code, share of composed calls, share with loops, failure rate and retry rate." caption="Table 7 — Shell call statistics (Source: original paper, Table 3.)" width="75%" >}}
+{{< image src="table3.png" alt="Shell statistics for each interface: commands per call, lines of code, share of composed calls, share with loops, failure rate and retry rate." caption="Table 3 — Shell call statistics (Source: original paper, Table 3.)" width="75%" >}}
 
 The figure below sorts the shell commands agents actually ran into 12 executable families plus "other", to see what Bash is really used for.
 
-{{< image src="figure5.png" alt="Horizontal stacked bars of shell-command shares by executable family, for TheAgentCompany and APEX-Agents, each with bars for Bash, Bash+Tool and Bash+Synthesis." caption="Figure 4 — Shell commands by executable family; each benchmark and interface sums to 100% (Source: original paper, Figure 5.)" >}}
+{{< image src="figure5.png" alt="Horizontal stacked bars of shell-command shares by executable family, for TheAgentCompany and APEX-Agents, each with bars for Bash, Bash+Tool and Bash+Synthesis." caption="Figure 5 — Shell commands by executable family; each benchmark and interface sums to 100% (Source: original paper, Figure 5.)" >}}
 
 Reuse of self-made tools, and whether they helped, are in the next two tables.
 
-{{< image src="table4.png" alt="Self-made tool reuse and success rates: tools created and invoked per model, cross-task reuse share, and success rates of reused tools versus fresh inline code." caption="Table 8 — Reuse and success rates of self-made tools. \"Created\" means standalone Python scripts the agent wrote, excluding seeds, initializers and dependencies (Source: original paper, Table 4.)" width="75%" >}}
+{{< image src="table4.png" alt="Self-made tool reuse and success rates: tools created and invoked per model, cross-task reuse share, and success rates of reused tools versus fresh inline code." caption="Table 4 — Reuse and success rates of self-made tools. \"Created\" means standalone Python scripts the agent wrote, excluding seeds, initializers and dependencies (Source: original paper, Table 4.)" width="75%" >}}
 
-{{< image src="table5.png" alt="Paired differences of Bash+Synthesis minus Bash, grouped by whether self-made tools were called: number of tasks, and median and mean differences in score and tokens." caption="Table 9 — Paired gaps of Bash+Synthesis versus Bash, grouped by whether the task called a self-made tool, both models pooled (Source: original paper, Table 5.)" width="75%" >}}
+{{< image src="table5.png" alt="Paired differences of Bash+Synthesis minus Bash, grouped by whether self-made tools were called: number of tasks, and median and mean differences in score and tokens." caption="Table 5 — Paired gaps of Bash+Synthesis versus Bash, grouped by whether the task called a self-made tool, both models pooled (Source: original paper, Table 5.)" width="75%" >}}
 
 The task-complexity analysis follows. The x-axis is Tool-only's number of tool calls, used as a stand-in for task length.
 
-{{< image src="figure4.png" alt="Mean paired score gaps of Bash (blue line) and PTC (orange line) over Tool-only, binned by task complexity, one panel per benchmark, with confidence bands and tasks per bin." caption="Figure 5 — Task complexity and paired score gaps: improvement of Bash (blue) and PTC (orange) over Tool-only, binned by Tool-only call count; bands are 95% confidence intervals (Source: original paper, Figure 4.)" >}}
+{{< image src="figure4.png" alt="Mean paired score gaps of Bash (blue line) and PTC (orange line) over Tool-only, binned by task complexity, one panel per benchmark, with confidence bands and tasks per bin." caption="Figure 4 — Task complexity and paired score gaps: improvement of Bash (blue) and PTC (orange) over Tool-only, binned by Tool-only call count; bands are 95% confidence intervals (Source: original paper, Figure 4.)" >}}
 
 Finally, scores by domain.
 
 {{< image src="figure6.png" alt="Dot plots of mean score by work domain, one per benchmark, with five colours for the five interfaces and the number of tasks per domain." caption="Figure 6 — Mean score by domain (averaged over both models) (Source: original paper, Figure 6.)" >}}
 {{< /fold >}}
 
-Recap: given a shell, agents almost always write composed little programs that fold repeated actions into one call (the authors' explanation); adding typed tools just means less shell use, self-made tools show no value, and the interface matters most for coding and cross-system work.
-
 ## How much should you trust this evidence?
-
-With the numbers in hand, step back and judge the evidence. Overall this is a useful empirical comparison whose conclusions need discounting: low research value, moderate engineering value, and its worth lies in the direction, not the size.
 
 **Low research value.** The paper offers no new method and no new analytical framework; its contribution is putting five interfaces into one controlled setting. The value of such a paper depends on whether its baselines are fair, and that is exactly its weakest point (see the weaknesses below).
 
 **Moderate engineering value.** The direction "Bash scores higher and costs less" holds in all four settings (two models × two benchmarks) and is worth using as input when choosing; "adding typed tools or self-made tools on top of Bash showed no score gain" is also consistent, and comes with more tokens. But the size (especially TheAgentCompany's +24.6 pp) does not carry over to other systems.
 
-Four strengths:
+What it does well:
 
-- **Clean controls**: same model, same task text, same base prompt, same stopping rule; only the interface changes.
-- **Careful statistics**: paired comparisons with bootstrap confidence intervals, not just averages.
-- **Cost next to score**: tokens and cost per task sit in the same table as scores, which is more useful for real decisions than scores alone.
-- **Honest about reward hacking**, including how it was blocked (Appendix B.1).
+- Clean controls: same model, same task text, same base prompt, same stopping rule; only the interface changes.
+- Careful statistics: paired comparisons with bootstrap confidence intervals, not just averages.
+- Tokens and cost per task sit in the same table as scores, which is more useful for real decisions than scores alone.
+- It is honest about reward hacking, including how it was blocked (Appendix B.1).
 
-Three weaknesses, the first of which matters most for how to read the results:
+Where it falls short, the first point matters most for how to read the results:
 
-1. **The Tool-only baseline is not neutral.** TheAgentCompany's 60 typed tools were designed by the paper's authors and cover only task-relevant APIs; PTC's Python runtime was also implemented by the authors. So TheAgentCompany's gap mixes in the quality of the tools themselves, while APEX-Agents' 20 tools came with the benchmark and are relatively clean (my inference: not perfectly clean).
-2. **Bash's risk is not part of the score.** The paper recommends "Bash when arbitrary execution can be isolated", but neither the cost of isolation nor security incidents were quantified, and the experiment itself caught agents pulling answers from grading scripts. Bash's high scores were measured under extra guardrails. The value of typed tools for output curation, access control and auditing is not in the score either.
+1. **The Tool-only baseline is not neutral.** Besides TheAgentCompany's 60 self-built typed tools (see the Q1 section), PTC's Python runtime was also implemented by the authors. APEX-Agents' 20 tools came with the benchmark and are relatively clean, though not perfectly clean (my inference).
+2. **Bash's risk is not part of the score.** The paper recommends "Bash when arbitrary execution can be isolated", but neither the cost of isolation nor security incidents were quantified, and the experiment itself caught agents pulling answers from grading scripts. The value of typed tools for output curation, access control and auditing is not in the score either.
 3. **Run-to-run randomness is not quantified on its own.** The paired counts are 348 = 174 × 2 and 960 = 480 × 2, which suggests each "task × model" ran only once (my inference; the paper does not say). The confidence intervals resample tasks, so the "no detectable difference" results (adding typed tools, self-made tools) can rule out only effects of limited size.
 
 **Is the abstract spun?** Not obviously: its 21.8 to 24.5 pp and 4.8 to 7.4 pp are exactly the range of the four results. But it puts TheAgentCompany first, the benchmark with the larger gap and the worst baseline problem.
 
-As a side note, unrelated to the assessment above, the paper also gives model advice: use Opus-4.8 first for shell-heavy coding and cross-application work; use GPT-5.5 for token-efficient direct typed-tool calling; for document-heavy professional analysis, trade off Opus-4.8's higher quality against GPT-5.5's lower token use. The authors themselves note that this advice may not survive model updates, so it has the shortest shelf life.
-
-Recap: clean controls and careful statistics, but a non-neutral baseline, risk left out of the score, and apparently a single run per task. Use it for direction; do not copy its sizes.
-
 ## How to choose: ask about compliance first, then isolation
 
-The paper itself leaves you with little; what lasts are the habits of judgment that came out of reading it. First, what the paper itself contributes:
+What to take away:
 
-- **A controlled data set**: Bash scores higher than typed tools alone and uses fewer tokens; adding typed tools or self-made tools on top of Bash showed no detectable score gain. Trust the direction; do not copy the size (see the previous section).
+- **Bash scores higher and costs less.** All four settings agree; TheAgentCompany's +24.6 pp is mixed with a self-built baseline, so for the size, APEX-Agents' +6.2 pp is the more trustworthy figure.
+- **Adding things on top of Bash showed no score benefit.** Typed tools and self-made tools only added tokens; intervals that cross 0 only mean effects larger than about 2 to 3 pp were not detected.
+- **PTC is a compromise.** It saves tokens, holds scores flat and loses to Bash, and part of that loss may just be catalog coverage.
+
+The paper itself leaves you with little; what lasts are the habits of judgment that came out of reading it. What the paper itself contributes:
+
+- **A controlled data set**: scores, tokens and costs for five interfaces under one setup. Trust the direction; do not copy the size (see the previous section).
 - **A reward-hacking case**: agents with a shell pulled answers from grading scripts instead of doing the work (Appendix B.1). That is a warning for any experiment that gives an agent a shell and then grades it on a benchmark: if the environment can reach the grader, the scores cannot be taken at face value.
 - **Close to zero methodological contribution**: all five interfaces are combinations of existing practice.
 
-Five habits hold beyond this paper, each worked through in the going-deeper sections at the end:
+These habits hold beyond this paper; the going-deeper sections at the end work through each one:
 
 - **When you see "A beats B", check who built B**: however weak the baseline was made gets mixed into the result.
 - **The key to saving tokens is keeping bulky intermediate data out of the context**: every token in the context is paid for again on every later turn.
@@ -351,7 +335,7 @@ Five habits hold beyond this paper, each worked through in the going-deeper sect
 - **Typed tools plus exec (a tool that runs shell commands)**: the paper does not show this hybrid beating plain Bash, and did not measure the stability that curated output might bring.
 - **"No detectable difference" is not "no difference"**: the width of the confidence interval decides how small an effect the experiment can detect.
 
-**A rule for choosing a tool interface.** The paper's advice is conditional: if compliance limits you to a fixed tool catalog, use PTC; if you can isolate arbitrary code execution, use Bash. As a decision order, ask about compliance first, then about isolation:
+**A rule for choosing a tool interface.** The paper's advice is conditional; as a decision order, ask about compliance first, then about isolation:
 
 | Order | Question | If yes | If no |
 | --- | --- | --- | --- |
@@ -360,19 +344,15 @@ Five habits hold beyond this paper, each worked through in the going-deeper sect
 
 Stacking typed tools or self-made tools on top of Bash is not on this path, because the paper saw no score benefit; if you add them, the reason has to be a value other than score.
 
+The paper also gives model advice: use Opus-4.8 first for shell-heavy coding and cross-application work; use GPT-5.5 for token-efficient direct typed-tool calling; for document-heavy professional analysis, trade off Opus-4.8's higher quality against GPT-5.5's lower token use. The authors themselves note that this advice may not survive model updates, so it has the shortest shelf life.
+
 {{< admonition warning "Two limits to keep in mind" >}}
 First, the study did not measure typed tools' output curation, access control or auditing; those benefits are not in the score and should not be read as disproven. Second (my inference), as long as the agent has a shell, typed tools are not a security boundary, because the agent can go around them at any time; a fixed tool catalog has security value only when there is no shell.
 {{< /admonition >}}
 
-The whole post in five sentences:
+Next time you see "new method crushes the baseline", first ask who built the baseline, then check how wide the confidence interval is. When you design an agent, ask about compliance first, then isolation, and watch for any tool that is dumping a whole stack of results into the context.
 
-- **Bash scores higher and costs less.** All four settings (two benchmarks × two models) agree, but TheAgentCompany's +24.6 pp is mixed with the effect of a self-built baseline, and APEX-Agents' +6.2 pp is more trustworthy.
-- **Adding things on top of Bash showed no score benefit.** Typed tools and self-made tools only added tokens; intervals that cross 0 only mean effects larger than about 2 to 3 pp were not detected.
-- **PTC is a compromise.** It saves tokens, holds scores flat and loses to Bash, and part of that loss may just be catalog coverage.
-- **Choose by conditions, not by one number.** Fixed tools only for compliance: PTC; arbitrary execution can be isolated: Bash. The value of typed tools for output curation, access and auditing was not measured here, which does not mean it is absent.
-- **The checks outlast the conclusions.** When A beats B, ask who built B; the key to saving tokens is keeping bulky intermediate data out of the context; batching and reach are different things; no detectable difference is not no difference.
-
-Next time you see "new method crushes the baseline", do two things first: ask who built the baseline, then check how wide the confidence interval is. When you design an agent, ask about compliance first, then isolation, and watch for any tool that is dumping a whole stack of results into the context.
+A note on labels: setup and results without a label come from the paper; the assessment in "How much should you trust this evidence?" and the habits in the going-deeper sections are the note author's views. "My inference" marks the note author's guess, "made-up example" marks scenarios and numbers invented for illustration, "general knowledge" marks background from outside the paper, and "the paper does not say" marks what the paper leaves out.
 
 ## Going deeper: when A beats B, check who built B
 
@@ -380,7 +360,7 @@ The five sections below are habits of judgment worked out while reading the pape
 
 Any result of the form "new method A beats old method B" equals the method's own merit plus how weakly B was built; when B was designed by the proposer, the second part is often underestimated.
 
-**Taking a comparison apart.** In words: the "A minus B" you see in a table is really three things added together: A's own merit, the shortfall caused by how weakly B was built, and noise.
+**Taking a comparison apart.** As a formula, with noise added as a third term:
 
 $$
 \text{observed gap} = \text{A's own merit} + \text{shortfall from a weak B} + \text{noise}
@@ -421,7 +401,7 @@ The gaps on the two benchmarks differ by a factor of four (+24.6 versus +6.2), a
 
 ## Going deeper: why keeping intermediate results out of the context saves tokens
 
-The model rereads everything so far on every turn, so every token that enters the [context](../../ai-concept/context-engineering/) is paid for again on every later turn; keeping bulky intermediate data outside the model is the most direct saving. The mechanism in this section is general knowledge, not from the paper; the paper offers only Table 5 as indirect evidence.
+The model rereads everything so far on every turn, so every token that enters the [context](../../ai-concept/context-engineering/) is paid for again on every later turn; keeping bulky intermediate data outside the model is the most direct saving. The mechanism in this section is general knowledge, not from the paper; the paper offers only Table 6 as indirect evidence.
 
 **Two terms first.**
 
@@ -463,9 +443,9 @@ total_input(5_000, {0: 100_000}, 10)   # about 950K (Tool-only)
 total_input(5_000, {0: 400}, 10)       # about 50K (Bash/PTC)
 ```
 
-Real systems usually have prompt caching: a repeated prefix is reread at a lower price. That lowers the price but not the token count; the input tokens in the paper's results table (Table 3) include cache reads too. So "keep bulky data out of the context" still holds with caching; the dollar gap just shrinks.
+Real systems usually have prompt caching: a repeated prefix is reread at a lower price. That lowers the price but not the token count; the input tokens in the paper's results table (Table 1) include cache reads too. So "keep bulky data out of the context" still holds with caching; the dollar gap just shrinks.
 
-**The paper's indirect evidence, and its limits.** Table 5 (the paper's Table 6) shows that, against Tool-only, PTC on TheAgentCompany cut uncached input by 97.6k and cache reads by 86.8k while output rose only 0.2k; on APEX-Agents the cuts were 45.4k and 44.0k, with output down 0.4k. Each execution batched only 2.0 calls on average, so the saving is mostly not about the number of calls. The authors' explanation: intermediate results are processed in the program and only the selected output comes back, so the context carried into later turns is shorter. They phrase it as "may" (*may reflect*) and did not test it directly.
+**The paper's indirect evidence, and its limits.** The evidence is Table 6 in the PTC section: against Tool-only, uncached input and cache reads both fall sharply while output barely moves, and each execution batched only 2.0 calls on average, so the saving is mostly not about the number of calls. The authors' explanation: intermediate results are processed in the program and only the selected output comes back, so the context carried into later turns is shorter. They phrase it as "may" (*may reflect*) and did not test it directly.
 
 **Other ways to cut the tokens entering the context** (general knowledge):
 
@@ -502,15 +482,15 @@ Bash and PTC can both fold several actions into one model call; the real differe
 
 | Interface | Can it batch? | Evidence in the paper |
 | --- | --- | --- |
-| Tool-only | No; every action is a separate call | Table 6: exact repeat calls are 16.2% (TheAgentCompany); the authors' explanation is that it exposes every repetition as a separate call |
-| Bash | Yes: pipes, `&&`, loops, heredocs (multi-line text embedded in a command), inline scripts | Table 7: 94.3% and 96.5% of shell calls are composed; calls with loop markers are 27.5% and 67.8%; Table 6: on APEX-Agents the median number of calls is 7.5 versus 13.0 for Tool-only |
-| PTC | Yes: Python loops, chaining, parallelism, but only over catalog functions | Table 5: each execution batched only 2.0 typed tool calls on average |
+| Tool-only | No; every action is a separate call | Table 2: exact repeat calls are 16.2% (TheAgentCompany); the authors' explanation is that it exposes every repetition as a separate call |
+| Bash | Yes: pipes, `&&`, loops, heredocs (multi-line text embedded in a command), inline scripts | Table 3: 94.3% and 96.5% of shell calls are composed; calls with loop markers are 27.5% and 67.8%; Table 2: on APEX-Agents the median number of calls is 7.5 versus 13.0 for Tool-only |
+| PTC | Yes: Python loops, chaining, parallelism, but only over catalog functions | Table 6: each execution batched only 2.0 typed tool calls on average |
 
-**"Is this benchmark unfair to PTC?"** Having seen PTC lose to Bash, a natural question is whether these two benchmarks simply suit PTC poorly. PTC's edge comes from looping over many calls; if a task only needs a dozen or so calls, the edge never shows. The short answer: **possibly, but the paper did not test it directly.** The evidence:
+**"Is this benchmark unfair to PTC?"** Having seen PTC lose to Bash, a natural question is whether these two benchmarks simply suit PTC poorly. PTC's edge comes from looping over many calls; if a task only needs a dozen or so calls, the edge never shows. **possibly, but the paper did not test it directly.** The evidence:
 
 - **For the hypothesis**: the median number of Tool-only calls per task is only 14.0 (TheAgentCompany) and 13.0 (APEX-Agents), and PTC batched only 2.0 calls per execution on average, which is not a heavy-looping workload.
-- **Partly consistent**: in the task-complexity figure (Figure 5), PTC's mean score gap turns positive in APEX-Agents' high-call bins. But the authors themselves note that PTC's confidence intervals cross 0 in most bins, so the evidence is weak.
-- **High-call tasks are a minority**: the 31-to-60-call bin holds only about 16% (56/348) and 8% (80/960) of the paired tasks (computed by the note author from the per-bin task counts in Figure 5).
+- **Partly consistent**: in the task-complexity figure (Figure 4), PTC's mean score gap turns positive in APEX-Agents' high-call bins. But the authors themselves note that PTC's confidence intervals cross 0 in most bins, so the evidence is weak.
+- **High-call tasks are a minority**: the 31-to-60-call bin holds only about 16% (56/348) and 8% (80/960) of the paired tasks (computed by the note author from the per-bin task counts in Figure 4).
 - **The paper does not say**: it splits scores by call count but not token savings, so "the more calls, the more PTC saves" is plausible but unverified.
 
 **The real difference: reach.**
@@ -535,12 +515,7 @@ Giving an agent a set of typed tools plus one exec tool (which runs shell comman
 
 **The paper's data.**
 
-| Comparison (Table 4, Table 3, Table 7) | TheAgentCompany | APEX-Agents |
-| --- | --- | --- |
-| Bash+Tool − Tool-only (score) | +24.1 pp [+20.1, +28.3] | +5.9 pp [+3.6, +8.3] |
-| Bash+Tool − Bash (score) | −0.6 pp [−3.0, +1.9] | −0.2 pp [−2.4, +1.9] |
-| Total tokens: Bash+Tool vs Bash (Opus-4.8) | 569k vs 264k | 396k vs 215k |
-| Shell failure rate: Bash+Tool vs Bash | 10.8% vs 7.9% | 9.3% vs 4.4% |
+The paper's numbers have all appeared already. Bash+Tool's gain over Tool-only (TheAgentCompany +24.1 pp [+20.1, +28.3], APEX-Agents +5.9 pp [+3.6, +8.3]) is about the same as plain Bash's; against plain Bash it shows no detectable score difference (the Table 9 excerpt in Q2), yet uses noticeably more tokens (the Table 1 excerpt in Q2), and its shell calls fail more often (the section on why Bash does better).
 
 The paper (§5.4) says: with typed tools added, the shell is used less, but the remaining shell calls are no more reliable. In tasks that use the shell, Bash+Tool has the lowest median number of shell calls, yet the highest failure rate and the lowest immediate-retry rate.
 
