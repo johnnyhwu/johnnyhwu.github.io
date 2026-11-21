@@ -95,11 +95,18 @@ python3 $S/validate_plan.py plans/<slug>/post.zh.json --article <article.md> --m
 python3 $S/brief.py plans/<slug>/post.zh.json --out plans/<slug>/work/skeleton.md
 ```
 
-**Stop and show the author the brief** (a short chat summary of `skeleton.md`: title candidates, hook, the three
-takeaways, the outline, and everything under "Needs your attention"), plus what is still cheap to fix now: a
-missing paper link (`planner-guide.md` §5), figures unreadable at column width, and any SEO check skipped for a
-missing tool (the author can turn it on before the draft). Wait for approval or changes. Do not write
-the full draft before that: changing the story after the draft costs the most.
+**Show the author the brief, then keep going on your own recommendations** (the author's standing instruction, given
+2026-11-19). Post a short chat summary of `skeleton.md`: title candidates, hook, the three takeaways, the outline,
+everything under "Needs your attention" with what you recommend for each, and what is still cheap to fix now (a
+missing paper link, `planner-guide.md` §5; figures unreadable at column width; any SEO check skipped for a missing
+tool). Then continue to the draft without waiting; the `needs_human` decisions are repeated in the PR, where the
+author can still overrule them.
+
+**Stop and wait only for a serious issue the author has to decide**, for example: the section is genuinely
+ambiguous (a wrong section changes the URL); doubt about the source would drop or reword a detail (a `dropped` or
+`reworded` decision); a folded caveat would change how the headline result reads; the paper link is missing with no
+id to recover it; or nothing in your recommendations reads as a safe default. Reviewer deadlocks still escalate as
+in `references/review-loop.md`.
 
 **P3. Draft.** Write the `blocks` (and finish `glossary`, `decisions`, each ledger item's `dest`) following
 `references/planner-guide.md`. Re-run `validate_plan.py` (default stage `draft`) until it exits 0. Warnings are
@@ -128,7 +135,8 @@ unittest discover -s tests`.
 
 ## Definition of done
 
-- Skeleton approved by the author; every `needs_human` decision was shown to them.
+- Skeleton brief shown to the author (and approved, if a serious issue made you stop); every `needs_human` decision
+  is in the brief and in the PR.
 - `validate_plan.py` exits 0 on the zh plan (draft stage) and on the en plan with `--zh`.
 - Reader and Fidelity both returned `approve` (no blocker or major), or the author accepted the open findings after
   an escalation; the final full cold read found no blocker or major.
