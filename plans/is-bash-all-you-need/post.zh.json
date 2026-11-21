@@ -341,7 +341,7 @@
   },
   {
    "term": "pipe",
-   "defined_in": "s2.b2"
+   "defined_in": "s3a.b3"
   },
   {
    "term": "reward hacking",
@@ -391,7 +391,6 @@
    "layer": "support",
    "section": "s1",
    "dest": [
-    "s1.b7",
     "s1.b8"
    ]
   },
@@ -520,7 +519,7 @@
    "layer": "support",
    "section": "s2",
    "dest": [
-    "s2.b1"
+    "s2.b3"
    ]
   },
   {
@@ -765,8 +764,8 @@
    "layer": "support",
    "section": "s3c",
    "dest": [
-    "s3c.b4",
-    "s3c.b5"
+    "s3c.f1.c1",
+    "s3c.f1.c2"
    ]
   },
   {
@@ -782,8 +781,8 @@
    "layer": "support",
    "section": "s3c",
    "dest": [
-    "s3c.b6",
-    "s3c.b7"
+    "s3c.f1.c3",
+    "s3c.f1.c4"
    ]
   },
   {
@@ -848,7 +847,7 @@
    "section": "s4",
    "dest": [
     "s4.b1",
-    "s4.b2"
+    "s4.f1.c1"
    ]
   },
   {
@@ -864,8 +863,8 @@
    "layer": "support",
    "section": "s4",
    "dest": [
-    "s4.b3",
-    "s4.b4"
+    "s4.b4",
+    "s4.b1"
    ]
   },
   {
@@ -946,7 +945,7 @@
    "section": "s4",
    "dest": [
     "s4.b9",
-    "s4.b10"
+    "s4.f2.c1"
    ]
   },
   {
@@ -1140,8 +1139,7 @@
    "section": "s6",
    "dest": [
     "s6.b5",
-    "s6.b6",
-    "s6.b7"
+    "s6.b6"
    ]
   },
   {
@@ -1341,7 +1339,7 @@
    "layer": "main",
    "section": "s8",
    "dest": [
-    "s8.b1"
+    "s8.b3"
    ]
   },
   {
@@ -1468,7 +1466,7 @@
    },
    "gist": "論文的模型建議（Opus-4.8 shell 工作、GPT-5.5 token 效率、文件分析取捨），模型更新後未必成立",
    "layer": "support",
-   "section": "s8",
+   "section": "s9",
    "dest": [
     "s8.b9"
    ]
@@ -2258,7 +2256,7 @@
    ],
    "tone": "warning",
    "title": "方向可信，幅度要打折",
-   "text": "TheAgentCompany 的 60 個 typed tools 是論文作者自己設計的，所以 Bash 的優勢混著「這組工具做得好不好」。Bash 的高分也是在額外防護（封鎖評分腳本、加密同事資料）之下測出來的。一句話總結：**這是一份「方向可用、幅度不可直接搬」的實證比較。**"
+   "text": "TheAgentCompany 的 60 個 typed tools 是論文作者自己設計的，所以 Bash 的優勢混著「這組工具做得好不好」。Bash 的高分也是在額外防護（封鎖評分腳本、加密同事資料）之下測出來的。"
   },
   {
    "id": "s1.b6",
@@ -2272,18 +2270,6 @@
    "text": "論文的實務建議是條件式的：能把任意程式碼執行隔離起來，就用 Bash；合規要求只能用固定工具目錄，就用 PTC。"
   },
   {
-   "id": "s1.b7",
-   "section": "s1",
-   "type": "paragraph",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L002"
-   ],
-   "text": "接下來先看實驗怎麼設計、三個問題各自的答案和 Bash 贏的原因，再評估這份證據能信幾分，最後整理選型規則。幾個脫離這篇論文也成立的判斷方法，放在結論之後的延伸段落。",
-   "purpose": "signpost"
-  },
-  {
    "id": "s1.b8",
    "section": "s1",
    "type": "paragraph",
@@ -2295,68 +2281,15 @@
    "text": "論文：[Is Bash All You Need? An Empirical Study of Tool Interfaces for Enterprise Digital Worker Agents](https://arxiv.org/abs/2609.11999)（Microsoft、CMU，arXiv 2609.11999v1，2026-09-10）。論文沒有提出新方法，價值在於把五種介面放進同一個受控設定裡比較。"
   },
   {
-   "id": "s2.b1",
-   "section": "s2",
-   "type": "paragraph",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L010"
-   ],
-   "text": "先退一步看問題本身：企業 agent 該用什麼方式對環境下動作，目前缺乏受控的對照證據。這篇論文用兩個企業工作 benchmark 補這個缺口。下面先把會反覆出現的名詞講清楚。",
-   "purpose": "signpost"
-  },
-  {
    "id": "s2.b2",
    "section": "s2",
-   "type": "table",
+   "type": "paragraph",
    "layer": "main",
    "origin": "source",
    "ledger": [
     "L011"
    ],
-   "headers": [
-    "名詞",
-    "意思",
-    "特性"
-   ],
-   "rows": [
-    [
-     "Agent",
-     "讓大型語言模型（LLM）反覆「想 → 呼叫工具 → 讀結果」直到完成任務的系統",
-     "每一輪都要把前面的對話重新讀一遍"
-    ],
-    [
-     "工具介面（tool interface）",
-     "agent 用什麼方式對環境（服務 API、檔案、應用程式）下動作",
-     "決定 agent 能做什麼、多安全、多貴"
-    ],
-    [
-     "Typed tool",
-     "預先定義好名稱與參數格式的函式，例如 `gitlab_create_issue`，模型一次呼叫一個",
-     "安全可控，只能做被授權的事，但一個動作就是一次呼叫"
-    ],
-    [
-     "Bash（shell）",
-     "只給模型一個命令列，讓它自己寫指令，可用 **pipe**（`\\|`，把前一個指令的輸出接給下一個）等方式一次串多個動作",
-     "彈性最大，但任意執行需要另外做隔離與權限控管"
-    ],
-    [
-     "PTC（Programmatic Tool Calling）",
-     "模型寫一小段 Python，程式裡只能呼叫預先定義的 typed tools，可以 loop、串接，但碰不到 shell",
-     "介於兩者之間：保留固定工具目錄，又能批次處理"
-    ],
-    [
-     "MCP（一般知識，不是論文內容）",
-     "Model Context Protocol，把外部服務包成「模型可呼叫工具」的標準做法",
-     "論文的 APEX-Agents 環境用 MCP 伺服器提供應用程式"
-    ],
-    [
-     "Token",
-     "模型讀寫文字的計費單位",
-     "論文用 token 數與估算的美元成本衡量「貴不貴」"
-    ]
-   ]
+   "text": "agent 是讓大型語言模型（LLM）反覆「想 → 呼叫工具 → 讀結果」直到完成任務的系統，每一輪都要把前面的對話重新讀一遍。給它哪種工具介面，決定了它能做什麼、多安全、多貴；「貴」在論文裡用 token 數與估算的美元成本來量。後面的 APEX-Agents 環境用 MCP 伺服器提供應用程式：MCP（Model Context Protocol）是把外部服務包成「模型可呼叫工具」的標準做法（一般知識，不是論文內容）。"
   },
   {
    "id": "s2.b3",
@@ -2365,15 +2298,16 @@
    "layer": "support",
    "origin": "source",
    "ledger": [
+    "L010",
     "L012",
     "L013",
     "L014"
    ],
    "ordered": false,
    "items": [
-    "**Coding 領域已經有先例**：在寫程式的 agent 裡，mini-SWE-agent 只給 bash，Live-SWE-agent 則讓 agent 自己造工具，還登上過 SWE-bench Verified（寫程式 agent 的評測排行榜）榜首。",
-    "**企業產品兩條路並存**：Anthropic 與 OpenAI 的 API 提供 PTC（受限在固定工具目錄內）；Claude Code、Codex CLI、Microsoft Copilot Studio（底層是 GitHub Copilot CLI）走 shell 路線。",
-    "**缺口**：企業工作要在多個應用之間切換、跟同事溝通、做專業分析，和寫程式不一樣，而 shell 對 typed tools 的受控比較在這類場景很少，實務者沒有證據可選。同期有一篇 Patel et al. 2026（*The Bitter Lesson of Tool Calling*）比較了 PTC 與一般 JSON 工具呼叫，但沒有納入 shell。"
+    "Coding 領域已經有先例：在寫程式的 agent 裡，mini-SWE-agent 只給 bash，Live-SWE-agent 則讓 agent 自己造工具，還登上過 SWE-bench Verified（寫程式 agent 的評測排行榜）榜首。",
+    "企業產品兩條路並存：Anthropic 與 OpenAI 的 API 提供 PTC（受限在固定工具目錄內）；Claude Code、Codex CLI、Microsoft Copilot Studio（底層是 GitHub Copilot CLI）走 shell 路線。",
+    "缺口：企業工作要在多個應用之間切換、跟同事溝通、做專業分析，和寫程式不一樣，而 shell 對 typed tools 的受控比較在這類場景很少，實務者沒有證據可選。同期有一篇 Patel et al. 2026（*The Bitter Lesson of Tool Calling*）比較了 PTC 與一般 JSON 工具呼叫，但沒有納入 shell。"
    ]
   },
   {
@@ -2415,17 +2349,6 @@
    ]
   },
   {
-   "id": "s2.b9",
-   "section": "s2",
-   "type": "callout",
-   "layer": "support",
-   "origin": "editorial",
-   "ledger": [],
-   "tone": "info",
-   "title": "文中的來源標示",
-   "text": "實驗設定與結果沒有特別標示的，是論文內容。開頭「方向可信、幅度要打折」的判斷、〈這份證據能信幾分〉的評估、結論段落的整理，以及文末延伸段落的判斷方法，是筆記作者的看法。標「我的推論」的是筆記作者的推測，不是論文作者的主張；標「自編例子」的是為了說明自己編的情境與數字；標「一般知識」的是論文以外的背景。論文沒交代的地方，會直接寫「論文未說明」。"
-  },
-  {
    "id": "s2.b6",
    "section": "s2",
    "type": "paragraph",
@@ -2434,7 +2357,7 @@
    "ledger": [
     "L016"
    ],
-   "text": "論文沒有獨立的「挑戰」章節。以下三題是依論文的 Introduction 與 Method 整理的（我的整理，不是原文分段），後面的實驗結果就照這三題走："
+   "text": "以下三題是我依論文的 Introduction 與 Method 整理的，後面的實驗結果就照這三題走："
   },
   {
    "id": "s2.b7",
@@ -2451,16 +2374,6 @@
     "**Q2**：在 shell 之上再加 typed tools，或讓 agent 自造可重用的工具，有沒有額外好處？",
     "**Q3**：PTC 這個折衷方案的表現如何？"
    ]
-  },
-  {
-   "id": "s2.b8",
-   "section": "s2",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "editorial",
-   "ledger": [],
-   "text": "小結：一條路換來彈性，一條路換來控管。接下來看論文作者怎麼把這兩條路，連同中間的折衷，放進同一個受控的設定裡比。",
-   "purpose": "recap"
   },
   {
    "id": "s3.b1",
@@ -2519,12 +2432,12 @@
     [
      "Tool-only",
      "只有 typed tools",
-     "每個動作一次獨立呼叫，是基準線"
+     "每個動作一次獨立呼叫，是基準線；只暴露被授權的函式，安全可控"
     ],
     [
      "Bash",
      "只有 shell",
-     "可以用 pipe、迴圈把多個動作串成一次呼叫"
+     "可以用 **pipe**（`\\|`，把前一個指令的輸出接給下一個）、迴圈把多個動作串成一次呼叫；彈性最大，但任意執行需要另外做隔離與權限控管"
     ],
     [
      "Bash+Tool",
@@ -2539,7 +2452,7 @@
     [
      "PTC",
      "模型寫 Python，程式裡只能呼叫 typed tools",
-     "可以 loop、串接、平行，但沒有 shell，也沒有其他能碰到環境的管道"
+     "介於兩者之間：保留固定工具目錄，又能 loop、串接、平行批次處理；但沒有 shell，也沒有其他能碰到環境的管道"
     ]
    ]
   },
@@ -2564,7 +2477,7 @@
     "L021",
     "L084"
    ],
-   "text": "用一個自編例子看三種介面的差別。任務：找出某個 GitLab 專案裡，標題含 \"bug\" 的 open issue 標題。假設專案有 500 個 open issue，其中 20 個符合。看的重點是：每種做法有多少資料回到模型的**上下文**（模型每一輪讀入的全部文字，包含之前每一輪的工具結果）。",
+   "text": "用一個自編例子看三種介面的差別。任務：找出某個 GitLab 專案裡，標題含「bug」的 open issue 標題。假設專案有 500 個 open issue，其中 20 個符合。看的重點是：每種做法有多少資料回到模型的**上下文**（模型每一輪讀入的全部文字，包含之前每一輪的工具結果）。",
    "illustrative": true
   },
   {
@@ -2680,66 +2593,67 @@
    ]
   },
   {
-   "id": "s3c.b4",
+   "id": "s3c.f1",
    "section": "s3c",
-   "type": "paragraph",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L025"
-   ],
-   "text": "表中最要記住的是「typed tools 從哪來」這一列。兩邊的工具清單論文都列在附錄；TheAgentCompany 那 60 個是論文作者自己設計的，按服務分組如下表。"
-  },
-  {
-   "id": "s3c.b5",
-   "section": "s3c",
-   "type": "figure",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L025"
-   ],
-   "manifest_id": "img-012",
-   "alt": "TheAgentCompany 的 60 個 typed tools 依服務分組列出，涵蓋工作區、Rocket.Chat、ownCloud、GitLab 與 Plane，每列是一個服務與它的函式名稱。",
-   "caption": "表 1 — TheAgentCompany 的 60 個 typed tools，依服務分組",
-   "paper_label": "Table 7",
-   "role": "evidence"
-  },
-  {
-   "id": "s3c.b6",
-   "section": "s3c",
-   "type": "paragraph",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L026"
-   ],
-   "text": "APEX-Agents 的 20 個工具是 benchmark 原有的。除了檔案系統伺服器之外，每個伺服器都由一個「動作分派工具」搭配一個「schema 工具」組成。"
-  },
-  {
-   "id": "s3c.b7",
-   "section": "s3c",
-   "type": "figure",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L026"
-   ],
-   "manifest_id": "img-013",
-   "alt": "APEX-Agents 的 20 個 typed tools 依 8 個非 shell 伺服器列出，包含日曆、聊天、文件、檔案系統、郵件、PDF、試算表與簡報。",
-   "caption": "表 2 — APEX-Agents 的 20 個 typed tools，分屬 8 個非 shell 伺服器",
-   "paper_label": "Table 8",
-   "role": "evidence"
-  },
-  {
-   "id": "s3c.b8",
-   "section": "s3c",
-   "type": "paragraph",
+   "type": "fold",
    "layer": "main",
    "origin": "editorial",
    "ledger": [],
-   "text": "小結：一邊的 typed tools 是論文作者自製的，一邊是 benchmark 原有的。後面判斷「能信幾分」時，會用到這個差別。",
-   "purpose": "recap"
+   "title": "兩個 benchmark 的工具清單（論文 Table 7、Table 8）",
+   "children": [
+    {
+     "id": "s3c.f1.c1",
+     "section": "s3c",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L025"
+     ],
+     "text": "兩邊的工具清單論文都列在附錄。TheAgentCompany 的 60 個按服務分組如下："
+    },
+    {
+     "id": "s3c.f1.c2",
+     "section": "s3c",
+     "type": "figure",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L025"
+     ],
+     "manifest_id": "img-012",
+     "alt": "TheAgentCompany 的 60 個 typed tools 依服務分組列出，涵蓋工作區、Rocket.Chat、ownCloud、GitLab 與 Plane，每列是一個服務與它的函式名稱。",
+     "caption": "表 7 — TheAgentCompany 的 60 個 typed tools，依服務分組",
+     "paper_label": "Table 7",
+     "role": "evidence"
+    },
+    {
+     "id": "s3c.f1.c3",
+     "section": "s3c",
+     "type": "paragraph",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L026"
+     ],
+     "text": "APEX-Agents 的 20 個工具是 benchmark 原有的。除了檔案系統伺服器之外，每個伺服器都由一個「動作分派工具」搭配一個「schema 工具」組成。"
+    },
+    {
+     "id": "s3c.f1.c4",
+     "section": "s3c",
+     "type": "figure",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L026"
+     ],
+     "manifest_id": "img-013",
+     "alt": "APEX-Agents 的 20 個 typed tools 依 8 個非 shell 伺服器列出，包含日曆、聊天、文件、檔案系統、郵件、PDF、試算表與簡報。",
+     "caption": "表 8 — APEX-Agents 的 20 個 typed tools，分屬 8 個非 shell 伺服器",
+     "paper_label": "Table 8",
+     "role": "evidence"
+    }
+   ]
   },
   {
    "id": "s3d.b1",
@@ -2823,52 +2737,17 @@
    ]
   },
   {
-   "id": "s3e.b3",
-   "section": "s3e",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "editorial",
-   "ledger": [],
-   "text": "小結：同模型、同任務、只換介面；比較兩種介面時，看配對分數差和它的信賴區間。下一節開始看三個問題的答案。",
-   "purpose": "recap"
-  },
-  {
    "id": "s4.b1",
    "section": "s4",
    "type": "paragraph",
    "layer": "main",
    "origin": "source",
    "ledger": [
-    "L030"
-   ],
-   "text": "先講結論：不論模型、不論 benchmark，Bash 都比 Tool-only 分數高、token 少；在 Bash 上加東西沒有增益；PTC 省 token 但分數持平，整體輸給 Bash。三個問題的答案都來自兩張總表：表 3 是 5 種介面乘 2 個模型乘 2 個 benchmark 的全部結果（論文 Table 1），表 4 是配對分數差（論文 Table 9）。後面的對照都是從這兩張表逐格取出來的。",
-   "purpose": "signpost"
-  },
-  {
-   "id": "s4.b2",
-   "section": "s4",
-   "type": "figure",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L030"
-   ],
-   "manifest_id": "img-003",
-   "alt": "五種介面在兩個模型、兩個 benchmark 上的完整結果表，列出分數、通過率、各類 token、每題成本與每題耗時，分數與通過率各附 95% bootstrap 信賴區間。",
-   "caption": "表 3 — 五種介面的完整結果。分數與通過率附 95% bootstrap 信賴區間，token 欄位為每題平均（單位千），輸入含快取讀取，總量為輸入加輸出",
-   "paper_label": "Table 1",
-   "role": "evidence"
-  },
-  {
-   "id": "s4.b3",
-   "section": "s4",
-   "type": "paragraph",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
+    "L030",
     "L031"
    ],
-   "text": "把分數對總 token 數畫在一起（token 為對數刻度），越靠左上越好："
+   "text": "Q1 到 Q3 的答案，都是從論文兩張總表逐格取出來的：表 1 是 5 種介面乘 2 個模型乘 2 個 benchmark 的全部結果，表 9 是配對分數差。先把分數對總 token 數畫在一起（token 為對數刻度），越靠左上越好：",
+   "purpose": "signpost"
   },
   {
    "id": "s4.b4",
@@ -2941,7 +2820,10 @@
      "328k → 176k",
      "0.52 → 0.40"
     ]
-   ]
+   ],
+   "source_figure": "img-003",
+   "extent": "excerpt",
+   "caption": "表 1 — 摘錄：Tool-only 換成 Bash 的四組結果"
   },
   {
    "id": "s4.b7",
@@ -2955,6 +2837,32 @@
    "text": "四組全部同向：分數變高，token 和成本變低。開頭的「+21.8 到 +24.5 pp」與「+4.8 到 +7.4 pp」，就是這張表的分數欄逐格相減。"
   },
   {
+   "id": "s4.f1",
+   "section": "s4",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "原始表格：五種介面的完整結果（論文 Table 1）",
+   "children": [
+    {
+     "id": "s4.f1.c1",
+     "section": "s4",
+     "type": "figure",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L030"
+     ],
+     "manifest_id": "img-003",
+     "alt": "五種介面在兩個模型、兩個 benchmark 上的完整結果表，列出分數、通過率、各類 token、每題成本與每題耗時，分數與通過率各附 95% bootstrap 信賴區間。",
+     "caption": "表 1 — 五種介面的完整結果。分數與通過率附 95% bootstrap 信賴區間，token 欄位為每題平均（單位千），輸入含快取讀取，總量為輸入加輸出",
+     "paper_label": "Table 1",
+     "role": "evidence"
+    }
+   ]
+  },
+  {
    "id": "s4.b8",
    "section": "s4",
    "type": "paragraph",
@@ -2963,7 +2871,7 @@
    "ledger": [
     "L035"
    ],
-   "text": "**統計上站得住嗎？** 下表是以配對任務算出的平均分數差（摘自表 4）。TheAgentCompany 的 +24.6 pp 比上面逐格相減的範圍（最高 24.5）略高一點，兩邊的算法不同，論文沒有說明這個小出入的來源。"
+   "text": "**統計上站得住嗎？** 下表是以配對任務算出的平均分數差（摘自表 9）。TheAgentCompany 的 +24.6 pp 比上面逐格相減的範圍（最高 24.5）略高一點，兩邊的算法不同，論文沒有說明這個小出入的來源。"
   },
   {
    "id": "s4.b9",
@@ -2993,22 +2901,10 @@
      "[+3.6, +8.7]",
      "220 / 596 / 144"
     ]
-   ]
-  },
-  {
-   "id": "s4.b10",
-   "section": "s4",
-   "type": "figure",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L036"
    ],
-   "manifest_id": "img-015",
-   "alt": "各介面兩兩比較的配對平均分數差表，列出配對任務數、平均差與 95% 信賴區間，以及勝／平／負的題數。",
-   "caption": "表 4 — 各介面兩兩比較的配對分數差，正數代表前者較好，括號內為 95% bootstrap 信賴區間",
-   "paper_label": "Table 9",
-   "role": "evidence"
+   "source_figure": "img-015",
+   "extent": "excerpt",
+   "caption": "表 9 — 摘錄：Bash 相對 Tool-only 的配對分數差"
   },
   {
    "id": "s4.b11",
@@ -3019,7 +2915,33 @@
    "ledger": [
     "L037"
    ],
-   "text": "兩個區間都不含 0，代表在這批資料裡，Bash 較好的方向相當穩定。不過 APEX-Agents 有 144 個配對是 Bash 反而輸，整體只是 Bash 贏的題數多於輸的題數。論文作者的解讀是，彈性執行對寫程式與跨應用的工作幫助，大於對領域推理的幫助（原文語氣為「可能」）。"
+   "text": "兩個區間都不含 0，代表在這批資料裡，Bash 較好的方向相當穩定。不過 APEX-Agents 有 144 個配對是 Bash 反而輸，整體只是 Bash 贏的題數多於輸的題數。論文作者認為，彈性執行對寫程式與跨應用工作的幫助，可能大於對領域推理的幫助。"
+  },
+  {
+   "id": "s4.f2",
+   "section": "s4",
+   "type": "fold",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "title": "原始表格：所有介面兩兩比較的配對分數差（論文 Table 9）",
+   "children": [
+    {
+     "id": "s4.f2.c1",
+     "section": "s4",
+     "type": "figure",
+     "layer": "fold",
+     "origin": "source",
+     "ledger": [
+      "L036"
+     ],
+     "manifest_id": "img-015",
+     "alt": "各介面兩兩比較的配對平均分數差表，列出配對任務數、平均差與 95% 信賴區間，以及勝／平／負的題數。",
+     "caption": "表 9 — 各介面兩兩比較的配對分數差，正數代表前者較好，括號內為 95% bootstrap 信賴區間",
+     "paper_label": "Table 9",
+     "role": "evidence"
+    }
+   ]
   },
   {
    "id": "s4.b12",
@@ -3033,16 +2955,6 @@
    "tone": "warning",
    "title": "要打折的地方",
    "text": "TheAgentCompany 的 Tool-only 用的是論文作者自製的那組工具，所以 +24.6 pp 混著「typed tools 的限制」與「這組工具做得好不好」，論文沒有拆開。APEX-Agents 的工具是 benchmark 原有的，+6.2 pp 相對乾淨（我的推論）。"
-  },
-  {
-   "id": "s4.b13",
-   "section": "s4",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "editorial",
-   "ledger": [],
-   "text": "小結：Q1 的答案是「贏，四組都贏」；但贏最多的那一邊，正好是基準線由論文作者自製的那一邊。",
-   "purpose": "recap"
   },
   {
    "id": "s5.b1",
@@ -3081,7 +2993,10 @@
      "−1.6 pp [−3.6, +0.3]",
      "−0.2 pp [−2.4, +2.0]"
     ]
-   ]
+   ],
+   "source_figure": "img-015",
+   "extent": "excerpt",
+   "caption": "表 9 — 摘錄：在 Bash 上加東西的配對分數差"
   },
   {
    "id": "s5.b3",
@@ -3145,7 +3060,10 @@
      "257k／0.42",
      "228k／0.44"
     ]
-   ]
+   ],
+   "source_figure": "img-003",
+   "extent": "excerpt",
+   "caption": "表 1 — 摘錄：在 Bash 上加東西的 token 與成本"
   },
   {
    "id": "s5.b6",
@@ -3157,16 +3075,6 @@
     "L044"
    ],
    "text": "八格裡只有 TheAgentCompany／Opus-4.8 的 Bash+Synthesis 比純 Bash 便宜，論文自己也把它列為唯一例外，其餘都是 token 變多。"
-  },
-  {
-   "id": "s5.b7",
-   "section": "s5",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "editorial",
-   "ledger": [],
-   "text": "小結：在 shell 上再加 typed tools 或自造工具，分數看不出變化，token 卻大多變多。",
-   "purpose": "recap"
   },
   {
    "id": "s6.b1",
@@ -3220,7 +3128,10 @@
      "328k → 256k",
      "0.52 → 0.48"
     ]
-   ]
+   ],
+   "source_figure": "img-003",
+   "extent": "excerpt",
+   "caption": "表 1 — 摘錄：Tool-only 換成 PTC 的四組結果"
   },
   {
    "id": "s6.b3",
@@ -3231,7 +3142,7 @@
    "ledger": [
     "L047"
    ],
-   "text": "四格 token 都下降，但分數只有第一格明顯進步，其餘持平或略降。配對分數差（表 4）給出一致的結論："
+   "text": "四格 token 都下降，但分數只有第一格明顯進步，其餘持平或略降。配對分數差（表 9）給出一致的結論："
   },
   {
    "id": "s6.b4",
@@ -3244,9 +3155,9 @@
    ],
    "ordered": false,
    "items": [
-    "**PTC − Tool-only**：TheAgentCompany 是 +3.5 pp [+0.8, +6.2]，APEX-Agents 是 −1.5 pp [−3.9, +0.9]。",
-    "**Bash − PTC**：+21.2 pp [+17.0, +25.5] 與 +7.7 pp [+5.2, +10.2]，區間都不含 0，Bash 明顯較好。",
-    "**token**：PTC 只在 TheAgentCompany／GPT-5.5 比 Bash 省（242k 對 377k）。"
+    "PTC − Tool-only：TheAgentCompany 是 +3.5 pp [+0.8, +6.2]，APEX-Agents 是 −1.5 pp [−3.9, +0.9]。",
+    "Bash − PTC：+21.2 pp [+17.0, +25.5] 與 +7.7 pp [+5.2, +10.2]，區間都不含 0，Bash 明顯較好。",
+    "token：PTC 只在 TheAgentCompany／GPT-5.5 比 Bash 省（242k 對 377k）。"
    ]
   },
   {
@@ -3258,7 +3169,7 @@
    "ledger": [
     "L048"
    ],
-   "text": "**為什麼 PTC 省 token？** 表 5（論文 Table 6）拆解了 PTC 的批次化程度與 token 變化（相對 Tool-only 的差）："
+   "text": "**為什麼 PTC 省 token？** 表 6 拆解了 PTC 的批次化程度與 token 變化（相對 Tool-only 的差；快取讀取是重複送出、以較低單價計費的那段前綴）："
   },
   {
    "id": "s6.b6",
@@ -3294,22 +3205,10 @@
      "−44.0k",
      "−0.4k"
     ]
-   ]
-  },
-  {
-   "id": "s6.b7",
-   "section": "s6",
-   "type": "figure",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L048"
    ],
-   "manifest_id": "img-009",
-   "alt": "PTC 的批次化組成與 token 效率表，兩列分別是兩個 benchmark，欄位為每次執行包含的呼叫數，以及相對 Tool-only 的呼叫次數、未快取輸入、快取讀取與輸出 token 差。",
-   "caption": "表 5 — PTC 的批次化程度與 token 效率（相對 Tool-only 的差，依任務與模型配對）",
-   "paper_label": "Table 6",
-   "role": "evidence"
+   "source_figure": "img-009",
+   "extent": "full",
+   "caption": "表 6 — PTC 的批次化程度與 token 效率（相對 Tool-only 的差，依任務與模型配對）"
   },
   {
    "id": "s6.b8",
@@ -3320,7 +3219,7 @@
    "ledger": [
     "L049"
    ],
-   "text": "批次化程度不高（平均每次執行只包 2 個呼叫），但輸入與快取讀取 token 少了很多，輸出幾乎不變。論文作者的解釋是：中間結果留在程式裡、只把選出的輸出交回模型，所以後續每輪要帶的上下文變短，就像前面 GitLab 例子裡 500 筆只回 20 個標題。原文為「可能」，未驗證；機制在文末延伸段落有推導。"
+   "text": "批次化程度不高（平均每次執行只包 2 個呼叫），但輸入與快取讀取 token 少了很多，輸出幾乎不變。論文作者推測（沒有驗證），這是因為中間結果留在程式裡、只把選出的輸出交回模型，後續每輪要帶的上下文就變短，像前面自編的 GitLab 例子裡 500 筆只回 20 個標題。文末延伸段落有這個機制的推導。"
   },
   {
    "id": "s6.b9",
@@ -3331,7 +3230,7 @@
    "ledger": [
     "L050"
    ],
-   "text": "**PTC 的工具呼叫成功率最低**（表 6）：TheAgentCompany 只有 65.2%，其他介面約 92%；APEX-Agents 是 86.2%，其他約 88% 到 91%。論文作者猜測是「在程式裡協調呼叫、處理中間失敗比較難」，沒有進一步驗證。"
+   "text": "**PTC 的工具呼叫成功率最低**（表 2）：TheAgentCompany 只有 65.2%，其他介面約 92%；APEX-Agents 是 86.2%，其他約 88% 到 91%。論文作者猜測是「在程式裡協調呼叫、處理中間失敗比較難」，沒有進一步驗證。"
   },
   {
    "id": "s6.b10",
@@ -3345,16 +3244,6 @@
    "tone": "note",
    "title": "PTC 輸給 Bash，有一部分可能是目錄覆蓋不夠（我的推論）",
    "text": "PTC 只能呼叫固定工具目錄裡的函式，而 TheAgentCompany 的自製目錄只涵蓋任務相關 API（Appendix B.1）。所以 Bash − PTC 的差距，混著「PTC 的做法」與「目錄能碰到的範圍」，論文沒有拆開。"
-  },
-  {
-   "id": "s6.b11",
-   "section": "s6",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "editorial",
-   "ledger": [],
-   "text": "小結：PTC 確實省 token，但分數沒跟上，和 Bash 的差距很明顯；這個差距裡可能有一部分是工具目錄的問題，而不是 PTC 本身（我的推論）。",
-   "purpose": "recap"
   },
   {
    "id": "s7.b1",
@@ -3380,11 +3269,11 @@
    ],
    "ordered": false,
    "items": [
-    "**工具使用（表 6）**：TheAgentCompany 上，呼叫內容的 token 是 Bash 9.0k 對 Tool-only 19.6k，重複呼叫 Tool-only 16.2%、Bash 0.3%；APEX-Agents 上，呼叫次數中位數 Bash 7.5 對 Tool-only 13.0。論文作者的解釋是：shell 能把重複動作合併成一次呼叫。",
-    "**shell 用法（表 7、圖 4）**：94% 以上的 shell 呼叫是組合式；TheAgentCompany 偏短指令加 HTTP 請求，APEX-Agents 偏長的內嵌 Python。Bash 不只是跑單一指令，是拿來寫小程式。",
-    "**Bash+Tool 的 shell 表現（表 7）**：有了 typed tools，剩下的 shell 呼叫沒有更可靠。失敗率 Bash+Tool 對純 Bash 是 10.8% 對 7.9%（TheAgentCompany）、9.3% 對 4.4%（APEX-Agents）。加 typed tools 只是少用 shell，剩下的沒變好。",
-    "**自造工具（表 8、表 9）**：Opus-4.8 在 TheAgentCompany 創造了 21 個工具，其中 12 個在後續任務再被用到；有呼叫自造工具的任務，相對純 Bash 的平均分數差是 −0.6 pp（TheAgentCompany）與 +0.1 pp（APEX-Agents），APEX-Agents 的 token 中位數還多 31.4k。這份資料裡看不到自造工具的價值。",
-    "**任務複雜度（圖 5）**：Bash 在 TheAgentCompany 的優勢在中等長度最大；APEX-Agents 上，呼叫次數高的區間兩者進步都比較多；PTC 的信賴區間多半跨過 0。證據弱，不要當結論。",
+    "**工具使用（表 2）**：TheAgentCompany 上，呼叫內容的 token 是 Bash 9.0k 對 Tool-only 19.6k；APEX-Agents 上，呼叫次數中位數 Bash 7.5 對 Tool-only 13.0。論文作者的解釋是：shell 能把重複動作合併成一次呼叫。",
+    "**shell 用法（表 3、圖 5）**：TheAgentCompany 偏短指令加 HTTP 請求，APEX-Agents 偏長的內嵌 Python。Bash 不只是跑單一指令，是拿來寫小程式。",
+    "**Bash+Tool 的 shell 表現（表 3）**：有了 typed tools，剩下的 shell 呼叫沒有更可靠。失敗率 Bash+Tool 對純 Bash 是 10.8% 對 7.9%（TheAgentCompany）、9.3% 對 4.4%（APEX-Agents）。加 typed tools 只是少用 shell，剩下的沒變好。",
+    "**自造工具（表 4、表 5）**：Opus-4.8 在 TheAgentCompany 創造了 21 個工具，其中 12 個在後續任務再被用到；有呼叫自造工具的任務，相對純 Bash 的平均分數差是 −0.6 pp（TheAgentCompany）與 +0.1 pp（APEX-Agents），APEX-Agents 的 token 中位數還多 31.4k。這份資料裡看不到自造工具的價值。",
+    "**任務複雜度（圖 4）**：Bash 在 TheAgentCompany 的優勢在中等長度最大；APEX-Agents 上，呼叫次數高的區間兩者進步都比較多；PTC 的信賴區間多半跨過 0。證據弱，不要當結論。",
     "**各領域分數（圖 6）**：每個領域都是 Bash ≥ Bash+Tool ≥ Tool-only，軟體工程差距最大，公司法務幾乎不受介面影響。介面的影響在寫程式與跨系統的工作最大，在法律判斷最小。"
    ]
   },
@@ -3419,7 +3308,7 @@
      ],
      "manifest_id": "img-005",
      "alt": "各介面的工具使用統計表，列出每題工具呼叫次數、工具呼叫相關 token 量、呼叫成功率與完全重複呼叫的比例。",
-     "caption": "表 6 — 各介面的工具使用統計。「工具 token」是呼叫名稱、參數與結果的 token 中位數，不是計費用量，也不含上下文與快取效應",
+     "caption": "表 2 — 各介面的工具使用統計。「工具 token」是呼叫名稱、參數與結果的 token 中位數，不是計費用量，也不含上下文與快取效應",
      "paper_label": "Table 2",
      "role": "evidence"
     },
@@ -3445,7 +3334,7 @@
      ],
      "manifest_id": "img-008",
      "alt": "各介面的 shell 統計表，列出每次呼叫的指令數、程式行數、組合式呼叫比例、含迴圈比例、失敗率與重試比例。",
-     "caption": "表 7 — shell 呼叫的統計",
+     "caption": "表 3 — shell 呼叫的統計",
      "paper_label": "Table 3",
      "role": "evidence"
     },
@@ -3471,7 +3360,7 @@
      ],
      "manifest_id": "img-007",
      "alt": "依執行檔類別統計的 shell 指令占比水平堆疊長條圖，分 TheAgentCompany 與 APEX-Agents 兩邊，各有 Bash、Bash+Tool、Bash+Synthesis 三條。",
-     "caption": "圖 4 — shell 指令依執行檔類別的占比，各 benchmark 與介面加總為 100%",
+     "caption": "圖 5 — shell 指令依執行檔類別的占比，各 benchmark 與介面加總為 100%",
      "paper_label": "Figure 5",
      "role": "evidence"
     },
@@ -3497,7 +3386,7 @@
      ],
      "manifest_id": "img-010",
      "alt": "自造工具重用統計與成功率表，列出各模型創造與被呼叫的工具數、跨任務重用比例，以及重用與全新內嵌程式的呼叫成功率。",
-     "caption": "表 8 — 自造工具的重用統計與成功率。「創造」指 agent 自己寫的獨立 Python 腳本，不含種子、初始化與依賴",
+     "caption": "表 4 — 自造工具的重用統計與成功率。「創造」指 agent 自己寫的獨立 Python 腳本，不含種子、初始化與依賴",
      "paper_label": "Table 4",
      "role": "evidence"
     },
@@ -3512,7 +3401,7 @@
      ],
      "manifest_id": "img-011",
      "alt": "Bash+Synthesis 減去 Bash 的配對差異表，依有沒有呼叫自造工具分組，列出任務數與分數、token 的中位數與平均差。",
-     "caption": "表 9 — Bash+Synthesis 相對 Bash 的配對差，依該任務有沒有呼叫自造工具分組，兩個模型合併計算",
+     "caption": "表 5 — Bash+Synthesis 相對 Bash 的配對差，依該任務有沒有呼叫自造工具分組，兩個模型合併計算",
      "paper_label": "Table 5",
      "role": "evidence"
     },
@@ -3538,7 +3427,7 @@
      ],
      "manifest_id": "img-006",
      "alt": "Bash（藍線）與 PTC（橘線）相對 Tool-only 的平均配對分數差，依任務複雜度分箱，兩個 benchmark 各一張，附信賴區間色帶與每箱任務數。",
-     "caption": "圖 5 — 任務複雜度與配對分數差：Bash（藍）與 PTC（橘）相對 Tool-only 的進步幅度，橫軸為 Tool-only 的呼叫次數分箱，色帶為 95% 信賴區間",
+     "caption": "圖 4 — 任務複雜度與配對分數差：Bash（藍）與 PTC（橘）相對 Tool-only 的進步幅度，橫軸為 Tool-only 的呼叫次數分箱，色帶為 95% 信賴區間",
      "paper_label": "Figure 4",
      "role": "evidence"
     },
@@ -3571,28 +3460,6 @@
    ]
   },
   {
-   "id": "s7.b4",
-   "section": "s7",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "editorial",
-   "ledger": [],
-   "purpose": "recap",
-   "text": "小結：agent 拿到 shell 之後，幾乎都在寫組合式的小程式，把重複的動作併成一次呼叫（論文作者的解釋）；加了 typed tools 只是少用 shell，自造工具也看不出價值；介面差距在寫程式與跨系統的工作最大。"
-  },
-  {
-   "id": "s8.b1",
-   "section": "s8",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "source",
-   "ledger": [
-    "L060"
-   ],
-   "text": "看完數字，回頭評估這份證據。整體來說，這是一篇有用但結論要打折的實證比較：研究價值偏低，工程價值中等，價值在「方向」而不在「幅度」。",
-   "purpose": "signpost"
-  },
-  {
    "id": "s8.b2",
    "section": "s8",
    "type": "paragraph",
@@ -3610,6 +3477,7 @@
    "layer": "main",
    "origin": "source",
    "ledger": [
+    "L060",
     "L062"
    ],
    "text": "**工程價值中等。** 「Bash 分數較高，而且更省」這個方向，在兩個模型乘兩個 benchmark 共四個設定裡一致，值得當作選型的參考；「在 Bash 上加 typed tools 或自造工具，沒看到分數增益」也一致，並且同時伴隨 token 增加。但幅度（尤其 TheAgentCompany 的 +24.6 pp）不能直接搬到別的系統。"
@@ -3623,7 +3491,7 @@
    "ledger": [
     "L063"
    ],
-   "text": "優點有四個："
+   "text": "它做得好的地方："
   },
   {
    "id": "s8.b5",
@@ -3636,10 +3504,10 @@
    ],
    "ordered": false,
    "items": [
-    "**控制變因乾淨**：同模型、同任務文字、同基礎 prompt、同停止條件，只換介面。",
-    "**統計處理算認真**：用配對比較加 bootstrap 信賴區間，不只報平均。",
-    "**成本與分數並列**：token 與每題成本放在同一張表，這對實務決策比單看分數有用。",
-    "**誠實揭露 reward hacking**，並說明怎麼擋（Appendix B.1）。"
+    "同模型、同任務文字、同基礎 prompt、同停止條件，只換介面，控制變因乾淨。",
+    "統計處理算認真：用配對比較加 bootstrap 信賴區間，不只報平均。",
+    "token 與每題成本和分數放在同一張表，對實務決策比單看分數有用。",
+    "誠實揭露 reward hacking，並說明怎麼擋（Appendix B.1）。"
    ]
   },
   {
@@ -3649,7 +3517,7 @@
    "layer": "main",
    "origin": "editorial",
    "ledger": [],
-   "text": "缺點有三個，第一個最影響結果的讀法："
+   "text": "做得不夠的地方，第一點最影響結果的讀法："
   },
   {
    "id": "s8.b7",
@@ -3664,8 +3532,8 @@
    ],
    "ordered": true,
    "items": [
-    "**Tool-only 的基準線不是中立的。** TheAgentCompany 的 60 個 typed tools 是論文作者自己設計、且只涵蓋任務相關 API；PTC 的 Python 執行環境也是論文作者自己實作。所以 TheAgentCompany 的差距混著工具本身的品質，而 APEX-Agents 的 20 個工具是 benchmark 原有的，相對乾淨（我的推論：不是完全乾淨）。",
-    "**Bash 的風險沒有被納入評分。** 論文建議「能隔離任意執行時用 Bash」，但隔離的成本與安全事件都沒有量化；而實驗本身就抓到 agent 會從評分腳本撈答案。Bash 的高分是在額外防護之下測出的。typed tool 在輸出整理、權限控管、稽核上的價值，也不在分數裡。",
+    "**Tool-only 的基準線不是中立的。** 除了 TheAgentCompany 那 60 個自製的 typed tools（見 Q1 那一節），PTC 的 Python 執行環境也是論文作者自己實作。APEX-Agents 的 20 個工具是 benchmark 原有的，相對乾淨，但不是完全乾淨（我的推論）。",
+    "**Bash 的風險沒有被納入評分。** 論文建議「能隔離任意執行時用 Bash」，但隔離的成本與安全事件都沒有量化；而實驗本身就抓到 agent 會從評分腳本撈答案。typed tool 在輸出整理、權限控管、稽核上的價值，也不在分數裡。",
     "**單次執行的隨機性沒有被單獨量化。** 配對任務數 348 = 174 × 2、960 = 480 × 2，似乎每個「任務乘模型」只跑一次（我的推論，論文未說明）。信賴區間是對任務取樣，「看不出差異」的那幾組結論（加 typed tools、自造工具）能排除的效果大小因此有限。"
    ]
   },
@@ -3681,25 +3549,31 @@
    "text": "**摘要有被包裝嗎？** 沒有明顯誇大：摘要的 21.8 到 24.5 pp 與 4.8 到 7.4 pp 就是四格結果的範圍。但它把幅度較大、且基準線問題最嚴重的 TheAgentCompany 放在前面。"
   },
   {
-   "id": "s8.b9",
-   "section": "s8",
-   "type": "paragraph",
-   "layer": "support",
-   "origin": "source",
-   "ledger": [
-    "L068"
-   ],
-   "text": "順帶一提，論文另外給了模型選用建議，和上面的評估無關：以 shell 為主的 coding 與跨應用工作先用 Opus-4.8；追求 token 效率的直接 typed tool 呼叫用 GPT-5.5；文件密集的專業分析要在 Opus-4.8 較高品質與 GPT-5.5 較低 token 之間取捨。論文作者自己也說，模型更新後這些建議未必成立，所以這一段的保存期限最短。"
-  },
-  {
-   "id": "s8.b10",
-   "section": "s8",
+   "id": "s9.b9",
+   "section": "s9",
    "type": "paragraph",
    "layer": "main",
-   "origin": "editorial",
-   "ledger": [],
-   "text": "小結：控制變因乾淨、統計認真，但基準線不中立、風險沒進分數、每題似乎只跑一次。拿它當方向的參考，不要搬它的幅度。",
-   "purpose": "recap"
+   "origin": "source",
+   "ledger": [
+    "L111"
+   ],
+   "text": "帶得走的結論："
+  },
+  {
+   "id": "s9.b10",
+   "section": "s9",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L111"
+   ],
+   "ordered": false,
+   "items": [
+    "**Bash 分數更高，而且更省。** 四個設定同向；TheAgentCompany 的 +24.6 pp 混著自製基準線，幅度以 APEX-Agents 的 +6.2 pp 較可信。",
+    "**在 Bash 上再加東西，沒看到分數好處。** typed tools 與自造工具都只是讓 token 變多，信賴區間跨過 0 只代表偵測不到大於約 2 到 3 pp 的效果。",
+    "**PTC 是折衷。** 省 token、分數持平，輸給 Bash，其中有一部分可能只是目錄覆蓋不夠。"
+   ]
   },
   {
    "id": "s9.b1",
@@ -3710,7 +3584,7 @@
    "ledger": [
     "L069"
    ],
-   "text": "這篇論文本身能帶走的不多，比較耐用的是讀它的過程裡整理出來的幾個判斷方法。先看論文本身的貢獻：",
+   "text": "這篇論文本身能帶走的不多，比較耐用的是讀它的過程裡整理出來的幾個判斷方法。論文本身的貢獻：",
    "purpose": "signpost"
   },
   {
@@ -3724,7 +3598,7 @@
    ],
    "ordered": false,
    "items": [
-    "**一組受控數據**：Bash 分數比只有 typed tools 高，也更省 token；在 Bash 之上加 typed tools 或自造工具，沒偵測到分數增益。方向可信，幅度不能直接搬（原因見上一節）。",
+    "**一組受控數據**：五種介面在同一個設定下的分數、token 與成本。方向可信，幅度不能直接搬（原因見上一節）。",
     "**一個 reward hacking 實例**：有 shell 的 agent 會從評分腳本撈答案，而不是做事（Appendix B.1）。這對任何「讓 agent 有 shell 再拿 benchmark 評分」的實驗都是提醒：能碰到評分程式的環境，分數不能直接信。",
     "**方法上的貢獻接近零**：五種介面都是既有做法的組合。"
    ]
@@ -3738,7 +3612,7 @@
    "ledger": [
     "L071"
    ],
-   "text": "脫離這篇論文也成立的有五條，每一條在文末延伸段落都有完整展開："
+   "text": "下面這些判斷方法脫離這篇論文也成立，文末延伸段落逐條展開："
   },
   {
    "id": "s9.b4",
@@ -3767,7 +3641,7 @@
    "ledger": [
     "L073"
    ],
-   "text": "**工具介面的選擇規則。** 論文的建議是條件式的：合規要求只能用固定工具目錄，就用 PTC；能把任意程式碼執行隔離起來，就用 Bash。整理成判斷順序，是先問合規，再問能不能隔離："
+   "text": "**工具介面的選擇規則。** 論文的建議是條件式的，整理成判斷順序，是先問合規，再問能不能隔離："
   },
   {
    "id": "s9.b6",
@@ -3811,6 +3685,17 @@
    "text": "在 Bash 之上疊 typed tools 或自造工具不在這條判斷路徑上，因為論文沒看到分數好處；真要加，理由得是分數以外的價值。"
   },
   {
+   "id": "s8.b9",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L068"
+   ],
+   "text": "論文另外給了模型選用建議：以 shell 為主的 coding 與跨應用工作先用 Opus-4.8；追求 token 效率的直接 typed tool 呼叫用 GPT-5.5；文件密集的專業分析要在 Opus-4.8 較高品質與 GPT-5.5 較低 token 之間取捨。論文作者自己也說，模型更新後這些建議未必成立，所以這一段的保存期限最短。"
+  },
+  {
    "id": "s9.b8",
    "section": "s9",
    "type": "callout",
@@ -3824,43 +3709,23 @@
    "text": "第一，這篇沒有量測 typed tool 的輸出整理、權限控管、稽核，這些好處不在分數裡，不能視為被否定。第二（我的推論），只要 agent 手上有 shell，typed tools 就不是安全邊界，因為 agent 隨時可以繞過去；固定工具目錄的安全價值只有在沒有 shell 時才成立。"
   },
   {
-   "id": "s9.b9",
-   "section": "s9",
-   "type": "paragraph",
-   "layer": "main",
-   "origin": "source",
-   "ledger": [
-    "L111"
-   ],
-   "text": "最後把整篇收成五句："
-  },
-  {
-   "id": "s9.b10",
-   "section": "s9",
-   "type": "list",
-   "layer": "main",
-   "origin": "source",
-   "ledger": [
-    "L111"
-   ],
-   "ordered": false,
-   "items": [
-    "**Bash 分數更高，而且更省。** 兩個 benchmark、兩個模型共四個設定同向，但 TheAgentCompany 的 +24.6 pp 混著自製基準線的影響，APEX-Agents 的 +6.2 pp 相對可信。",
-    "**在 Bash 上再加東西，沒看到分數好處。** typed tools 與自造工具都只是讓 token 變多，信賴區間跨過 0 只代表偵測不到大於約 2 到 3 pp 的效果。",
-    "**PTC 是折衷。** 省 token、分數持平，輸給 Bash，其中有一部分可能只是目錄覆蓋不夠。",
-    "**選型看條件，不看單一數字。** 合規只允許固定工具就用 PTC，能隔離任意執行就用 Bash；typed tool 在輸出整理、權限與稽核上的價值，這篇沒量到，不代表不存在。",
-    "**比結論更耐用的是檢查法。** 看到 A 贏 B，先問 B 是誰做的；省 token 的關鍵是別讓大量中間資料進上下文；批次化與可碰觸範圍是兩件事；看不出差異不等於沒有差異。"
-   ]
-  },
-  {
    "id": "s9.b11",
    "section": "s9",
    "type": "paragraph",
    "layer": "main",
    "origin": "editorial",
    "ledger": [],
-   "text": "下次看到「新做法大勝基準線」的數字，可以先做兩件事：問基準線是誰做的，再看信賴區間有多寬。自己設計 agent 時，先問合規、再問能不能隔離，並留意哪個工具正把一大疊結果整份倒進上下文。",
+   "text": "下次看到「新做法大勝基準線」的數字，先問基準線是誰做的，再看信賴區間有多寬。自己設計 agent 時，先問合規、再問能不能隔離，並留意哪個工具正把一大疊結果整份倒進上下文。",
    "purpose": "recap"
+  },
+  {
+   "id": "s9.b12",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "關於文中的標示：沒有標示的實驗設定與結果來自論文；〈這份證據能信幾分〉的評估與延伸段落的判斷方法是筆記作者的看法。「我的推論」是筆記作者的推測，「自編例子」是為了說明而編的情境與數字，「一般知識」是論文以外的背景，論文沒交代的地方寫「論文未說明」。"
   },
   {
    "id": "s10.b1",
@@ -3894,7 +3759,7 @@
    "ledger": [
     "L077"
    ],
-   "text": "**拆解一個比較結果。** 用文字寫成一條式子：表格上看到的「A 減 B」，其實是三樣東西加起來，A 本身的功勞、B 被做得多弱造成的落差，以及雜訊。"
+   "text": "**拆解一個比較結果。** 寫成式子，再加上雜訊這一項："
   },
   {
    "id": "s10.b4",
@@ -4071,7 +3936,7 @@
    "ledger": [
     "L083"
    ],
-   "text": "模型每一輪都要把前面的全部內容重新讀一遍，所以進了上下文的每個 token，之後每一輪都要再付一次錢；讓大量的中間資料留在模型之外，是最直接的省法。本節的機制屬一般知識，不是論文內容，論文只提供表 5 的旁證。"
+   "text": "模型每一輪都要把前面的全部內容重新讀一遍，所以進了上下文的每個 token，之後每一輪都要再付一次錢；讓大量的中間資料留在模型之外，是最直接的省法。本節的機制屬一般知識，不是論文內容，論文只提供表 6 的旁證。"
   },
   {
    "id": "s11.b2",
@@ -4228,7 +4093,7 @@
    "ledger": [
     "L087"
    ],
-   "text": "實際系統通常有快取（prompt caching）：前綴相同的部分以較低單價重讀。它降低單價，但沒有減少 token 數；論文結果表（表 3）的輸入 token 也包含快取讀取。所以「別讓大量資料進上下文」的價值在有快取時仍成立，只是金額差距變小。"
+   "text": "實際系統通常有快取（prompt caching）：前綴相同的部分以較低單價重讀。它降低單價，但沒有減少 token 數；論文結果表（表 1）的輸入 token 也包含快取讀取。所以「別讓大量資料進上下文」的價值在有快取時仍成立，只是金額差距變小。"
   },
   {
    "id": "s11.b13",
@@ -4239,7 +4104,7 @@
    "ledger": [
     "L088"
    ],
-   "text": "**論文的旁證與保留。** 表 5（論文 Table 6）顯示，PTC 相對 Tool-only，TheAgentCompany 上未快取輸入少 97.6k、快取讀取少 86.8k，輸出只多 0.2k；APEX-Agents 上分別少 45.4k 與 44.0k，輸出少 0.4k。平均每次執行只包了 2.0 個呼叫，所以省下的主要不是「呼叫次數」。論文作者的解釋是：中間結果在程式裡處理，只回傳選出的輸出，後續各輪攜帶的上下文因此縮短。原文措辭是「可能」（*may reflect*），沒有做直接驗證。"
+   "text": "**論文的旁證與保留。** 旁證是 PTC 那一節的表 6：相對 Tool-only，未快取輸入與快取讀取都大幅減少，輸出幾乎不變，而平均每次執行只包 2.0 個呼叫，所以省下的主要不是「呼叫次數」。論文作者的解釋是：中間結果在程式裡處理，只回傳選出的輸出，後續各輪攜帶的上下文因此縮短。原文措辭是「可能」（*may reflect*），沒有做直接驗證。"
   },
   {
    "id": "s11.b14",
@@ -4376,17 +4241,17 @@
     [
      "Tool-only",
      "不能，每個動作是一次獨立呼叫",
-     "表 6：完全相同的重複呼叫占 16.2%（TheAgentCompany）；論文作者的解釋是它把每次重複都暴露成一次呼叫"
+     "表 2：完全相同的重複呼叫占 16.2%（TheAgentCompany）；論文作者的解釋是它把每次重複都暴露成一次呼叫"
     ],
     [
      "Bash",
      "能：pipe、`&&`、迴圈、heredoc（在指令裡直接嵌入多行文字）、內嵌腳本",
-     "表 7：94.3% 與 96.5% 的 shell 呼叫是組合式；含迴圈標記的呼叫 27.5% 與 67.8%；表 6：APEX-Agents 呼叫次數中位數 7.5，Tool-only 是 13.0"
+     "表 3：94.3% 與 96.5% 的 shell 呼叫是組合式；含迴圈標記的呼叫 27.5% 與 67.8%；表 2：APEX-Agents 呼叫次數中位數 7.5，Tool-only 是 13.0"
     ],
     [
      "PTC",
      "能：Python 迴圈、串接、平行，但只能呼叫目錄內的函式",
-     "表 5：平均每次執行只包了 2.0 個 typed tool 呼叫"
+     "表 6：平均每次執行只包了 2.0 個 typed tool 呼叫"
     ]
    ]
   },
@@ -4399,7 +4264,7 @@
    "ledger": [
     "L095"
    ],
-   "text": "**「這個 benchmark 是不是對 PTC 不利？」** 前面看到 PTC 輸給 Bash，一個自然的疑問是：會不會只是這兩個 benchmark 的任務型態不適合 PTC？PTC 的優勢來自迴圈式的大量呼叫，任務若本來就只有十幾次呼叫，優勢就發揮不出來。結論先講：**有可能，但論文沒有直接驗證。** 證據如下："
+   "text": "**「這個 benchmark 是不是對 PTC 不利？」** 前面看到 PTC 輸給 Bash，一個自然的疑問是：會不會只是這兩個 benchmark 的任務型態不適合 PTC？PTC 的優勢來自迴圈式的大量呼叫，任務若本來就只有十幾次呼叫，優勢就發揮不出來。**有可能，但論文沒有直接驗證。** 證據如下："
   },
   {
    "id": "s12.b7",
@@ -4413,8 +4278,8 @@
    "ordered": false,
    "items": [
     "**支持這個假設**：Tool-only 每題呼叫次數的中位數只有 14.0（TheAgentCompany）與 13.0（APEX-Agents），PTC 平均每次執行只包 2.0 個呼叫，不是大量迴圈的工作型態。",
-    "**部分呼應**：在任務複雜度圖（圖 5）裡，APEX-Agents 上呼叫次數高的區間，PTC 的平均分數差變成正的。但論文作者自己也說，PTC 的信賴區間在大多數區間都跨過 0，證據很弱。",
-    "**高呼叫次數的任務是少數**：呼叫數 31 到 60 那一組，只占配對任務的約 16%（56/348）與 8%（80/960）（筆記作者用圖 5 標示的每箱任務數算的）。",
+    "**部分呼應**：在任務複雜度圖（圖 4）裡，APEX-Agents 上呼叫次數高的區間，PTC 的平均分數差變成正的。但論文作者自己也說，PTC 的信賴區間在大多數區間都跨過 0，證據很弱。",
+    "**高呼叫次數的任務是少數**：呼叫數 31 到 60 那一組，只占配對任務的約 16%（56/348）與 8%（80/960）（筆記作者用圖 4 標示的每箱任務數算的）。",
     "**論文未說明**：它沒有按呼叫次數拆 token 節省量，只拆了分數。所以「呼叫越多，PTC 越省 token」這個假設合理，但沒被驗證。"
    ]
   },
@@ -4524,39 +4389,13 @@
   {
    "id": "s13.b3",
    "section": "s13",
-   "type": "table",
+   "type": "paragraph",
    "layer": "appendix",
    "origin": "source",
    "ledger": [
     "L100"
    ],
-   "headers": [
-    "比較（表 4、表 3、表 7）",
-    "TheAgentCompany",
-    "APEX-Agents"
-   ],
-   "rows": [
-    [
-     "Bash+Tool − Tool-only（分數）",
-     "+24.1 pp [+20.1, +28.3]",
-     "+5.9 pp [+3.6, +8.3]"
-    ],
-    [
-     "Bash+Tool − Bash（分數）",
-     "−0.6 pp [−3.0, +1.9]",
-     "−0.2 pp [−2.4, +1.9]"
-    ],
-    [
-     "Total tokens：Bash+Tool 對 Bash（Opus-4.8）",
-     "569k 對 264k",
-     "396k 對 215k"
-    ],
-    [
-     "shell 呼叫失敗率：Bash+Tool 對 Bash",
-     "10.8% 對 7.9%",
-     "9.3% 對 4.4%"
-    ]
-   ]
+   "text": "論文的數字前面都看過了。Bash+Tool 相對 Tool-only 的進步（TheAgentCompany +24.1 pp [+20.1, +28.3]，APEX-Agents +5.9 pp [+3.6, +8.3]）和純 Bash 差不多；相對純 Bash 則看不出分數差異（Q2 的表 9 摘錄），token 卻多出不少（Q2 的表 1 摘錄），shell 呼叫的失敗率也比較高（〈Bash 為什麼比較好〉那一節）。"
   },
   {
    "id": "s13.b4",
