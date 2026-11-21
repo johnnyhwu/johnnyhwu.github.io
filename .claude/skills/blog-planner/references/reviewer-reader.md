@@ -43,12 +43,17 @@ Check for these problems and report each one you find with a quote:
 - an abstract claim or mechanism with no concrete example
 - a formula or symbol-heavy passage with no plain-words explanation first
 - a section whose role in the whole post you cannot tell, or that does not move the argument
-- a wall of text; a point buried at the end of a paragraph; the same idea explained twice
+- a wall of text; a point buried at the end of a paragraph; the same idea explained twice; the same term defined
+  twice; the same data shown twice (a picture of a table and a table of the same numbers)
 - a table, list or diagram that would be clearer than the prose around it (or one that adds noise)
 - an opening that asks for effort before giving a reason to care
 - a missing or empty recap or ending; takeaways that do not match what the post spent its time on
 - callouts or folds overused or in the wrong place; something collapsed that you needed
 - awkward or translated-sounding Chinese, half-width punctuation in Chinese text
+- writing that reads as machine-made: announcing instead of saying (「先講結論」「一句話總結」「值得注意的是」), a
+  section that ends by restating itself, every section ending the same way, the main verdict repeated section after
+  section, who-said-what labels on nearly every sentence, most lists starting with a bold label, a route paragraph
+  that just lists the sections
 
 Severity:
 - blocker: you could not follow, or you would stop reading, or you would walk away with a wrong idea
@@ -63,7 +68,7 @@ Write your result as JSON to <RESULT_PATH> with exactly this shape:
   "title_guess": "...", "click": "yes|maybe|no", "first_screen": "...",
   "route_guess": ["..."], "learned": ["...","...","..."], "remember": "...",
   "findings": [
-    {"id": "R<round>-1", "severity": "blocker|major|minor", "category": "term|example|formula|structure|flow|opening|ending|visual|language",
+    {"id": "R<round>-1", "severity": "blocker|major|minor", "category": "term|example|formula|structure|flow|opening|ending|visual|language|style",
      "block_ids": ["s3.b2"], "quote": "<the exact words>", "problem": "...", "suggestion": "..."}
   ]
 }

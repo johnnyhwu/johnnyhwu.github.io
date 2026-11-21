@@ -142,8 +142,9 @@ def render_diagram(b):
 
 
 class Renderer:
-    def __init__(self, plan, lang, fig_files, widths, links):
+    def __init__(self, plan, lang, fig_files, widths, links, labels=None):
         self.plan, self.lang = plan, lang
+        self.labels = labels or {}
         self.fig_files, self.widths, self.links = fig_files, widths, links
         self.links_used = set()
 
@@ -169,7 +170,10 @@ class Renderer:
                 return "\n".join(f"{i}. {x}" for i, x in enumerate(items, 1))
             return "\n".join(f"- {x}" for x in items)
         if t == "table":
-            return md_table(b["headers"], b["rows"])
+            out = md_table(b["headers"], b["rows"])
+            if b.get("caption"):
+                out += "\n\n*" + self.table_caption(b) + "*"
+            return out
         if t == "formula":
             return "$$\n" + b["latex"].strip() + "\n$$"
         if t == "figure":
@@ -186,6 +190,17 @@ class Renderer:
         if t == "code":
             return "```%s\n%s\n```" % (b.get("lang", "text"), b["code"].rstrip("\n"))
         raise ValueError(f"unknown block type {t!r}")
+
+    def table_caption(self, b):
+        """A table transcribed from a paper image keeps the image's attribution (full) or says it is an excerpt."""
+        label = b.get("paper_label") or self.labels.get(b.get("source_figure"))
+        cap = b["caption"].rstrip()
+        if not label:
+            return cap
+        if b.get("extent") == "excerpt":
+            return cap + (f"（摘自原始論文 {label}。）" if self.lang == "zh-tw"
+                          else f" (Excerpt from the original paper, {label}.)")
+        return cap + (f"（來源：原始論文 {label}。）" if self.lang == "zh-tw" else f" (Source: original paper, {label}.)")
 
     def figure(self, b):
         name, label = self.fig_files[b["manifest_id"]]
@@ -238,6 +253,16 @@ def existing_date(path):
         if m:
             return m.group(1)
     return None
+
+
+def paper_labels(manifest):
+    """manifest id -> the paper's own label ("Table 6"), read from the manifest caption."""
+    out = {}
+    for e in manifest["images"]:
+        m = FIG_NAME_RE.match(e.get("caption", ""))
+        if m:
+            out[e["id"]] = ("Table " if m.group(1).lower() == "table" else "Figure ") + m.group(2)
+    return out
 
 
 def collect_figures(plans, manifest, root):
@@ -300,7 +325,7 @@ def main():
     for lg in langs:
         plan = plans[lg]
         fname = "index.zh-tw.md" if lg == "zh-tw" else "index.en.md"
-        r = Renderer(plan, lg, fig_files, widths, links)
+        r = Renderer(plan, lg, fig_files, widths, links, paper_labels(manifest))
         body = r.body()
         date = existing_date(out / fname) or a.date or plan["meta"].get("date") or today
         text = front_matter(plan, date, a.lastmod or today) + body

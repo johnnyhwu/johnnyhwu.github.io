@@ -9,7 +9,7 @@ new visual means a new row here, a new branch there and a golden-file test in `t
 | `paragraph`, `list` | markdown | inline math as `\( \)` (the plan stores `$..$`); two tight `~` on a line are escaped |
 | `callout` + `tone` | `{{< admonition <tone> "Title" >}}` | positional form, the site's convention. Tones: note, abstract, info, tip, success, question, warning, example, quote. Markdown inside is rendered, and it never appears in the TOC |
 | `fold` | `{{< fold title=".." tone=".." >}}` | **collapsed by default**, click the title to open, auto-opens for print. `layouts/_shortcodes/fold.html`. Do not use `admonition ... open=false`: the theme turns it back into `open` (`default true`) |
-| `table` | pipe table | the theme wraps it so it scrolls sideways on a phone; `\|` in a cell is escaped |
+| `table` | pipe table, then an italic caption line if it has `caption` | the theme wraps it so it scrolls sideways on a phone; `\|` in a cell is escaped. A table with `source_figure` gets 「（來源：原始論文 Table N。）」 (`extent: full`) or 「（摘自原始論文 Table N。）」 (`excerpt`) appended, like a figure's source note, and its image is not copied unless a figure block also uses it |
 | `formula` | `$$ .. $$` block | its `intuition` block must come first (validated) |
 | `figure` | `{{< image src alt caption [width] >}}` | file named after the paper's number; width 75% floor; attribution appended per language |
 | `diagram` kind `flow` / `tree` | ```` ```mermaid ```` `graph TD/LR` | site palette `%%{init}%%` first line |

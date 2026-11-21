@@ -1,13 +1,9 @@
 # Getting a real local Hugo build running to verify a post
 
-`scripts/verify_post.py` catches the common mistakes fast, but it cannot
-catch a bug like the one in `bilingual-bundle-gotcha.md` — that one only
-showed up in actual rendered HTML from a real `hugo build`. For any
-non-trivial change (a new post, not a one-line typo fix), get a real build
-running and actually look at the rendered `<img>` tags, not just the
-source Markdown.
+`scripts/verify_post.py` catches the common mistakes fast, but some bugs (the one in `bilingual-bundle-gotcha.md`,
+a page silently skipped, a formula that overflows) only show in a real build. Every new post gets one.
 
-## Quickest path: the project-local wrapper
+## Build
 
 ```bash
 git submodule update --init themes/DoIt     # theme only; a bare --init also clones AI-Research
@@ -15,149 +11,73 @@ git submodule update --init themes/DoIt     # theme only; a bare --init also clo
 ```
 
 `scripts/hugo.sh` reads `HUGO_VERSION` from `.github/workflows/hugo.yaml`, downloads exactly that release into
-`.tools/hugo/<version>/` (gitignored; on macOS it unpacks the release `.pkg` with `pkgutil` instead of running
-the installer, on Linux it untars the release), and runs it with its cache in `.tools/hugo-cache`. Nothing is
-installed system-wide and `~/Library/Caches/hugo_cache` is not touched. Arguments go straight to hugo. The first
-run downloads about 40MB (resumable and retried, since the connection can be slow); later runs reuse the binary.
-Write the build output under `.tools/` (as above) so it never lands in the repo. The sections below explain the
-problems this solves and what to check in the output; they are the manual route if the wrapper can't be used.
+`.tools/hugo/<version>/` (gitignored; on macOS it unpacks the `.pkg` with `pkgutil`, on Linux it untars), and runs
+it with its cache in `.tools/hugo-cache`. Nothing is installed system-wide. Arguments go straight to hugo (match
+`baseURL` and flags to the workflow if they change). The first run downloads about 40MB, resumable and retried.
+
+A successful run prints `ZH - TW` / `EN` page counts. They should be equal; a mismatch usually means a
+one-language bundle. "Non-page files" is counted for the default language only, which is expected.
+
+**If the download is blocked** (GitHub release assets are not always reachable from a sandbox), build that exact
+version from source into `.tools/`, never onto the machine (an older Hugo from `brew` or `apt` fails with an
+unrelated-looking `:contentbasename` error):
+
+```bash
+HUGO_VERSION=$(grep -oE 'HUGO_VERSION:[[:space:]]*[^[:space:]]+' .github/workflows/hugo.yaml | awk '{print $2}')
+GOBIN="$PWD/.tools/bin" go install -tags extended "github.com/gohugoio/hugo@v${HUGO_VERSION}"
+.tools/bin/hugo version    # must report the CI version
+```
+
+Then run `.tools/bin/hugo` with the same arguments as above.
 
 ## Confirm the post was actually built
 
-Exit code 0 and matching page counts do not prove *your* post is in the output. Hugo silently skips a page whose
-front-matter `date` is in the future, and the build machine's clock is UTC: a post dated today (local time) can
-still be "tomorrow" there, and the build succeeds without it. After every build, check the files exist:
+Exit code 0 does not prove *your* post is in the output. Hugo silently skips a page whose `date` is in the future,
+and the build clock is UTC, so a post dated today (local time) can be "tomorrow" there:
 
 ```bash
 ls .tools/public/<section>/<slug>/index.html .tools/public/en/<section>/<slug>/index.html
 ```
 
-If either is missing, rerun with `--buildFuture` (and expect the page counts to rise by one per language) or
-date the post on or before the UTC date. The deployed CI build runs after the merge, so a date that was "future"
-only during local verification is fine, but say so in the PR.
+If either is missing, rerun with `--buildFuture` or date the post on or before the UTC date. A date that was
+"future" only during local verification is fine (CI builds after the merge), but say so in the PR.
 
-## Check the rendered page in a browser
-
-A build proves the HTML exists, not that it *looks* right: KaTeX typesets in the browser after Hugo is done.
-`scripts/node.sh` is the project-local Node (plus Playwright and Chromium, downloaded on first use into the
-gitignored `.tools/`; nothing is installed system-wide). Run the checks through it:
+## Links and images: `check_links.py`
 
 ```bash
-.claude/skills/hugo-publisher/scripts/node.sh .claude/skills/hugo-publisher/scripts/check_layout.js <section>/<slug>
+python3 .claude/skills/hugo-publisher/scripts/check_links.py .tools/public
 ```
 
-It serves `.tools/public`, opens the zh-tw and en pages at 1280px and 390px, and exits 1 on horizontal page
-overflow, a KaTeX error, or an inline formula wider than the text column (tables and code blocks scroll on their
-own and are not counted). Exit 2 means Playwright or Chromium was missing, so layout was NOT checked.
+It resolves every internal link and image `src` in every built post against the output, so do not grep the HTML by
+hand. If you ever do: `--minify` strips attribute quotes (`src=/paper-intro/x/figure1.png`, so `src="` finds
+nothing on a healthy build), and body links stay relative (`href=../other-slug/`) while the theme's prev/next links
+are absolute, so grep for the bare slug. A bare filename in `src=` (`src=figure1.png`) is the fingerprint of
+`bilingual-bundle-gotcha.md`.
 
-Mermaid diagrams are reported as "NOT checked" by that script (the theme loads mermaid from a CDN that sandboxes
-block); use the companion, which serves a local mermaid@10 fetched once with `npm pack` into `.tools/mermaid/`:
+## The rendered page in a browser
+
+A build proves the HTML exists, not that it looks right: KaTeX and mermaid run in the browser. `scripts/node.sh` is
+the project-local Node with Playwright and Chromium (downloaded into `.tools/` on first use).
 
 ```bash
-.claude/skills/hugo-publisher/scripts/node.sh .claude/skills/hugo-publisher/scripts/check_mermaid.js <section>/<slug> --shots .tools/shots
+S=.claude/skills/hugo-publisher/scripts
+$S/node.sh $S/check_layout.js <section>/<slug>                         # always
+$S/node.sh $S/check_mermaid.js <section>/<slug> --shots .tools/shots   # post has a diagram
+$S/node.sh tests/check_fold.js <section>/<slug>                         # post has a fold
 ```
 
-It fails on a syntax error (mermaid still draws an SVG, an error graphic) or an over-wide diagram and saves a PNG
-per diagram; view one per diagram, since a clipped subgraph title is a valid SVG.
+- `check_layout.js` opens both languages at 1280 and 390 px and exits 1 on horizontal page overflow, a KaTeX error,
+  or an inline formula wider than the column (tables and code scroll on their own). **Exit 2 means it did not run**
+  (Playwright or Chromium missing): say so, do not report a pass.
+- `check_mermaid.js` serves a local mermaid@10 (the theme's CDN is blocked in sandboxes), fails on a syntax error or
+  an over-wide diagram, and saves one PNG per diagram. Look at each: a clipped subgraph title is still a valid SVG.
+- Math that parses can still render at the wrong size if Hugo's KaTeX class names drift from the theme's CSS (it
+  happened once; the fix is in `assets/css/_custom.scss`). If subscripts render full-size, compare
+  `grep -o 'class="sizing[^"]*"'` on a built page with that override before re-diagnosing.
 
-## Fallback: when `hugo.sh` cannot download Hugo
+## Cleaning up
 
-`hugo.sh` fetches the release named by `HUGO_VERSION` in
-`.github/workflows/hugo.yaml`. If that download is blocked (GitHub release
-assets are not always reachable from a sandbox) and `hugo version` on PATH
-is older than that version, build Hugo from source with Go, which
-usually has access to `proxy.golang.org`:
-
-```bash
-HUGO_VERSION=$(grep -oP 'HUGO_VERSION:\s*\K\S+' .github/workflows/hugo.yaml)
-go install -tags extended "github.com/gohugoio/hugo@v${HUGO_VERSION}"
-"$(go env GOPATH)/bin/hugo" version    # must report the CI version, not an apt one
-```
-
-Then run that binary with the same arguments as `hugo.sh` (including
-`-d .tools/public`). Don't `brew install` / `apt-get install` Hugo: an old
-package fails with the unrelated-looking `:contentbasename` error above.
-
-## Running the build
-
-```bash
-git submodule update --init themes/DoIt
-.claude/skills/hugo-publisher/scripts/hugo.sh --gc --minify --baseURL "https://datasciocean.com/" -d .tools/public
-```
-
-(Match `baseURL` and flags to `.github/workflows/hugo.yaml` if they have
-changed.) A successful run prints a small table with `ZH - TW` / `EN` page
-counts. The two page counts should be equal after your change; a mismatch is
-itself a signal something is off (for example the missing zh-tw file bug this
-skill exists to prevent). "Non-page files" is counted for the default
-language only, which is expected.
-
-## What to actually check in the output
-
-Don't just check that the build exits 0 — inspect the rendered HTML for the
-specific post:
-
-```bash
-grep -o '<img[^>]*src=[^ >]*' .tools/public/en/paper-intro/<slug>/index.html
-grep -o '<img[^>]*src=[^ >]*' .tools/public/paper-intro/<slug>/index.html   # zh-tw output has no /en/ prefix (it's the default language)
-```
-
-Use those commands as written: `--minify` strips attribute quotes, so the
-rendered HTML contains `src=/ai-concept/foo.png`, not `src="..."`. Grepping
-for `src="` returns **zero matches on a perfectly healthy build** — don't
-read that as "the images are broken". (Same trap when checking math: the
-KaTeX output that server-rendering produces ends in `</annotation>`, which
-truncates to a confusing-looking `</a` in narrow grep context.)
-
-**A math grep only proves the LaTeX parsed — not that it renders at the
-right size.** Hugo's built-in server-side math renderer and the theme's
-vendored `lib/katex/katex.min.css` are two independently-versioned things;
-if their CSS class names for font-size scaling ever drift apart again (it
-happened once — see `assets/css/_custom.scss` for the fix and its comment
-explaining the exact class mismatch), subscripts/superscripts will keep
-the right DOM structure and position but silently render at full size
-instead of shrinking, e.g. `v_1` shows a full-size `1` instead of a small
-one. `grep` for `</annotation>` or `msub` cannot catch this — the markup
-looks identical either way. If a rendering complaint like this comes up
-again, first check whether `assets/css/_custom.scss` still matches the
-class names Hugo is actually emitting (`grep -o 'class="sizing[^"]*"'` on
-a built page) before re-diagnosing from scratch; only fall back to an
-actual screenshot (build + serve + Playwright) if that override is
-present and still doesn't fix it.
-
-**Checking internal links has its own version of this trap.** A body link
-written `[text](../other-slug/)` renders **relative**, verbatim —
-`href=../other-slug/` — while the theme's own prev/next navigation renders
-the *same* post as an absolute `href=/ai-concept/other-slug/`. So grepping
-for the absolute form finds the nav link and misses every body link, which
-looks exactly like "my cross-post links didn't render". Grep for the bare
-slug instead:
-
-```bash
-grep -c 'other-slug' .tools/public/ai-concept/<linking-post>/index.html
-```
-
-then confirm `.tools/public/<section>/<other-slug>/` exists. Relative body links
-are correct and are what every existing post on this site uses.
-
-Every `src=` should look like a real permalink
-(`/paper-intro/<slug>/figure1.png`) and the file should actually exist
-under `.tools/public/` at that path. A literal bare filename in `src=` (e.g.
-`src=figure1.png`) is the exact fingerprint of the bug in
-`bilingual-bundle-gotcha.md` — go fix that, don't just note it and move on.
-
-## Cleaning up after yourself
-
-With `-d .tools/public` there is nothing to clean: `.tools/` (the Hugo binary,
-its cache, the build output, the mermaid copy and screenshots) is gitignored.
-If you ever build without `-d`, Hugo writes `public/` and `resources/` at the
-repo root (both are in `.gitignore` too, but remove them anyway so a stray
-`public/` is not mistaken for the real site).
-
-Leave `themes/DoIt`'s submodule checkout alone either way: a submodule
-checkout is a gitlink reference, not tracked file content, so there is
-nothing to undo there. The same goes for `AI-Research`: if you ran
-`git submodule update --remote` to read newer content, `git status` shows
-`M AI-Research`; either commit that pointer bump deliberately with the post
-(it must name a commit already on `AI-Research`'s `main`) or reset it with
-`git submodule update --init AI-Research`.
+With `-d .tools/public` there is nothing to clean: `.tools/` is gitignored. A build without `-d` writes `public/`
+and `resources/` at the repo root (also gitignored); remove them. A `git submodule update --remote` shows
+`M AI-Research`: commit that pointer deliberately with the post (it must name a commit on `AI-Research`'s `main`) or
+reset it with `git submodule update --init AI-Research`.

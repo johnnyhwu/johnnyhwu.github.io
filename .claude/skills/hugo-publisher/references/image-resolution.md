@@ -15,14 +15,16 @@ pixels only to confirm or to judge.
 - **An id that does not exist or does not match its caption**: `validate_plan.py` fails. That is a Step 3 fix
   (edit the figure block), never a guess here.
 - **A crop that is cut off, blank or illegible**: found by looking (next section). Report it in the PR; a re-crop
-  is a Step 1 job in `AI-Research`.
+  is a Step 1 job in `AI-Research`. Legibility at column width is judged once, by Step 3 before the skeleton
+  (`blog-planner/references/planner-guide.md` §5, which also decides when a table is transcribed instead of shown).
+- **An id that cannot be resolved at all** fails the render; there is no placeholder to leave behind. Fix it in the
+  plan, or list it in the PR and stop.
 
 ## Look at the images that need it — through a subagent
 
 Have an image looked at when:
-- the matched manifest entry has `"parser_confidence": "low"`, **or**
-- you want to judge quality (is the crop cut off? is the text legible at
-  the width it will display?).
+- the matched manifest entry has `"parser_confidence": "low"` and Step 3's brief did not already cover it, **or**
+- you doubt a specific crop (is it cut off? blank?).
 
 **Default: delegate.** Image bytes stay in context for the rest of the
 session, so send a subagent (`Agent`, `general-purpose`) with the file
@@ -72,23 +74,3 @@ width = max(75%, round(image_px_width / widest_image_px_width_in_this_post * 100
 The widest image gets no `width`; neither does any within about 10% of it. Flat figures (aspect ratio above 2.5)
 rarely need shrinking at all. Say each width in the PR so the author can adjust. `verify_post.py` warns on a
 narrow image with no `width=` and on any `width=` below 75%. `scripts/render_post.py` applies this rule.
-
-## When a reference truly can't be resolved
-
-Don't silently drop or guess. Leave a visible placeholder in the rendered
-body:
-```
-<!-- UNRESOLVED IMAGE: img-004 -- no confident match; needs manual review -->
-```
-and list it explicitly in the PR description. A loud gap beats a
-confidently-wrong figure shipped to the blog.
-
-## Tables specifically
-
-If a manifest entry carries a `table_markdown` field and the article
-references that table as an image, you *may* emit the Markdown table
-inline instead of the screenshot — but only if the site renders tables
-cleanly (it does; `goldmark.extensions.table = true` in
-`config/_default/markup.toml`) and the surrounding prose reads naturally
-with a table there instead of an image. When unsure, keep the image — it's
-always the safer default.

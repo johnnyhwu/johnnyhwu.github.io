@@ -137,37 +137,28 @@ open the `AI-Research` PR, say so: a topic left in `done/unpublished/` gets offe
 
 ## Global rules for anything touching a published post
 
-- **Tools live in this repo, never on the machine.** Python goes through `uv`, never `pip`: Pillow and numpy are
-  in `pyproject.toml` (`uv sync`, then `uv run python ...`; `uv add` for anything new; `verify_post.py` is
-  stdlib-only). Hugo and Node (with Playwright and Chromium) are downloaded on first use into the gitignored
-  `.tools/` by `.claude/skills/hugo-publisher/scripts/hugo.sh` and `node.sh`. Don't `brew install`, `go install`,
-  `npm i -g` or `pip install` anything. If a tool is missing, install it that way (or into `.tools/` by the same
-  pattern) and say so; don't skip the check it was for. Run `uv` from this repo's root; the exception is
-  `verify_manifest.py`, which runs from inside `AI-Research/` with `env -u VIRTUAL_ENV uv run ...` because only
-  that repo's environment has `pymupdf`.
+Each skill's "hard rules" section has the detail; these are the ones that hold everywhere.
 
-- **Never read the source PDF.** It sits in the `AI-Research` submodule next
-  to `article.md`, so it is easy to open by accident. Steps 3 and 4 work
-  from `article.md` + `image-manifest.json` + the already-extracted image
-  files (and, in Step 4, the plan) only.
-- **Looking at images is allowed, but delegate it** to a subagent (file path plus a specific question, short
-  text answer back) so image bytes stay out of your context; view one yourself only downscaled and when you need
-  the pixels for the next decision. Resolve images by manifest id first; looking only confirms or judges quality
-  (`hugo-publisher/references/image-resolution.md`).
-- **Never invent a manifest id, a number, or front-matter metadata the site
-  needs but the article doesn't supply.** The cover is the common case: generate an original one with
-  `canvas-design` (`hugo-publisher/references/featured-image.md`), never a stock photo or a paper figure. Flag
-  any other gap (a missing paper link, say) in the PR instead of papering over it.
-- **Fail loud, not silent.** An image id that doesn't resolve, a detail that lands nowhere, a number that went
-  missing, a link that can't apply: each fails `validate_plan.py` or `render_post.py` and is fixed in the plan
-  or reported in the PR — never a silent guess.
-- **This site is bilingual (`zh-TW` + `en`), and that isn't optional per
-  post.** See the skill's bundle-resources note for exactly why a
-  single-language post actively breaks the *other* language's images too,
-  not just its own content.
-- **On-page SEO is part of the work, not an afterthought.** The theme already handles canonical URL, hreflang,
-  Open Graph/Twitter tags and JSON-LD. Step 3 owns the title, description, headings and image alt text it writes
-  into the plan; Step 4 owns the contextual internal links (`hugo-publisher/references/hugo-conventions.md`).
+- **Tools live in this repo, never on the machine.** Python goes through `uv`, never `pip` (`uv sync`, then
+  `uv run python ...`; `uv add` for anything new). Hugo and Node (with Playwright and Chromium) are downloaded on
+  first use into the gitignored `.tools/` by `hugo-publisher/scripts/hugo.sh` and `node.sh`. Never `brew install`,
+  `npm i -g`, `pip install`, or `go install` outside `.tools/`. If a tool is missing, install it into `.tools/` the
+  same way and say so; don't skip the check it was for. Run `uv` from this repo's root, except `verify_manifest.py`,
+  which runs inside `AI-Research/` with `env -u VIRTUAL_ENV uv run ...` (only that repo has `pymupdf`).
+- **Never read the source PDF** (it sits next to `article.md`, easy to open by accident). Work from `article.md`,
+  the manifest and the extracted images.
+- **Delegate looking at images** to a subagent that answers in text; resolve images by manifest id first.
+- **Never invent** a manifest id, a number, or metadata the article doesn't supply. The cover is generated with
+  `canvas-design`; any other gap (a missing paper link) is flagged in the PR.
+- **Fail loud**: anything that does not resolve fails `validate_plan.py` or `render_post.py` and is fixed in the
+  plan or reported in the PR, never guessed.
+- **Bilingual (`zh-TW` + `en`) every time**: a one-language bundle breaks the other language's images too
+  (`hugo-publisher/references/bilingual-bundle-gotcha.md`).
+- **Readable, not generated-sounding**: one home per piece of data and per definition (a paper table is shown as an
+  image *or* a table, never both), no recap-every-section scaffolding. `blog-planner/references/style.md` and
+  `planner-guide.md` §5 have the rules; `validate_plan.py` enforces or warns on them.
+- **On-page SEO**: the theme handles canonical, hreflang, Open Graph and JSON-LD. Step 3 owns title, description,
+  headings and alt text; Step 4 owns contextual internal links.
 
 ## SEO is part of publishing, without being asked
 

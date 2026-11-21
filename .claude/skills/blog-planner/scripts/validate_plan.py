@@ -9,6 +9,9 @@ It checks structure and fidelity mechanically, so the Reviewers can spend their 
     block may not introduce a new number unless it is marked `illustrative`
   - glossary: a defined term is not used before the block that defines it
   - paper link: a paper-intro post links its paper (error, unless meta.paper_link_missing gives the reason)
+  - one home per piece of data: an image is shown once, as a figure or a transcribed table, never both in the
+    reading line; paper-intro captions use the paper's own numbers
+  - style (warnings, `style_scan.py`): template scaffolding, recap labels, label density, bold-lead lists
   - hygiene: no `$` imbalance, no hand-numbered headings, no half-width punctuation in zh text, no CJK in en text
   - parity (en): same block ids, types, ledger refs, figures and per-block numbers as the zh plan (numbers with a
     magnitude unit compare by value: 270億 = 27B = 27 billion)
@@ -26,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import plan_lib as L  # noqa: E402
+import style_scan  # noqa: E402
 
 HALF_WIDTH_PUNCT_RE = re.compile(r"[一-鿿][,;:]|[,;:][一-鿿]|[一-鿿][?!](?!\S)|(?<!\S)[?!][一-鿿]")
 MANUAL_NUMBER_RE = re.compile(r"^\s*(\d+(\.\d+)*[\.\s、]|[一二三四五六七八九十]+、)")
@@ -239,10 +243,6 @@ def check_blocks(r, plan, by_id, nodes, article, manifest_ids, stage):
             dropped = [d for d in plan.get("decisions", []) if d.get("ledger") == lid and d.get("kind") == "dropped"]
             if not dropped:
                 r.err(f"{lid}: lands in no block and has no `dropped` decision")
-    fig_ids = {b.get("manifest_id") for b, _ in L.iter_blocks(blocks) if b.get("type") == "figure"}
-    for iid in article.image_ids:
-        if iid not in fig_ids:
-            r.err(f"article.md references {iid} but no figure block uses it")
     check_glossary(r, plan, order, glossary_skip)
     meta = plan.get("meta", {})
     if meta.get("section") == "paper-intro" and "](http" not in L.plan_text(plan):
@@ -255,6 +255,64 @@ def check_blocks(r, plan, by_id, nodes, article, manifest_ids, stage):
                   "section, or link the arXiv id (planner-guide.md §5); if no source exists, set "
                   "meta.paper_link_missing to the reason")
     return seen
+
+
+CAPTION_NUM_RE = re.compile(r"^\s*(圖|表|Figure|Fig\.?|Table)\s*(\d+)", re.I)
+PAPER_NUM_RE = re.compile(r"(Fig(?:ure)?|Table)\.?\s*(\d+)", re.I)
+
+
+def _kind(word):
+    return "table" if word.lower() in ("表", "table") else "figure"
+
+
+def paper_number(entry, block):
+    """('table', '6') for the paper's own number of an image, from paper_label or the manifest caption."""
+    m = PAPER_NUM_RE.search(block.get("paper_label") or "") or PAPER_NUM_RE.search(entry.get("caption", ""))
+    return (_kind(m.group(1)), m.group(2)) if m else None
+
+
+def check_figures(r, plan, article, entries):
+    """One home per piece of data: every image is shown once (as a figure or a full transcription), never twice in
+    the reading line, and paper-intro captions use the paper's own numbers."""
+    flat = list(L.iter_blocks(plan.get("blocks", [])))
+    in_fold = {b["id"] for b, p in flat if p and p.get("type") == "fold" and "id" in b}
+    figs, tables = {}, []
+    for b, _ in flat:
+        if b.get("type") == "figure":
+            figs.setdefault(b.get("manifest_id"), []).append(b)
+        elif b.get("type") == "table" and b.get("source_figure"):
+            tables.append(b)
+    full = {b["source_figure"] for b in tables if b.get("extent") == "full"}
+    for iid in article.image_ids:
+        if iid not in figs and iid not in full:
+            r.err(f"article.md references {iid} but no figure block (or full transcription) uses it")
+    for t in tables:
+        for f in figs.get(t["source_figure"], []):
+            if f.get("id") not in in_fold:
+                how = "drop the figure" if t.get("extent") == "full" else "move the figure into a fold"
+                r.err(f"{t['id']}: shows data from {t['source_figure']}, and figure {f.get('id')} shows it again in "
+                      f"the reading line; {how} (planner-guide.md §5)")
+    order = L.ordered_blocks(plan)
+    for i, b in enumerate(order):
+        if b.get("type") != "figure" or b.get("id") in in_fold:
+            continue
+        if entries.get(b.get("manifest_id"), {}).get("type") != "table":
+            continue
+        for nb in order[max(0, i - 2):i + 3]:
+            if nb.get("type") == "table" and not nb.get("source_figure") and nb.get("section") == b.get("section"):
+                r.warn(f"{nb['id']}: a hand-written table next to table image {b['id']}; if it repeats that "
+                       "image's data, declare source_figure/extent and fold or drop the image (planner-guide.md §5)")
+    if plan.get("meta", {}).get("section") != "paper-intro":
+        return
+    for b, _ in flat:
+        iid = b.get("manifest_id") if b.get("type") == "figure" else b.get("source_figure")
+        if not iid or iid not in entries:
+            continue
+        pn = paper_number(entries[iid], b)
+        m = CAPTION_NUM_RE.match(b.get("caption", ""))
+        if pn and m and (_kind(m.group(1)), m.group(2)) != pn:
+            r.warn(f"{b.get('id')}: caption says {m.group(1)} {m.group(2)} but this is the paper's "
+                   f"{pn[0]} {pn[1]}; use the paper's numbering so a number means one thing (planner-guide.md §5)")
 
 
 def check_block_fields(r, b, t, manifest_ids, pos):
@@ -270,6 +328,14 @@ def check_block_fields(r, b, t, manifest_ids, pos):
             r.err(f"{bid}: table needs headers and rows")
         elif any(len(row) != len(h) for row in rows):
             r.err(f"{bid}: every table row must have {len(h)} cells")
+        sf = b.get("source_figure")
+        if sf is not None:
+            if sf not in manifest_ids:
+                r.err(f"{bid}: source_figure {sf!r} is not in the image manifest")
+            if b.get("extent") not in ("full", "excerpt"):
+                r.err(f"{bid}: a table with source_figure needs extent 'full' or 'excerpt'")
+            if not b.get("caption"):
+                r.err(f"{bid}: a table with source_figure needs a caption")
     elif t == "formula":
         if not b.get("latex"):
             r.err(f"{bid}: formula needs latex")
@@ -373,7 +439,8 @@ def check_parity(r, zh, en):
         r.err(f"en plan has an extra block {bid}")
     for bid in zb.keys() & eb.keys():
         z, e = zb[bid], eb[bid]
-        for key in ("type", "section", "layer", "origin", "ledger", "manifest_id", "tone", "kind"):
+        for key in ("type", "section", "layer", "origin", "ledger", "manifest_id", "tone", "kind", "source_figure",
+                    "extent"):
             if z.get(key) != e.get(key):
                 r.err(f"{bid}: '{key}' differs between zh ({z.get(key)!r}) and en ({e.get(key)!r})")
         zc = [c["id"] for c in z.get("children", [])]
@@ -410,7 +477,8 @@ def main():
         r.err(f"schema must be {L.SCHEMA!r}")
     article = L.Article(a.article)
     manifest = L.load(a.manifest)
-    manifest_ids = {e["id"] for e in manifest.get("images", [])}
+    entries = {e["id"]: e for e in manifest.get("images", [])}
+    manifest_ids = set(entries)
 
     check_meta(r, plan, lang)
     nodes = check_outline(r, plan)
@@ -419,14 +487,18 @@ def main():
         by_id = {it["id"]: it for it in zh.get("ledger", [])}
         check_blocks(r, {**plan, "ledger": zh.get("ledger", []), "decisions": zh.get("decisions", [])},
                      by_id, nodes, article, manifest_ids, "draft")
+        check_figures(r, plan, article, entries)
         check_hygiene(r, plan, "en")
+        style_scan.check(r, plan, "en")
         check_parity(r, zh, plan)
     else:
         by_id = check_ledger(r, plan, article, nodes, a.stage)
         if a.stage == "draft":
             check_blocks(r, plan, by_id, nodes, article, manifest_ids, a.stage)
+            check_figures(r, plan, article, entries)
             check_numbers(r, plan, article, by_id)
             check_hygiene(r, plan, lang)
+            style_scan.check(r, plan, lang)
     for w in r.warnings:
         print("WARN:  " + w)
     for e in r.errors:

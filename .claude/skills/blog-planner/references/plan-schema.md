@@ -46,7 +46,8 @@ Length targets, warned by the validator: zh title 10 to 55 characters and descri
 
 A tree of `{id, title, role, goal, serves[], recap, children[]}`. `role` is one of `hook`, `context`, `mechanism`,
 `evidence`, `caveat`, `takeaway`, `deep-dive`. `goal` is what the reader can do or say after the section.
-`serves` lists takeaway ids. Depth 1 renders as H2, depth 2 as H3, depth 3 as H4 (no deeper). **Titles carry no
+`serves` lists takeaway ids. `recap` is optional: what the section's closing recap adds, set only for the
+sections that get one (`planner-guide.md` §2). Depth 1 renders as H2, depth 2 as H3, depth 3 as H4 (no deeper). **Titles carry no
 numbers**: the theme numbers headings, so a title may not even start with a count (「14 個模型…」 fails). A section's heading is generated from the outline; it is not a block.
 
 ## `glossary`
@@ -72,23 +73,25 @@ earlier block than its definition, and figure `alt` text and captions count as a
 ## `blocks`
 
 Common fields: `id` (unique; `s3.b2` style), `section` (an outline id), `type`, `layer`, `origin`, `ledger[]`
-(ledger ids it carries), optional `illustrative: true` and `purpose` (`recap`, `signpost`, `bridge`, `hook`).
+(ledger ids it carries), optional `illustrative: true` and `purpose` (`recap`, `signpost`, `bridge`, `hook`; a
+`recap` is the exception, not one per section: `style.md` §1).
 A `source` block must cite at least one ledger item. Reading order is the outline order, then the list order.
 
 | `type` | Fields |
 |---|---|
 | `paragraph` | `text` (markdown; inline math as `$..$`; never a literal `$` for prices) |
 | `list` | `items[]` (strings), `ordered` (bool) |
-| `table` | `headers[]`, `rows[][]` (cells are inline markdown) |
+| `table` | `headers[]`, `rows[][]` (cells are inline markdown); optional `source_figure` (a manifest id this table transcribes), then also `extent` (`full` or `excerpt`) and `caption` (「表 6 — ...」 without the source note; the renderer appends 「來源：」 or 「摘自」). See `planner-guide.md` §5 |
 | `formula` | `latex` (no delimiters), `intuition` (id of the block that explains it in words; must come earlier) |
-| `figure` | `manifest_id`, `alt`, `caption` (visible label such as 「圖 2 — ...」 without the source note), `paper_label` (optional), `role` |
+| `figure` | `manifest_id`, `alt`, `caption` (visible label such as 「圖 2 — ...」 without the source note; in paper-intro, the paper's own number), `paper_label` (optional), `role` |
 | `callout` | `tone` (note, abstract, info, tip, success, question, warning, example, quote), `title`, `text` |
 | `fold` | `title`, `tone` (optional), `children[]` (blocks; layer `fold` or `appendix`; no callout or fold inside) |
 | `diagram` | `kind` flow (`direction`, `nodes[{id,label}]`, `edges[{from,to,label?}]`), tree or mindmap (`tree{label, children[]}`) |
 | `code` | `lang`, `code` |
 
-Rules the validator enforces beyond field presence: a `layer: fold` block must sit inside a fold; a figure block
-exists for every image `article.md` references; ledger and block ids cite each other both ways; every number in
+Rules the validator enforces beyond field presence: a `layer: fold` block must sit inside a fold; every image
+`article.md` references is shown by a figure block or a full transcription (`source_figure`, `extent: full`), and
+never by both a transcription and a figure in the reading line; ledger and block ids cite each other both ways; every number in
 `article.md` is still in the post (or its line is waived by a `dropped`/`reworded` decision); an `editorial` block
 introduces no number that `article.md` lacks (except single digits, or when marked `illustrative`).
 
