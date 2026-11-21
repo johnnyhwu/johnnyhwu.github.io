@@ -20,11 +20,10 @@ Procedure lives here; state lives in `seo/` (committed). Keep it that way so `CL
 1. `test -f "$HOME/.config/gsc/client_secrets.json"`; if missing, you are not on the owner's Mac (for
    example an Anthropic cloud VM). **GSC is unavailable.**
 2. `ToolSearch` with `select:mcp__gsc__get_site_details`; if it does not load, GSC is unavailable.
-3. Chrome (`mcp__claude-in-chrome__*`) is separate and only needed for the results-page check. Load it
-   with `ToolSearch` now, not when that check comes up; if it is missing, say so in the skeleton brief
-   (the author can connect it before the draft), and otherwise skip that one check, not the rest.
+3. No browser is needed. Outside-site demand comes from `scripts/suggest.py` (Google autocomplete, no
+   key); a Chrome look at the results page is optional and never blocks or counts as a skipped step.
 
-If GSC is unavailable: skip every GSC step, still do the tool-free work below, and **end the task by
+If GSC is unavailable: skip every GSC step, still do the tool-free work below (`suggest.py` included), and **end the task by
 telling the user which SEO steps you did not do and why**. Ignore `.mcp.json` there (the server
 cannot start without the credentials) and ignore the due-rows prompt except to report it. Never call `mcp__gsc__*` in that case: an
 unauthenticated call waits for a browser and hangs.
@@ -39,25 +38,37 @@ Tool-free, always: title and description per `hugo-publisher/references/hugo-con
 ("SEO checklist for front matter"; English title 52 characters or fewer, the searchable name inside
 those 52), contextual internal links and alt text. (The follow-up rows are added after, below.)
 
+Always, with no tool but the network (recipe in `references/gsc-recipes.md`):
+
+0. **Outside demand** (`scripts/suggest.py --expand`, zh, plus `--lang en` for the English title):
+   the paper's name and **the concept it depends on** (for Is Bash: "bash agent" and "programmatic tool
+   calling"). A suggestion with another meaning (「dpo 醫學」) is a collision: the title needs a
+   plain-words hook such as 「是什麼」. Comparison and question forms are H2 candidates. If the concept
+   has demand and the site has no page that ranks for it (step 1), add it to **Concept-page
+   candidates** in `seo/plan.md` (G1) with the suggestions as evidence; the paper post itself is not
+   changed for it. This is the check that can change what the site writes next, so do not skip it
+   because the paper's own name has no demand.
+
 With GSC (about five minutes, recipes in `references/gsc-recipes.md`):
 
 1. **Site vocabulary.** Query the last 90 days for the paper's concept and name variants. Reuse the
    phrasings readers actually type (`wiki skill` vs `wikiskill`, `dpo 是什麼`) in H2s, the first
    paragraph and the description, only where it reads naturally. A paper the site has never covered
    usually has no impressions under any of its names: one query for the name variants and one for the
-   broad concept settle that, so stop there and lead the title with the paper's name.
-2. **Results page** (Chrome, Taiwan, at most two searches): who holds the name, whether the name
-   collides with another meaning (DPO is also Data Protection Officer), AI Overview, related searches.
-   Use it to decide whether the title needs a plain-words hook such as 「是什麼」 or 「介紹」. If Google
-   shows a CAPTCHA or an unusual-traffic page, stop: never solve it, skip this check and say so.
+   broad concept settle that; lead the title with the paper's name.
+2. **Results page** (optional, only when a Chrome tool is already connected; at most two searches):
+   who holds the name, AI Overview. If Google shows a CAPTCHA or an unusual-traffic page, stop: never
+   solve it. Its absence is not a skipped check; do not mention it in the brief or the follow-up rows.
 3. **Link targets.** From step 1, the existing posts that already earn impressions on the topic. Step 4
    links the new post to them through `plans/<slug>/links.json`. Links *back* from live posts would edit other posts, which is not this
    task's scope: list up to three candidates in the PR ("could link here from X, Y") and let the
    author decide. Also check no existing post already targets the same query; if one does,
-   say so in the PR rather than publishing a competitor.
+   say so in the PR rather than publishing a competitor. Add the link-back candidates to the
+   **Link-back queue** in `seo/plan.md` (G2) in the same PR, so the monthly batch picks them up.
 
-Write the outcome as a short "SEO" block in the PR description: name variants used, what the results
-page showed, the title decision, links added, anything skipped.
+Write the outcome as a short "SEO" block in the PR description: name variants used, what autocomplete
+showed (collisions, question forms, concept demand), the title decision, links added, concept-page
+candidates added, anything skipped.
 
 ## After publishing (Step 4 of `hugo-publisher`)
 
@@ -81,6 +92,20 @@ opened only when the user asks. Rules:
 - Never judge a change on fewer than about 60 clicks in total; extend the window instead.
 
 ## Site-wide analysis (monthly `site` rows, or when asked)
+
+A monthly row is not finished with a report. It ends with **actions**, because measuring without acting
+is what this process did in its first month (`seo/reports/2026-11-21-process-reflection.md`):
+
+1. **Decisions for the author**: one or two, each a yes/no question with the evidence and a
+   recommendation, taken from `plan.md` items in `decide` or stuck in `todo` longest, and from G1
+   (which concept page to write next). Ask them in the session's final message and record the answer
+   (or "no answer yet") in `plan.md`. An item asked three months running without an answer is
+   `dropped` with that reason.
+2. **Link-back batch**: everything in the G2 queue, in one PR (`claude/link-backs-<date>`), opened when
+   the user agrees. A post with a plan gets the link through its `plans/<slug>/links.json` and a
+   re-render. A legacy post (no `plans/<slug>/`) has no generated file to protect, so the batch edits
+   one sentence in both `index.*.md` by hand, the way the A6 title batch did; nothing else in the post
+   changes. Log the batch in `seo/log.md`; move the rows to G2's done list.
 
 Re-measure with the **same windows** as the baseline in `plan.md` (90 days vs the 90 before), note
 how many posts were published in between (new posts alone move clicks), save a new dated file in

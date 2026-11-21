@@ -17,7 +17,7 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 | Due | Kind | Item | How |
 |---|---|---|---|
 | 2026-11-22 | post | `paper-intro/tasteful-agent`: impressions, position, CTR | post check; no site demand for the paper name or its concepts at publish time, so under about 30 impressions means record it and do not tweak the title |
-| 2026-11-23 | site | Monthly baseline: last 90 days vs the 90 before, against the baseline in `plan.md` | site baseline; save as a new dated report; note new-post count |
+| 2026-11-23 | site | Monthly baseline: last 90 days vs the 90 before, against the baseline in `plan.md` | site baseline; save as a new dated report; note new-post count; then the skill's actions: ask the author about A5 (DPO) and the top G1 concept page, and offer the G2 link-back batch PR |
 | 2026-11-23 | site | The ten never-crawled posts (see plan B3): last-crawled dates | `batch_url_inspection` on their URLs |
 | 2026-11-24 | post | `ai-concept/subagent-fold`: impressions, position, CTR | post check; no site demand for subagent at publish time (agentic loop demand lands on `ai-concept/claude-code`), so under about 30 impressions means record it and do not tweak the title |
 | 2026-12-01 | post | `paper-intro/context-language-models`: impressions, position, CTR | post check; no site demand for the paper name at publish time (context demand lands on memgpt, agentic-context-engineering and context-engineering), so under about 30 impressions means record it and do not tweak the title |
