@@ -19,11 +19,18 @@ Skip rows whose page contains `#`: those are section sitelinks.
 impressions. Pages with impressions are the link targets; two pages ranking for the same query is a
 conflict worth reporting.
 
-## Results page (Chrome)
+## Outside demand (autocomplete, no key)
 
-`navigate` to `https://www.google.com/search?q=<url-encoded query>&gl=tw&hl=zh-TW`, then
-`get_page_text`. Read: top results, AI Overview, video/image blocks, "related searches", "people also
-ask". Close the tab afterwards. At most two searches per post.
+`python3 .claude/skills/seo/scripts/suggest.py --expand "<paper name>" "<concept>"` (Taiwan, zh-TW),
+then `--lang en` for the English title. The script's docstring says how to read the output. Exit 2
+means the endpoint failed: skip the check and say so. Suggestions show phrasing and collisions, not
+volume; GSC impressions are still the only volume number we have.
+
+## Results page (optional, Chrome)
+
+Only when a Chrome tool is already connected: `navigate` to
+`https://www.google.com/search?q=<url-encoded query>&gl=tw&hl=zh-TW`, then `get_page_text`. Read: top
+results, AI Overview. Close the tab afterwards. At most two searches per post.
 
 ## Indexed? (post row at +7 days)
 

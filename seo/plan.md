@@ -31,6 +31,7 @@ at most about +3-6% of clicks even if it works; clicks are concentrated (top 10 
 | B3 never-crawled posts | Small, ten posts | Monthly check only |
 | A7, B4, B2, C2-C4 | Low | Candidates to drop; keep unless a readout says otherwise |
 | C1 US/English market | Large but needs backlinks and authority GSC cannot show | Decision for the author |
+| G1 concept pages, G2 link-backs, G3 monthly decisions | Unknown; G1 is the only item that adds pages where demand already exists | Added 2026-11-21 after the first month showed no lift (`reports/2026-11-21-process-reflection.md`) |
 
 ## A. Taiwan market (highest return)
 
@@ -193,13 +194,62 @@ on 300 pages, alt text, CLS 0, 404/301 behaviour, sitemap in both languages.
 
 ### F8. Pipeline rules. `todo`
 - Concept posts open with a one-sentence "X is ..." definition.
-- Record the SERP's dominant result type in `meta.seo` at P1.
+- Record the SERP's dominant result type in `meta.seo` at P1. (Superseded 2026-11-21: the results page is
+  optional now; P1 records autocomplete findings instead, see G.)
 - Find topic clusters from GSC queries that land on several of our posts (no SERP scraping).
 - 17 posts have no inbound contextual link from another post; add them through `links.json`.
 
 ### F9. Moved publish dates on `dropout` and `backpropagation`. `decide`
 - Commit 20d5102 moved them into 2026 on purpose. Google treats date changes without content change as
   fake freshness. Option: restore the original `date` and move only `lastmod`.
+
+## G. Closing the loop (added 2026-11-21)
+
+The first month measured and recorded but changed little (`reports/2026-11-21-process-reflection.md`).
+These three turn findings into work. The `seo` skill feeds and drains them.
+
+### G1. Concept-page candidates. `doing`
+
+Concepts that new paper posts depend on and that people type into Google, with no page of ours that
+ranks for them. Evidence is `suggest.py` output (phrasing, not volume) plus GSC (our impressions). A
+concept post is a new `AI-Research` topic (Step 2 runs there), so each one is the author's call; the
+monthly `site` row asks about the top one.
+
+| Added | Concept | Evidence | From post | Status |
+|---|---|---|---|---|
+| 2026-11-21 | programmatic tool calling | autocomplete (tw): "… claude code", "… mcp", "… anthropic", "… vs mcp"; the site has no page for it | `paper-intro/is-bash-all-you-need` | `decide` |
+| 2026-11-21 | subagent vs skill / vs multi agent | autocomplete (tw): 「subagent 是什麼」, "subagent vs skill", "subagent vs multi agent", "subagent vs agent teams"; `ai-concept/subagent-fold` exists but had no site demand at publish | `ai-concept/subagent-fold` | `decide` (extend `subagent-fold` or a new explainer) |
+| 2026-11-21 | agent memory | autocomplete (tw): "agent memory architecture", "… benchmark", "… management"; same as B1 hub | B1, `jev-mem` | `decide` (folds into B1) |
+
+### G2. Link-back queue. `todo`
+
+Links from live posts to newer ones, listed in publish PRs ("could link back here") and never added.
+Shipped monthly in one batch PR (`seo` skill, site-wide analysis). None of the sources below has a
+plan, so each is a one-sentence hand edit in both languages.
+
+| From (source post) | To | Listed in |
+|---|---|---|
+| `ai-concept/claude-code`, `ai-concept/context-engineering` | `paper-intro/is-bash-all-you-need` | PR #103 |
+| `ai-concept/jev-overview`, `paper-intro/cerebras-rag` | `paper-intro/decision-rag` | PR #101 |
+| `paper-intro/cerebras-rag` (RRF), `paper-intro/mem0` (LoCoMo) | `paper-intro/jev-mem` | PR #100 |
+| `paper-intro/jev-as-a-judge`, `ai-concept/jev-overview` | `paper-intro/jevact` | PR #95 |
+| `ai-concept/context-engineering`, `paper-intro/memgpt`, `paper-intro/agentic-context-engineering` | `paper-intro/context-language-models` | PR #94 |
+| `ai-concept/claude-code` (subagent section), `ai-concept/harness-engineering` | `ai-concept/subagent-fold` | PR #93 |
+| `paper-intro/chateval`, `paper-intro/jev-as-a-judge` | `paper-intro/tasteful-agent` | PR #91 |
+| `ai-concept/openai-data-agent`, `ai-concept/context-engineering` | `paper-intro/evoontology` | PR #90 |
+| `paper-intro/skillopt`, `paper-intro/agentic-context-engineering` | `paper-intro/wikiskill` | PR #89 |
+| `paper-intro/cer`, `paper-intro/deepconf` | `paper-intro/llm-as-a-verifier` | PR #87 |
+| `paper-intro/pre-act`, `paper-intro/skillopt` | `paper-intro/procedural-graphs` | PR #85 |
+
+Before editing, check each source still has a sentence where the link reads naturally; skip it if not,
+and say so. `context-engineering` and `claude-code` appear several times: add at most two links to
+any one post per batch.
+
+Done: (none yet)
+
+### G3. Each monthly `site` row ends with one or two decisions for the author. `doing`
+
+First batch (2026-11-23 row): A5 (extend DPO, waiting since 2026-10-23) and the top G1 candidate.
 
 ## D. Needs data GSC does not have
 
