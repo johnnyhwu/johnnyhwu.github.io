@@ -3,6 +3,7 @@
 One line per change made because of `plan.md`. Newest first. Format:
 `YYYY-MM-DD | plan item | what changed | URLs/files | PR`
 
+2026-11-21 | publish | Re-rendered `paper-intro/is-bash-all-you-need` from a revised plan under the new writing-quality rules (each paper table shown once, paper numbering in captions, recap labels and repeated caveats removed); title, description, URL and date (2026-11-19) unchanged, lastmod moved. Existing follow-ups (2026-11-26, 2026-12-10) still apply | plans/is-bash-all-you-need/, content/posts/paper-intro/is-bash-all-you-need/ | this PR
 2026-11-15 | retitle | zh title of `paper-intro/jevact` changed at the author's request, one day after publishing and before any GSC data ("JevAct 解析：AI agent 動手前的決策閘門，增益其實多來自程式檢查" -> "JevAct：讓 AI Agent 三思而後行的執行前閘門"); shorter, name first, 三思而後行 echoes the paper's "Think Before You Act" and the 先思考再動作 wording of zh results; en title unchanged. Existing follow-ups (2026-11-18, 2026-12-02) measure the new title | plans/jevact/post.zh.json, content/posts/paper-intro/jevact/index.zh-tw.md | this PR
 2026-11-14 | F4, F6, plan | Added `max-image-preview:large` site-wide; added section F (claude-seo review) to plan.md and the monthly movers check to the seo skill | layouts/partials/head/link.html, seo/plan.md, .claude/skills/seo/SKILL.md | PR #98
 2026-11-14 | F1, F2 | Fixed 12 broken cross-section links; linked 19 papers; added check_links.py and made a missing paper link a validate_plan error | content/posts/..., plans/..., .claude/skills/{hugo-publisher,blog-planner}/ | PR #96
