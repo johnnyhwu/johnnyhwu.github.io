@@ -2,7 +2,8 @@
 
 `article.md` is organised the way the *discussion* went and the way a careful note is: setup, then details, then
 results, with every caveat attached where it was discussed. A reader does not read like that. This guide is how to
-re-shape it. It changes structure and expression; it never changes substance (`SKILL.md`, rule 2).
+re-shape it. It changes structure and expression; it never changes substance (`SKILL.md`, rule 2). What to keep
+out of the sentences themselves (scaffolding, recap loops, label clutter) is in `style.md`.
 
 ## 1. The reader
 
@@ -36,8 +37,9 @@ Every later decision is checked against that promise.
 
 - The first screen gives a **reason to read before it asks for effort**: a scenario, a tension, or the verdict plus
   what is surprising about it. No definitions, symbols or setup before that reason exists.
-- If `article.md` opens with the conclusion, keep it, but dress it: say why it matters, then promise the route.
-- One short paragraph that tells the reader the route ("先看…，再看…，最後…") is welcome; a table of contents is not.
+- If `article.md` opens with the conclusion, keep it, but dress it: say why it matters.
+- No route paragraph that lists the sections ("先看…，再看…，最後…"): the headings and the TOC already do that. If
+  the order needs justifying, give the reason for it in one sentence (`style.md` §1).
 
 ### Follow (the mindmap)
 
@@ -45,15 +47,18 @@ Every later decision is checked against that promise.
   evidence -> where it breaks -> what to take away; or claim -> why you might doubt it -> what the evidence says.
 - **Thread one running example** (a concrete task, one worked case) through the mechanism sections instead of
   introducing a new toy each time. If the paper has one, use it; otherwise make one and mark it `editorial`.
-- **Signposts**: a one-line "where we are" opening each major section, and a one-line recap (`purpose: recap`)
-  closing it, in the reader's words. A `mindmap` or `flow` diagram near the top is worth it only when the post has
-  a real structure to show (three parts, a loop); do not draw a diagram of a list. A `flow` of more than about four
-  nodes uses `direction: TD`: left-to-right shrinks the labels below readable on a phone.
+- **Signposts**: open each major section with its point, tied to the question it answers. A closing recap
+  (`purpose: recap`) only where the section is long or turns on a subtle point, and only if it adds the
+  consequence or the link onward; never a 「小結：」 label, never a restatement (`style.md` §1).
+- A `mindmap` or `flow` diagram near the top is worth it only when the post has a real structure to show (three
+  parts, a loop); do not draw a diagram of a list. A `flow` of more than about four nodes uses `direction: TD`:
+  left-to-right shrinks the labels below readable on a phone.
 - **Informative headings** that state the point ("整張圖會傷害，局部子圖才有效") rather than label it ("實驗二").
   No numbers (the theme numbers headings). Keep hierarchy contiguous; a section past about five paragraphs or two
   sub-ideas gets H3s.
-- **Define a term right before it is first needed**, and list it in `glossary` so the validator can check order.
-  When a term returns after a long gap, re-anchor it in a few words.
+- **Define a term right before it is first needed, once**, and list it in `glossary` so the validator can check
+  order. When a term returns after a long gap, re-anchor it in a few words; do not define it again (no glossary
+  table that repeats definitions the prose already gave).
 - **Intuition before formula.** Every `formula` block has an `intuition` block before it: what the formula says
   in words, with the symbols named. The symbol list can follow as a short `list`.
 
@@ -63,7 +68,8 @@ Every later decision is checked against that promise.
   colleague, and at least one **memory hook**: a named idea, a one-line analogy, or one number.
 - Every section declares which takeaway it serves (`outline[].serves`); the validator warns on an orphan.
 - The closing section repeats the three in new words and ends with what the reader can do with them (try it, watch
-  for it, doubt it). It is not a rerun of the introduction.
+  for it, doubt it). It is not a rerun of the introduction. Between the first screen and the close, the verdict
+  is built on, not restated (`style.md` §1).
 
 ## 3. Layers: how to keep every detail and still have a clear line
 
@@ -86,8 +92,9 @@ Rules of thumb:
 - Move, don't summarise: the folded text is the Writer's content (reworded for flow), not a gist of it.
 - Put the conclusion **before** the deep-dives, so a reader who stops there still has the whole argument.
 - The Writer's "我的推測" paragraphs are substance. Gather related ones into one clearly labelled callout rather than
-  scattering blockquotes through the argument, but keep the label and the strength of each. Name the voice every
-  time: 「論文作者」 for the paper's claims, 「我的推論」 for the Writer's; a bare 「作者」 reads as either.
+  scattering blockquotes through the argument, but keep the label and the strength of each. Name the voice
+  unambiguously: 「論文作者」 for the paper's claims, 「我的推論」 for the Writer's; a bare 「作者」 reads as either. Label
+  once per block, not once per sentence (`style.md` §4).
 
 ## 4. Expression: what you may do to the sentences
 
@@ -101,19 +108,38 @@ Rules of thumb:
 - Do not change what is claimed, how strongly, or any number. "可能" stays "可能"; "論文沒有說" stays.
 - Callouts are for a genuine TL;DR, caveat, aside or example; not decoration. Never two of the same tone back to
   back; most posts need only a handful.
-- No filler transitions, em-dash glue, "首先…其次…" ladders or tour-guide narration; avoid repeating one sentence
-  shape three times.
+- The sentence-level rules (scaffolding phrases, manufactured contrast, count-announced and bold-lead lists, dashes,
+  label density) are in `style.md`; `style_scan.py` warns on the countable ones.
 
 ## 5. Figures and tables
 
-Every image `article.md` references gets a `figure` block (the validator fails otherwise). Place it **right after
-the sentence that makes the reader want it**, say what to look at in the text before it, and write alt text that
-describes what the figure shows. A figure that carries only data may be shortened to a `table` block if the numbers
-are all in the Writer's text; if not, keep the figure. Figure captions use the post's own numbering ("圖 2 —").
+Every image `article.md` references is shown **once**: as a `figure` block, or as a `table` block that transcribes
+it in full (`source_figure`, `extent: "full"`). Place it **right after the sentence that makes the reader want
+it**, say what to look at in the text before it, and write alt text that describes what the figure shows.
 
-Before the skeleton, have a subagent look at every figure the post will use at column width (about 800 px) and
-name any that are unreadable there (many panels, tiny text). Tell the author with the brief: a re-crop happens in
-`AI-Research` (Step 1), and is cheap only before publishing.
+**One home per piece of data.** `article.md` often carries a paper table twice: the image, and a markdown table
+the Writer typed from it. The post never shows both in the reading line. Pick by size:
+
+| The paper table | Main line | The image |
+|---|---|---|
+| small (fits the column as markdown, roughly 6 columns or fewer) and every number is in `article.md` | a `table` with `source_figure: <id>`, `extent: "full"`, and a caption | dropped (the transcription covers it) |
+| large, and the argument needs only some cells | a `table` with `source_figure`, `extent: "excerpt"`, and a caption saying what was kept | in a `fold` ("原始表格"), or dropped if the excerpt is the whole point |
+| a chart, a diagram, or a table whose layout is the point | the `figure` | (it is the figure) |
+
+The validator fails a `table` with `source_figure` whose image also appears in the reading line, and warns on a
+hand-written table right next to a table image. A transcription is `origin: source` and cites the same ledger items
+the figure did; its numbers are checked like any other. Folding the image of a table you transcribed is not a
+`folded` decision (nothing was hidden).
+
+**Numbering.** In a paper-intro post, captions and text use **the paper's own numbers** (「表 6 —」 for Table 6, even
+if it is the post's fifth table), so 「表 6」 means one thing and matches the source note the renderer appends. The
+Writer's own numbering in `article.md` is expression and is replaced. Other sections number in reading order.
+
+**Legibility.** Before the skeleton, have a subagent look at every figure the post will use at column width (about
+800 px) and name any that are unreadable there (many panels, tiny text). This is the only look before publishing;
+Step 4 re-checks only crops with `parser_confidence: low`. An unreadable table becomes a transcription or an
+excerpt (above); an unreadable chart goes into a fold with the sentence that carries its point in the main line,
+and is listed in the brief and the PR as a re-crop candidate (a re-crop is a Step 1 job in `AI-Research`).
 
 **The paper link.** A paper's `article.md` opens with a `**來源**：` line (title, link, institutions). It is a
 ledger item like any other: put it as a short `support` paragraph at the end of the opening section, after the hook
@@ -147,4 +173,7 @@ number the article contains). Step 4 draws it (`hugo-publisher/references/featur
 - Does every number say, where it first appears, what was counted and out of what?
 - Does every formula have its words first? Every abstract mechanism an example?
 - Is any limitation that changes the headline hidden in a fold?
+- Is any data shown twice (an image and a table of it), or any term defined twice?
+- Read the first sentence of every section, then the last: do they all have the same shape? Does any section end
+  by restating itself? (`style.md` §7 has the rest of the pass.)
 - Could the main line be read in one sitting without the folds, and still be true?

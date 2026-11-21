@@ -33,7 +33,9 @@ For every block with source lines, compare the block against those lines and loo
 - strength change: a hedge dropped or added ("may", "probably", "論文沒有說", "我的推測" turned into fact, or a fact
   turned into a guess); a scope qualifier lost ("on this benchmark", "in this setting")
 - merging or splitting that changes meaning: two different claims fused; a condition detached from its claim
-- wrong figures: a wrong table/figure caption or a number attached to the wrong thing
+- wrong figures: a wrong table/figure caption or a number attached to the wrong thing; a table marked as a
+  transcription of a paper table whose cells differ from the article's version of that table (a full transcription
+  must carry every cell; an excerpt must say it is one)
 - a limitation or inference that was moved to a collapsed section but changes how a main-line result should be read
 For every block marked origin=editorial (analogies, examples, recaps, intuition):
 - it must assert nothing about the paper that the source does not (no new claim, mechanism, result or number)

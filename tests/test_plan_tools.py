@@ -63,6 +63,44 @@ class Base(unittest.TestCase):
 
 
 class TestValidate(Base):
+    def _as_table(self, extent, keep_figure):
+        plan = json.loads(json.dumps(self.zh))
+        fig = next(b for b in plan["blocks"] if b["id"] == "s2.b2")
+        table = {"id": "s2.t1" if keep_figure else "s2.b2", "section": "s2", "type": "table", "layer": "main",
+                 "origin": "source", "ledger": ["L7"], "headers": ["左", "右"], "rows": [["知識圖譜", "流程圖"]],
+                 "source_figure": "img-001", "extent": extent, "caption": "圖 1 — 知識與流程。"}
+        i = plan["blocks"].index(fig)
+        if keep_figure:
+            plan["blocks"].insert(i, table)
+            led = next(x for x in plan["ledger"] if x["id"] == "L7")
+            led["dest"].append("s2.t1")
+        else:
+            plan["blocks"][i] = table
+        return plan
+
+    def test_full_transcription_replaces_figure(self):
+        code, out = self.validate(self._as_table("full", keep_figure=False))
+        self.assertEqual(code, 0, out)
+
+    def test_same_data_twice_in_reading_line_fails(self):
+        code, out = self.validate(self._as_table("excerpt", keep_figure=True))
+        self.assertEqual(code, 1, out)
+        self.assertIn("shows it again in the reading line", out)
+
+    def test_caption_must_use_paper_number(self):
+        plan = json.loads(json.dumps(self.zh))
+        next(b for b in plan["blocks"] if b["id"] == "s2.b2")["caption"] = "圖 3 — 知識與流程。"
+        code, out = self.validate(plan)
+        self.assertIn("this is the paper's figure 1", out)
+
+    def test_style_scan_flags_recap_label(self):
+        plan = json.loads(json.dumps(self.zh))
+        b = next(b for b in plan["blocks"] if b["id"] == "s3.b2")
+        b["text"] = "小結：" + b["text"]
+        code, out = self.validate(plan)
+        self.assertEqual(code, 0, out)
+        self.assertIn("open with a recap label", out)
+
     def test_good_plan_passes(self):
         code, out = self.validate()
         self.assertEqual(code, 0, out)
@@ -148,7 +186,7 @@ class TestValidate(Base):
         z["decisions"].append({"id": "D2", "kind": "dropped", "ledger": "L7", "why": "x", "needs_human": True})
         code, out = self.validate(z)
         self.assertEqual(code, 1)
-        self.assertIn("no figure block uses it", out)
+        self.assertIn("no figure block (or full transcription) uses it", out)
 
     def test_odd_dollar_signs(self):
         z = copy.deepcopy(self.zh)
@@ -281,6 +319,12 @@ class TestRender(Base):
         files, widths, _ = render_post.collect_figures([plan], manifest, self.base)
         self.assertEqual(files["img-b"][0], "table2.png")
         self.assertEqual(widths, {"table2.png": "75%"})      # 60% is lifted to the 75% floor; 95% needs none
+
+    def test_table_caption_render(self):
+        r = render_post.Renderer({"outline": [], "blocks": []}, "zh-tw", {}, {}, [], {"img-001": "Table 6"})
+        out = r.block({"id": "x", "type": "table", "headers": ["a"], "rows": [["1"]], "source_figure": "img-001",
+                       "extent": "excerpt", "caption": "表 6 — 摘錄"})
+        self.assertTrue(out.endswith("*表 6 — 摘錄（摘自原始論文 Table 6。）*"), out)
 
     def test_diagram_render(self):
         flow = render_post.render_diagram({"kind": "flow", "direction": "LR",

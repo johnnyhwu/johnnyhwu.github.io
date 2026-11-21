@@ -66,9 +66,10 @@ For a topic `<Topic>` with slug `<slug>`:
 
    If they do not, stop: the plan is not finished and Step 3 owns the fix.
 
-2. **Look at the figures that need it** (`references/image-resolution.md`): crops with `parser_confidence: low`,
-   and anything you doubt, through a subagent that reports text. The width rule (never below 75%) is applied by
-   the renderer; note each applied width for the PR.
+2. **Look at the figures that need it** (`references/image-resolution.md`): Step 3 already judged legibility at
+   column width, so look only at crops with `parser_confidence: low` that its brief did not cover, through a
+   subagent that reports text. The width rule (never below 75%) is applied by the renderer; note each applied width
+   for the PR.
 
 3. **Make the cover** with `canvas-design` per `references/featured-image.md`, from `meta.cover_brief`. Re-read
    `references/generated-covers.md` **as it is on `origin/main`** first (palettes and fonts already taken), add a
@@ -118,18 +119,20 @@ For a topic `<Topic>` with slug `<slug>`:
    - Post with a `fold` block: also `.claude/skills/hugo-publisher/scripts/node.sh tests/check_fold.js <section>/<slug>`.
    - Finally look at how the figures render (a subagent can view downscaled copies at final width).
 
-7. **Open the PR** (only if the user asked; otherwise push the branch, draft the description and offer). Merge
-   `origin/main` first; before every later push check `gh pr view <n> --json state` (a push to a merged branch
+7. **Open the PR** (a publish request includes it; for a touch-up nobody asked to ship, push the branch and offer).
+   Merge `origin/main` first; before every later push check `gh pr view <n> --json state` (a push to a merged branch
    recreates it, so open a new PR instead). The description covers:
    - the topic directory it came from (full bucketed path) and the plan files;
    - the section and why, and whether the slug was already pinned by existing links;
    - the final `en` and `zh-tw` titles (they came from the plan; say how they pass the title self-test in
      `references/hugo-conventions.md`);
-   - the id -> filename image mapping, which crops were looked at and why, and each applied width;
+   - the id -> filename image mapping, which crops were looked at and why, and each applied width; which paper
+     tables were transcribed instead of shown (`source_figure`) and which images were folded or dropped for it;
    - the cover: generated with `canvas-design`, what it depicts, where each label comes from (`cover_brief`), size;
    - internal links added (or why none), and up to three candidates for links back;
-   - **what Step 3 did**, in a few lines: rounds the Reviewers took, anything escalated, the `decisions[]` the
-     author approved (folded, reworded, dropped), and editorial blocks added;
+   - **what Step 3 did**, in a few lines: rounds the Reviewers took, anything escalated, the `decisions[]` with
+     `needs_human` (folded, reworded, dropped; the author did not approve them in advance, so this is where they
+     can overrule), editorial blocks added, and any `style:` warning kept on purpose;
    - the `SEO` block from the `seo` skill, or which of its checks were skipped;
    - confirmation that both languages were verified to build.
 

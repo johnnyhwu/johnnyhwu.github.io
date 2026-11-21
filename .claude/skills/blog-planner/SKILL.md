@@ -61,7 +61,8 @@ ledger**: detail is moved, folded and re-ordered, never deleted, and a script ca
 
 - `AI-Research/done/unpublished/<Topic>/article.md` and `assets/image-manifest.json` (or the documented exception
   path in `AI-Research/CLAUDE.md`). Manifest `file` paths are relative to `AI-Research/`.
-- `references/planner-guide.md` (how to make it readable: the reader, the four goals as moves, layering, style).
+- `references/planner-guide.md` (how to make it readable: the reader, the four goals as moves, layering, figures
+  and tables) and `references/style.md` (what to keep out of the sentences: scaffolding, recap loops, label clutter).
 - `references/plan-schema.md` (the JSON you write).
 
 ## Workflow
@@ -97,9 +98,9 @@ python3 $S/brief.py plans/<slug>/post.zh.json --out plans/<slug>/work/skeleton.m
 
 **Show the author the brief, then keep going on your own recommendations** (the author's standing instruction, given
 2026-11-19). Post a short chat summary of `skeleton.md`: title candidates, hook, the three takeaways, the outline,
-everything under "Needs your attention" with what you recommend for each, and what is still cheap to fix now (a
-missing paper link, `planner-guide.md` §5; figures unreadable at column width; any SEO check skipped for a missing
-tool). Then continue to the draft without waiting; the `needs_human` decisions are repeated in the PR, where the
+everything under "Needs your attention" with what you recommend for each, how you will handle each figure that is
+unreadable at column width and each paper table `article.md` also typed out (`planner-guide.md` §5), and any SEO
+check skipped for a missing tool. Then continue to the draft without waiting; the `needs_human` decisions are repeated in the PR, where the
 author can still overrule them.
 
 **Stop and wait only for a serious issue the author has to decide**, for example: the section is genuinely
@@ -109,8 +110,9 @@ id to recover it; or nothing in your recommendations reads as a safe default. Re
 in `references/review-loop.md`.
 
 **P3. Draft.** Write the `blocks` (and finish `glossary`, `decisions`, each ledger item's `dest`) following
-`references/planner-guide.md`. Re-run `validate_plan.py` (default stage `draft`) until it exits 0. Warnings are
-read, not ignored. Context is the scarce resource on a long post: write the blocks one section at a time, and fix
+`references/planner-guide.md` and `references/style.md`. Re-run `validate_plan.py` (default stage `draft`) until it
+exits 0. Warnings are read, not ignored: each `style:` warning is either fixed or knowingly kept (a literal use),
+and before the first Reviewer you do the style pass in `style.md` §7. Context is the scarce resource on a long post: write the blocks one section at a time, and fix
 validator findings with targeted edits by block id rather than re-reading or regenerating the whole plan.
 
 **P4. Review loop**, exactly as in `references/review-loop.md`: two fresh subagents (Reader and Fidelity) on views
@@ -129,9 +131,9 @@ screen. Then hand over to Step 4 (`hugo-publisher`).
 | `plans/<slug>/links.json` | internal-link overlay (written in Step 4) | yes |
 | `plans/<slug>/work/` | `skeleton.md`, reviewer views, `reviews/rN-*.json`, `delta.json`, `seo.md` | no (gitignored) |
 
-Scripts (`scripts/`, stdlib only): `validate_plan.py` (the zero-token gate), `views.py` (reader and fidelity views,
-full or delta), `brief.py` (the author's one-page summary), `plan_lib.py` (shared). Tests: `uv run python -m
-unittest discover -s tests`.
+Scripts (`scripts/`, stdlib only): `validate_plan.py` (the zero-token gate), `style_scan.py` (style warnings, also
+run by the validator), `views.py` (reader and fidelity views, full or delta), `brief.py` (the author's one-page
+summary), `plan_lib.py` (shared). Tests: `uv run python -m unittest discover -s tests`.
 
 ## Definition of done
 

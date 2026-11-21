@@ -22,7 +22,9 @@ Chinese leaves value on the table.
   title follows the same self-test as zh (plain subject first, the searchable name inside the first 52 characters,
   a tension in the reader's terms, 52 characters or fewer); the description is about 150 to 160 characters. Use the
   vocabulary the GSC check found (`meta.seo`) where it reads naturally.
-- **Sentences**: idiomatic English, point first, short paragraphs; no calques of Chinese structure.
+- **Sentences**: idiomatic English, point first, short paragraphs; no calques of Chinese structure. The English
+  half of `style.md` applies (the validator runs `style_scan.py` on the en plan too): no "In short:" recaps, no
+  "It's worth noting", no dash glue, no "not X, but Y" habit. Transcreation is where these creep in.
 - **Editorial material**: analogies, examples and the running example may be replaced by ones that land better in
   English, as long as they stay `editorial`, assert nothing about the paper that the source does not, and keep any
   invented numbers marked `illustrative` (and, for parity, with the same numbers as the zh block).
@@ -31,7 +33,7 @@ Chinese leaves value on the table.
 
 ## What does not change
 
-Math (`$..$` and `latex`), code, figure `manifest_id`, `paper_label`. Figure `alt` and `caption` are rewritten in
+Math (`$..$` and `latex`), code, figure `manifest_id`, `paper_label`, a table's `source_figure` and `extent`. Figure `alt` and `caption` are rewritten in
 English. No Chinese characters anywhere in the English plan (the validator warns).
 
 ## Check

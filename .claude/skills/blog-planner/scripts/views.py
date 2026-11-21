@@ -36,6 +36,9 @@ def block_view(b):
     if t == "table":
         rows = ["| " + " | ".join(b["headers"]) + " |", "| " + " | ".join("---" for _ in b["headers"]) + " |"]
         rows += ["| " + " | ".join(str(c) for c in r) + " |" for r in b["rows"]]
+        if b.get("caption"):
+            kind = "excerpt of" if b.get("extent") == "excerpt" else "transcription of"
+            rows.append(f"Caption: {b['caption']} [{kind} {b.get('source_figure', 'a paper table')}]")
         return "\n".join(rows)
     if t == "formula":
         return "$$\n" + b["latex"] + "\n$$"

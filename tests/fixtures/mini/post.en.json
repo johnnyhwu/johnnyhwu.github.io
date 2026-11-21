@@ -3,6 +3,7 @@
   "source": {"article": "article.md", "manifest": "image-manifest.json", "root": "."},
   "meta": {
     "section": "paper-intro",
+    "paper_link_missing": "test fixture: the mini article has no source line",
     "slug": "mini-post",
     "tags": ["Large Language Model", "Agent Memory"],
     "title": "Why Agents Repeat Themselves: A Mini Example",
