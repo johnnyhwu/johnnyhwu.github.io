@@ -1,0 +1,2990 @@
+{
+ "schema": "post-plan/1",
+ "source": {
+  "article": "AI-Research/done/published/SKILL-state/article.md",
+  "manifest": "AI-Research/done/published/SKILL-state/assets/image-manifest.json",
+  "root": "AI-Research"
+ },
+ "meta": {
+  "section": "paper-intro",
+  "slug": "skill-state",
+  "tags": [
+   "Agent Memory",
+   "Single-Agent",
+   "Inference Optimization"
+  ],
+  "title": "SKILL.state 論文：Agent 不留對話歷史只留狀態，200 步任務省 41 倍 token",
+  "title_alts": [
+   "SKILL.state 論文：Agent 不留對話歷史只留狀態，200 步任務省 41 倍 token",
+   "Agent 越跑越貴？SKILL.state 用一份會更新的狀態取代對話歷史",
+   "丟掉對話歷史的 Agent：SKILL.state 省錢的證據很硬，變準的證據沒那麼穩"
+  ],
+  "description": "長任務 agent 每一步都把整段歷史塞回 prompt，成本隨步數平方成長。SKILL.state 只留一份結構化狀態，200 步任務的 token 少了 41 倍；但準確率的提升沒那麼穩，換到關聯密集的環境還出現反例。",
+  "reader": {
+   "persona": "用過 ChatGPT 或 Claude、聽過 AI agent，想知道長任務 agent 為什麼又貴又容易出錯的工程師或學生，不需要做過 agent",
+   "promise": "讀完能說出 SKILL.state 每一步看什麼、為什麼總成本從平方變線性、哪些實驗結果可信哪些要打折，並能用「相關性能不能當下判斷」這個問題決定自己的 agent 要不要保留歷史",
+   "assumes": [
+    "prompt",
+    "token",
+    "JSON",
+    "benchmark"
+   ]
+  },
+  "takeaways": [
+   {
+    "id": "t1",
+    "text": "長任務 agent 變貴，是因為每一步都把整段歷史再塞回 prompt；SKILL.state 每步只看指令、當下狀態和最新觀察，總 token 從隨步數平方成長變成線性成長。",
+    "memory_hook": "傳統做法每步「加一段」，SKILL.state 每步「換一份」；200 步差 41 倍"
+   },
+   {
+    "id": "t2",
+    "text": "省錢和變準是兩個宣稱，證據不一樣硬：token 節省在每個環境都成立，準確率優勢只在長任務出現，而且軟體版本庫環境在第 25 步還輸給保留歷史的對照組。",
+    "memory_hook": "看到「又快又準」，先把兩個宣稱拆開查"
+   },
+   {
+    "id": "t3",
+    "text": "丟掉歷史等於賭模型當下就判斷對；格式驗證擋不住語意錯誤（小模型 68% 的失敗屬於這類），所以先問：這個 domain 的資訊，能不能在出現的當下就判斷該不該記？",
+    "memory_hook": "「相關性能不能當下判斷？」"
+   }
+  ],
+  "hook": {
+   "kind": "tension",
+   "text": "同樣讓 agent 處理 200 步的倉儲任務，保留完整對話歷史的做法燒掉 5,041,164 個 token，只留一份「倉庫現在長什麼樣」的狀態只用 122,384 個，差了 41 倍。可是準確率只從 0.88 變成 0.94，換到關聯密集的軟體版本庫環境，第 25 步還反過來輸。這篇論文省錢的證據很硬，變準的證據沒那麼穩。"
+  },
+  "running_example": {
+   "id": "ex-wh",
+   "desc": "論文附錄的倉儲情境：item_12 放在 shelf_42，顧客下單後 agent 出貨並清掉狀態裡的紀錄；串起機制、複雜度與失敗模式"
+  },
+  "cover_brief": {
+   "metaphor": "左邊一疊越疊越高的紙條（每一步往上加一張），右邊一張固定大小的卡片，每一步只有一小塊被貼上新補丁換掉；底下兩條曲線，一條往上彎（平方），一條是斜直線（線性）",
+   "labels": [
+    {
+     "text": "Σ ⊕ ΔΣ",
+     "ledger": "L12"
+    },
+    {
+     "text": "O(T²)",
+     "ledger": "L21"
+    },
+    {
+     "text": "O(T)",
+     "ledger": "L21"
+    },
+    {
+     "text": "41×",
+     "ledger": "L39"
+    }
+   ]
+  },
+  "seo": {
+   "queries": [
+    "skill.state",
+    "skill.state scalable long-horizon agent skills",
+    "long horizon agent",
+    "agent state management"
+   ],
+   "notes": "自動完成：skill.state 有論文全名與 arxiv 的建議，但「skill state」撞到履歷用語（skill statements），標題要加 Agent 與白話鉤子。英文有 long horizon agents、ai agent state management 的需求。GSC 90 天：state、react、lost in the middle 在本站零曝光；長任務相關曝光在 plan-and-act；MemGPT 有大量曝光（paper-intro/memgpt），是最強的內部連結目標，另有 context-engineering、mem0。沒有既有文章鎖定同一查詢。"
+  }
+ },
+ "outline": [
+  {
+   "id": "s1",
+   "title": "Agent 跑越久越貴：把對話歷史換成一份狀態",
+   "role": "hook",
+   "goal": "知道這篇在回答什麼、結論是什麼、為什麼值得讀",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s2",
+   "title": "對話式執行的兩個問題：越疊越長，舊資訊賴著不走",
+   "role": "context",
+   "goal": "說得出長任務 agent 為什麼越跑越貴、越跑越容易錯",
+   "serves": [
+    "t1"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s3",
+   "title": "SKILL.state 怎麼運作：每一步只看三樣東西",
+   "role": "mechanism",
+   "goal": "能用倉儲例子講出一步的輸入、輸出和狀態怎麼更新",
+   "serves": [
+    "t1",
+    "t3"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s3a",
+     "title": "三樣輸入、三樣輸出，狀態用合併來更新",
+     "role": "mechanism",
+     "goal": "認得 P、Σ、O 與 R、ΔΣ、a，懂 ⊕ 合併",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3b",
+     "title": "執行迴圈：推理用完就丟，狀態整份換掉",
+     "role": "mechanism",
+     "goal": "說得出 prompt 為什麼不再變長",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3c",
+     "title": "走一遍倉儲出貨的一步",
+     "role": "mechanism",
+     "goal": "看懂一次 patch 套用前後的狀態",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3d",
+     "title": "狀態欄位按 domain 設計一次",
+     "role": "mechanism",
+     "goal": "知道 schema 的好處與前提",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3e",
+     "title": "驗證擋得住格式錯誤，擋不住語意錯誤",
+     "role": "caveat",
+     "goal": "說得出這套架構最脆弱的地方",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "總成本為什麼從平方降到線性",
+   "role": "mechanism",
+   "goal": "能用 1 加到 10 的例子解釋 O(T²) 和 O(T)",
+   "serves": [
+    "t1"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s5",
+   "title": "實驗怎麼設計：測試環境與對照組",
+   "role": "context",
+   "goal": "知道每個數字來自哪個環境、跟誰比",
+   "serves": [
+    "t2"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s5a",
+     "title": "測試環境與計分方式",
+     "role": "context",
+     "goal": "分得清自建環境和公開 benchmark",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s5b",
+     "title": "對照組：關鍵是 Stateful 與預算對齊組",
+     "role": "context",
+     "goal": "知道哪組比較真正測到「丟掉歷史」",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "title": "看數字前的保留：長任務只在自建環境測過",
+   "role": "caveat",
+   "goal": "帶著正確的懷疑去讀結果",
+   "serves": [
+    "t2"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s7",
+   "title": "結果：省錢的證據很硬，變準的證據沒那麼穩",
+   "role": "evidence",
+   "goal": "能分開評估成本和準確率兩個宣稱",
+   "serves": [
+    "t1",
+    "t2"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s7a",
+     "title": "倉儲環境：任務夠長才拉開差距，最大的差距在 token",
+     "role": "evidence",
+     "goal": "說得出 41 倍和 6 個百分點各指什麼",
+     "serves": [
+      "t1",
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7b",
+     "title": "公開 benchmark：三個任務都贏，但零售的對照組不穩",
+     "role": "evidence",
+     "goal": "知道最有力的準確率證據和它的但書",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7c",
+     "title": "軟體版本庫：中途一度輸給 Stateful",
+     "role": "evidence",
+     "goal": "說得出全篇最重要的反例",
+     "serves": [
+      "t2",
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7d",
+     "title": "預算對齊：贏在結構化，不只是 prompt 變短",
+     "role": "evidence",
+     "goal": "知道為什麼這是最紮實的實驗",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7e",
+     "title": "雜訊與狀態恢復：架構本來就保證的結果",
+     "role": "evidence",
+     "goal": "知道這兩個實驗為什麼不意外",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "title": "它會在哪裡失敗：小模型的錯誤與三種失效情境",
+   "role": "caveat",
+   "goal": "說得出失敗的主要類型和論文承認的限制",
+   "serves": [
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s9",
+   "title": "實務上該選 ReAct 還是 SKILL.state",
+   "role": "takeaway",
+   "goal": "能用一個問題和一張表替自己的任務做選擇",
+   "serves": [
+    "t3",
+    "t1"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s10",
+   "title": "結論：省成本可以期待，全面變準還不行",
+   "role": "takeaway",
+   "goal": "帶走三個可以轉述的判斷",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  }
+ ],
+ "glossary": [
+  {
+   "term": "ReAct",
+   "defined_in": "s2.b1"
+  },
+  {
+   "term": "context",
+   "defined_in": "s2.b1"
+  },
+  {
+   "term": "schema",
+   "defined_in": "s3d.b1"
+  },
+  {
+   "term": "chain-of-thought",
+   "defined_in": "s3a.b5"
+  },
+  {
+   "term": "Stateful",
+   "defined_in": "s4.b5"
+  },
+  {
+   "term": "LangGraph",
+   "defined_in": "s5b.b1"
+  },
+  {
+   "term": "MemGPT",
+   "defined_in": "s10.b1"
+  },
+  {
+   "term": "Dialogue State Tracking",
+   "defined_in": "s10.b1"
+  },
+  {
+   "term": "InterCode CTF",
+   "defined_in": "s3d.b1"
+  },
+  {
+   "term": "pass@1",
+   "defined_in": "s5a.b5"
+  },
+  {
+   "term": "LLMLingua",
+   "defined_in": "s5b.b3"
+  },
+  {
+   "term": "lost-in-the-middle",
+   "defined_in": "s9.b4"
+  }
+ ],
+ "ledger": [
+  {
+   "id": "L01",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     5,
+     5
+    ]
+   },
+   "gist": "幾乎所有 agent runtime 同一做法：執行越久 prompt 越長，成本延遲爆",
+   "layer": "main",
+   "section": "s1",
+   "dest": [
+    "s1.b1"
+   ]
+  },
+  {
+   "id": "L02",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     7,
+     7
+    ]
+   },
+   "gist": "Google 與 Purdue 論文：每步只看指令+狀態+觀察，推理丟棄只留狀態修改；成本平方變線性",
+   "layer": "main",
+   "section": "s1",
+   "dest": [
+    "s1.b3",
+    "s1.b5"
+   ]
+  },
+  {
+   "id": "L03",
+   "kind": "nav",
+   "src": {
+    "lines": [
+     9,
+     9
+    ]
+   },
+   "gist": "路線段落",
+   "layer": "none",
+   "section": null,
+   "dest": []
+  },
+  {
+   "id": "L04",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     11,
+     11
+    ]
+   },
+   "gist": "判決：成本價值高（T=200 省 41 倍）；研究價值中偏低（MemGPT/LangGraph/DST）；準確率證據弱且非處處成立",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s1.b2",
+    "s10.b1"
+   ]
+  },
+  {
+   "id": "L05",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     17,
+     17
+    ]
+   },
+   "gist": "問題一：prompt 隨步數增長，成本延遲上升",
+   "layer": "main",
+   "section": "s2",
+   "dest": [
+    "s2.b1"
+   ]
+  },
+  {
+   "id": "L06",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     19,
+     19
+    ]
+   },
+   "gist": "問題二：舊資訊賴著不走，模型可能照過期資訊判斷",
+   "layer": "main",
+   "section": "s2",
+   "dest": [
+    "s2.b2"
+   ]
+  },
+  {
+   "id": "L07",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     21,
+     21
+    ]
+   },
+   "gist": "摘要/檢索式記憶仍是重整歷史文字，沒解決",
+   "layer": "main",
+   "section": "s2",
+   "dest": [
+    "s2.b4"
+   ]
+  },
+  {
+   "id": "L08",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     23,
+     23
+    ]
+   },
+   "gist": "論文目標：把現在世界狀態變成可直接讀取的東西",
+   "layer": "main",
+   "section": "s2",
+   "dest": [
+    "s2.b5"
+   ]
+  },
+  {
+   "id": "L09",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     31,
+     37
+    ]
+   },
+   "gist": "A_t=(P,Σ_t,O_t) 三樣輸入與倉儲例子",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3.b1",
+    "s3a.b1",
+    "s3a.b2"
+   ]
+  },
+  {
+   "id": "L10",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     39,
+     40
+    ]
+   },
+   "gist": "圖 1 架構總覽",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b3",
+    "s3a.b4"
+   ]
+  },
+  {
+   "id": "L11",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     42,
+     48
+    ]
+   },
+   "gist": "輸出 (R_t,ΔΣ_t,a_t)，R_t 丟棄",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b5",
+    "s3a.b6"
+   ]
+  },
+  {
+   "id": "L12",
+   "kind": "formula",
+   "src": {
+    "lines": [
+     50,
+     54
+    ]
+   },
+   "gist": "Σ_{t+1}=Σ_t⊕ΔΣ_t，合併帶 null 刪除語意",
+   "layer": "main",
+   "section": "s3a",
+   "dest": [
+    "s3a.b7",
+    "s3a.b8"
+   ]
+  },
+  {
+   "id": "L13",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     58,
+     66
+    ]
+   },
+   "gist": "七步執行迴圈，含驗證與回滾",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b1"
+   ]
+  },
+  {
+   "id": "L14",
+   "kind": "example",
+   "src": {
+    "lines": [
+     68,
+     84
+    ]
+   },
+   "gist": "傳統 vs SKILL.state 的 prompt 組成對照",
+   "layer": "main",
+   "section": "s3b",
+   "dest": [
+    "s3b.b2",
+    "s3b.b3",
+    "s3b.b4"
+   ]
+  },
+  {
+   "id": "L15",
+   "kind": "example",
+   "src": {
+    "lines": [
+     88,
+     88
+    ]
+   },
+   "gist": "附錄倉儲例子：item_12 在 shelf_42",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b1"
+   ]
+  },
+  {
+   "id": "L16",
+   "kind": "example",
+   "src": {
+    "lines": [
+     90,
+     122
+    ]
+   },
+   "gist": "出貨一步的完整流程：觀察、推理、JSON patch、狀態前後、下一輪 prompt",
+   "layer": "main",
+   "section": "s3c",
+   "dest": [
+    "s3c.b1",
+    "s3c.b2",
+    "s3c.b3",
+    "s3c.b4",
+    "s3c.b5",
+    "s3c.b6"
+   ]
+  },
+  {
+   "id": "L17",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     126,
+     126
+    ]
+   },
+   "gist": "schema 按 domain 設計一次；CTF 100 題共用欄位",
+   "layer": "support",
+   "section": "s3d",
+   "dest": [
+    "s3d.b1"
+   ]
+  },
+  {
+   "id": "L18",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     128,
+     128
+    ]
+   },
+   "gist": "前提是事先知道要追蹤哪些欄位；論文承認的第一個失效情境",
+   "layer": "main",
+   "section": "s3d",
+   "dest": [
+    "s3d.b2"
+   ]
+  },
+  {
+   "id": "L19",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     132,
+     132
+    ]
+   },
+   "gist": "格式驗證與回滾重試",
+   "layer": "main",
+   "section": "s3e",
+   "dest": [
+    "s3e.b1"
+   ]
+  },
+  {
+   "id": "L20",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     134,
+     134
+    ]
+   },
+   "gist": "擋不住語意錯誤、無法回頭自我修正；小模型 68% 失敗屬此類",
+   "layer": "main",
+   "section": "s3e",
+   "dest": [
+    "s3e.b2"
+   ]
+  },
+  {
+   "id": "L21",
+   "kind": "formula",
+   "src": {
+    "lines": [
+     140,
+     148
+    ]
+   },
+   "gist": "O(T^2) vs O(T) 推導",
+   "layer": "main",
+   "section": "s4",
+   "dest": [
+    "s4.b1",
+    "s4.b2"
+   ]
+  },
+  {
+   "id": "L22",
+   "kind": "example",
+   "src": {
+    "lines": [
+     150,
+     152
+    ]
+   },
+   "gist": "10 步算術 55 vs 10",
+   "layer": "main",
+   "section": "s4",
+   "dest": [
+    "s4.b3"
+   ]
+  },
+  {
+   "id": "L23",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     154,
+     154
+    ]
+   },
+   "gist": "Σ 會隨世界複雜度變，但與 t 無關",
+   "layer": "support",
+   "section": "s4",
+   "dest": [
+    "s4.b4"
+   ]
+  },
+  {
+   "id": "L24",
+   "kind": "number",
+   "src": {
+    "lines": [
+     156,
+     156
+    ]
+   },
+   "gist": "T 100→200：Stateful 4.7 倍、SKILL.state 1.9 倍，吻合理論",
+   "layer": "main",
+   "section": "s4",
+   "dest": [
+    "s4.b5"
+   ]
+  },
+  {
+   "id": "L25",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     164,
+     164
+    ]
+   },
+   "gist": "測試環境組成（原文計數前後不一致）",
+   "layer": "main",
+   "section": "s5a",
+   "dest": [
+    "s5a.b1"
+   ]
+  },
+  {
+   "id": "L26",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     166,
+     169
+    ]
+   },
+   "gist": "SkillExecBench：倉儲 500 貨架、軟體版本庫密集依賴",
+   "layer": "main",
+   "section": "s5a",
+   "dest": [
+    "s5a.b2",
+    "s5a.b3"
+   ]
+  },
+  {
+   "id": "L27",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     171,
+     171
+    ]
+   },
+   "gist": "InterCode CTF 100 題",
+   "layer": "main",
+   "section": "s5a",
+   "dest": [
+    "s5a.b4"
+   ]
+  },
+  {
+   "id": "L28",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     173,
+     173
+    ]
+   },
+   "gist": "Sierra τ-Bench 零售、航空",
+   "layer": "main",
+   "section": "s5a",
+   "dest": [
+    "s5a.b4"
+   ]
+  },
+  {
+   "id": "L29",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     177,
+     177
+    ]
+   },
+   "gist": "計分方式與 token 指標",
+   "layer": "support",
+   "section": "s5a",
+   "dest": [
+    "s5a.b5"
+   ]
+  },
+  {
+   "id": "L30",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     181,
+     181
+    ]
+   },
+   "gist": "三個架構對照組 Prompt/Memory/Stateful",
+   "layer": "main",
+   "section": "s5b",
+   "dest": [
+    "s2.b1",
+    "s5b.b1"
+   ]
+  },
+  {
+   "id": "L31",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     183,
+     183
+    ]
+   },
+   "gist": "Stateful 是驗證丟棄歷史的關鍵對照",
+   "layer": "main",
+   "section": "s5b",
+   "dest": [
+    "s5b.b2"
+   ]
+  },
+  {
+   "id": "L32",
+   "kind": "definition",
+   "src": {
+    "lines": [
+     185,
+     185
+    ]
+   },
+   "gist": "預算對齊控制組三種",
+   "layer": "main",
+   "section": "s5b",
+   "dest": [
+    "s5b.b3"
+   ]
+  },
+  {
+   "id": "L33",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     187,
+     187
+    ]
+   },
+   "gist": "模型、溫度 0.0、5 種子、paired t-test p<0.01",
+   "layer": "support",
+   "section": "s5b",
+   "dest": [
+    "s5b.b4"
+   ]
+  },
+  {
+   "id": "L34",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     193,
+     193
+    ]
+   },
+   "gist": "公開 benchmark 沒報告平均步數",
+   "layer": "main",
+   "section": "s6",
+   "dest": [
+    "s6.b1"
+   ]
+  },
+  {
+   "id": "L35",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     195,
+     201
+    ]
+   },
+   "gist": "沒用的長任務 benchmark：SWE-bench、WebArena/Mind2Web、GAIA、OSWorld",
+   "layer": "support",
+   "section": "s6",
+   "dest": [
+    "s6.b2",
+    "s6.b3"
+   ]
+  },
+  {
+   "id": "L36",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     202,
+     202
+    ]
+   },
+   "gist": "論文沒解釋為何不用",
+   "layer": "support",
+   "section": "s6",
+   "dest": [
+    "s6.b4"
+   ]
+  },
+  {
+   "id": "L37",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     204,
+     204
+    ]
+   },
+   "gist": "長任務宣稱的證據比表面薄",
+   "layer": "main",
+   "section": "s6",
+   "dest": [
+    "s6.b4"
+   ]
+  },
+  {
+   "id": "L38",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     212,
+     213
+    ]
+   },
+   "gist": "Table 1",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b1",
+    "s7a.b2"
+   ]
+  },
+  {
+   "id": "L39",
+   "kind": "number",
+   "src": {
+    "lines": [
+     215,
+     215
+    ]
+   },
+   "gist": "T=10 打平；T=200 0.94 對 0.88；token 41 倍",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s1.b1",
+    "s7a.b3"
+   ]
+  },
+  {
+   "id": "L40",
+   "kind": "number",
+   "src": {
+    "lines": [
+     217,
+     217
+    ]
+   },
+   "gist": "Prompt 0.90±0.02→0.74±0.14；baseline 退化",
+   "layer": "main",
+   "section": "s7a",
+   "dest": [
+    "s7a.b4"
+   ]
+  },
+  {
+   "id": "L41",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     221,
+     222
+    ]
+   },
+   "gist": "Table 4",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b1",
+    "s7b.b2"
+   ]
+  },
+  {
+   "id": "L42",
+   "kind": "number",
+   "src": {
+    "lines": [
+     224,
+     224
+    ]
+   },
+   "gist": "CTF +7.8、零售 +6.6、航空 +4.3",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b3"
+   ]
+  },
+  {
+   "id": "L43",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     226,
+     226
+    ]
+   },
+   "gist": "Memory 零售 29.9% vs Prompt 48.2% 異常；不回答長任務疑慮",
+   "layer": "main",
+   "section": "s7b",
+   "dest": [
+    "s7b.b4"
+   ]
+  },
+  {
+   "id": "L44",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     230,
+     231
+    ]
+   },
+   "gist": "Table 6",
+   "layer": "main",
+   "section": "s7c",
+   "dest": [
+    "s7c.b1",
+    "s7c.b2"
+   ]
+  },
+  {
+   "id": "L45",
+   "kind": "number",
+   "src": {
+    "lines": [
+     233,
+     233
+    ]
+   },
+   "gist": "T=10/25/50/100 數字",
+   "layer": "main",
+   "section": "s7c",
+   "dest": [
+    "s1.b2",
+    "s7c.b3"
+   ]
+  },
+  {
+   "id": "L46",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     235,
+     235
+    ]
+   },
+   "gist": "T=25 與 across all horizons 宣稱矛盾，正文沒提；±0.08",
+   "layer": "main",
+   "section": "s7c",
+   "dest": [
+    "s7c.b4"
+   ]
+  },
+  {
+   "id": "L47",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     237,
+     237
+    ]
+   },
+   "gist": "密集依賴使錯誤延續，可能是 2.5 的風險",
+   "layer": "main",
+   "section": "s7c",
+   "dest": [
+    "s7c.b5"
+   ]
+  },
+  {
+   "id": "L48",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     239,
+     239
+    ]
+   },
+   "gist": "只有 token 節省跨環境穩定",
+   "layer": "main",
+   "section": "s7c",
+   "dest": [
+    "s7c.b6"
+   ]
+  },
+  {
+   "id": "L49",
+   "kind": "nav",
+   "src": {
+    "lines": [
+     243,
+     243
+    ]
+   },
+   "gist": "其他佐證實驗引言",
+   "layer": "none",
+   "section": null,
+   "dest": []
+  },
+  {
+   "id": "L50",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     245,
+     246
+    ]
+   },
+   "gist": "Table 2",
+   "layer": "support",
+   "section": "s7e",
+   "dest": [
+    "s7e.b1",
+    "s7e.b2"
+   ]
+  },
+  {
+   "id": "L51",
+   "kind": "number",
+   "src": {
+    "lines": [
+     248,
+     248
+    ]
+   },
+   "gist": "雜訊：Prompt 0.68→0.53，SKILL.state 0.97–1.00；可預期",
+   "layer": "support",
+   "section": "s7e",
+   "dest": [
+    "s7e.b1"
+   ]
+  },
+  {
+   "id": "L52",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     250,
+     251
+    ]
+   },
+   "gist": "Table 3",
+   "layer": "support",
+   "section": "s7e",
+   "dest": [
+    "s7e.b3",
+    "s7e.b4"
+   ]
+  },
+  {
+   "id": "L53",
+   "kind": "number",
+   "src": {
+    "lines": [
+     253,
+     253
+    ]
+   },
+   "gist": "恢復 5–8 步 vs 0 步；近乎同義反覆",
+   "layer": "support",
+   "section": "s7e",
+   "dest": [
+    "s7e.b3"
+   ]
+  },
+  {
+   "id": "L54",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     255,
+     256
+    ]
+   },
+   "gist": "Table 5",
+   "layer": "main",
+   "section": "s7d",
+   "dest": [
+    "s7d.b1",
+    "s7d.b2"
+   ]
+  },
+  {
+   "id": "L55",
+   "kind": "number",
+   "src": {
+    "lines": [
+     258,
+     258
+    ]
+   },
+   "gist": "預算約 1,800：0.18、0.22、0.52、0.94",
+   "layer": "main",
+   "section": "s7d",
+   "dest": [
+    "s7d.b3"
+   ]
+  },
+  {
+   "id": "L56",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     260,
+     260
+    ]
+   },
+   "gist": "最紮實的實驗，排除 prompt 變短的混淆",
+   "layer": "main",
+   "section": "s7d",
+   "dest": [
+    "s7d.b4"
+   ]
+  },
+  {
+   "id": "L57",
+   "kind": "figure",
+   "src": {
+    "lines": [
+     266,
+     267
+    ]
+   },
+   "gist": "Table 7",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b1",
+    "s8.b2"
+   ]
+  },
+  {
+   "id": "L58",
+   "kind": "number",
+   "src": {
+    "lines": [
+     269,
+     269
+    ]
+   },
+   "gist": "Gemma T=100 0.42；68/20/12；結構化輸出遵從度",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b3",
+    "s8.b4",
+    "s8.b5"
+   ]
+  },
+  {
+   "id": "L59",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     271,
+     271
+    ]
+   },
+   "gist": "68% 與 2.5 風險、T=25 反例同一問題",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b6"
+   ]
+  },
+  {
+   "id": "L60",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     273,
+     277
+    ]
+   },
+   "gist": "充分統計量前提與三種失效情境",
+   "layer": "main",
+   "section": "s8",
+   "dest": [
+    "s8.b7",
+    "s8.b8"
+   ]
+  },
+  {
+   "id": "L61",
+   "kind": "caveat",
+   "src": {
+    "lines": [
+     279,
+     279
+    ]
+   },
+   "gist": "多 agent 同時寫入未測；grammar-constrained decoding 只解語法",
+   "layer": "support",
+   "section": "s8",
+   "dest": [
+    "s8.b9"
+   ]
+  },
+  {
+   "id": "L62",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     285,
+     285
+    ]
+   },
+   "gist": "保留歷史比較容錯的直覺，拆成兩種意義",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b1"
+   ]
+  },
+  {
+   "id": "L63",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     287,
+     287
+    ]
+   },
+   "gist": "意義一：可追溯可除錯，歷史佔優",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b2"
+   ]
+  },
+  {
+   "id": "L64",
+   "kind": "number",
+   "src": {
+    "lines": [
+     289,
+     289
+    ]
+   },
+   "gist": "意義二被 Table 1 反駁：0.90±0.02→0.74±0.14，標準差 7 倍",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b3"
+   ]
+  },
+  {
+   "id": "L65",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     291,
+     291
+    ]
+   },
+   "gist": "lost-in-the-middle；強模型也不會消失",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b4"
+   ]
+  },
+  {
+   "id": "L66",
+   "kind": "table",
+   "src": {
+    "lines": [
+     293,
+     302
+    ]
+   },
+   "gist": "六軸決策框架",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b5",
+    "s9.b6",
+    "s9.b6a"
+   ]
+  },
+  {
+   "id": "L67",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     304,
+     304
+    ]
+   },
+   "gist": "判斷規則",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b7"
+   ]
+  },
+  {
+   "id": "L68",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     306,
+     306
+    ]
+   },
+   "gist": "Stateful 中間選項，T=25 0.94 對 0.88",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b8"
+   ]
+  },
+  {
+   "id": "L69",
+   "kind": "inference",
+   "src": {
+    "lines": [
+     308,
+     308
+    ]
+   },
+   "gist": "狀態加有限窗口歷史的混合做法可能更務實",
+   "layer": "main",
+   "section": "s9",
+   "dest": [
+    "s9.b9"
+   ]
+  },
+  {
+   "id": "L70",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     316,
+     316
+    ]
+   },
+   "gist": "貢獻是證明與系統化，不是新概念",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b1"
+   ]
+  },
+  {
+   "id": "L71",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     318,
+     318
+    ]
+   },
+   "gist": "budget-matched control 方法論值得記住",
+   "layer": "support",
+   "section": "s10",
+   "dest": [
+    "s10.b1"
+   ]
+  },
+  {
+   "id": "L72",
+   "kind": "nav",
+   "src": {
+    "lines": [
+     322,
+     322
+    ]
+   },
+   "gist": "心法引言",
+   "layer": "none",
+   "section": null,
+   "dest": []
+  },
+  {
+   "id": "L73",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     324,
+     324
+    ]
+   },
+   "gist": "準確率與成本是兩個宣稱",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b2"
+   ]
+  },
+  {
+   "id": "L74",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     326,
+     326
+    ]
+   },
+   "gist": "關鍵是相關性能否當下判斷",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b3"
+   ]
+  },
+  {
+   "id": "L75",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     328,
+     328
+    ]
+   },
+   "gist": "找全稱宣稱的反例",
+   "layer": "support",
+   "section": "s10",
+   "dest": [
+    "s10.b4",
+    "s10.b5"
+   ]
+  },
+  {
+   "id": "L76",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     330,
+     330
+    ]
+   },
+   "gist": "Lost-in-the-middle（Liu et al., 2024）",
+   "layer": "support",
+   "section": "s10",
+   "dest": [
+    "s9.b4",
+    "s10.b4",
+    "s10.b5"
+   ]
+  },
+  {
+   "id": "L77",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     332,
+     332
+    ]
+   },
+   "gist": "DST 與本文差異：歷史要不要並存",
+   "layer": "support",
+   "section": "s10",
+   "dest": [
+    "s10.b4",
+    "s10.b5"
+   ]
+  },
+  {
+   "id": "L78",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     334,
+     334
+    ]
+   },
+   "gist": "驗證擋語法不擋語意，可遷移",
+   "layer": "support",
+   "section": "s10",
+   "dest": [
+    "s10.b4",
+    "s10.b5"
+   ]
+  },
+  {
+   "id": "L79",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     336,
+     336
+    ]
+   },
+   "gist": "消除回頭核對的路等於押注當下判斷",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b3"
+   ]
+  },
+  {
+   "id": "L80",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     342,
+     342
+    ]
+   },
+   "gist": "結論段",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b2"
+   ]
+  },
+  {
+   "id": "L81",
+   "kind": "claim",
+   "src": {
+    "lines": [
+     344,
+     344
+    ]
+   },
+   "gist": "一句話怎麼用這篇論文",
+   "layer": "main",
+   "section": "s10",
+   "dest": [
+    "s10.b2"
+   ]
+  }
+ ],
+ "blocks": [
+  {
+   "id": "s1.b1",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L01",
+    "L39"
+   ],
+   "text": "讓一個 AI agent 處理一個要走 200 步的倉儲任務：顧客下單、貨物上架、搬移貨架，一件接一件。現在幾乎所有 agent 都用同一套做法執行這種任務：每走一步，就把之前所有的觀察和思考接回 prompt，下一步整段重讀。於是執行越久，prompt 越長，花的錢和等待的時間跟著暴增。同樣 200 步，保留完整對話歷史的做法用掉 5,041,164 個 token，只留一份「倉庫現在長什麼樣」的狀態，只用 122,384 個，差了 41 倍。",
+   "purpose": "hook"
+  },
+  {
+   "id": "s1.b2",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L45",
+    "L04"
+   ],
+   "text": "可是準確率只是 0.94 對 0.88（只留狀態對保留歷史）。換到關聯密集的軟體版本庫環境，在 25 步長的任務上，只留狀態的做法還輸給保留歷史的對照組。**這篇論文省錢的證據很硬，變準的證據沒那麼穩**，而且不是每個環境都成立。",
+   "purpose": "hook"
+  },
+  {
+   "id": "s1.b3",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L02"
+   ],
+   "text": "這是 Google 與 Purdue 的論文《SKILL.state: Scalable Long-Horizon Agent Skills》提出的做法。模型每一步只看三樣東西：任務指令、一份描述「世界現在長什麼樣」的結構化狀態、這一步的最新觀察。模型的思考過程用完就丟，只把「狀態該怎麼改」的結論留下來。這樣 prompt 大小就跟已經走了幾步無關，整體成本從隨步數平方成長，變成線性成長。"
+  },
+  {
+   "id": "s1.b5",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L02"
+   ],
+   "text": "論文：[SKILL.state: Scalable Long-Horizon Agent Skills](https://arxiv.org/abs/2608.26263)（Google、Purdue）"
+  },
+  {
+   "id": "s2.b1",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L05",
+    "L30"
+   ],
+   "text": "今天常見的 agent 做法叫 ReAct：模型每一步先寫一段推理、選一個動作，環境回傳觀察，這三樣都接到 prompt 後面，下一步再整段讀一次。模型每次呼叫時看得到的全部內容，叫做 context。這種對話式執行有兩個具體問題。第一個是 prompt 長度隨執行步數增長，token 成本與延遲跟著漲：執行越久，context 裡塞的東西越多。"
+  },
+  {
+   "id": "s2.b2",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L06"
+   ],
+   "text": "第二個問題是舊資訊會「賴著不走」，模型得自己分辨哪些還有效。早期的觀察、已經走過的推理，即使過期了也還留在 context 裡。模型每一步都要重新判斷「這段舊文字現在還算數嗎」，這本身就是額外負擔，也容易出錯：如果外部事件已經改變了世界，但舊的觀察紀錄還壓在上面，模型很可能照舊資訊做判斷。"
+  },
+  {
+   "id": "s2.b3",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "舉個例子：context 前段寫著「shelf_42 放著 item_12」，後來有人把貨搬走了，這件事只出現在很後面的一句觀察裡。模型下一步要找 item_12 時，得自己判斷該信前面那句還是後面那句。",
+   "illustrative": true
+  },
+  {
+   "id": "s2.b4",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L07"
+   ],
+   "text": "加上記憶系統（摘要、檢索）也沒有真正解決這兩個問題。這些方法本質上還是把過去的文字歷史重新整理一遍再餵回去，模型的決策仍然建立在「重建過去發生了什麼」，而不是「直接讀取現在世界長什麼樣」。執行的邏輯沒變，只是換了一種壓縮歷史的方式。"
+  },
+  {
+   "id": "s2.b5",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L08"
+   ],
+   "text": "論文真正想回答的是：能不能把「現在的世界狀態」變成一個獨立於歷史文字、可以直接讀取的東西，讓模型不用每次都從一堆文字裡重建現況？"
+  },
+  {
+   "id": "s3.b1",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "下面用論文附錄的倉儲情境當例子，貫穿整個機制：agent 管理一座倉庫的貨架，可用的動作只有 Store（上架）、Ship（出貨）、Move（搬移）、Wait（等待）。",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s3a.b1",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "每一步餵給模型的東西固定是三樣。$P$ 是任務的固定指令（procedural specification），例如「你是倉儲管理員，可用動作是 Store/Ship/Move/Wait」，整個執行過程不變。$\\Sigma_t$ 是第 $t$ 步當下的**結構化執行狀態**，一個 JSON 字典，記錄世界現在的樣子，例如「shelf_42 放著 item_12」。$O_t$ 是這一步環境傳來的最新觀察，例如「Customer ordered item_12」。論文把這三樣合起來寫成 $A_t$："
+  },
+  {
+   "id": "s3a.b2",
+   "section": "s3a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "latex": "A_t = (P,\\ \\Sigma_t,\\ O_t)",
+   "intuition": "s3a.b1"
+  },
+  {
+   "id": "s3a.b3",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L10"
+   ],
+   "text": "圖 1 把兩種做法並排。左邊是傳統做法，prompt 裡除了指令和最新觀察，還疊著對話歷史、先前的觀察和推理；右邊是 SKILL.state，prompt 只有指令、狀態和最新觀察。下方的長條圖是重點：左邊的 context 一路變長，右邊維持在上限以內。"
+  },
+  {
+   "id": "s3a.b4",
+   "section": "s3a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L10"
+   ],
+   "manifest_id": "img-001",
+   "alt": "左右對照的架構圖。左邊是傳統做法：prompt 依序放著任務指令、對話歷史、先前的觀察、先前的推理與最新觀察，交給模型執行動作。右邊是 SKILL.state：prompt 只放任務指令、執行狀態與最新觀察；模型的推理被劃掉，標示為用完即丟；一條標著 JSON Patch ΔΣ 的狀態更新箭頭繞回執行狀態。兩邊下方各有一張 context 成長長條圖，左邊標示持續變長，右邊標示有上限。",
+   "caption": "圖 1 — SKILL.state 架構總覽：左邊的傳統做法 prompt 隨步數變長，右邊的 SKILL.state 維持固定大小",
+   "paper_label": "Figure 1",
+   "role": "overview"
+  },
+  {
+   "id": "s3a.b5",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L11"
+   ],
+   "text": "模型看完這三樣，輸出三樣東西。$R_t$ 是推理過程，也就是 chain-of-thought（模型一步步寫出來的思考），用完立刻丟掉，**永遠不會出現在下一步的 prompt 裡**。$\\Delta\\Sigma_t$ 是狀態的「差異」，一個 JSON 字典，描述這一步要對狀態做哪些修改。$a_t$ 是要執行的動作。"
+  },
+  {
+   "id": "s3a.b6",
+   "section": "s3a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L11"
+   ],
+   "latex": "(R_t,\\ \\Delta\\Sigma_t,\\ a_t)",
+   "intuition": "s3a.b5"
+  },
+  {
+   "id": "s3a.b7",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L12"
+   ],
+   "text": "狀態的更新規則很單純。論文定義了一個運算子 $\\oplus$，叫「帶 null 刪除語意的字典合併」：$\\Delta\\Sigma_t$ 裡有的 key，直接覆蓋舊狀態裡同名 key 的值；某個 key 的值被設成 `null`，代表把它從狀態裡整個刪掉；$\\Delta\\Sigma_t$ 沒提到的 key 維持原樣。寫成公式就是下一步的狀態等於這一步的狀態合併上差異："
+  },
+  {
+   "id": "s3a.b8",
+   "section": "s3a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L12"
+   ],
+   "latex": "\\Sigma_{t+1} = \\Sigma_t \\oplus \\Delta\\Sigma_t",
+   "intuition": "s3a.b7"
+  },
+  {
+   "id": "s3b.b1",
+   "section": "s3b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "items": [
+    "Runtime（負責呼叫模型、執行動作的外層程式）收到觀察 $O_t$。",
+    "組成 prompt $(P, \\Sigma_t, O_t)$，大小跟第幾步無關。",
+    "模型輸出 $(R_t, \\Delta\\Sigma_t, a_t)$。",
+    "Runtime 檢查 $\\Delta\\Sigma_t$ 的格式是否合法。合法就往下走；不合法就回滾，要求模型重新輸出。",
+    "套用更新：$\\Sigma_{t+1} = \\Sigma_t \\oplus \\Delta\\Sigma_t$。",
+    "執行動作 $a_t$，$R_t$ 永久丟棄。",
+    "環境回傳新觀察 $O_{t+1}$，回到第一步。"
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s3b.b2",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "text": "拿傳統的 ReAct 式做法來對照，差別在 prompt 怎麼長："
+  },
+  {
+   "id": "s3b.b3",
+   "section": "s3b",
+   "type": "code",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "lang": "text",
+   "code": "傳統做法：\n  第1步 prompt: [P] + [O_1]\n  第2步 prompt: [P] + [O_1, R_1, a_1] + [O_2]\n  第3步 prompt: [P] + [O_1,R_1,a_1] + [O_2,R_2,a_2] + [O_3]\n  ...越疊越長\n\nSKILL.state：\n  第1步 prompt: [P] + [Σ_1] + [O_1]\n  第2步 prompt: [P] + [Σ_2] + [O_2]\n  第3步 prompt: [P] + [Σ_3] + [O_3]\n  ...大小大致固定（Σ 可能隨任務複雜度緩慢變化，但跟走了幾步無關）"
+  },
+  {
+   "id": "s3b.b4",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "text": "傳統做法每一步都在 prompt 後面**加一段新的**，SKILL.state 每一步都把狀態**整份換掉**。"
+  },
+  {
+   "id": "s3c.b1",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L15",
+    "L16"
+   ],
+   "text": "論文附錄用這個倉儲情境示範一次出貨的完整流程，讀起來比公式直觀。開始時，item_12 放在 shelf_42。Runtime 收到觀察 $O_t$：「Customer ordered item_12.」（顧客訂了 item_12。）"
+  },
+  {
+   "id": "s3c.b2",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "模型內部的推理大概是：「顧客訂購了 item_12，我需要出貨。查看目前狀態，item_12 在 shelf_42。我要下 Ship 動作，並把狀態裡 shelf_42 的紀錄清掉。」這段推理之後會被丟掉。模型實際輸出的是這個 JSON："
+  },
+  {
+   "id": "s3c.b3",
+   "section": "s3c",
+   "type": "code",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "lang": "json",
+   "code": "{\n  \"state_patch\": { \"inventory\": { \"shelf_42\": null } },\n  \"action\": \"Ship item_12 shelf_42\"\n}"
+  },
+  {
+   "id": "s3c.b4",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "`state_patch` 就是 $\\Delta\\Sigma_t$，它把 shelf_42 設成 `null`；`action` 是 $a_t$。套用 $\\oplus$ 前後，狀態裡的 inventory 變成這樣："
+  },
+  {
+   "id": "s3c.b5",
+   "section": "s3c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "headers": [
+    "貨架",
+    "套用前",
+    "套用後"
+   ],
+   "rows": [
+    [
+     "shelf_42",
+     "\"item_12\"",
+     "null（被刪除／清空）"
+    ],
+    [
+     "shelf_43",
+     "\"item_9\"",
+     "\"item_9\"（沒被提到，維持原樣）"
+    ]
+   ]
+  },
+  {
+   "id": "s3c.b6",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "環境執行完動作，回傳新觀察 $O_{t+1}$：「Success: Shipped item_12 from shelf_42.」下一輪的 prompt 就是 $(P, \\Sigma_{t+1}, O_{t+1})$。推理過程 $R_t$ 沒有出現，上一步的觀察 $O_t$ 也沒有出現：模型只看到現在的狀態和最新的觀察，沒有半點歷史文字。"
+  },
+  {
+   "id": "s3d.b1",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L17"
+   ],
+   "text": "狀態要記哪些欄位，也就是狀態的 **schema**，是為整個 domain（同一類任務）設計一次，不是每個任務各設計一套。例如 InterCode CTF（100 道 Linux 解謎題，agent 要下 bash 指令找出藏起來的 flag 字串）的題目五花八門，涵蓋逆向工程、鑑識、密碼學、二進位漏洞利用，卻全部共用同一組欄位：已找到的 flag、已試過的假設與指令、目前操作的檔案、目前工作目錄、指令執行摘要。好處很直接：不用每個任務重新設計狀態格式，不同任務還能共用同一套 runtime 程式碼。"
+  },
+  {
+   "id": "s3d.b2",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L18"
+   ],
+   "text": "前提是這個 domain 事先就知道該追蹤哪些欄位。如果 schema 沒辦法事先固定、必須邊執行邊發現該追蹤什麼，這套做法就不適用。這是論文在 Limitations 一節自己承認的第一個失效情境。"
+  },
+  {
+   "id": "s3e.b1",
+   "section": "s3e",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L19"
+   ],
+   "text": "Runtime 在套用 $\\Delta\\Sigma_t$ 之前會先做格式驗證：是不是合法的 JSON、key 的結構符不符合預期。驗證失敗就回滾重試，狀態退回上一步，要求模型重新輸出。所以格式錯誤的輸出不會污染狀態。"
+  },
+  {
+   "id": "s3e.b2",
+   "section": "s3e",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L20"
+   ],
+   "tone": "warning",
+   "title": "格式對、內容錯的 patch 會被照單全收",
+   "text": "驗證擋得住「格式不合法」，擋不住「格式合法、但語意錯誤」的輸出。比方說模型輸出一個會誤刪重要資訊的 patch，格式完全沒問題，驗證抓不到，錯誤的更新就被「成功」套用了。更關鍵的是，舊狀態已經不在 context 裡，一旦錯誤的 patch 被合法套用，就沒有回頭看歷史文字來自我修正的機會。相對於保留完整歷史的做法，這是整個架構在結構上更脆弱的地方。這不是猜測：論文自己的實驗顯示，小模型 68% 的失敗正是這種「語意上合法但錯誤的更新被無感套用」，後面談失敗模式時會回到這個數字。"
+  },
+  {
+   "id": "s4.b1",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L21"
+   ],
+   "text": "論文用 $T$ 代表總執行步數，比較兩種做法加總起來的 token 量級。量級寫成 $O(\\cdot)$，意思是「$T$ 變大時大致怎麼成長」，不管前面的常數。傳統做法第 $t$ 步的 prompt 記作 $C_t$，長度 $|C_t|$ 跟 $t$ 成正比，是 $O(t)$。SKILL.state 第 $t$ 步的 prompt 記作 $P_t$（注意不是前面的任務指令 $P$），長度是 $O(|P|+|\\Sigma|+|O|)$，也就是指令、狀態、觀察三者的長度相加，跟 $t$ 無關。把 $T$ 步全部加起來，傳統做法是 $T$ 的平方量級，SKILL.state 只是 $T$ 的量級："
+  },
+  {
+   "id": "s4.b2",
+   "section": "s4",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L21"
+   ],
+   "latex": "\\sum_{t=1}^{T} |C_t| = O(T^2) \\qquad \\sum_{t=1}^{T} |P_t| = O(T)",
+   "intuition": "s4.b1"
+  },
+  {
+   "id": "s4.b3",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L22"
+   ],
+   "text": "用數字驗證直覺比較好懂。假設走 10 步，把每一步的長度簡化成「單位長度」：傳統做法是 1, 2, 3, ..., 10，SKILL.state 是 1, 1, ..., 1。傳統做法加起來是 $1+2+\\cdots+10=(1+10)\\times10/2=55$，這是等差數列求和，量級是 $T^2$；SKILL.state 是 10 個 1 相加，$1\\times10=10$，量級是 $T$。每一步的長度隨 $t$ 線性增加，把這些線性增加的量再加總一次，就變成平方量級。"
+  },
+  {
+   "id": "s4.b4",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L23"
+   ],
+   "text": "「1 單位」是簡化。SKILL.state 每一步的大小其實是 $|P|+|\\Sigma|+|O|$，狀態 $\\Sigma$ 可能隨任務複雜度慢慢變大，例如關聯密集的環境裡，狀態會隨分支、PR 數量增加而變胖。但它的變化只跟「當下世界有多複雜」有關，跟「已經走了幾步」無關，所以說每步 $O(1)$、總和 $O(T)$，而不是每步剛好等於某個固定常數。"
+  },
+  {
+   "id": "s4.b5",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L24"
+   ],
+   "text": "實測數字也對得上。後面的 Table 1 裡，$T$ 從 100 加倍到 200 時，Stateful 對照組（同樣有結構化狀態，但還保留完整對話歷史）的總 token 成長了約 4.7 倍，接近理論預期的 4 倍（$2^2$）；SKILL.state 只成長約 1.9 倍，接近理論預期的 2 倍（$2^1$）。"
+  },
+  {
+   "id": "s5a.b1",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L25"
+   ],
+   "text": "論文的測試分成兩類：自己設計的合成測試台 SkillExecBench，以及兩個別人設計的公開 benchmark。"
+  },
+  {
+   "id": "s5a.b2",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L26"
+   ],
+   "text": "**SkillExecBench** 是控制型的診斷測試台：世界怎麼變化由固定規則決定，用來把「執行機制本身」和「開放式的摸索搜尋」分開測。它可以把任務長度，也就是要走幾步（論文稱為 horizon），從 $T=10$ 一路拉到 $T=200$。底下分成倉儲和軟體版本庫："
+  },
+  {
+   "id": "s5a.b3",
+   "section": "s5a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L26"
+   ],
+   "items": [
+    "倉儲管理：500 個獨立、互不重疊的貨架，動作只有 Store/Ship/Move/Wait，測模型能不能在長時間執行中維持大量互不干擾的狀態變數。",
+    "軟體版本庫：Git 分支、commit、PR、CI 狀態彼此深度關聯，動作包括 CherryPick、Merge、RunTests、CreateRelease、Rollback。特色是「密集依賴」：單一動作（例如合併一個 PR）會連帶影響目標分支和其他相依的 PR，測模型能不能在互相糾纏的關聯圖上做結構化推理。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s5a.b4",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L27",
+    "L28"
+   ],
+   "text": "兩個公開 benchmark 是 **InterCode CTF**（Yang et al., 2023）和 **Sierra τ-Bench**（Yao et al., 2024）。InterCode CTF 就是前面提過的 100 道解謎題，涵蓋逆向工程、鑑識、密碼學、二進位漏洞利用，agent 在 Docker 容器裡執行 bash 指令，反覆測試假設找出隱藏的 flag。τ-Bench 測企業客服情境裡工具、agent、使用者三方的互動，分零售和航空兩個領域：agent 要跟模擬使用者對話、透過工具查詢 SQLite 資料庫，並在商業政策的限制下執行交易。"
+  },
+  {
+   "id": "s5a.b5",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L29"
+   ],
+   "text": "三個環境的算分方式不同：SkillExecBench 是連續分數（成功的動作數除以總事件數）；InterCode CTF 用 pass@1，也就是第一次嘗試就解出來的比例；τ-Bench 用官方評分器檢查資料庫的最終狀態。除了準確率，論文也記錄每次呼叫 LLM 的平均 prompt 大小，以及整個執行過程累積的 token 總量。"
+  },
+  {
+   "id": "s5b.b1",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L30"
+   ],
+   "text": "架構層面的對照組有三個。**Prompt(ReAct)** 是最原始的做法，每一步的觀察、推理、動作全部往後疊加。**Memory(Summary)** 保留最近三輪的原文，再加上一份定期更新的自然語言摘要。**Stateful(LangGraph)** 仿照 LangGraph（一個 agent 開發框架，可以在對話之外維護一份結構化狀態）的做法，有結構化的狀態區塊，但**同時**保留完整的滾動對話紀錄。"
+  },
+  {
+   "id": "s5b.b2",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L31"
+   ],
+   "text": "Stateful 是最關鍵的對照組。它跟 SKILL.state 一樣有結構化狀態，唯一的差別是「狀態加完整歷史並存」還是「只有狀態，歷史全丟」。只有這一組比較，才真正驗證了「丟掉歷史」這個決定有沒有價值；其他對照組頂多證明「結構化狀態比純文字歷史好」。"
+  },
+  {
+   "id": "s5b.b3",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L32"
+   ],
+   "text": "論文另外設了一組**預算對齊控制組**，專門排除「贏只是因為 prompt 比較短」這個可能。三種做法都把 prompt 硬壓到跟 SKILL.state 差不多短：Truncated(Sliding Window) 只留最近幾輪，硬卡 token 上限；Summary-capped 用自然語言摘要，但嚴格限制摘要本身的長度；ReAct+LLMLingua 用 LLMLingua 壓縮，這個工具讓一個小模型依困惑度（小模型覺得一段文字有多難預測）刪掉它認為不重要的字，硬壓到目標 token 數。"
+  },
+  {
+   "id": "s5b.b4",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L33"
+   ],
+   "text": "模型用了 Gemini-3-Flash（不公開權重）、Gemma-4-31B-it 和 Qwen-3-8B-it（公開權重），溫度設 0.0（每次輸出盡量固定）。合成實驗跑 5 個隨機種子，$T \\geq 50$ 時做 paired t-test（一種檢查差距是不是隨機波動的統計檢定），論文聲稱 $p<0.01$。"
+  },
+  {
+   "id": "s6.b1",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L34"
+   ],
+   "text": "SkillExecBench 刻意把任務長度從 $T=10$ 掃到 $T=200$，是明確的長度掃描。但 InterCode CTF 和 τ-Bench 兩節，論文完全沒有報告一個任務平均要走幾步。如果這些任務平均 10 到 20 步就結束，「公開驗證」就根本沒有測到 SKILL.state 宣稱最擅長的長任務；真正對長任務做過壓力測試的，只剩論文自己設計、自己控制的合成環境。"
+  },
+  {
+   "id": "s6.b2",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L35"
+   ],
+   "text": "業界其實有專門測長任務、真實世界 agent 能力的公開 benchmark，這篇論文一個都沒用："
+  },
+  {
+   "id": "s6.b3",
+   "section": "s6",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L35"
+   ],
+   "items": [
+    "SWE-bench：修真實 GitHub issue 的任務，往往需要數十到上百輪工具呼叫。論文自己的軟體版本庫環境本質上就在模仿這類任務，卻選擇自己造一個簡化版，而不是直接用真的 SWE-bench。",
+    "WebArena / Mind2Web：長距離的網頁操作任務。",
+    "GAIA：需要多步驟串接工具推理的通用助理任務。",
+    "OSWorld：真實作業系統的操作任務。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s6.b4",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L36",
+    "L37"
+   ],
+   "text": "論文沒有解釋為什麼不用這些更有代表性的長任務 benchmark。這不代表論文的數字是假的，而是「長任務的做法在真實世界也成立」這個宣稱，證據比表面看起來薄：最有說服力的長任務數字，全部來自自己設計、自己控制的合成環境。讀後面的結果時，這個保留值得放在心裡。"
+  },
+  {
+   "id": "s7a.b1",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "text": "Table 1 是倉儲環境的主表：任務長度從 $T=10$ 拉到 $T=200$，每個長度比較四種做法的準確率、平均 prompt 長度和總 token。最值得看的是最上面和最下面兩組。"
+  },
+  {
+   "id": "s7a.b2",
+   "section": "s7a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "manifest_id": "img-002",
+   "alt": "表格，列出五種任務長度下，Prompt、Memory、Stateful、SKILL.state 四種做法的準確率、平均 prompt 字元數與總 token 數，每格附標準差。",
+   "caption": "表 1 — 倉儲環境的長任務 scaling：準確率與 token 消耗隨任務長度的變化",
+   "paper_label": "Table 1",
+   "role": "evidence"
+  },
+  {
+   "id": "s7a.b3",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L39"
+   ],
+   "text": "短任務（$T=10$）沒有準確率優勢：主要對照組 Memory、Stateful 和 SKILL.state 都是 1.00，打平。優勢只在長任務浮現，而且不算壓倒性：$T=200$ 時是 0.94 對 0.88，差 6 個百分點。真正壓倒性的是 token：$T=200$ 時 Stateful 用掉 5,041,164 個，SKILL.state 只用 122,384 個，差了 41 倍。差距主要在成本，不在準確率。"
+  },
+  {
+   "id": "s7a.b4",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L40"
+   ],
+   "text": "對照組的準確率也隨 $T$ 變長而下降，標準差（多次執行的分數有多分散）跟著放大：Prompt 從 $T=10$ 的 $0.90\\pm0.02$ 跌到 $T=200$ 的 $0.74\\pm0.14$，SKILL.state 則相對穩定。所以更精確的講法是「對照組會隨執行時間拉長而退化，SKILL.state 不太退化」，而不是「SKILL.state 準確率大幅領先」。"
+  },
+  {
+   "id": "s7b.b1",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L41"
+   ],
+   "text": "Table 4 換到別人設計的真實任務。因為不是論文自己出的題，這是全篇最有說服力的準確率證據。"
+  },
+  {
+   "id": "s7b.b2",
+   "section": "s7b",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L41"
+   ],
+   "manifest_id": "img-005",
+   "alt": "表格，比較 Prompt、Memory、Stateful、SKILL.state 四種做法在 InterCode CTF、Sierra τ-Bench 零售、Sierra τ-Bench 航空三個公開 benchmark 上的成功率、prompt 大小與總 token。",
+   "caption": "表 4 — 公開互動式 benchmark 的成功率與 token 消耗",
+   "paper_label": "Table 4",
+   "role": "evidence"
+  },
+  {
+   "id": "s7b.b3",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L42"
+   ],
+   "text": "三個任務都贏：比起表現最好的對照組，CTF 的 pass@1 高 7.8 個百分點，τ-Bench 零售高 6.6 個百分點，航空高 4.3 個百分點。"
+  },
+  {
+   "id": "s7b.b4",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L43"
+   ],
+   "text": "但有個異常值要留意：Memory 在 τ-Bench 零售上崩得很慘，只有 29.9%，比 Prompt 的 48.2% 還低將近 20 個百分點。論文沒有討論這個異常值；我的推論是，摘要式記憶可能把交易細節搞丟了。這代表零售這一欄的比較基準不穩定：SKILL.state 贏的是表現最好的對照組還是最差的，差距很大，解讀時要看清楚對照組是誰。這張表也回答不了看數字之前提過的「長任務在真實世界成立嗎」這個疑慮；它證明的是「整體上表現比較好」，範圍比論文摘要暗示的窄。"
+  },
+  {
+   "id": "s7c.b1",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L44"
+   ],
+   "text": "軟體版本庫是 SkillExecBench 的第二個子環境，狀態彼此高度關聯。Table 6 是它在四個任務長度下的結果，也是全篇最重要的反例。"
+  },
+  {
+   "id": "s7c.b2",
+   "section": "s7c",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L44"
+   ],
+   "manifest_id": "img-007",
+   "alt": "表格，列出四種任務長度下，Prompt、Memory、Stateful、SKILL.state 四種做法的準確率、平均 prompt 大小與總 token，每格附標準差。",
+   "caption": "表 6 — 軟體版本庫環境的長任務 scaling：短任務打平，中段一度落後，長任務才領先",
+   "paper_label": "Table 6",
+   "role": "evidence"
+  },
+  {
+   "id": "s7c.b3",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L45"
+   ],
+   "text": "$T=10$ 時 Stateful 和 SKILL.state 都是 $1.00\\pm0.00$，打平。到了 $T=25$，SKILL.state（$0.88\\pm0.08$）反而**輸給** Stateful（$0.94\\pm0.03$）6 個百分點。$T=50$ 才贏回來（0.86 對 0.74），$T=100$ 領先擴大到 15 個百分點（0.78 對 0.63）。"
+  },
+  {
+   "id": "s7c.b4",
+   "section": "s7c",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L46"
+   ],
+   "tone": "warning",
+   "title": "這個反例跟論文自己的宣稱矛盾",
+   "text": "論文摘要說 SKILL.state「improves task accuracy... across diverse datasets」，正文說它「matches or exceeds baseline accuracy across all horizons」。但「across all horizons」只在倉儲環境成立，換到軟體版本庫就有 $T=25$ 這個反例，論文正文完全沒有提到。SKILL.state 在這張表的標準差也偏大（$\\pm0.08$），結果不算穩定。"
+  },
+  {
+   "id": "s7c.b5",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L47"
+   ],
+   "text": "我的推論是，這跟軟體版本庫的密集依賴有關。單一動作可能連帶影響多個分支；一旦某次 patch 沒有正確捕捉到連帶影響（例如合併了 PR，卻漏了更新相依分支的狀態），錯誤可能一路延續到後面的步驟，因為沒有原始歷史文字可以回頭核對。這正好是前面說的驗證盲區，$T=25$ 的反例很可能就是這個風險真的發生了。"
+  },
+  {
+   "id": "s7c.b6",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L48"
+   ],
+   "text": "「準確率全面提升」會隨環境的關聯密度出現反例；跨所有環境都穩定成立的優勢，只有 token 節省。"
+  },
+  {
+   "id": "s7d.b1",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L54"
+   ],
+   "text": "前面的比較還留著一個疑點：SKILL.state 贏，會不會只是因為 prompt 比較短？Table 5 把所有做法的 token 預算硬性對齊到 SKILL.state 的水準（約 1,800 token）再比。"
+  },
+  {
+   "id": "s7d.b2",
+   "section": "s7d",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L54"
+   ],
+   "manifest_id": "img-006",
+   "alt": "表格，比較五種設定的準確率、平均 prompt 大小與總 token：不設上限的完整 ReAct、滑動視窗截斷、限長摘要、ReAct 加 LLMLingua 壓縮，以及 SKILL.state。",
+   "caption": "表 5 — 倉儲環境的預算對齊控制組：同樣的 token 預算下比準確率",
+   "paper_label": "Table 5",
+   "role": "evidence"
+  },
+  {
+   "id": "s7d.b3",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L55"
+   ],
+   "text": "預算一對齊，壓縮型的做法全部崩掉：Truncated(Sliding Window) 只剩 0.18，ReAct+LLMLingua 只剩 0.22，Summary-capped 有 0.52，SKILL.state 維持 0.94。"
+  },
+  {
+   "id": "s7d.b4",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "text": "這是全篇最紮實的實驗，因為它排除了「贏只是因為 prompt 比較短」這個混淆因素。同樣的 token 預算下，統計式壓縮（LLMLingua）和簡單截斷會把語意上關鍵的資訊一起壓爛，SKILL.state 的結構化狀態則完整保留了關鍵的關聯資訊。"
+  },
+  {
+   "id": "s7e.b1",
+   "section": "s7e",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L50",
+    "L51"
+   ],
+   "text": "另外兩個實驗各自證明一件比較單純的事。第一個是雜訊：在無關訊息很多的高雜訊環境，Prompt 的準確率從 0.68 掉到 0.53，SKILL.state 全程維持 0.97 到 1.00。這個結果其實可以預期：雜訊不會被寫進 state patch，自然不影響後續決策，是架構設計的直接推論，不算意外發現。"
+  },
+  {
+   "id": "s7e.b2",
+   "section": "s7e",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L50"
+   ],
+   "manifest_id": "img-003",
+   "alt": "表格，列出任務長度 T=50 時，低、中、高三種雜訊強度下，Prompt、Memory、Stateful、SKILL.state 四種做法的準確率。",
+   "caption": "表 2 — 倉儲環境的雜訊魯棒性",
+   "paper_label": "Table 2",
+   "role": "evidence"
+  },
+  {
+   "id": "s7e.b3",
+   "section": "s7e",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L52",
+    "L53"
+   ],
+   "text": "第二個是狀態恢復：外部環境悄悄改變了世界（例如有人搬走了貨），保留歷史的對照組需要 5 到 8 步才能從錯誤的舊認知中恢復，SKILL.state 需要 0 步。這個結果同樣接近同義反覆：SKILL.state 本來就不保留歷史文字，「被舊觀察蓋過新事實」在架構上不可能發生，只要修正性的觀察能成功寫進 patch，恢復步數邏輯上必然是 0。"
+  },
+  {
+   "id": "s7e.b4",
+   "section": "s7e",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L52"
+   ],
+   "manifest_id": "img-004",
+   "alt": "表格，列出四個情境下，各種做法是否完成任務，以及從錯誤認知恢復需要幾步。",
+   "caption": "表 3 — 倉儲環境的狀態恢復：世界被外部改變後，要幾步才能回到正確認知",
+   "paper_label": "Table 3",
+   "role": "evidence"
+  },
+  {
+   "id": "s8.b1",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L57"
+   ],
+   "text": "換成公開權重的 Gemma-4-31B，SKILL.state 在 $T=100$ 的倉儲任務上準確率只剩 0.42。其他做法在同一長度的分數，可以在下面的表 7 對照。"
+  },
+  {
+   "id": "s8.b2",
+   "section": "s8",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L57"
+   ],
+   "manifest_id": "img-008",
+   "alt": "表格，列出 Gemma-4-31B 在四種任務長度下，Prompt、Memory、Stateful、SKILL.state 四種做法的準確率、平均 prompt 與總 token，各附標準差。",
+   "caption": "表 7 — 換成 Gemma-4-31B 跑倉儲環境的 scaling 結果",
+   "paper_label": "Table 7",
+   "role": "evidence"
+  },
+  {
+   "id": "s8.b3",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "text": "論文把失敗案例分了類："
+  },
+  {
+   "id": "s8.b4",
+   "section": "s8",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "headers": [
+    "失敗類型",
+    "具體是什麼",
+    "占比"
+   ],
+   "rows": [
+    [
+     "Premature State Overwrite/Deletion",
+     "合併時不小心漏掉既有的 key，等於誤刪",
+     "68%"
+    ],
+    [
+     "Schema Comprehension/Type 錯誤",
+     "巢狀的 list 和 dict 搞混",
+     "20%"
+    ],
+    [
+     "JSON 語法／格式錯誤",
+     "漏逗號、括號沒對齊",
+     "12%"
+    ]
+   ]
+  },
+  {
+   "id": "s8.b5",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "text": "論文的結論是：小模型失敗的根源是**結構化輸出的遵從度**（能不能照規定的格式和結構正確輸出），不是推理能力不足。"
+  },
+  {
+   "id": "s8.b6",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L59"
+   ],
+   "text": "我的推論是，第一類的 68% 就是前面那個驗證盲區的直接證據：語意上合法、但錯誤的 patch 被套用之後，沒辦法回頭校正。它跟軟體版本庫 $T=25$ 的反例，本質上是同一個問題的不同表現。"
+  },
+  {
+   "id": "s8.b7",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L60"
+   ],
+   "text": "整套設計依賴一個前提：**執行狀態可以成為未來執行的充分統計量**。意思是過去發生的一切，只要當下就被正確寫進狀態，就不需要保留原始文字。論文自己承認，這個前提在三種情境下會失效："
+  },
+  {
+   "id": "s8.b8",
+   "section": "s8",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L60"
+   ],
+   "items": [
+    "**Schema 沒辦法事先固定**：必須邊執行邊發現該追蹤哪些欄位。",
+    "**某個早期觀察，當下沒被判斷為重要，後來才發現有關**：因為沒寫進狀態，事後也找不回來。這是三者中最現實、最容易在正式環境踩到的一項。整個架構最根本的賭注，是賭模型在**當下**就能做出正確的取捨，一旦賭錯，沒有回頭路。",
+    "**任務的目標就是歷史軌跡本身**：例如稽核、debug 溯源、解釋過去做了什麼決策。這種任務下，丟掉歷史直接跟任務目標衝突。"
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s8.b9",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L61"
+   ],
+   "text": "論文另外承認兩個附帶限制。多個 agent 共享同一份狀態時，同時寫入會衝突，論文只說「可以自然擴展」，沒有實作也沒有測試。grammar-constrained decoding（生成時直接限制模型只能輸出符合語法的內容）可以消除上面第三類的純語法錯誤，但解決不了第一類的語意錯誤。"
+  },
+  {
+   "id": "s9.b1",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "text": "一個常見的直覺是：保留過去的動作紀錄比較有容錯空間，對強模型來說應該利大於弊。這個「容錯」其實有兩種意義，要拆開看。"
+  },
+  {
+   "id": "s9.b2",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L63"
+   ],
+   "text": "第一種是事後可以追溯、可以除錯。這方面保留歷史確實佔優勢，出錯後還能回頭檢查原始資料；SKILL.state 一旦把資訊丟掉，就真的回不去了，也就是上一節的第二種失效情境。"
+  },
+  {
+   "id": "s9.b3",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L64"
+   ],
+   "text": "第二種是長任務的準確率會不會因為保留歷史而更穩。前面 Table 1 的數字反駁了這個直覺：即使用論文測過最強的模型 Gemini-3-Flash，保留完整歷史的 Prompt(ReAct) 準確率還是從 0.90 一路跌到 0.74，標準差還放大了 7 倍。"
+  },
+  {
+   "id": "s9.b4",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L65",
+    "L76"
+   ],
+   "text": "論文引用 lost-in-the-middle 現象（Liu et al., 2024）來解釋長 context 的準確率退化：模型技術上看得到長 context 裡的資訊，不代表能可靠地用到。我的推論是，這不是推理能力不夠，所以換成更強的前沿模型，這個弱點也不會消失，只是程度可能緩和。「強模型加保留歷史，利大於弊」在短中距離的任務成立，在長任務上則被實測數據推翻。"
+  },
+  {
+   "id": "s9.b5",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "text": "把這些線索整理成一張決策表："
+  },
+  {
+   "id": "s9.b6",
+   "section": "s9",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "headers": [
+    "軸線",
+    "傾向 ReAct（保留歷史）",
+    "傾向 SKILL.state（丟棄歷史）"
+   ],
+   "rows": [
+    [
+     "相關性何時能判斷",
+     "事後才發現某個觀察有用（debug、探索式研究）",
+     "當下就能判斷這筆該不該記（倉儲、資料庫狀態這類）"
+    ],
+    [
+     "軌跡本身是不是產出物",
+     "是（稽核、合規、解釋過程）",
+     "否（只要最終狀態或結果對）"
+    ],
+    [
+     "狀態的關聯密度",
+     "密集互相依賴（Git 圖、連鎖財務計算）",
+     "稀疏獨立（像 500 個互不相關的貨架）"
+    ],
+    [
+     "預期執行長度",
+     "短到中（關聯稀疏時約 25 步以內）：兩者準確率打平，ReAct 比較簡單",
+     "長（100 步以上）：保留歷史的做法準確率退化、變異放大，狀態型維持穩定"
+    ],
+    [
+     "模型能力",
+     "弱模型：合法但語意錯誤的 patch 被無感套用是重大風險",
+     "強模型能降低這個風險，但前沿模型只是沒測過，沒有證據顯示完全免疫"
+    ],
+    [
+     "對成本／延遲的敏感度",
+     "不敏感（呼叫次數少、預算充足）",
+     "敏感（高頻呼叫、要上正式環境）"
+    ]
+   ]
+  },
+  {
+   "id": "s9.b6a",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "text": "關聯密集時，patch 一旦出錯，後果會無聲擴散，而且無法回頭比對原文；關聯稀疏時，錯誤的影響範圍被限制住。「25 步以內打平」也只適用於關聯稀疏的環境，關聯密集時這條線會更早出現，例如軟體版本庫在 $T=25$ 就已經反過來輸。短到中的任務選 ReAct 的好處，是不用多蓋一層 schema 和驗證的基礎設施；成本敏感的場景則是因為 $O(T^2)$ 的成本會爆表。"
+  },
+  {
+   "id": "s9.b7",
+   "section": "s9",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L67"
+   ],
+   "tone": "tip",
+   "title": "先問這一句",
+   "text": "這個 domain 的狀態，我能不能在事情發生的當下就決定該不該記？如果能（結構清楚、關聯稀疏、任務夠長），選 SKILL.state；如果不能，或需要稽核軌跡，或狀態關聯密集，優先考慮 ReAct，或「狀態加有限歷史」的混合做法。"
+  },
+  {
+   "id": "s9.b8",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L68"
+   ],
+   "text": "介於兩者之間的，是 Table 1 和 Table 6 裡的 Stateful 對照組，LangGraph 風格的「結構化狀態加完整對話歷史」。它不是純 ReAct，也不是 SKILL.state 那種只留狀態，而它在軟體版本庫 $T=25$ 時甚至贏過 SKILL.state，就是前面那個 Stateful 0.94、SKILL.state 0.88 的反例。"
+  },
+  {
+   "id": "s9.b9",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L69"
+   ],
+   "text": "我的推論是，如果不確定「當下就能正確判斷什麼該記」這個假設成不成立，「狀態加一小段近期歷史」的混合做法，可能比論文給的兩個極端都務實：有把握的部分交給結構化狀態，同時留一小段滾動歷史當安全網，萬一 schema 漏掉了什麼，近期歷史還能補救。成本介於兩者之間，不是每步 $O(1)$，但也不會一路線性疊加到底。"
+  },
+  {
+   "id": "s10.b1",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04",
+    "L70",
+    "L71"
+   ],
+   "text": "這篇論文的工程價值很高，尤其在成本上；研究上的新意則中等偏低。它最紮實的部分，是把「結構化狀態加丟棄歷史」系統化，並給出 $O(T)$ 對 $O(T^2)$ 的複雜度證明。但核心概念早就存在：MemGPT（讓 LLM 自己管理長期記憶的系統）、LangGraph 的狀態區塊，以及 Dialogue State Tracking（對話系統裡追蹤使用者需求的技術）都做過類似的事，論文的貢獻是證明和系統化衡量，不是提出新概念。預算對齊控制組這個實驗設計也值得記住：它證明贏的是「結構化」，而不只是「變短」，這個方法論比論文的核心主張更值得留在腦子裡。"
+  },
+  {
+   "id": "s10.b2",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L80",
+    "L81",
+    "L73"
+   ],
+   "text": "SKILL.state 用一個簡單的想法解決一個很具體的問題：把「現在的世界狀態」和「歷史文字」分開，prompt 就不再隨步數變長。把它當成省成本的解法來考慮，證據很夠（$T=200$ 時省 41 倍）；當成全面比較準的解法來期待，證據還不到那個程度，軟體版本庫 $T=25$ 的反例就是最直接的證據：關聯密集的任務，加上驗證擋不住的語意錯誤，是這個架構真正的軟肋。論文常把準確率和成本包裝成同一個賣點，但兩者的證據力不對等。讀任何宣稱「又快又準」的論文，都可以把兩個宣稱拆開分別檢查，通常其中一個會明顯比另一個強。"
+  },
+  {
+   "id": "s10.b3",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L74",
+    "L79"
+   ],
+   "text": "要不要丟掉歷史，關鍵問題不是模型夠不夠強，而是**相關性能不能在資訊出現的當下就被正確判斷**。架構如果拿掉了「回頭核對原始資料」這條路，就等於把賭注全押在當下的判斷上。任何為了效率丟掉原始資料、只留摘要或萃取結果的系統，都在做同一種賭注，所以比論文結論本身更值得留下的，就是這個問題：它不限於 agent 設計，值得在任何「要不要丟棄原始資料」的系統設計裡重新問一次。"
+  },
+  {
+   "id": "s10.b4",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L75",
+    "L76",
+    "L77",
+    "L78"
+   ],
+   "text": "讀這篇論文，還能順手帶走幾個判斷習慣："
+  },
+  {
+   "id": "s10.b5",
+   "section": "s10",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L75",
+    "L76",
+    "L77",
+    "L78"
+   ],
+   "items": [
+    "找全稱宣稱的反例：看到「across all X」，就去找跨資料集或跨環境的反例，像軟體版本庫的 $T=25$。全稱宣稱通常只在最有利的環境成立，附錄或次要表格反而常藏著誠實的反例。",
+    "看得到不等於用得到：lost-in-the-middle（Liu et al., 2024）說的是模型能不能用上長 context 裡的資訊，這跟模型強弱是兩個獨立的維度，值得另外深入了解。",
+    "歷史要不要跟狀態並存：Dialogue State Tracking 是狀態加完整對話歷史並存，這篇是只留狀態。設計任何結構化狀態的系統時，先問這個子問題，而不是只把「有沒有結構化狀態」當成唯一的分類。",
+    "驗證只擋得住格式：論文自己的實驗（68% 的錯誤來自語意合法但錯誤的 patch）暴露了這一點，論文卻沒有明講它對架構的含義。任何「LLM 產生結構化輸出、程式自動套用」的設計，都要記得驗證擋不住「格式對、內容錯」。"
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s10.b7",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "如果你正在做會跑很久的 agent，可以先替自己的 domain 列一份狀態欄位，再找出哪些資訊沒辦法在出現的當下決定該不該記：那些地方，就是你還需要保留歷史的地方。"
+  }
+ ],
+ "decisions": [
+  {
+   "id": "D1",
+   "kind": "reworded",
+   "ledger": "L25",
+   "why": "article.md 第 164 行說三個環境「兩個自建、一個公開」，但第 166–173 行列出的是自建的 SkillExecBench（兩個子環境）加兩個公開 benchmark（InterCode CTF、τ-Bench）。計數前後不一致，正文改寫為「自建的 SkillExecBench（倉儲、軟體版本庫兩個子環境）加上兩個公開 benchmark」，不再說「一個公開」。",
+   "needs_human": true
+  },
+  {
+   "id": "D2",
+   "kind": "moved",
+   "ledger": "L02",
+   "why": "article.md 沒有「來源」行。論文連結取自主題目錄 PDF 檔名的 arXiv id 2608.26263（https://arxiv.org/abs/2608.26263），機構（Google、Purdue）取自第 7 行。",
+   "needs_human": true
+  },
+  {
+   "id": "D3",
+   "kind": "moved",
+   "ledger": "L38",
+   "why": "article.md 的表 1–7 是 Writer 自己的編號；文章改用論文原本的編號（Table 1–7），例如 article 的表 2 是論文 Table 4。",
+   "needs_human": false
+  },
+  {
+   "id": "D4",
+   "kind": "moved",
+   "ledger": "L04",
+   "why": "開場判決裡「工程價值高、研究價值中等偏低、核心概念已存在於 MemGPT/LangGraph/DST」移到結論的貢獻段（s10.b1），第一屏只留成本與準確率的判決；Reader 反映第一屏塞三個陌生系統名太吃力。",
+   "needs_human": false
+  }
+ ]
+}

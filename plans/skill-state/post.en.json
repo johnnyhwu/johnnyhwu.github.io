@@ -1,0 +1,1656 @@
+{
+ "schema": "post-plan/1",
+ "source": {
+  "article": "AI-Research/done/published/SKILL-state/article.md",
+  "manifest": "AI-Research/done/published/SKILL-state/assets/image-manifest.json",
+  "root": "AI-Research"
+ },
+ "meta": {
+  "section": "paper-intro",
+  "slug": "skill-state",
+  "tags": [
+   "Agent Memory",
+   "Single-Agent",
+   "Inference Optimization"
+  ],
+  "title": "SKILL.state: Agents Keep State, Not History",
+  "description": "Long-running agents paste their history into every prompt, so cost grows with the square of the steps. SKILL.state keeps one state: 41x fewer tokens, shakier accuracy.",
+  "reader": {
+   "persona": "Engineers or students who have used ChatGPT or Claude, have heard of AI agents, and want to know why long-running agents get expensive and error-prone; no agent-building experience needed",
+   "promise": "Afterwards you can say what SKILL.state looks at each step, why total cost drops from quadratic to linear, which results to trust and which to discount, and use one question, can relevance be judged in the moment, to decide whether your own agent should keep its history",
+   "assumes": [
+    "prompt",
+    "token",
+    "JSON",
+    "benchmark"
+   ]
+  },
+  "takeaways": [
+   {
+    "id": "t1",
+    "text": "Long-running agents get expensive because every step pastes the whole history back into the prompt. SKILL.state shows the model only the instructions, the current state and the newest observation, so total tokens grow linearly with the number of steps instead of quadratically.",
+    "memory_hook": "The usual agent appends a piece every step; SKILL.state swaps in a new state. At 200 steps, 41 times fewer tokens"
+   },
+   {
+    "id": "t2",
+    "text": "Cheaper and more accurate are two separate claims with unequal evidence: the token saving holds in every environment, but the accuracy edge appears only on long tasks, and in the software-repository environment it lost to the history-keeping baseline at 25 steps.",
+    "memory_hook": "When a paper says faster and more accurate, check the two claims separately"
+   },
+   {
+    "id": "t3",
+    "text": "Dropping history bets that the model judges correctly in the moment. Format validation cannot catch semantic errors (68% of a small model's failures), so first ask: in this domain, can you tell when information arrives whether it is worth recording?",
+    "memory_hook": "Can relevance be judged in the moment?"
+   }
+  ],
+  "hook": {
+   "kind": "tension",
+   "text": "Run an agent through a 200-step warehouse job. Keeping the full conversation history burns 5,041,164 tokens; keeping only a record of what the warehouse looks like now uses 122,384, 41 times fewer. Yet accuracy is only 0.94 versus 0.88, and in a densely linked software-repository environment the state-only setup lost at 25 steps. The cost evidence is strong; the accuracy evidence is shakier."
+  },
+  "running_example": {
+   "id": "ex-wh",
+   "desc": "The paper's warehouse scenario: item_12 sits on shelf_42, a customer orders it, and the agent ships it and clears the record from its state; it runs through the mechanism, the complexity argument and the failure modes"
+  },
+  "cover_brief": {
+   "metaphor": "Left: a stack of paper slips growing taller (one more slip each step). Right: a single fixed-size card where each step only a small patch is replaced. Below: two curves, one bending upward (quadratic), one a straight slope (linear)",
+   "labels": [
+    {
+     "text": "Σ ⊕ ΔΣ",
+     "ledger": "L12"
+    },
+    {
+     "text": "O(T²)",
+     "ledger": "L21"
+    },
+    {
+     "text": "O(T)",
+     "ledger": "L21"
+    },
+    {
+     "text": "41×",
+     "ledger": "L39"
+    }
+   ]
+  },
+  "seo": {
+   "queries": [
+    "skill.state",
+    "skill.state scalable long-horizon agent skills",
+    "long horizon agent",
+    "agent state management"
+   ],
+   "notes": "自動完成：skill.state 有論文全名與 arxiv 的建議，但「skill state」撞到履歷用語（skill statements），標題要加 Agent 與白話鉤子。英文有 long horizon agents、ai agent state management 的需求。GSC 90 天：state、react、lost in the middle 在本站零曝光；長任務相關曝光在 plan-and-act；MemGPT 有大量曝光（paper-intro/memgpt），是最強的內部連結目標，另有 context-engineering、mem0。沒有既有文章鎖定同一查詢。"
+  }
+ },
+ "outline": [
+  {
+   "id": "s1",
+   "title": "Agents get pricier the longer they run: swap history for state",
+   "role": "hook",
+   "goal": "Know what question the post answers, its verdict, and why it is worth reading",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s2",
+   "title": "Two problems with conversational execution: prompts grow and stale facts linger",
+   "role": "context",
+   "goal": "Explain why long-running agents get pricier and more error-prone",
+   "serves": [
+    "t1"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s3",
+   "title": "How SKILL.state works: three inputs per step",
+   "role": "mechanism",
+   "goal": "Walk through one step's inputs, outputs and state update with the warehouse example",
+   "serves": [
+    "t1",
+    "t3"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s3a",
+     "title": "Three inputs, three outputs, and a merge to update state",
+     "role": "mechanism",
+     "goal": "Recognise P, Σ, O and R, ΔΣ, a, and understand the ⊕ merge",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3b",
+     "title": "The loop: reasoning is discarded, the state is replaced whole",
+     "role": "mechanism",
+     "goal": "Explain why the prompt stops growing",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3c",
+     "title": "One warehouse shipping step, start to finish",
+     "role": "mechanism",
+     "goal": "Read a patch's before and after state",
+     "serves": [
+      "t1"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3d",
+     "title": "State fields are designed once per domain",
+     "role": "mechanism",
+     "goal": "Know the benefit and the precondition of a per-domain schema",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s3e",
+     "title": "Validation catches format errors, not semantic ones",
+     "role": "caveat",
+     "goal": "Name the architecture's most fragile point",
+     "serves": [
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "Why total cost drops from quadratic to linear",
+   "role": "mechanism",
+   "goal": "Explain O(T²) versus O(T) with the 1-to-10 example",
+   "serves": [
+    "t1"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s5",
+   "title": "How the experiments were set up",
+   "role": "context",
+   "goal": "Know which environment each number comes from and what it is compared against",
+   "serves": [
+    "t2"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s5a",
+     "title": "Environments and scoring",
+     "role": "context",
+     "goal": "Tell the in-house environment from the public benchmarks",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s5b",
+     "title": "Baselines: Stateful and the budget-matched controls matter most",
+     "role": "context",
+     "goal": "Know which comparison actually tests dropping history",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "title": "A caveat before the numbers: long tasks were only tested in-house",
+   "role": "caveat",
+   "goal": "Read the results with the right doubt",
+   "serves": [
+    "t2"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s7",
+   "title": "Results: the cost evidence is strong, the accuracy evidence shakier",
+   "role": "evidence",
+   "goal": "Judge the cost claim and the accuracy claim separately",
+   "serves": [
+    "t1",
+    "t2"
+   ],
+   "recap": false,
+   "children": [
+    {
+     "id": "s7a",
+     "title": "Warehouse: gaps open only on long tasks, and the big one is tokens",
+     "role": "evidence",
+     "goal": "Say what the 41x and the 6 points each refer to",
+     "serves": [
+      "t1",
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7b",
+     "title": "Public benchmarks: wins on all three, but the retail baseline is shaky",
+     "role": "evidence",
+     "goal": "Know the strongest accuracy evidence and its caveat",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7c",
+     "title": "Software repository: losing to Stateful midway",
+     "role": "evidence",
+     "goal": "Name the paper's most important counterexample",
+     "serves": [
+      "t2",
+      "t3"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7d",
+     "title": "Matched budgets: structure wins, not just a shorter prompt",
+     "role": "evidence",
+     "goal": "Explain why this is the most solid experiment",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    },
+    {
+     "id": "s7e",
+     "title": "Noise and state recovery: results the design guarantees",
+     "role": "evidence",
+     "goal": "Explain why these two results are unsurprising",
+     "serves": [
+      "t2"
+     ],
+     "recap": false,
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "title": "Where it fails: small-model errors and three failure situations",
+   "role": "caveat",
+   "goal": "Name the main failure types and the limitations the paper admits",
+   "serves": [
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s9",
+   "title": "In practice: ReAct or SKILL.state?",
+   "role": "takeaway",
+   "goal": "Choose for your own task with one question and one table",
+   "serves": [
+    "t3",
+    "t1"
+   ],
+   "recap": false,
+   "children": []
+  },
+  {
+   "id": "s10",
+   "title": "Conclusion: expect lower cost, not across-the-board accuracy",
+   "role": "takeaway",
+   "goal": "Leave with three judgements you can repeat",
+   "serves": [
+    "t1",
+    "t2",
+    "t3"
+   ],
+   "recap": false,
+   "children": []
+  }
+ ],
+ "glossary": [
+  {
+   "term": "ReAct",
+   "defined_in": "s2.b1"
+  },
+  {
+   "term": "context",
+   "defined_in": "s2.b1"
+  },
+  {
+   "term": "schema",
+   "defined_in": "s3d.b1"
+  },
+  {
+   "term": "chain-of-thought",
+   "defined_in": "s3a.b5"
+  },
+  {
+   "term": "Stateful",
+   "defined_in": "s4.b5"
+  },
+  {
+   "term": "LangGraph",
+   "defined_in": "s5b.b1"
+  },
+  {
+   "term": "MemGPT",
+   "defined_in": "s10.b1"
+  },
+  {
+   "term": "Dialogue State Tracking",
+   "defined_in": "s10.b1"
+  },
+  {
+   "term": "InterCode CTF",
+   "defined_in": "s3d.b1"
+  },
+  {
+   "term": "pass@1",
+   "defined_in": "s5a.b5"
+  },
+  {
+   "term": "LLMLingua",
+   "defined_in": "s5b.b3"
+  },
+  {
+   "term": "lost-in-the-middle",
+   "defined_in": "s9.b4"
+  }
+ ],
+ "blocks": [
+  {
+   "id": "s1.b1",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L01",
+    "L39"
+   ],
+   "text": "Give an AI agent a warehouse job that takes 200 steps: customers order, stock arrives, items move between shelves, one event after another. Almost every agent today runs this the same way. At each step it pastes every earlier observation and thought back into the prompt and rereads the whole thing. The longer it runs, the longer the prompt, and the cost and wait time balloon. Over the same 200 steps, the setup that keeps the full conversation history burns 5,041,164 tokens. Keeping only a record of what the warehouse looks like right now uses 122,384. That is 41 times fewer.",
+   "purpose": "hook"
+  },
+  {
+   "id": "s1.b2",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L45",
+    "L04"
+   ],
+   "text": "On accuracy, the state-only setup did come out ahead: 0.94 versus 0.88 for full history. But that edge is not reliable. In a software-repository environment, where branches, commits and PRs all depend on each other, the state-only setup even lost to the history-keeping baseline on 25-step tasks. **The evidence that this saves money is strong; the evidence that it is more accurate is shakier**, and it does not hold everywhere.",
+   "purpose": "hook"
+  },
+  {
+   "id": "s1.b3",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L02"
+   ],
+   "text": "The approach comes from SKILL.state: Scalable Long-Horizon Agent Skills, a paper from Google and Purdue. At every step the model sees only the task instructions, a structured state describing what the world looks like now (in the warehouse, what sits on each shelf), and the newest observation. Its reasoning is thrown away after use; only its conclusion about how the state should change is kept. The prompt size then no longer depends on how many steps have passed, and total cost grows linearly with the number of steps instead of with its square."
+  },
+  {
+   "id": "s1.b5",
+   "section": "s1",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L02"
+   ],
+   "text": "Paper: [SKILL.state: Scalable Long-Horizon Agent Skills](https://arxiv.org/abs/2608.26263) (Google, Purdue)"
+  },
+  {
+   "id": "s2.b1",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L05",
+    "L30"
+   ],
+   "text": "The usual way to run an agent today is called ReAct: at each step the model writes some reasoning and picks an action, the environment returns an observation, and all three are appended to the prompt to be read again next step. Everything the model can see in one call is its context. This conversational style of execution has two concrete problems. First, the prompt grows with every step, and token cost and latency grow with it: the longer the run, the more the context holds."
+  },
+  {
+   "id": "s2.b2",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L06"
+   ],
+   "text": "Second, old information lingers, and the model has to work out what is still valid. Early observations and past reasoning stay in the context long after they expire. At every step the model has to decide again whether an old line still counts, which is extra work and easy to get wrong: if something outside has already changed the world but the old observation is still sitting there, the model may well act on the stale version."
+  },
+  {
+   "id": "s2.b3",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "For example, early in the context it says \"shelf_42 holds item_12\". Later someone moves the item, and that appears only in one observation much further down. Next time the model looks for item_12, it has to decide which line to believe.",
+   "illustrative": true
+  },
+  {
+   "id": "s2.b4",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L07"
+   ],
+   "text": "Adding a memory system (summaries, retrieval) does not really fix either problem. These methods still repackage the past text history and feed it back, so the model's decisions still rest on reconstructing what happened rather than reading what the world looks like now. The execution logic is unchanged; only the way history gets compressed is different."
+  },
+  {
+   "id": "s2.b5",
+   "section": "s2",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L08"
+   ],
+   "text": "The question the paper actually goes after: can the current state of the world become something separate from the text history, something the model reads directly instead of rebuilding it from a pile of text every time?"
+  },
+  {
+   "id": "s3.b1",
+   "section": "s3",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "The paper's appendix uses a warehouse scenario, and it runs through this whole section: an agent manages the shelves of a warehouse, and its only actions are Store, Ship, Move and Wait.",
+   "purpose": "signpost"
+  },
+  {
+   "id": "s3a.b1",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "text": "Each step feeds the model the same three things. $P$ is the fixed task instruction (the procedural specification), such as \"You are a warehouse manager; available actions are Store/Ship/Move/Wait\"; it never changes during the run. $\\Sigma_t$ is the **structured execution state** at step $t$, a JSON dictionary recording what the world looks like now, such as \"shelf_42 holds item_12\". $O_t$ is the newest observation from the environment, such as \"Customer ordered item_12\". The paper writes the three together as $A_t$:"
+  },
+  {
+   "id": "s3a.b2",
+   "section": "s3a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L09"
+   ],
+   "latex": "A_t = (P,\\ \\Sigma_t,\\ O_t)",
+   "intuition": "s3a.b1"
+  },
+  {
+   "id": "s3a.b3",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L10"
+   ],
+   "text": "Figure 1 puts the two approaches side by side. On the left, the traditional prompt holds the instructions and newest observation plus a growing stack of conversation history, past observations and past reasoning. On the right, the SKILL.state prompt has only the instructions, the state and the newest observation. The bar charts at the bottom are the point: the context on the left keeps growing, while the one on the right stays under a cap."
+  },
+  {
+   "id": "s3a.b4",
+   "section": "s3a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L10"
+   ],
+   "manifest_id": "img-001",
+   "alt": "Side-by-side architecture diagram. Left, the traditional approach: the prompt holds the task instructions, conversation history, past observations, past reasoning and the newest observation, and the model acts on it. Right, SKILL.state: the prompt holds only the task instructions, the execution state and the newest observation; the model's reasoning is crossed out as discarded, and a state-update arrow labelled JSON Patch ΔΣ loops back to the execution state. Under each side a context-growth bar chart is labelled growing on the left and bounded on the right.",
+   "caption": "Figure 1 — SKILL.state overview: the traditional prompt grows with each step, SKILL.state's stays the same size",
+   "paper_label": "Figure 1",
+   "role": "overview"
+  },
+  {
+   "id": "s3a.b5",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L11"
+   ],
+   "text": "After reading those three things, the model outputs three things. $R_t$ is its reasoning, the chain-of-thought (the step-by-step thinking the model writes out); it is thrown away immediately and **never appears in the next step's prompt**. $\\Delta\\Sigma_t$ is the state \"diff\", a JSON dictionary describing what to change in the state this step. $a_t$ is the action to take."
+  },
+  {
+   "id": "s3a.b6",
+   "section": "s3a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L11"
+   ],
+   "latex": "(R_t,\\ \\Delta\\Sigma_t,\\ a_t)",
+   "intuition": "s3a.b5"
+  },
+  {
+   "id": "s3a.b7",
+   "section": "s3a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L12"
+   ],
+   "text": "The update rule is simple. The paper defines an operator $\\oplus$, a \"dictionary merge with null-deletion semantics\": any key in $\\Delta\\Sigma_t$ overwrites the key of the same name in the old state; a key set to `null` is removed from the state entirely; keys that $\\Delta\\Sigma_t$ does not mention stay as they are. As a formula, the next state is this state merged with the diff:"
+  },
+  {
+   "id": "s3a.b8",
+   "section": "s3a",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L12"
+   ],
+   "latex": "\\Sigma_{t+1} = \\Sigma_t \\oplus \\Delta\\Sigma_t",
+   "intuition": "s3a.b7"
+  },
+  {
+   "id": "s3b.b1",
+   "section": "s3b",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L13"
+   ],
+   "items": [
+    "The runtime (the outer program that calls the model and carries out actions) receives observation $O_t$.",
+    "It builds the prompt $(P, \\Sigma_t, O_t)$, whose size does not depend on the step number.",
+    "The model outputs $(R_t, \\Delta\\Sigma_t, a_t)$.",
+    "The runtime checks that $\\Delta\\Sigma_t$ is well-formed. If it is, the loop continues; if not, it rolls back and asks the model to try again.",
+    "It applies the update: $\\Sigma_{t+1} = \\Sigma_t \\oplus \\Delta\\Sigma_t$.",
+    "It carries out action $a_t$, and $R_t$ is discarded for good.",
+    "The environment returns a new observation $O_{t+1}$, and the loop starts over."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s3b.b2",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "text": "Compared with a traditional ReAct-style run, the difference is in how the prompt grows:"
+  },
+  {
+   "id": "s3b.b3",
+   "section": "s3b",
+   "type": "code",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "lang": "text",
+   "code": "Traditional:\n  step 1 prompt: [P] + [O_1]\n  step 2 prompt: [P] + [O_1, R_1, a_1] + [O_2]\n  step 3 prompt: [P] + [O_1,R_1,a_1] + [O_2,R_2,a_2] + [O_3]\n  ...keeps growing\n\nSKILL.state:\n  step 1 prompt: [P] + [Σ_1] + [O_1]\n  step 2 prompt: [P] + [Σ_2] + [O_2]\n  step 3 prompt: [P] + [Σ_3] + [O_3]\n  ...roughly fixed size (Σ may change slowly with task complexity, but not with the step count)"
+  },
+  {
+   "id": "s3b.b4",
+   "section": "s3b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L14"
+   ],
+   "text": "The traditional prompt **appends a new piece** at every step; SKILL.state **replaces the whole state** at every step."
+  },
+  {
+   "id": "s3c.b1",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L15",
+    "L16"
+   ],
+   "text": "The paper's appendix walks through one complete shipping step in this scenario, and it is easier to follow than the formulas. At the start, item_12 sits on shelf_42. The runtime receives observation $O_t$: \"Customer ordered item_12.\""
+  },
+  {
+   "id": "s3c.b2",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "The model's internal reasoning goes roughly: \"The customer ordered item_12, so I need to ship it. The current state says item_12 is on shelf_42. I'll issue a Ship action and clear shelf_42 in the state.\" This reasoning gets thrown away afterwards. What the model actually outputs is this JSON:"
+  },
+  {
+   "id": "s3c.b3",
+   "section": "s3c",
+   "type": "code",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "lang": "json",
+   "code": "{\n  \"state_patch\": { \"inventory\": { \"shelf_42\": null } },\n  \"action\": \"Ship item_12 shelf_42\"\n}"
+  },
+  {
+   "id": "s3c.b4",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "`state_patch` is $\\Delta\\Sigma_t$, and it sets shelf_42 to `null`; `action` is $a_t$. Before and after applying $\\oplus$, the inventory part of the state looks like this:"
+  },
+  {
+   "id": "s3c.b5",
+   "section": "s3c",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "headers": [
+    "Shelf",
+    "Before",
+    "After"
+   ],
+   "rows": [
+    [
+     "shelf_42",
+     "\"item_12\"",
+     "null (deleted / cleared)"
+    ],
+    [
+     "shelf_43",
+     "\"item_9\"",
+     "\"item_9\" (not mentioned, unchanged)"
+    ]
+   ]
+  },
+  {
+   "id": "s3c.b6",
+   "section": "s3c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L16"
+   ],
+   "text": "After carrying out the action, the environment returns a new observation $O_{t+1}$: \"Success: Shipped item_12 from shelf_42.\" The next prompt is simply $(P, \\Sigma_{t+1}, O_{t+1})$. The reasoning $R_t$ is gone, and so is the previous observation $O_t$: the model sees only the current state and the newest observation, with no history text at all."
+  },
+  {
+   "id": "s3d.b1",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L17"
+   ],
+   "text": "Which fields the state records, its **schema**, is designed once for a whole domain (a family of similar tasks), not once per task. In InterCode CTF (100 Linux puzzle challenges where the agent runs bash commands to find a hidden flag string), the challenges vary widely, covering reverse engineering, forensics, cryptography and binary exploitation, yet all of them share one set of fields: flags found, hypotheses and commands already tried, the file being worked on, the current working directory, and a summary of command output. The benefit is direct: no new state format per task, and different tasks can share the same runtime code."
+  },
+  {
+   "id": "s3d.b2",
+   "section": "s3d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L18"
+   ],
+   "text": "The catch is that the domain must know in advance which fields to track. If the schema cannot be fixed beforehand and what to track only emerges during the run, this approach does not apply. The paper names this as the first failure case in its own Limitations section."
+  },
+  {
+   "id": "s3e.b1",
+   "section": "s3e",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L19"
+   ],
+   "text": "Before applying $\\Delta\\Sigma_t$, the runtime checks its format: is it valid JSON, and does its key structure match what is expected? If the check fails, it rolls back and retries: the state reverts to the previous step and the model is asked to output again. So malformed output never corrupts the state."
+  },
+  {
+   "id": "s3e.b2",
+   "section": "s3e",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L20"
+   ],
+   "tone": "warning",
+   "title": "Well-formed but wrong patches go straight through",
+   "text": "The check stops output that is malformed. It cannot stop output that is well-formed but semantically wrong. Say the model outputs a patch that accidentally deletes something important: the format is fine, the check sees nothing, and a wrong update is \"successfully\" applied. Worse, the old state is no longer in the context, so once a wrong patch has been applied there is no history to look back at and correct it. Compared with keeping the full history, this is where the architecture is structurally more fragile. This is not speculation: the paper's own experiments show that 68% of a smaller model's failures are exactly this kind of semantically valid but wrong update applied without notice, and the failure section comes back to that number."
+  },
+  {
+   "id": "s4.b1",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L21"
+   ],
+   "text": "The paper uses $T$ for the total number of steps and compares the order of magnitude of total tokens for the two approaches. The order of magnitude is written $O(\\cdot)$, meaning roughly how something grows as $T$ gets large, ignoring constant factors. Call the traditional prompt at step $t$ $C_t$: its length $|C_t|$ is proportional to $t$, so it is $O(t)$. Call the SKILL.state prompt at step $t$ $P_t$ (not the task instruction $P$ from earlier): its length is $O(|P|+|\\Sigma|+|O|)$, the lengths of the instructions, state and observation added together, which does not depend on $t$. Summed over all $T$ steps, the traditional total is on the order of $T$ squared and SKILL.state's is on the order of $T$:"
+  },
+  {
+   "id": "s4.b2",
+   "section": "s4",
+   "type": "formula",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L21"
+   ],
+   "latex": "\\sum_{t=1}^{T} |C_t| = O(T^2) \\qquad \\sum_{t=1}^{T} |P_t| = O(T)",
+   "intuition": "s4.b1"
+  },
+  {
+   "id": "s4.b3",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L22"
+   ],
+   "text": "Numbers make the intuition easier. Suppose there are 10 steps and each step's length is simplified to \"units\": the traditional run is 1, 2, 3, ..., 10, and SKILL.state is 1, 1, ..., 1. The traditional total is $1+2+\\cdots+10=(1+10)\\times10/2=55$, an arithmetic series whose size grows like $T^2$; SKILL.state adds up 10 copies of 1, $1\\times10=10$, which grows like $T$. When each step's length grows linearly with $t$, adding up those growing amounts gives a square."
+  },
+  {
+   "id": "s4.b4",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L23"
+   ],
+   "text": "\"1 unit\" is a simplification. Each SKILL.state step really costs $|P|+|\\Sigma|+|O|$, and the state $\\Sigma$ can grow slowly with task complexity: in a densely linked environment, for instance, it gets bigger as branches and PRs pile up. But that growth depends only on how complex the world is right now, not on how many steps have passed. That is why each step is called $O(1)$ and the total $O(T)$, rather than every step costing exactly some fixed constant."
+  },
+  {
+   "id": "s4.b5",
+   "section": "s4",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L24"
+   ],
+   "text": "The measurements agree. In Table 1 later on, doubling $T$ from 100 to 200 multiplies the total tokens of the Stateful baseline (which has a structured state too, but also keeps the full conversation history) by about 4.7, close to the 4 that theory predicts ($2^2$). SKILL.state's total grows only about 1.9 times, close to the predicted 2 ($2^1$)."
+  },
+  {
+   "id": "s5a.b1",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L25"
+   ],
+   "text": "The tests fall into two groups: a synthetic testbed the authors built themselves, SkillExecBench, and two public benchmarks designed by others."
+  },
+  {
+   "id": "s5a.b2",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L26"
+   ],
+   "text": "**SkillExecBench** is a controlled diagnostic testbed: fixed rules decide how the world changes, so it can test the execution mechanism separately from open-ended trial-and-error search. It can stretch the task length, the number of steps (the paper calls it the horizon), from $T=10$ all the way to $T=200$. It comes in a warehouse version and a software-repository version:"
+  },
+  {
+   "id": "s5a.b3",
+   "section": "s5a",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L26"
+   ],
+   "items": [
+    "Warehouse management: 500 independent, non-overlapping shelves, with only Store/Ship/Move/Wait as actions. It tests whether the model can keep many state variables that don't interfere with each other straight over a long run.",
+    "Software repository: Git branches, commits, PRs and CI status, all deeply linked, with actions such as CherryPick, Merge, RunTests, CreateRelease and Rollback. Its defining feature is dense dependency: one action (merging a PR, say) also affects the target branch and other dependent PRs, which tests structured reasoning over a tangled graph of relationships."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s5a.b4",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L27",
+    "L28"
+   ],
+   "text": "The two public benchmarks are **InterCode CTF** (Yang et al., 2023) and **Sierra τ-Bench** (Yao et al., 2024). InterCode CTF is the set of 100 puzzle challenges mentioned earlier, covering reverse engineering, forensics, cryptography and binary exploitation; the agent runs bash commands inside a Docker container, testing hypotheses until it finds the hidden flag. τ-Bench tests three-way interaction between tools, agent and user in enterprise customer service, in a retail and an airline domain: the agent talks with a simulated user, queries an SQLite database through tools, and carries out transactions under business-policy constraints."
+  },
+  {
+   "id": "s5a.b5",
+   "section": "s5a",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L29"
+   ],
+   "text": "Each environment is scored differently. SkillExecBench uses a continuous score (successful actions divided by total events); InterCode CTF uses pass@1, the share of challenges solved on the first try; τ-Bench uses the official grader, which checks the final state of the database. Besides accuracy, the paper tracks the average prompt size per LLM call and the total tokens used over a whole run."
+  },
+  {
+   "id": "s5b.b1",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L30"
+   ],
+   "text": "There are three architectural baselines. **Prompt(ReAct)** is the most basic setup, appending every step's observation, reasoning and action. **Memory(Summary)** keeps the last three turns verbatim plus a natural-language summary that is updated periodically. **Stateful(LangGraph)** follows LangGraph (an agent development framework that can keep a structured state alongside the conversation): it has a structured state block but **also** keeps the full rolling conversation log."
+  },
+  {
+   "id": "s5b.b2",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L31"
+   ],
+   "text": "Stateful is the baseline that matters most. Like SKILL.state it has a structured state; the only difference is state plus full history versus state alone with all history dropped. Only this comparison actually tests whether dropping history is worth it; the other baselines can at most show that structured state beats plain-text history."
+  },
+  {
+   "id": "s5b.b3",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L32"
+   ],
+   "text": "The paper also adds a set of **budget-matched controls** to rule out the possibility that SKILL.state wins only because its prompt is shorter. All three squeeze the prompt down to roughly SKILL.state's size. Truncated(Sliding Window) keeps only the most recent turns under a hard token cap. Summary-capped uses a natural-language summary with a strict limit on the summary's own length. ReAct+LLMLingua compresses with LLMLingua, a tool in which a small model uses perplexity (how hard the small model finds a piece of text to predict) to delete the words it judges unimportant, down to a target token count."
+  },
+  {
+   "id": "s5b.b4",
+   "section": "s5b",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L33"
+   ],
+   "text": "The models are Gemini-3-Flash (closed weights), Gemma-4-31B-it and Qwen-3-8B-it (open weights), at temperature 0.0 (output kept as fixed as possible). The synthetic experiments use 5 random seeds, and for $T \\geq 50$ a paired t-test (a statistical test of whether a gap is just random variation); the paper reports $p<0.01$."
+  },
+  {
+   "id": "s6.b1",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L34"
+   ],
+   "text": "SkillExecBench deliberately sweeps the task length from $T=10$ to $T=200$, a clear length scan. But in the InterCode CTF and τ-Bench sections, the paper never reports how many steps a task takes on average. If those tasks finish in 10 to 20 steps on average, the \"public validation\" never tests the long tasks SKILL.state claims to be best at; the only real stress test of long tasks is the synthetic environment the authors designed and control."
+  },
+  {
+   "id": "s6.b2",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L35"
+   ],
+   "text": "Public benchmarks built specifically to test long, real-world agent tasks do exist, and the paper uses none of them:"
+  },
+  {
+   "id": "s6.b3",
+   "section": "s6",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L35"
+   ],
+   "items": [
+    "SWE-bench: fixing real GitHub issues, which often takes tens to hundreds of tool calls. The paper's own software-repository environment essentially imitates this kind of task, yet the authors built a simplified version instead of using the real SWE-bench.",
+    "WebArena / Mind2Web: long web-navigation tasks.",
+    "GAIA: general-assistant tasks that chain tools over many reasoning steps.",
+    "OSWorld: tasks operating a real operating system."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s6.b4",
+   "section": "s6",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L36",
+    "L37"
+   ],
+   "text": "The paper does not explain why it skipped these more representative long-task benchmarks. That does not make its numbers false. It means the claim that the approach holds up on long real-world tasks rests on thinner evidence than it first appears: the most persuasive long-task numbers all come from a synthetic environment the authors designed and control. Keep that in mind while reading the results."
+  },
+  {
+   "id": "s7a.b1",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "text": "Table 1 is the main warehouse table: task length runs from $T=10$ to $T=200$, and for each length it compares the four setups on accuracy, average prompt length and total tokens. The top and bottom groups are the ones to look at."
+  },
+  {
+   "id": "s7a.b2",
+   "section": "s7a",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L38"
+   ],
+   "manifest_id": "img-002",
+   "alt": "Table of accuracy, average prompt length in characters and total tokens for Prompt, Memory, Stateful and SKILL.state at five task lengths, each with a standard deviation.",
+   "caption": "Table 1 — Warehouse long-horizon scaling: accuracy and token use as task length grows",
+   "paper_label": "Table 1",
+   "role": "evidence"
+  },
+  {
+   "id": "s7a.b3",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L39"
+   ],
+   "text": "Short tasks ($T=10$) show no accuracy advantage: the main baselines Memory and Stateful and SKILL.state all score 1.00, a tie. The advantage only appears on long tasks, and it is not overwhelming: at $T=200$ it is 0.94 versus 0.88, a 6-point gap. What is overwhelming is tokens: at $T=200$ Stateful uses 5,041,164 and SKILL.state only 122,384, 41 times fewer. The gap is mostly in cost, not accuracy."
+  },
+  {
+   "id": "s7a.b4",
+   "section": "s7a",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L40"
+   ],
+   "text": "Baseline accuracy also falls as $T$ grows, and the standard deviation (how spread out the scores of repeated runs are) widens: Prompt drops from $0.90\\pm0.02$ at $T=10$ to $0.74\\pm0.14$ at $T=200$, while SKILL.state stays fairly steady. The more accurate summary is that baselines degrade over long runs and SKILL.state barely does, not that SKILL.state leads by a wide margin."
+  },
+  {
+   "id": "s7b.b1",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L41"
+   ],
+   "text": "Table 4 moves to real tasks designed by others. Because the authors did not write these tests, this is the most persuasive accuracy evidence in the paper."
+  },
+  {
+   "id": "s7b.b2",
+   "section": "s7b",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L41"
+   ],
+   "manifest_id": "img-005",
+   "alt": "Table comparing Prompt, Memory, Stateful and SKILL.state on InterCode CTF, Sierra τ-Bench Retail and Sierra τ-Bench Airline: success rate, prompt size and total tokens.",
+   "caption": "Table 4 — Success rate and token use on public interactive benchmarks",
+   "paper_label": "Table 4",
+   "role": "evidence"
+  },
+  {
+   "id": "s7b.b3",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L42"
+   ],
+   "text": "It wins on all three: against the best baseline, CTF pass@1 is 7.8 points higher, τ-Bench retail 6.6 points higher, and airline 4.3 points higher."
+  },
+  {
+   "id": "s7b.b4",
+   "section": "s7b",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L43"
+   ],
+   "text": "There is one outlier to watch. Memory collapses on τ-Bench retail, scoring only 29.9%, nearly 20 points below Prompt's 48.2%. The paper does not discuss it; my guess is that the summary-based memory may have lost transaction details. That makes the retail column an unstable comparison: whether SKILL.state is being measured against the best or the worst baseline makes a big difference, so check which baseline you are reading. This table also cannot answer the doubt raised before the results, whether the long-task claim holds in the real world; what it shows is better overall performance, a narrower claim than the paper's abstract suggests."
+  },
+  {
+   "id": "s7c.b1",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L44"
+   ],
+   "text": "The software repository is SkillExecBench's second environment, where pieces of state are tightly linked. Table 6 shows its results at four task lengths, and it holds the most important counterexample in the paper."
+  },
+  {
+   "id": "s7c.b2",
+   "section": "s7c",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L44"
+   ],
+   "manifest_id": "img-007",
+   "alt": "Table of accuracy, average prompt size and total tokens for Prompt, Memory, Stateful and SKILL.state at four task lengths, each with a standard deviation.",
+   "caption": "Table 6 — Software repository long-horizon scaling: tied on short tasks, behind midway, ahead only on long tasks",
+   "paper_label": "Table 6",
+   "role": "evidence"
+  },
+  {
+   "id": "s7c.b3",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L45"
+   ],
+   "text": "At $T=10$, Stateful and SKILL.state both score $1.00\\pm0.00$, a tie. At $T=25$, SKILL.state ($0.88\\pm0.08$) actually **loses** to Stateful ($0.94\\pm0.03$) by 6 points. It only pulls ahead again at $T=50$ (0.86 versus 0.74), and by $T=100$ the lead grows to 15 points (0.78 versus 0.63)."
+  },
+  {
+   "id": "s7c.b4",
+   "section": "s7c",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L46"
+   ],
+   "tone": "warning",
+   "title": "This counterexample contradicts the paper's own claim",
+   "text": "The abstract says SKILL.state \"improves task accuracy... across diverse datasets\", and the main text says it \"matches or exceeds baseline accuracy across all horizons\". But \"across all horizons\" holds only in the warehouse; in the software repository there is the $T=25$ counterexample, which the main text never mentions. SKILL.state's standard deviation in this table is also large ($\\pm0.08$), so the result is not very stable."
+  },
+  {
+   "id": "s7c.b5",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L47"
+   ],
+   "text": "My guess is that this comes from the repository's dense dependencies. One action can affect several branches at once; if a patch fails to capture a knock-on effect (merging a PR but forgetting to update the state of a dependent branch, say), the error can carry through to later steps, because there is no original history text to check against. That is exactly the validation blind spot described earlier, and the $T=25$ counterexample may well be that risk actually happening."
+  },
+  {
+   "id": "s7c.b6",
+   "section": "s7c",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L48"
+   ],
+   "text": "The claim of across-the-board accuracy gains breaks down as environments get more densely linked; the only advantage that holds steadily in every environment is the token saving."
+  },
+  {
+   "id": "s7d.b1",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L54"
+   ],
+   "text": "One doubt remains from the comparisons so far: does SKILL.state win just because its prompt is shorter? Table 5 forces every setup to SKILL.state's token budget (about 1,800 tokens) and compares again."
+  },
+  {
+   "id": "s7d.b2",
+   "section": "s7d",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L54"
+   ],
+   "manifest_id": "img-006",
+   "alt": "Table comparing five configurations on accuracy, average prompt size and total tokens: unbounded ReAct, sliding-window truncation, capped summary, ReAct with LLMLingua compression, and SKILL.state.",
+   "caption": "Table 5 — Warehouse budget-matched controls: accuracy at the same token budget",
+   "paper_label": "Table 5",
+   "role": "evidence"
+  },
+  {
+   "id": "s7d.b3",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L55"
+   ],
+   "text": "Once the budgets match, the compression approaches all collapse: Truncated(Sliding Window) scores only 0.18, ReAct+LLMLingua 0.22, Summary-capped 0.52, while SKILL.state holds at 0.94."
+  },
+  {
+   "id": "s7d.b4",
+   "section": "s7d",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L56"
+   ],
+   "text": "This is the most solid experiment in the paper, because it rules out the confound that SKILL.state wins only by having a shorter prompt. At the same token budget, statistical compression (LLMLingua) and simple truncation crush the semantically important information along with everything else, while SKILL.state's structured state keeps the key relationships intact."
+  },
+  {
+   "id": "s7e.b1",
+   "section": "s7e",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L50",
+    "L51"
+   ],
+   "text": "Two more experiments each show something simpler. The first is noise: in a high-noise environment full of irrelevant messages, Prompt's accuracy drops from 0.68 to 0.53 while SKILL.state stays between 0.97 and 1.00. This is predictable: noise never gets written into a state patch, so it cannot affect later decisions. It follows directly from the design and is not a surprising finding."
+  },
+  {
+   "id": "s7e.b2",
+   "section": "s7e",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L50"
+   ],
+   "manifest_id": "img-003",
+   "alt": "Table of accuracy for Prompt, Memory, Stateful and SKILL.state at low, medium and high noise, with task length T=50.",
+   "caption": "Table 2 — Warehouse noise robustness",
+   "paper_label": "Table 2",
+   "role": "evidence"
+  },
+  {
+   "id": "s7e.b3",
+   "section": "s7e",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L52",
+    "L53"
+   ],
+   "text": "The second is state recovery: when the outside environment quietly changes the world (someone moves an item, for example), the history-keeping baselines need 5 to 8 steps to recover from their stale beliefs, and SKILL.state needs 0. This result is also close to a tautology: SKILL.state keeps no history text, so a stale observation overriding a new fact cannot happen by design, and as long as the correcting observation makes it into a patch, the number of recovery steps is logically 0."
+  },
+  {
+   "id": "s7e.b4",
+   "section": "s7e",
+   "type": "figure",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L52"
+   ],
+   "manifest_id": "img-004",
+   "alt": "Table of four scenarios showing, for each setup, whether the task succeeded and how many steps recovery from a wrong belief took.",
+   "caption": "Table 3 — Warehouse state recovery: steps needed to get back to the truth after the world changes outside the agent",
+   "paper_label": "Table 3",
+   "role": "evidence"
+  },
+  {
+   "id": "s8.b1",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L57"
+   ],
+   "text": "With the open-weight Gemma-4-31B, SKILL.state's accuracy on the $T=100$ warehouse task falls to 0.42. Table 7 below shows how the other setups score at the same length."
+  },
+  {
+   "id": "s8.b2",
+   "section": "s8",
+   "type": "figure",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L57"
+   ],
+   "manifest_id": "img-008",
+   "alt": "Table of accuracy, average prompt and total tokens for Prompt, Memory, Stateful and SKILL.state with Gemma-4-31B at four task lengths, each with a standard deviation.",
+   "caption": "Table 7 — Warehouse scaling with Gemma-4-31B",
+   "paper_label": "Table 7",
+   "role": "evidence"
+  },
+  {
+   "id": "s8.b3",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "text": "The paper sorts the failures into types:"
+  },
+  {
+   "id": "s8.b4",
+   "section": "s8",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "headers": [
+    "Failure type",
+    "What it looks like",
+    "Share"
+   ],
+   "rows": [
+    [
+     "Premature State Overwrite/Deletion",
+     "Accidentally dropping an existing key during a merge, which deletes it",
+     "68%"
+    ],
+    [
+     "Schema Comprehension/Type errors",
+     "Mixing up nested lists and dicts",
+     "20%"
+    ],
+    [
+     "JSON syntax/format errors",
+     "Missing commas, unbalanced brackets",
+     "12%"
+    ]
+   ]
+  },
+  {
+   "id": "s8.b5",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L58"
+   ],
+   "text": "The paper concludes that small models fail because of **structured-output compliance** (whether they can produce output in exactly the required format and structure), not because they reason poorly."
+  },
+  {
+   "id": "s8.b6",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L59"
+   ],
+   "text": "My guess is that the first type, the 68%, is direct evidence of the validation blind spot from earlier: a semantically valid but wrong patch gets applied and cannot be corrected afterwards. It is the same problem as the software repository's $T=25$ counterexample, showing up in a different way."
+  },
+  {
+   "id": "s8.b7",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L60"
+   ],
+   "text": "The whole design rests on one premise: **the execution state can be a sufficient statistic for future execution**. Anything that happened in the past needs no original text kept, as long as it was written into the state correctly at the time. The paper itself admits this premise fails in three situations:"
+  },
+  {
+   "id": "s8.b8",
+   "section": "s8",
+   "type": "list",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L60"
+   ],
+   "items": [
+    "**The schema cannot be fixed in advance**: which fields to track only emerges during the run.",
+    "**An early observation seemed unimportant at the time and only later turned out to matter**: since it never went into the state, there is no getting it back. Of the three, this is the most realistic and the easiest to hit in production. The architecture's most fundamental bet is that the model makes the right call **in the moment**; if that bet is wrong, there is no way back.",
+    "**The goal of the task is the history itself**: auditing, tracing a bug back to its source, explaining past decisions. Here, dropping history directly conflicts with the task."
+   ],
+   "ordered": true
+  },
+  {
+   "id": "s8.b9",
+   "section": "s8",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L61"
+   ],
+   "text": "The paper admits two further limitations. When several agents share one state, simultaneous writes conflict; the paper only says the design \"extends naturally\" and neither implements nor tests it. Grammar-constrained decoding (restricting generation so the model can only produce syntactically valid output) can remove the pure syntax errors of the third type above, but it does nothing for the semantic errors of the first type."
+  },
+  {
+   "id": "s9.b1",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L62"
+   ],
+   "text": "A common intuition is that keeping a record of past actions gives more room for error, so for a strong model it should do more good than harm. That \"room for error\" means two different things, and they need to be pulled apart."
+  },
+  {
+   "id": "s9.b2",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L63"
+   ],
+   "text": "The first is being able to trace and debug afterwards. Here keeping history really does win: after a mistake you can go back to the original data, whereas once SKILL.state drops something it is truly gone. That is the second failure situation in the previous section."
+  },
+  {
+   "id": "s9.b3",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L64"
+   ],
+   "text": "The second is whether keeping history makes long-task accuracy more stable. The Table 1 numbers from earlier contradict that intuition: even with the strongest model the paper tested, Gemini-3-Flash, the history-keeping Prompt(ReAct) still slides from 0.90 to 0.74, and its standard deviation grows 7 times."
+  },
+  {
+   "id": "s9.b4",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L65",
+    "L76"
+   ],
+   "text": "The paper cites the lost-in-the-middle effect (Liu et al., 2024) to explain why accuracy degrades over long contexts: a model can technically see the information in a long context without reliably using it. My guess is that this is not a reasoning shortfall, so a stronger frontier model would not make the weakness disappear, though it might soften it. \"Strong model plus kept history does more good than harm\" holds for short and medium tasks; on long tasks the measurements overturn it."
+  },
+  {
+   "id": "s9.b5",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "text": "Put together, the evidence makes a decision table:"
+  },
+  {
+   "id": "s9.b6",
+   "section": "s9",
+   "type": "table",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "headers": [
+    "Axis",
+    "Leans ReAct (keep history)",
+    "Leans SKILL.state (drop history)"
+   ],
+   "rows": [
+    [
+     "When relevance can be judged",
+     "Only later turns out an observation mattered (debugging, exploratory research)",
+     "Can tell right away whether to record it (warehouse, database state)"
+    ],
+    [
+     "Is the trajectory itself the output?",
+     "Yes (audit, compliance, explaining the process)",
+     "No (only the final state or result must be right)"
+    ],
+    [
+     "How densely the state is linked",
+     "Densely interdependent (Git graphs, chained financial calculations)",
+     "Sparse and independent (like 500 unrelated shelves)"
+    ],
+    [
+     "Expected run length",
+     "Short to medium (about 25 steps or fewer with sparse links): accuracy ties, and ReAct is simpler",
+     "Long (100 steps or more): history-keeping accuracy degrades and varies more, state-based stays steady"
+    ],
+    [
+     "Model capability",
+     "Weak model: valid but wrong patches applied unnoticed are a major risk",
+     "A strong model lowers this risk, but frontier models simply weren't tested; no evidence they are immune"
+    ],
+    [
+     "Sensitivity to cost and latency",
+     "Low (few calls, ample budget)",
+     "High (frequent calls, going to production)"
+    ]
+   ]
+  },
+  {
+   "id": "s9.b6a",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L66"
+   ],
+   "text": "With dense links, a bad patch spreads silently and there is no original text to check it against; with sparse links, the damage from a bad patch stays contained. \"Tied within about 25 steps\" also applies only to sparsely linked environments; with dense links the crossover comes earlier, as when the software repository was already losing at $T=25$. For short and medium tasks ReAct has the advantage of not needing an extra layer of schema and validation infrastructure; cost-sensitive settings lean the other way because $O(T^2)$ costs explode."
+  },
+  {
+   "id": "s9.b7",
+   "section": "s9",
+   "type": "callout",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L67"
+   ],
+   "tone": "tip",
+   "title": "Ask this first",
+   "text": "Can I decide, at the moment something happens in this domain, whether it is worth recording? If yes (clear structure, sparse links, long enough tasks), choose SKILL.state. If not, or if you need an audit trail, or if the state is densely linked, prefer ReAct, or a hybrid of state plus limited history."
+  },
+  {
+   "id": "s9.b8",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L68"
+   ],
+   "text": "In between sits the Stateful baseline from Table 1 and Table 6, LangGraph-style structured state plus full conversation history. It is neither pure ReAct nor SKILL.state's state-only approach, and in the software repository at $T=25$ it even beat SKILL.state: the Stateful 0.94 versus SKILL.state 0.88 counterexample from earlier."
+  },
+  {
+   "id": "s9.b9",
+   "section": "s9",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L69"
+   ],
+   "text": "My guess is that if you are not sure the premise of judging correctly in the moment holds, a hybrid of state plus a short window of recent history may be more practical than either of the paper's two extremes: let the structured state handle what you are confident about, and keep a short rolling history as a safety net in case the schema missed something. The cost falls between the two, not $O(1)$ per step, but not linear stacking all the way either."
+  },
+  {
+   "id": "s10.b1",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L04",
+    "L70",
+    "L71"
+   ],
+   "text": "The paper's engineering value is high, especially on cost; its research novelty is moderate to low. Its most solid part is turning \"structured state plus dropped history\" into a system and proving the $O(T)$ versus $O(T^2)$ complexity. But the core idea already existed: MemGPT (a system that lets an LLM manage its own long-term memory), LangGraph's state block and Dialogue State Tracking (the technique dialogue systems use to keep track of what a user wants) all did something similar. The contribution is the proof and the systematic measurement, not a new concept. The budget-matched control is worth remembering as an experimental design too: it shows the win comes from structure, not just from being shorter, and that method is worth keeping longer than the paper's core claim."
+  },
+  {
+   "id": "s10.b2",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L80",
+    "L81",
+    "L73"
+   ],
+   "text": "SKILL.state solves a very concrete problem with a simple idea: separate the current state of the world from the text history, and the prompt stops growing with the number of steps. Consider it as a way to cut cost and the evidence is strong (41 times fewer tokens at $T=200$); expect it to be more accurate across the board and the evidence is not there yet, with the software repository's $T=25$ counterexample as the clearest proof. Densely linked tasks, plus semantic errors that validation cannot catch, are the architecture's real weak spot. Papers often package accuracy and cost as one selling point, but the evidence for each is rarely equal. Whenever a paper claims to be both faster and more accurate, check the two claims separately; one is usually clearly stronger."
+  },
+  {
+   "id": "s10.b3",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "source",
+   "ledger": [
+    "L74",
+    "L79"
+   ],
+   "text": "Whether to drop history comes down not to how strong the model is but to **whether relevance can be judged correctly at the moment information arrives**. An architecture that removes the option of checking the original data bets everything on getting that call right. Any system that throws away raw data for efficiency and keeps only summaries or extractions is making the same bet. So the thing to keep, more than the paper's conclusion, is that question: it is not limited to agent design, and it applies to any system where you decide whether to throw raw data away."
+  },
+  {
+   "id": "s10.b4",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L75",
+    "L76",
+    "L77",
+    "L78"
+   ],
+   "text": "The paper also leaves a few habits of judgement:"
+  },
+  {
+   "id": "s10.b5",
+   "section": "s10",
+   "type": "list",
+   "layer": "support",
+   "origin": "source",
+   "ledger": [
+    "L75",
+    "L76",
+    "L77",
+    "L78"
+   ],
+   "items": [
+    "Look for counterexamples to universal claims: when you see \"across all X\", look for a dataset or environment where it fails, like the software repository's $T=25$. Universal claims usually hold only in the most favourable setting, and the appendix or a secondary table often hides the honest counterexample.",
+    "Seeing is not using: lost-in-the-middle (Liu et al., 2024) is about whether a model can use what is in a long context, a separate dimension from how strong the model is, and worth learning about on its own.",
+    "Should history live alongside state: Dialogue State Tracking keeps state and full conversation history together, while this paper keeps only state. When designing any system with structured state, ask this sub-question first instead of treating \"structured state or not\" as the only split.",
+    "Validation only catches format: the paper's own experiments (68% of errors came from semantically valid but wrong patches) expose this, yet the paper never spells out what it means for the architecture. Any design where an LLM produces structured output and code applies it automatically should remember that validation cannot catch output that is well-formed but wrong."
+   ],
+   "ordered": false
+  },
+  {
+   "id": "s10.b7",
+   "section": "s10",
+   "type": "paragraph",
+   "layer": "main",
+   "origin": "editorial",
+   "ledger": [],
+   "text": "If you are building an agent that runs for a long time, try listing the state fields for your domain, then find the information you cannot decide, at the moment it arrives, whether to keep. Those are the places where you still need history."
+  }
+ ],
+ "decisions": [
+  {
+   "id": "D1",
+   "kind": "reworded",
+   "ledger": "L25",
+   "why": "article.md 第 164 行說三個環境「兩個自建、一個公開」，但第 166–173 行列出的是自建的 SkillExecBench（兩個子環境）加兩個公開 benchmark（InterCode CTF、τ-Bench）。計數前後不一致，正文改寫為「自建的 SkillExecBench（倉儲、軟體版本庫兩個子環境）加上兩個公開 benchmark」，不再說「一個公開」。",
+   "needs_human": true
+  },
+  {
+   "id": "D2",
+   "kind": "moved",
+   "ledger": "L02",
+   "why": "article.md 沒有「來源」行。論文連結取自主題目錄 PDF 檔名的 arXiv id 2608.26263（https://arxiv.org/abs/2608.26263），機構（Google、Purdue）取自第 7 行。",
+   "needs_human": true
+  },
+  {
+   "id": "D3",
+   "kind": "moved",
+   "ledger": "L38",
+   "why": "article.md 的表 1–7 是 Writer 自己的編號；文章改用論文原本的編號（Table 1–7），例如 article 的表 2 是論文 Table 4。",
+   "needs_human": false
+  },
+  {
+   "id": "D4",
+   "kind": "moved",
+   "ledger": "L04",
+   "why": "開場判決裡「工程價值高、研究價值中等偏低、核心概念已存在於 MemGPT/LangGraph/DST」移到結論的貢獻段（s10.b1），第一屏只留成本與準確率的判決；Reader 反映第一屏塞三個陌生系統名太吃力。",
+   "needs_human": false
+  }
+ ]
+}
