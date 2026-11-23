@@ -10,6 +10,10 @@ Clicks 1,544 | impressions 178,168 | CTR 0.87% | position 10.3 | Taiwan clicks 1
 Re-measure with the same windows (90 d vs the preceding 90 d) and note any new post counts, since
 new posts alone move clicks.
 
+Latest re-measure (2026-11-24, 90 days to 2026-11-21): clicks 1,853 | impressions 192,338 | CTR 0.96% |
+Taiwan clicks 1,145 | Taiwan CTR 2.28% at position 6.3; 25 posts published in that window
+(`reports/2026-11-24-monthly-baseline.md`).
+
 ## Strategy in one line
 
 About two thirds of clicks come from Taiwan at position 6. Protect and grow that. The US/English
@@ -122,12 +126,15 @@ at most about +3-6% of clicks even if it works; clicks are concentrated (top 10 
 - `aws-ml-service` and `aws-ai-service` compete for the same queries, at position 27-65.
 - Do: pick one canonical post, fold in the other, redirect the loser.
 
-### B3. Ten old posts never crawled. `todo`
+### B3. Ten old posts never crawled. `doing` (2026-11-24: 7 of 16 URLs indexed; the `python-function` series is the stuck part)
 - `python-function` 1-3, `python-loop`, `define-problem`, `face-recognition`,
   `house-price-prediction`, `chateval` (and English twins). "Discovered - currently not indexed".
 - Do: add contextual internal links from indexed pages; consider consolidating the Python series;
   request indexing manually in the Search Console UI (no tool for it here).
 - Measure: `batch_url_inspection` shows a last-crawled date.
+- 2026-11-24: still not indexed are zh `python-function`, zh and en `python-function-2` and `-3`
+  (discovered), zh `python-loop`, en `define-problem`, en `house-price-prediction`, en `chateval` (unknown to
+  Google, though in the sitemap). Next lever: consolidate the function series; Request indexing for the four unknown.
 
 ### B4. Check `fastapi-race-condition` for a direct answer to "is FastAPI single threaded". `todo`
 - 297 impressions at pos 7.6, 0 clicks. Unverified whether the article answers it up front.
@@ -252,7 +259,8 @@ Done: (none yet)
 
 ### G3. Each monthly `site` row ends with one or two decisions for the author. `doing`
 
-First batch (2026-11-23 row): A5 (extend DPO, waiting since 2026-10-23) and the top G1 candidate.
+First batch (2026-11-23 row, asked 2026-11-24): A5 (extend DPO, waiting since 2026-10-23; `dpo` now 1,724
+impressions at position 6.0) and the top G1 candidate (recommended: ReAct agent). Answer: no answer yet (asked once).
 
 ## D. Needs data GSC does not have
 
