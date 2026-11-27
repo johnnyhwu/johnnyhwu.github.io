@@ -148,7 +148,7 @@ For a topic `<Topic>` with slug `<slug>`:
    git mv done/unpublished/<Topic> done/published/<Topic>
    # rewrite done/unpublished/ -> done/published/ in the manifest's source_pdf and every images[].file, then,
    # run inside AI-Research (it has the pymupdf environment this repo lacks):
-   env -u VIRTUAL_ENV uv run python .claude/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
+   env -u VIRTUAL_ENV uv run python .agents/skills/pdf-figure-table-parser/scripts/verify_manifest.py \
        done/published/<Topic>/assets/image-manifest.json .
    ```
 
@@ -157,7 +157,7 @@ For a topic `<Topic>` with slug `<slug>`:
    submodule back with `git submodule update --remote AI-Research` before staging anything here** (not
    `git checkout main`, which can land on a stale local branch): this repo's pointer must name a commit already on
    `AI-Research`'s `main`, never the unmerged bucket-move commit. The manifest rewrite is not optional (`git mv`
-   does not touch contents); `AI-Research/CLAUDE.md`'s "Moving a topic between buckets" is the authority.
+   does not touch contents); `AI-Research/AGENTS.md`'s "Moving a topic between buckets" is the authority.
    **Also rewrite `source.article`, `source.manifest` and `source.root` in both plan files** from
    `done/unpublished/...` to `done/published/...` (same prefix swap), or a later re-render looks for images where
    they no longer are; commit that with this PR.

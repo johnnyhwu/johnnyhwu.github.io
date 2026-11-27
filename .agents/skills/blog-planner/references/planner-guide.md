@@ -100,7 +100,7 @@ Rules of thumb:
 
 - Rewrite for flow and plain words; split long paragraphs (one idea each, point first); merge duplicates (one home
   per explanation); add transitions. Keep the Taiwan Traditional Chinese voice, full-width punctuation and the
-  Writer's house style (`AI-Research/.claude/skills/blog-writer/references/writing-style.md`).
+  Writer's house style (`AI-Research/.agents/skills/blog-writer/references/writing-style.md`).
 - Turn a before/after or A/B comparison in prose into a `table`; a loop or a flow in prose into a `diagram`
   (flow / tree / mindmap); a sequence of steps into an ordered `list`.
 - Add **analogies and examples** where an abstract mechanism has none; mark them `editorial`. An example with
