@@ -8,7 +8,7 @@ so Hugo ignores it.
 
 ## Layout: read only what the task needs
 
-The procedure is in the `seo` skill (`.claude/skills/seo/`); this directory holds state.
+The procedure is in the `seo` skill (`.agents/skills/seo/`); this directory holds state.
 
 | Task | Read |
 |---|---|
@@ -37,7 +37,7 @@ The procedure is in the `seo` skill (`.claude/skills/seo/`); this directory hold
 
 ## Data source
 
-GSC through the `gsc` MCP server (configured in `/.mcp.json`, OAuth, read-oriented use only;
+GSC through the `gsc` MCP server (configured in `.agents/plugins/gsc/mcp_config.json`, OAuth, read-oriented use only;
 `GSC_ALLOW_DESTRUCTIVE` stays unset).
 
 - Property used for analysis: `sc-domain:datasciocean.com` (whole site).

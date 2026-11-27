@@ -10,7 +10,7 @@ __pycache__/
 .tools/
 resources/
 
-# SEO workspace (seo/) and the GSC MCP config (.mcp.json) are committed. Never commit credentials
+# SEO workspace (seo/) and the GSC MCP config (.agents/plugins/gsc/mcp_config.json) are committed. Never commit credentials
 # or bulk exports: the OAuth client lives in ~/.config/gsc/, outside this repo.
 client_secrets*.json
 token.json

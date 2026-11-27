@@ -16,8 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIX = ROOT / "tests" / "fixtures" / "mini"
-PLANNER = ROOT / ".claude" / "skills" / "blog-planner" / "scripts"
-PUBLISHER = ROOT / ".claude" / "skills" / "hugo-publisher" / "scripts"
+PLANNER = ROOT / ".agents" / "skills" / "blog-planner" / "scripts"
+PUBLISHER = ROOT / ".agents" / "skills" / "hugo-publisher" / "scripts"
 sys.path.insert(0, str(PLANNER))
 sys.path.insert(0, str(PUBLISHER))
 import render_post  # noqa: E402

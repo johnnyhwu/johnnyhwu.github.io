@@ -1,0 +1,10 @@
+{
+  "seo-followups": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python3 ./skills/seo/scripts/due.py"
+      }
+    ]
+  }
+}

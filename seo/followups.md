@@ -1,10 +1,10 @@
 # SEO follow-ups
 
 The to-do queue for checks that happen *after* something shipped. A `SessionStart` hook
-(`.claude/skills/seo/scripts/due.py`) prints every row in **Open** whose date has arrived, so a
+(`.agents/skills/seo/scripts/due.py`) injects every row in **Open** whose date has arrived, so a
 new session finds out without being told. Keep the table format: first cell is `YYYY-MM-DD`.
 
-How to close a row: do the check (recipe in `.claude/skills/seo/SKILL.md`), move the row to
+How to close a row: do the check (recipe in `.agents/skills/seo/SKILL.md`), move the row to
 **Done** with the result in one line, and, for recurring kinds, add the next row to Open.
 
 Kinds: `post` (one-off check on a new or edited article), `experiment` (readout of a change set),
