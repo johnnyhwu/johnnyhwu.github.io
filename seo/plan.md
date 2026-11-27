@@ -229,6 +229,7 @@ monthly `site` row asks about the top one.
 | 2026-11-21 | agent memory | autocomplete (tw): "agent memory architecture", "… benchmark", "… management"; same as B1 hub | B1, `jev-mem` | `decide` (folds into B1) |
 | 2026-11-23 | ReAct agent | autocomplete (tw): "react agent loop", "… langchain", "… prompt", "react agent vs langgraph", "… vs chain of thought", "… vs planning agent"; GSC 90 days: zero impressions for "react"; the site has no ReAct page | `paper-intro/skill-state` | `decide` |
 | 2026-11-23 | long-horizon agents | autocomplete (en): "long horizon agents", "… meaning", "… benchmark", "long horizon agentic tasks"; site demand only for `plan-and-act`'s title | `paper-intro/skill-state` | `decide` |
+| 2026-11-27 | temporal grounding | autocomplete (tw + en): "temporal grounding meaning", "what is temporal grounding", "temporal grounding video llm", "video temporal grounding benchmark/survey"; site has no explainer page (GSC check skipped) | `paper-intro/videojev` | `decide` |
 
 ### G2. Link-back queue. `todo`
 
@@ -238,6 +239,7 @@ plan, so each is a one-sentence hand edit in both languages.
 
 | From (source post) | To | Listed in |
 |---|---|---|
+| `paper-intro/video-deep-research`, `ai-concept/vllm-agentic-serving`, `paper-intro/sparse-upcycling` | `paper-intro/videojev` | PR #111 |
 | `paper-intro/memgpt`, `ai-concept/context-engineering`, `paper-intro/plan-and-act` | `paper-intro/skill-state` | PR #107 |
 | `ai-concept/claude-code`, `ai-concept/context-engineering` | `paper-intro/is-bash-all-you-need` | PR #103 |
 | `ai-concept/jev-overview`, `paper-intro/cerebras-rag` | `paper-intro/decision-rag` | PR #101 |
