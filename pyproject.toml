@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = []
 
 [dependency-groups]
-# Used only by .claude/skills/hugo-publisher/references/featured-image-example/render*.py.
+# Used only by .agents/skills/hugo-publisher/references/featured-image-example/render*.py.
 # verify_post.py is stdlib-only and needs nothing.
 cover = ["pillow", "numpy"]
 
