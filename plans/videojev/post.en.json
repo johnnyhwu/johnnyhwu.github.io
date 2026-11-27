@@ -1,0 +1,2953 @@
+{
+  "schema": "post-plan/1",
+  "source": {
+    "article": "AI-Research/done/published/VideoJev/article.md",
+    "manifest": "AI-Research/done/published/VideoJev/assets/image-manifest.json",
+    "root": "AI-Research"
+  },
+  "meta": {
+    "section": "paper-intro",
+    "slug": "videojev",
+    "tags": [
+      "Vision Language Model",
+      "Inference Optimization",
+      "Fine-Tuning",
+      "Mixture of Experts"
+    ],
+    "title": "VideoJev: Why Video LLMs Should Score, Not Write",
+    "title_alts": [
+      "VideoJev: Why Video LLMs Should Score, Not Write",
+      "VideoJev: Faster Video LLMs via Candidate Scoring",
+      "VideoJev: 100x Over Thinking, 1.2x Over Instruct"
+    ],
+    "description": "VideoJev replaces token generation with candidate scoring for video timestamps and QA: 100x faster than Thinking models, only 1.2x-1.6x over Instruct.",
+    "reader": {
+      "persona": "Engineers and students interested in multimodal AI or video models who know AI, LLM, RL, ML, GPU, and API, but are new to video temporal grounding or loss function derivations.",
+      "promise": "Understand how VideoJev handles temporal grounding and multiple-choice video QA with a single scoring head, why the 100x speedup claim splits sharply between Thinking and Instruct baselines, and take away three general modeling principles (sigmoid vs. softmax, Soft IoU surrogate loss, and logit-space maximum-sum decoding).",
+      "assumes": [
+        "token",
+        "benchmark",
+        "fps"
+      ]
+    },
+    "takeaways": [
+      {
+        "id": "t1",
+        "text": "Structured video decisions like temporal grounding and multiple-choice QA do not need token-by-token generation: pack time bins or answer options into one sequence, score them in a single forward pass with one shared head, and compute the video prefix once. When all questions arrive together, Joint inference is both faster and slightly more accurate than Cached on 13 of 14 test pairs.",
+        "memory_hook": "Score candidates in one pass instead of writing answers token by token; compute the video prefix once."
+      },
+      {
+        "id": "t2",
+        "text": "The headline 'over 100x faster' compares against long-reasoning Thinking models (100x to 129x). Against direct-answer Instruct models, QA speedup is only 1.2x to 1.6x, and every experiment runs in a closed-world setup where agent workflows remain untested Future Work.",
+        "memory_hook": "129x faster than Thinking, but only 1.2x faster than Instruct on multiple-choice QA."
+      },
+      {
+        "id": "t3",
+        "text": "Three general modeling rules that outlive this paper: use softmax for mutually exclusive choices and sigmoid for independent yes/no bins (a constant bias only shifts sigmoid); pair per-bin losses with a differentiable surrogate like Soft IoU (+4.6 mIoU); and decode contiguous intervals via maximum-sum subarray in logit space to handle dips and stray false positives.",
+        "memory_hook": "Softmax for exclusive choices, sigmoid for independent bins; per-bin accuracy is not interval quality."
+      }
+    ],
+    "hook": {
+      "kind": "tension",
+      "text": "On the same 1,549 LVBench multiple-choice video questions, Qwen3.5-4B Thinking spends 144.9 seconds per question on average, while VideoJev-4B takes 1.12 seconds. The model did not shrink; it stopped generating answers token by token and turned both temporal grounding and multiple-choice QA into candidate scoring. Before taking that 100x gap at face value, two caveats matter: the 100x speedup is against Thinking mode (against direct-answer Instruct QA it is 1.2x to 1.6x), and every experiment uses pre-supplied closed-world questions while agent workflows remain untested Future Work."
+    },
+    "running_example": {
+      "id": "ex-10bins",
+      "desc": "A 20-second video split into 10 bins (2 seconds each, ground truth bins 6-9 or 10-18s), carrying the source article's illustrative summary figures across BCE (0.21), Soft IoU (0.64 / loss 0.36), Stage 2 total loss (0.93), and maximum-sum decoding (bins 5-9, 8-18s, Hard IoU 0.80)."
+    },
+    "cover_brief": {
+      "metaphor": "On the left, a video timeline sliced into time bins and a stack of text option cards converge into one central shared scoring head (with the video prefix passing through once); on the right, two outputs emerge: a highlighted contiguous time interval above and the top-scoring answer choice below.",
+      "labels": [
+        {
+          "text": "Temporal Grounding",
+          "ledger": "L5"
+        },
+        {
+          "text": "Video QA",
+          "ledger": "L5"
+        },
+        {
+          "text": "Shared Scoring Head",
+          "ledger": "L12"
+        },
+        {
+          "text": "Soft IoU +4.6 mIoU",
+          "ledger": "L19"
+        }
+      ]
+    },
+    "seo": {
+      "queries": [
+        "VideoJev",
+        "temporal grounding",
+        "影片理解",
+        "video temporal grounding"
+      ],
+      "notes": "GSC MCP checks skipped due to local MCP timeout (likely expired OAuth token); suggest.py autocomplete ran. English autocomplete shows 'video QA' collides with video quality, video qawwali, and game QA testing, so the English title leads with VideoJev and Video LLMs within 52 chars while using temporal grounding and video QA naturally in the description and opening."
+    }
+  },
+  "outline": [
+    {
+      "id": "s1",
+      "title": "Video Models Don't Need to Write Answers Token by Token",
+      "role": "hook",
+      "goal": "Understand VideoJev's core scoring idea, headline numbers, and two key caveats before diving in.",
+      "serves": [
+        "t1",
+        "t2"
+      ],
+      "recap": false,
+      "children": []
+    },
+    {
+      "id": "s2",
+      "title": "Why Small Decisions in Video Shouldn't Be Generated",
+      "role": "context",
+      "goal": "Recognize temporal grounding and multiple-choice video QA, and see the three bottlenecks of token generation.",
+      "serves": [
+        "t1"
+      ],
+      "recap": false,
+      "children": []
+    },
+    {
+      "id": "s3",
+      "title": "How One Scoring Head Handles Both Grounding and QA",
+      "role": "mechanism",
+      "goal": "Follow how both tasks share one input layout and cosine scoring head, then branch for probabilities and losses.",
+      "serves": [
+        "t1",
+        "t3"
+      ],
+      "recap": false,
+      "children": [
+        {
+          "id": "s3a",
+          "title": "Input Layout and Scoring Head: One Video Prefix, Two Readout Positions",
+          "role": "mechanism",
+          "goal": "Read Figure 2, the sequence layout, and Eq. (1)'s cosine scoring head.",
+          "serves": [
+            "t1"
+          ],
+          "recap": false,
+          "children": []
+        },
+        {
+          "id": "s3b",
+          "title": "Temporal Grounding in Four Steps: Bins, BCE, Soft IoU, and Decoding",
+          "role": "mechanism",
+          "goal": "Walk through binning, per-bin BCE, Soft IoU, and Kadane maximum-sum decoding on the 10-bin example.",
+          "serves": [
+            "t1",
+            "t3"
+          ],
+          "recap": false,
+          "children": []
+        },
+        {
+          "id": "s3c",
+          "title": "Multiple-Choice QA and Task Comparison: Competing Options",
+          "role": "mechanism",
+          "goal": "Contrast QA with temporal grounding on candidates, softmax vs. sigmoid, loss, and anti-bias shuffling.",
+          "serves": [
+            "t1",
+            "t3"
+          ],
+          "recap": false,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "Multi-Question Inference and the Two-Stage Training Recipe",
+      "role": "mechanism",
+      "goal": "Distinguish Cached vs. Joint inference and see why two-stage training saves compute rather than boosting accuracy.",
+      "serves": [
+        "t1"
+      ],
+      "recap": false,
+      "children": [
+        {
+          "id": "s4a",
+          "title": "Cached vs. Joint Inference: Sequential Arrival vs. All-at-Once",
+          "role": "mechanism",
+          "goal": "Compare attention visibility, latency curves, and deployment prerequisites for Cached and Joint.",
+          "serves": [
+            "t1",
+            "t2"
+          ],
+          "recap": false,
+          "children": []
+        },
+        {
+          "id": "s4b",
+          "title": "Two-Stage Training: Same Quality, Lower Backbone Update Cost",
+          "role": "mechanism",
+          "goal": "Know what trains in each stage, the loss weights, and why single-stage actually scores slightly higher.",
+          "serves": [
+            "t1"
+          ],
+          "recap": false,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "Results: Accuracy, Speed Breakdown, and Cached vs. Joint",
+      "role": "evidence",
+      "goal": "Read the 4B and 35B-A3B accuracy gains, three-tier speed comparisons, and Joint vs. Cached parity.",
+      "serves": [
+        "t1",
+        "t2"
+      ],
+      "recap": false,
+      "children": [
+        {
+          "id": "s5a",
+          "title": "Accuracy: Sweeps Same-Backbone Instruct, Trails 4B Thinking Slightly",
+          "role": "evidence",
+          "goal": "Grasp the core accuracy numbers across 3 grounding and 4 QA benchmarks.",
+          "serves": [
+            "t1",
+            "t2"
+          ],
+          "recap": false,
+          "children": []
+        },
+        {
+          "id": "s5b",
+          "title": "Speed: 'Over 100x Faster' Depends Entirely on the Baseline",
+          "role": "evidence",
+          "goal": "Separate 100x-129x (vs. Thinking), 2.8x-3.1x (grounding vs. Instruct), and 1.2x-1.6x (QA vs. Instruct).",
+          "serves": [
+            "t2"
+          ],
+          "recap": false,
+          "children": []
+        },
+        {
+          "id": "s5c",
+          "title": "Cached vs. Joint: Batching Wins on 13 of 14 Test Pairs",
+          "role": "evidence",
+          "goal": "See that Joint avoids the accuracy drop suffered by autoregressive models on LVBench.",
+          "serves": [
+            "t1"
+          ],
+          "recap": false,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "title": "Limitations and Unanswered Details in the Paper",
+      "role": "caveat",
+      "goal": "Know the closed-world evaluation boundary and implementation details the paper leaves unspecified.",
+      "serves": [
+        "t2"
+      ],
+      "recap": false,
+      "children": []
+    },
+    {
+      "id": "s7",
+      "title": "Three Takeaways You Can Reuse",
+      "role": "takeaway",
+      "goal": "Leave with three portable lessons on candidate scoring, speed claims, and loss-metric alignment.",
+      "serves": [
+        "t1",
+        "t2",
+        "t3"
+      ],
+      "recap": false,
+      "children": []
+    },
+    {
+      "id": "s8",
+      "title": "Further Reading: Three Modeling Principles Beyond This Paper",
+      "role": "deep-dive",
+      "goal": "Master logit/sigmoid/softmax, why local BCE misses global IoU, and Soft IoU vs. Hard IoU.",
+      "serves": [
+        "t3"
+      ],
+      "recap": false,
+      "children": [
+        {
+          "id": "s8a",
+          "title": "Logits, Sigmoid, and Softmax: Independent Checks vs. Competing Choices",
+          "role": "deep-dive",
+          "goal": "Understand shift invariance, log-odds, and when to use sigmoid vs. softmax.",
+          "serves": [
+            "t3"
+          ],
+          "recap": false,
+          "children": []
+        },
+        {
+          "id": "s8b",
+          "title": "Why Per-Bin Correctness Does Not Equal Interval Quality",
+          "role": "deep-dive",
+          "goal": "See why missing 2 bins hurts IoU more than over-predicting 2 bins even at identical BCE.",
+          "serves": [
+            "t3"
+          ],
+          "recap": false,
+          "children": []
+        },
+        {
+          "id": "s8c",
+          "title": "Hard IoU vs. Soft IoU: Training Signal vs. Evaluation Metric",
+          "role": "deep-dive",
+          "goal": "See why Soft IoU is differentiable and why its value differs from Hard IoU on the same predictions.",
+          "serves": [
+            "t3"
+          ],
+          "recap": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "MLLM",
+      "defined_in": "s1.b1"
+    },
+    {
+      "term": "softmax",
+      "defined_in": "s1.b2"
+    },
+    {
+      "term": "temporal grounding",
+      "defined_in": "s2.b1"
+    },
+    {
+      "term": "Video QA",
+      "defined_in": "s2.b1"
+    },
+    {
+      "term": "logit",
+      "defined_in": "s3a.b1"
+    },
+    {
+      "term": "sigmoid",
+      "defined_in": "s3a.b1"
+    },
+    {
+      "term": "BCE",
+      "defined_in": "s3a.b1"
+    },
+    {
+      "term": "IoU",
+      "defined_in": "s3a.b1"
+    },
+    {
+      "term": "cross-entropy",
+      "defined_in": "s3a.b1"
+    },
+    {
+      "term": "MLP",
+      "defined_in": "s3a.b8"
+    },
+    {
+      "term": "mIoU",
+      "defined_in": "s3b.b7"
+    },
+    {
+      "term": "Kadane",
+      "defined_in": "s3b.b11"
+    },
+    {
+      "term": "prefill",
+      "defined_in": "s4a.b1"
+    },
+    {
+      "term": "FlashAttention",
+      "defined_in": "s4a.b3"
+    },
+    {
+      "term": "LoRA",
+      "defined_in": "s4b.f1.b1"
+    },
+    {
+      "term": "MoE",
+      "defined_in": "s4b.f1.b3"
+    },
+    {
+      "term": "epoch",
+      "defined_in": "s4b.b1"
+    },
+    {
+      "term": "checkpoint",
+      "defined_in": "s5c.b1"
+    }
+  ],
+  "ledger": [
+    {
+      "id": "L1",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          3,
+          3
+        ]
+      },
+      "gist": "Source ledger item L1 (claim).",
+      "layer": "support",
+      "section": "s1",
+      "dest": [
+        "s1.b4"
+      ]
+    },
+    {
+      "id": "L2",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          7,
+          11
+        ]
+      },
+      "gist": "Source ledger item L2 (claim).",
+      "layer": "main",
+      "section": "s1",
+      "dest": [
+        "s1.b1",
+        "s1.b2"
+      ]
+    },
+    {
+      "id": "L3",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          13,
+          13
+        ]
+      },
+      "gist": "Source ledger item L3 (nav).",
+      "layer": "none",
+      "section": "s1",
+      "dest": []
+    },
+    {
+      "id": "L4",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          15,
+          15
+        ]
+      },
+      "gist": "Source ledger item L4 (nav).",
+      "layer": "none",
+      "section": "s1",
+      "dest": []
+    },
+    {
+      "id": "L5",
+      "kind": "definition",
+      "src": {
+        "lines": [
+          19,
+          22
+        ]
+      },
+      "gist": "Source ledger item L5 (definition).",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s2.b1"
+      ]
+    },
+    {
+      "id": "L6",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          24,
+          30
+        ]
+      },
+      "gist": "Source ledger item L6 (claim).",
+      "layer": "main",
+      "section": "s2",
+      "dest": [
+        "s1.b1",
+        "s2.b2",
+        "s2.b3",
+        "s2.b4"
+      ]
+    },
+    {
+      "id": "L7",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          32,
+          32
+        ]
+      },
+      "gist": "Source ledger item L7 (caveat).",
+      "layer": "main",
+      "section": "s1",
+      "dest": [
+        "s1.b3"
+      ]
+    },
+    {
+      "id": "L8",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          38,
+          38
+        ]
+      },
+      "gist": "Source ledger item L8 (nav).",
+      "layer": "none",
+      "section": "s3",
+      "dest": []
+    },
+    {
+      "id": "L9",
+      "kind": "table",
+      "src": {
+        "lines": [
+          40,
+          48
+        ]
+      },
+      "gist": "Source ledger item L9 (table).",
+      "layer": "support",
+      "section": "s3a",
+      "dest": [
+        "s3a.b1",
+        "s3a.b2",
+        "s3a.b3"
+      ]
+    },
+    {
+      "id": "L10",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          50,
+          51
+        ]
+      },
+      "gist": "Source ledger item L10 (figure).",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b3"
+      ]
+    },
+    {
+      "id": "L11",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          55,
+          62
+        ]
+      },
+      "gist": "Source ledger item L11 (claim).",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b4",
+        "s3a.b5"
+      ]
+    },
+    {
+      "id": "L12",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          64,
+          73
+        ]
+      },
+      "gist": "Source ledger item L12 (formula).",
+      "layer": "main",
+      "section": "s3a",
+      "dest": [
+        "s3a.b6",
+        "s3a.b7",
+        "s3a.b8"
+      ]
+    },
+    {
+      "id": "L13",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          75,
+          75
+        ]
+      },
+      "gist": "Source ledger item L13 (inference).",
+      "layer": "support",
+      "section": "s3a",
+      "dest": [
+        "s3a.b8"
+      ]
+    },
+    {
+      "id": "L14",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          77,
+          77
+        ]
+      },
+      "gist": "Source ledger item L14 (claim).",
+      "layer": "support",
+      "section": "s3a",
+      "dest": [
+        "s3a.b8"
+      ]
+    },
+    {
+      "id": "L15",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          81,
+          81
+        ]
+      },
+      "gist": "Source ledger item L15 (nav).",
+      "layer": "none",
+      "section": "s3b",
+      "dest": []
+    },
+    {
+      "id": "L16",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          83,
+          89
+        ]
+      },
+      "gist": "Source ledger item L16 (formula).",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b1",
+        "s3b.b2"
+      ]
+    },
+    {
+      "id": "L17",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          91,
+          97
+        ]
+      },
+      "gist": "Source ledger item L17 (formula).",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b5",
+        "s3b.b6",
+        "s3b.b7"
+      ]
+    },
+    {
+      "id": "L18",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          99,
+          107
+        ]
+      },
+      "gist": "Source ledger item L18 (formula).",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b7",
+        "s3b.b8",
+        "s3b.b9"
+      ]
+    },
+    {
+      "id": "L19",
+      "kind": "number",
+      "src": {
+        "lines": [
+          109,
+          112
+        ]
+      },
+      "gist": "Source ledger item L19 (number).",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b9",
+        "s3b.b10"
+      ]
+    },
+    {
+      "id": "L20",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          114,
+          122
+        ]
+      },
+      "gist": "Source ledger item L20 (formula).",
+      "layer": "main",
+      "section": "s3b",
+      "dest": [
+        "s3b.b11",
+        "s3b.b12",
+        "s3b.b13"
+      ]
+    },
+    {
+      "id": "L21",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          126,
+          134
+        ]
+      },
+      "gist": "Source ledger item L21 (formula).",
+      "layer": "main",
+      "section": "s3c",
+      "dest": [
+        "s3c.b1",
+        "s3c.b2"
+      ]
+    },
+    {
+      "id": "L22",
+      "kind": "example",
+      "src": {
+        "lines": [
+          136,
+          144
+        ]
+      },
+      "gist": "Source ledger item L22 (example).",
+      "layer": "support",
+      "section": "s3c",
+      "dest": [
+        "s3c.b3",
+        "s3c.b4"
+      ]
+    },
+    {
+      "id": "L23",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          146,
+          146
+        ]
+      },
+      "gist": "Source ledger item L23 (claim).",
+      "layer": "support",
+      "section": "s3c",
+      "dest": [
+        "s3c.b5"
+      ]
+    },
+    {
+      "id": "L24",
+      "kind": "table",
+      "src": {
+        "lines": [
+          150,
+          157
+        ]
+      },
+      "gist": "Source ledger item L24 (table).",
+      "layer": "support",
+      "section": "s3c",
+      "dest": [
+        "s3c.b6"
+      ]
+    },
+    {
+      "id": "L25",
+      "kind": "table",
+      "src": {
+        "lines": [
+          161,
+          170
+        ]
+      },
+      "gist": "Source ledger item L25 (table).",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b1",
+        "s4a.b2",
+        "s4a.b3"
+      ]
+    },
+    {
+      "id": "L26",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          172,
+          172
+        ]
+      },
+      "gist": "Source ledger item L26 (caveat).",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b3"
+      ]
+    },
+    {
+      "id": "L27",
+      "kind": "figure",
+      "src": {
+        "lines": [
+          174,
+          177
+        ]
+      },
+      "gist": "Source ledger item L27 (figure).",
+      "layer": "main",
+      "section": "s4a",
+      "dest": [
+        "s4a.b4",
+        "s4a.b5"
+      ]
+    },
+    {
+      "id": "L28",
+      "kind": "table",
+      "src": {
+        "lines": [
+          181,
+          198
+        ]
+      },
+      "gist": "Source ledger item L28 (table).",
+      "layer": "main",
+      "section": "s4b",
+      "dest": [
+        "s4b.b1",
+        "s4b.b2",
+        "s4b.b3",
+        "s4b.b4"
+      ]
+    },
+    {
+      "id": "L29",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          200,
+          200
+        ]
+      },
+      "gist": "Source ledger item L29 (inference).",
+      "layer": "support",
+      "section": "s4b",
+      "dest": [
+        "s4b.b4b"
+      ]
+    },
+    {
+      "id": "L30",
+      "kind": "number",
+      "src": {
+        "lines": [
+          202,
+          207
+        ]
+      },
+      "gist": "Source ledger item L30 (number).",
+      "layer": "main",
+      "section": "s4b",
+      "dest": [
+        "s4b.b5",
+        "s4b.b6"
+      ]
+    },
+    {
+      "id": "L31",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          213,
+          213
+        ]
+      },
+      "gist": "Source ledger item L31 (nav).",
+      "layer": "none",
+      "section": "s5",
+      "dest": []
+    },
+    {
+      "id": "L32",
+      "kind": "table",
+      "src": {
+        "lines": [
+          217,
+          233
+        ]
+      },
+      "gist": "Source ledger item L32 (table).",
+      "layer": "main",
+      "section": "s5a",
+      "dest": [
+        "s5a.b1",
+        "s5a.b2",
+        "s5a.f1",
+        "s5a.f1.b1",
+        "s5a.f1.b2"
+      ]
+    },
+    {
+      "id": "L33",
+      "kind": "table",
+      "src": {
+        "lines": [
+          237,
+          252
+        ]
+      },
+      "gist": "Source ledger item L33 (table).",
+      "layer": "main",
+      "section": "s5b",
+      "dest": [
+        "s5b.b1",
+        "s5b.b2",
+        "s5b.b3",
+        "s5b.b4"
+      ]
+    },
+    {
+      "id": "L34",
+      "kind": "number",
+      "src": {
+        "lines": [
+          256,
+          266
+        ]
+      },
+      "gist": "Source ledger item L34 (number).",
+      "layer": "main",
+      "section": "s5c",
+      "dest": [
+        "s5c.b1",
+        "s5c.b2"
+      ]
+    },
+    {
+      "id": "L35",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          272,
+          272
+        ]
+      },
+      "gist": "Source ledger item L35 (nav).",
+      "layer": "none",
+      "section": "s8",
+      "dest": []
+    },
+    {
+      "id": "L36",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          276,
+          307
+        ]
+      },
+      "gist": "Source ledger item L36 (formula).",
+      "layer": "appendix",
+      "section": "s8a",
+      "dest": [
+        "s8a.b1",
+        "s8a.b2",
+        "s8a.b3",
+        "s8a.b4",
+        "s8a.b5",
+        "s8a.b6",
+        "s8a.b7"
+      ]
+    },
+    {
+      "id": "L37",
+      "kind": "example",
+      "src": {
+        "lines": [
+          311,
+          324
+        ]
+      },
+      "gist": "Source ledger item L37 (example).",
+      "layer": "appendix",
+      "section": "s8b",
+      "dest": [
+        "s8b.b1",
+        "s8b.b2",
+        "s8b.b3"
+      ]
+    },
+    {
+      "id": "L38",
+      "kind": "example",
+      "src": {
+        "lines": [
+          328,
+          351
+        ]
+      },
+      "gist": "Source ledger item L38 (example).",
+      "layer": "appendix",
+      "section": "s8c",
+      "dest": [
+        "s8c.b1",
+        "s8c.b2",
+        "s8c.b3",
+        "s8c.b4",
+        "s8c.b5"
+      ]
+    },
+    {
+      "id": "L39",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          357,
+          357
+        ]
+      },
+      "gist": "Source ledger item L39 (nav).",
+      "layer": "none",
+      "section": "s3",
+      "dest": []
+    },
+    {
+      "id": "L40",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          361,
+          369
+        ]
+      },
+      "gist": "Source ledger item L40 (inference).",
+      "layer": "fold",
+      "section": "s3a",
+      "dest": [
+        "s3a.f1",
+        "s3a.f1.b1",
+        "s3a.f1.b2",
+        "s3a.f1.b3"
+      ]
+    },
+    {
+      "id": "L41",
+      "kind": "example",
+      "src": {
+        "lines": [
+          373,
+          375
+        ]
+      },
+      "gist": "Source ledger item L41 (example).",
+      "layer": "appendix",
+      "section": "s8a",
+      "dest": [
+        "s8a.b3",
+        "s8a.b5"
+      ]
+    },
+    {
+      "id": "L42",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          379,
+          386
+        ]
+      },
+      "gist": "Source ledger item L42 (claim).",
+      "layer": "fold",
+      "section": "s3b",
+      "dest": [
+        "s3b.b9",
+        "s3b.f1",
+        "s3b.f1.b1"
+      ]
+    },
+    {
+      "id": "L43",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          390,
+          396
+        ]
+      },
+      "gist": "Source ledger item L43 (inference).",
+      "layer": "fold",
+      "section": "s3a",
+      "dest": [
+        "s3a.f2",
+        "s3a.f2.b1"
+      ]
+    },
+    {
+      "id": "L44",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          400,
+          411
+        ]
+      },
+      "gist": "Source ledger item L44 (caveat).",
+      "layer": "support",
+      "section": "s3b",
+      "dest": [
+        "s3b.b3",
+        "s3b.b4"
+      ]
+    },
+    {
+      "id": "L45",
+      "kind": "table",
+      "src": {
+        "lines": [
+          415,
+          431
+        ]
+      },
+      "gist": "Source ledger item L45 (table).",
+      "layer": "fold",
+      "section": "s3a",
+      "dest": [
+        "s3a.f2",
+        "s3a.f2.b2",
+        "s3a.f2.b3"
+      ]
+    },
+    {
+      "id": "L46",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          435,
+          442
+        ]
+      },
+      "gist": "Source ledger item L46 (claim).",
+      "layer": "fold",
+      "section": "s3b",
+      "dest": [
+        "s3b.f1",
+        "s3b.f1.b2"
+      ]
+    },
+    {
+      "id": "L47",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          446,
+          467
+        ]
+      },
+      "gist": "Source ledger item L47 (caveat).",
+      "layer": "fold",
+      "section": "s3b",
+      "dest": [
+        "s3b.f2",
+        "s3b.f2.b1",
+        "s3b.f2.b2",
+        "s3b.f2.b3",
+        "s3b.f2.b4",
+        "s3b.f2.b5"
+      ]
+    },
+    {
+      "id": "L48",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          471,
+          479
+        ]
+      },
+      "gist": "Source ledger item L48 (claim).",
+      "layer": "fold",
+      "section": "s3b",
+      "dest": [
+        "s3b.f1",
+        "s3b.f1.b3"
+      ]
+    },
+    {
+      "id": "L49",
+      "kind": "inference",
+      "src": {
+        "lines": [
+          483,
+          506
+        ]
+      },
+      "gist": "Source ledger item L49 (inference).",
+      "layer": "fold",
+      "section": "s4b",
+      "dest": [
+        "s4b.f1",
+        "s4b.f1.b1",
+        "s4b.f1.b2",
+        "s4b.f1.b3"
+      ]
+    },
+    {
+      "id": "L50",
+      "kind": "formula",
+      "src": {
+        "lines": [
+          510,
+          527
+        ]
+      },
+      "gist": "Source ledger item L50 (formula).",
+      "layer": "appendix",
+      "section": "s8a",
+      "dest": [
+        "s8a.b8",
+        "s8a.b9",
+        "s8a.b10",
+        "s8a.b11"
+      ]
+    },
+    {
+      "id": "L51",
+      "kind": "caveat",
+      "src": {
+        "lines": [
+          533,
+          538
+        ]
+      },
+      "gist": "Source ledger item L51 (caveat).",
+      "layer": "main",
+      "section": "s6",
+      "dest": [
+        "s6.b1",
+        "s6.b2"
+      ]
+    },
+    {
+      "id": "L52",
+      "kind": "nav",
+      "src": {
+        "lines": [
+          540,
+          549
+        ]
+      },
+      "gist": "Source ledger item L52 (nav).",
+      "layer": "none",
+      "section": "s6",
+      "dest": []
+    },
+    {
+      "id": "L53",
+      "kind": "claim",
+      "src": {
+        "lines": [
+          553,
+          557
+        ]
+      },
+      "gist": "Source ledger item L53 (claim).",
+      "layer": "main",
+      "section": "s7",
+      "dest": [
+        "s7.b1",
+        "s7.b2"
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "id": "s1.b1",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L2",
+        "L6"
+      ],
+      "purpose": "hook",
+      "text": "On the same 1,549 LVBench multiple-choice video questions, Qwen3.5-4B Thinking spends 144.9 seconds per question on average, while VideoJev-4B takes 1.12 seconds. The gap comes from how answers are produced rather than model size: standard multimodal large language models (**MLLM**s) write answers one token at a time, whereas VideoJev turns both finding event timestamps and answering multiple-choice video questions into **candidate scoring**. In a single pass through the model, it reads internal representations at the candidate and decision markers and feeds them to one shared scoring layer, without generating any answer tokens."
+    },
+    {
+      "id": "s1.b2",
+      "section": "s1",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L2"
+      ],
+      "ordered": false,
+      "items": [
+        "Event timestamps: slice the video into time bins as candidates, judge each bin independently, and pick the single continuous stretch of video with the highest combined score.",
+        "Multiple-choice QA: treat the given answer options as candidates and use **softmax** (which turns raw scores into probabilities summing to 1) to pick the highest-probability choice.",
+        "Shared prefix: compute the video **prefix** (the video frame data at the start of the input) once, then answer follow-up questions one by one (Cached) or all together (Joint)."
+      ]
+    },
+    {
+      "id": "s1.b3",
+      "section": "s1",
+      "type": "callout",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L7"
+      ],
+      "tone": "warning",
+      "title": "Two caveats before reading the numbers",
+      "text": "Every experiment in the paper runs in a closed-world setup where questions, answer options, and event queries are supplied upfront; the paper's pitch of using VideoJev inside an agent workflow appears only in Future Work and is never tested. Also, the headline 'over 100× faster' compares against long-reasoning Thinking models; when we break down the tables below, the gap against direct-answer Instruct models is much smaller."
+    },
+    {
+      "id": "s1.b4",
+      "section": "s1",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L1"
+      ],
+      "text": "Paper: [VideoJev (arXiv 2610.18615)](https://arxiv.org/abs/2610.18615) (2026/10)."
+    },
+    {
+      "id": "s2.b1",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L5"
+      ],
+      "text": "Video understanding relies heavily on two structured 'small decisions': **temporal grounding** takes an event description and finds its start and end timestamps in the video, while **multiple-choice Video QA** picks one answer from options like A through D."
+    },
+    {
+      "id": "s2.b2",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L6"
+      ],
+      "text": "Both answers are tiny, yet current MLLMs still generate them token by token. The paper highlights three bottlenecks with that approach:"
+    },
+    {
+      "id": "s2.b3",
+      "section": "s2",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L6"
+      ],
+      "ordered": true,
+      "items": [
+        "Generation is expensive: producing a single option letter or a few timestamp digits can still take over a hundred seconds in long-reasoning mode (as in the opening LVBench comparison; full numbers in Table 2 below).",
+        "Discriminative classifiers are fast but rigid: traditional classifiers only handle fixed label sets and lack an LLM's ability to match arbitrary natural-language descriptions.",
+        "Videos are often queried repeatedly: recomputing the entire video's visual input for every single question wastes compute."
+      ]
+    },
+    {
+      "id": "s2.b4",
+      "section": "s2",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L6"
+      ],
+      "text": "Temporal grounding adds a structural requirement: the output must be one **contiguous** time interval rather than scattered seconds. The next section's binning and decoding steps are built around that rule."
+    },
+    {
+      "id": "s3a.b1",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L9"
+      ],
+      "text": "Both tasks share the upper half of the pipeline: the model sends each candidate's hidden state into Eq. (1) to produce a raw score $s$ (a **logit**, a real-valued score before probability conversion), and training and inference both branch from that same $s$. Temporal grounding applies **sigmoid** (squashing each real score into a 0-to-1 probability) independently to each bin, trained with **BCE** (binary cross-entropy) and **Soft IoU** (a differentiable version of **IoU**, which measures overlap between predicted and ground-truth intervals). Multiple-choice QA applies softmax across all options and trains with **cross-entropy (CE)**."
+    },
+    {
+      "id": "s3a.b2",
+      "section": "s3a",
+      "type": "table",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L9"
+      ],
+      "headers": [
+        "Stage",
+        "Temporal Grounding",
+        "Multiple-Choice QA"
+      ],
+      "rows": [
+        [
+          "Shared",
+          "Hidden state -> Eq. (1) -> score $s$",
+          "Hidden state -> Eq. (1) -> score $s$"
+        ],
+        [
+          "Training",
+          "$\\sigma(s)$ -> BCE (Eq. 2) + Soft IoU (Eq. 3)",
+          "softmax -> cross-entropy (Eq. 5)"
+        ],
+        [
+          "Inference",
+          "Subtract threshold -> max-sum segment (Eq. 4)",
+          "Pick highest-probability option"
+        ]
+      ]
+    },
+    {
+      "id": "s3a.b3",
+      "section": "s3a",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L9",
+        "L10"
+      ],
+      "manifest_id": "img-002",
+      "alt": "Three-panel overview: (a) time intervals represented as timestamps share the same input layout as text options; (b) Cached inference computes the video prefix once then processes each question suffix separately, while Joint inference processes the full batch in one forward pass; (c) time scores form event intervals and option scores select the answer.",
+      "caption": "Figure 2 — VideoJev architecture overview: candidate scoring and shared video computation (scores and reference intervals are illustrative)",
+      "paper_label": "Figure 2",
+      "role": "overview"
+    },
+    {
+      "id": "s3a.b4",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L11"
+      ],
+      "text": "A single forward pass reads the whole sequence, yet the model only extracts hidden states at two special marker positions: `<|option_end|>` at the end of each candidate, and `<|decide|>` at the very end of the question. For example, a 20-second video sampled at 4 fps yields 40 time candidates; the video prefix is computed once, and each question appends its own suffix:"
+    },
+    {
+      "id": "s3a.b5",
+      "section": "s3a",
+      "type": "code",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L11"
+      ],
+      "lang": "text",
+      "code": "[Video prefix: image tokens + timestamps] -> computed once\n[Instruction] [Question] [Candidate 1 <|option_end|>] [Candidate 2 <|option_end|>] ... [Candidate 40 <|option_end|>] [<|decide|>] -> one per question"
+    },
+    {
+      "id": "s3a.b6",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L12"
+      ],
+      "text": "The scoring head's job is straightforward: map the question-level decision summary and each candidate into equal-length direction vectors, measure how closely their directions align (closer means higher score), scale the result, and add a baseline offset. Concretely, after reading `<|decide|>`'s hidden state $h_d$ and the $i$-th `<|option_end|>` hidden state $h_i$, Eq. (1) projects them to 512 dimensions with two separate linear projections $W_q, b_q$ and $W_k, b_k$, normalizes both to unit vectors $u$ and $v_i$, takes their dot product $u^\\top v_i$ (cosine similarity in $[-1, 1]$), multiplies by a fixed factor of 10, and adds one learnable scalar bias $b$ to get candidate $i$'s logit $s_i$:"
+    },
+    {
+      "id": "s3a.b7",
+      "section": "s3a",
+      "type": "formula",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L12"
+      ],
+      "intuition": "s3a.b6",
+      "latex": "u=\\frac{W_q h_d+b_q}{\\|W_q h_d+b_q\\|_2},\\quad v_i=\\frac{W_k h_i+b_k}{\\|W_k h_i+b_k\\|_2},\\quad s_i=10\\,u^\\top v_i+b"
+    },
+    {
+      "id": "s3a.b8",
+      "section": "s3a",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L12",
+        "L13",
+        "L14"
+      ],
+      "text": "Take a 2-dimensional vector example: suppose $u=(0.8, 0.6)$ and $v=(0.6, 0.8)$; their directions align closely with a cosine similarity of 0.96, giving $s=9.6$ when $b=0$. The paper does not explain why the scale is fixed at 10 or why vectors are unit-normalized; my guess is that scaling sharpens the softmax distribution. The architecture also trims the tail of the language **backbone** (the core language model): VideoJev removes the final-layer **MLP** (multi-layer perceptron) and replaces the vocabulary output head with this scoring head, which **ablation** (removing a component to measure score impact) shows changes scores by under 0.2 points. The bias $b$ only matters for temporal grounding's sigmoid and cancels out completely in QA's softmax (proof in Further Reading below)."
+    },
+    {
+      "id": "s3a.f1",
+      "section": "s3a",
+      "type": "fold",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L40"
+      ],
+      "title": "Details: why remove the final-layer MLP and swap the output head? (with Table 7)",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s3a.f1.b1",
+          "section": "s3a",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L40"
+          ],
+          "text": "A standard LLM's final layer runs attention -> MLP -> hidden state $h$ -> output head -> full-vocabulary logits -> next token. VideoJev instead reads $h$ before the final MLP and replaces the output head with the Eq. (1) scorer. The paper cites FreeRet to state that pre-MLP features work better for semantic similarity without offering its own analysis; my guess is that the final MLP mainly serves next-token prediction and becomes redundant once generation is removed."
+        },
+        {
+          "id": "s3a.f1.b2",
+          "section": "s3a",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L40"
+          ],
+          "text": "Table 7's ablation confirms the impact is tiny: removing the final MLP averages 65.3 (temporal grounding) and 74.3 (QA), compared to 65.1 and 74.1 when keeping it."
+        },
+        {
+          "id": "s3a.f1.b3",
+          "section": "s3a",
+          "type": "figure",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L40"
+          ],
+          "manifest_id": "img-009",
+          "alt": "Ablation table comparing VideoJev-4B without the final-layer MLP (baseline) versus keeping it across three temporal grounding and four Video QA benchmarks, with deltas.",
+          "caption": "Table 7 — Effect of removing the final-layer MLP (VideoJev-4B)",
+          "paper_label": "Table 7",
+          "role": "ablation"
+        }
+      ]
+    },
+    {
+      "id": "s3a.f2",
+      "section": "s3a",
+      "type": "fold",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L43",
+        "L45"
+      ],
+      "title": "Details: how video tokens interleave with timestamps, from hidden states to seconds",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s3a.f2.b1",
+          "section": "s3a",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L43"
+          ],
+          "text": "An LLM's input is just a sequence of vectors: text tokens look up embedding vectors and image tokens come from the vision encoder, and once inside the language model they are treated identically. Timestamps are text tokens interleaved beside every pair of frames to mark the seconds. Temporal grounding candidates are not chosen by the model; they are sliced sequentially from the video at two frames per candidate ($K = \\text{frames} \\div 2$), independent of the query text. Each candidate label uses the two frames' midpoint rounded to one decimal place, such as $(12.00 + 12.25) \\div 2 = 12.125$ formatted as `12.1s`, while labels and boundaries still use unrounded timestamps. The paper does not specify the exact prefix layout beyond saying candidate timestamp strings are copied from the video prefix; my guess is that VideoJev follows the Qwen convention of interleaving one timestamp per frame group."
+        },
+        {
+          "id": "s3a.f2.b2",
+          "section": "s3a",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L45"
+          ],
+          "text": "After a forward pass, every position outputs a vector of the backbone's hidden dimension $d$ (the paper does not report $d$), yet the model only reads `<|option_end|>` and `<|decide|>` positions and ignores video, instruction, and question outputs. Under causal attention, $h_i$ sees the video, question, and earlier candidates, while $h_d$ at the end sees everything. The paper does not explain how a candidate attends to its matching frames; my guess is that matching timestamp strings in the candidate and video prefix let attention align them."
+        },
+        {
+          "id": "s3a.f2.b3",
+          "section": "s3a",
+          "type": "table",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L45"
+          ],
+          "headers": [
+            "Step",
+            "Action",
+            "Illustrative Seventh-Bin Example"
+          ],
+          "rows": [
+            [
+              "1",
+              "Read hidden states",
+              "$h_7$ and $h_d$"
+            ],
+            [
+              "2",
+              "Project to 512-dim unit vectors",
+              "$v_7$ and $u$ (one $u$ per question, one $v$ per bin)"
+            ],
+            [
+              "3",
+              "Dot product x 10 + $b$ for logit",
+              "$s_7 = 10\\,u^\\top v_7 + b$, assume 2.2"
+            ],
+            [
+              "4",
+              "Convert to probability via sigmoid",
+              "$p_7 = \\sigma(2.2) \\approx 0.90$"
+            ],
+            [
+              "5",
+              "Select one high contiguous segment via Eq. (4)",
+              "Assume bins six through 9 (independent of the main-text 10-bin decoding example)"
+            ],
+            [
+              "6",
+              "Convert to seconds",
+              "Left edge of the sixth bin to right edge of the ninth bin"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s3b.b1",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L16"
+      ],
+      "text": "Temporal grounding turns a continuous video into scorable candidates in four steps: binning, per-bin yes/no classification, whole-interval overlap loss, and contiguous decoding. Step 1 is **binning and labeling**: the backbone merges every two adjacent frames (twofold temporal compression) into one bin. At evaluation, videos are sampled at 4 fps, making each bin about 0.5 seconds; a 20-second video has 80 frames, or $K = 40$ bins, named by their midpoint (e.g., `<12.1s>`). If bin $i$'s time $t_i$ falls inside the union of annotated event intervals $G$, its label $y_i$ is 1, otherwise 0:"
+    },
+    {
+      "id": "s3b.b2",
+      "section": "s3b",
+      "type": "formula",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L16"
+      ],
+      "intuition": "s3b.b1",
+      "latex": "y_i=\\mathbb{1}\\{t_i\\in G\\},\\qquad K=\\frac{\\text{frames}}{2}"
+    },
+    {
+      "id": "s3b.b3",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L44"
+      ],
+      "text": "Figure 2(a) confirms the 4 fps slicing: two adjacent frames sit at 00:12.00 and 00:12.25, 0.25 seconds apart. Part 3.1 of the paper leaves an unresolved ambiguity, stating that training videos are sampled at 2 fps without specifying per-task settings, which admits two readings:"
+    },
+    {
+      "id": "s3b.b4",
+      "section": "s3b",
+      "type": "list",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L44"
+      ],
+      "ordered": false,
+      "items": [
+        "Reading (a): temporal grounding also trains at 2 fps, meaning ~1-second bins in training vs. 0.5-second bins at test time, a width mismatch the paper does not discuss.",
+        "Reading (b): 2 fps refers to QA or general settings while grounding trains at 4 fps, keeping bin widths consistent."
+      ]
+    },
+    {
+      "id": "s3b.b5",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L17"
+      ],
+      "text": "Step 2 is **per-bin yes/no scoring (BCE, Eq. 2)**: because an event spans multiple bins that must all be able to say 'yes' at once, each bin gets its own independent sigmoid probability $p_i = \\sigma(s_i)$, and binary cross-entropy penalizes each bin before averaging across all $K$ bins:"
+    },
+    {
+      "id": "s3b.b6",
+      "section": "s3b",
+      "type": "formula",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L17"
+      ],
+      "intuition": "s3b.b5",
+      "latex": "\\mathcal{L}_{BCE}=-\\frac{1}{K}\\sum_{i=1}^{K}\\Big[y_i\\log p_i+(1-y_i)\\log(1-p_i)\\Big],\\qquad p_i=\\sigma(s_i)"
+    },
+    {
+      "id": "s3b.b7",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L17",
+        "L18"
+      ],
+      "text": "BCE's blind spot is that it judges each bin in isolation and never sees whole-interval coverage (temporal grounding is evaluated by **IoU**, predicted-vs-ground-truth overlap divided by union, averaged across queries as **mIoU**). Step 3 therefore adds differentiable **Soft IoU (Eq. 3)**: $d_i$ is bin $i$'s duration (canceling out when bins have equal width), the numerator is the intersection (only event bins with $y_i=1$ contribute), and the denominator is the union (event bins count in full, while non-event bins add whatever probability $p_i$ the model over-predicted):"
+    },
+    {
+      "id": "s3b.b8",
+      "section": "s3b",
+      "type": "formula",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L18"
+      ],
+      "intuition": "s3b.b7",
+      "latex": "\\mathcal{L}_{IoU}=1-\\frac{\\sum_i d_i\\,p_i\\,y_i}{\\sum_i d_i\\,[\\,y_i+p_i(1-y_i)\\,]}"
+    },
+    {
+      "id": "s3b.b9",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L18",
+        "L19",
+        "L42"
+      ],
+      "text": "Take a 10-bin illustrative example (we will reuse these summary figures for decoding and total loss without listing every individual bin): suppose ground truth spans the sixth through bin 9 (four bins), and the model assigns probabilities between 0.6 and 0.9 to those four bins (the last one is 0.6), summing to a numerator of 3.2. The denominator adds those four ground-truth bins to the over-predicted probabilities outside the event for a total of 5.0, giving Soft IoU 0.64 and loss 0.36 (the same 10 bins have a per-bin BCE loss of about 0.21). In practice this term matters: Table 6 shows adding Soft IoU lifts average mIoU across three grounding benchmarks from 60.7 to 65.3 (+4.6)."
+    },
+    {
+      "id": "s3b.b10",
+      "section": "s3b",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L19"
+      ],
+      "manifest_id": "img-008",
+      "alt": "Ablation table comparing VideoJev-4B trained with BCE/CE only versus adding Soft IoU across three temporal grounding and four Video QA benchmarks, with deltas.",
+      "caption": "Table 6 — Effect of Soft IoU supervision (VideoJev-4B, deltas relative to BCE/CE baseline)",
+      "paper_label": "Table 6",
+      "role": "ablation"
+    },
+    {
+      "id": "s3b.b11",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L20"
+      ],
+      "text": "Step 4 is **decoding one contiguous interval (Eq. 4)**. The intuition is simple: bins above a threshold earn positive points, bins below lose points, and we pick the contiguous span with the highest total score. Concretely, convert the probability threshold $\\tau = 0.25$ into logit space as $\\log\\frac{\\tau}{1-\\tau} \\approx -1.10$, subtract it from each bin's logit to get weight $w_i = s_i + 1.10$ ($w_i > 0$ is equivalent to $p_i > \\tau$), and run **Kadane's algorithm** (a single $O(K)$ linear scan that finds the maximum-sum contiguous subarray) to obtain $(a^\\star, b^\\star)$, outputting the left edge of bin $a^\\star$ to the right edge of bin $b^\\star$:"
+    },
+    {
+      "id": "s3b.b12",
+      "section": "s3b",
+      "type": "formula",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L20"
+      ],
+      "intuition": "s3b.b11",
+      "latex": "w_i=s_i-\\log\\frac{\\tau}{1-\\tau},\\qquad (a^\\star,b^\\star)=\\arg\\max_{1\\le a\\le b\\le K}\\sum_{i=a}^{b}w_i"
+    },
+    {
+      "id": "s3b.b13",
+      "section": "s3b",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L20"
+      ],
+      "text": "Continuing the 10-bin illustrative example (2 seconds per bin): ground truth is the sixth through bin 9 (10 to 18 seconds), but the adjacent fifth bin happens to exceed the 0.25 threshold (earning positive weight), so the maximum-sum subarray selects the fifth through bin 9 with a sum of about 10.83 and outputs 8 to 18 seconds. Against the 10 to 18 seconds ground truth, Hard IoU is 0.8."
+    },
+    {
+      "id": "s3b.f1",
+      "section": "s3b",
+      "type": "fold",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L42",
+        "L46",
+        "L48"
+      ],
+      "title": "Details: how BCE penalizes bins, why non-event bins have probabilities in Soft IoU, and s vs. p",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s3b.f1.b1",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L42"
+          ],
+          "text": "Because the answer is a continuous span rather than a fixed set of options, discretizing into time bins lets the model score each bin. BCE grades a row of yes/no questions: when the label is 1, lower probability costs more ($-\\log p$); when the label is 0, higher probability costs more ($-\\log(1-p)$). Each bin must use an independent sigmoid so multiple event bins can be 'yes' together instead of competing under softmax. In the 10-bin example, the average penalty across all bins is BCE (~0.21), and the ninth bin — even though 0.6 is above 0.5 — lacks confidence and incurs a 0.51 penalty, the highest of any bin."
+        },
+        {
+          "id": "s3b.f1.b2",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L46"
+          ],
+          "text": "One common trap in Soft IoU: bins outside the event still have model probabilities $p$; they only vanish from the intersection $p \\times y$ because $y=0$ multiplies them to 0. They remain in the union denominator as over-predicted mass that lowers IoU. Conversely, inside the event $y=1$ makes $p \\times y = p$, which can create the illusion that only event bins carry probabilities."
+        },
+        {
+          "id": "s3b.f1.b3",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L48"
+          ],
+          "text": "On the $s$ in Eq. (4): the real model first computes an unbounded real logit $s$ via Eq. (1), then converts it to a probability $p$ in $(0, 1)$ with sigmoid. Useful landmarks: $s=0$ gives $p=0.5$, $s=2.20$ gives $p=0.90$, and $s=-1.10$ corresponds to threshold $\\tau=0.25$. Because Eq. (4)'s $w = s - \\log(\\tau/(1-\\tau)) = s + 1.10$ already subtracts the threshold and $p > \\tau$ is equivalent to $w > 0$, decoding works directly on $s$ without converting back to probabilities. Since the paper gives no real $s$ values, our illustrative examples pick $p$ first and invert via logit."
+        }
+      ]
+    },
+    {
+      "id": "s3b.f2",
+      "section": "s3b",
+      "type": "fold",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L47"
+      ],
+      "title": "Details: why not just threshold bins directly? Four interval-selection rules compared",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s3b.f2.b1",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L47"
+          ],
+          "text": "A plain threshold only tells you which bins pass; it does not say how to assemble them into one contiguous span. Eq. (4) also has a threshold $\\tau$; the real distinction is that threshold value and segment-selection rule are two separate choices."
+        },
+        {
+          "id": "s3b.f2.b2",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L47"
+          ],
+          "text": "Consider another illustrative set of probabilities (unrelated to the 10-bin decoding example, using point-sum summaries): all three rules use threshold 0.7, the fifth bin is a brief dip inside the event, and the tenth bin is a stray false positive far away."
+        },
+        {
+          "id": "s3b.f2.b3",
+          "section": "s3b",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L47"
+          ],
+          "ordered": false,
+          "items": [
+            "Rule A (leftmost to rightmost): stretched all the way to the tenth-bin false positive, dropping IoU to 0.75.",
+            "Rule B (longest contiguous run): split in half by the fifth-bin dip so only half survives, dropping IoU to 0.50.",
+            "Rule C (Eq. 4 maximum sum): convert each bin to $w = s - \\log(0.7/0.3)$. The fifth bin only loses 0.44 while both sides add 8.24 (the third bin and bin 4 add 3.45, the sixth through bin 8 add 4.80), so bridging the dip pays off for a third-through-bin-8 total of 7.80. The tenth bin adds only 0.25 after crossing the ninth bin's -3.04 penalty, so it is rejected. Result: exact match, IoU 1.00."
+          ]
+        },
+        {
+          "id": "s3b.f2.b4",
+          "section": "s3b",
+          "type": "table",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L47"
+          ],
+          "headers": [
+            "Rule",
+            "Method",
+            "Weakness"
+          ],
+          "rows": [
+            [
+              "A: Leftmost to rightmost",
+              "Span from first to last bin above threshold",
+              "One distant false positive stretches the whole interval"
+            ],
+            [
+              "B: Longest contiguous run",
+              "Take the longest unbroken run above threshold",
+              "A single mid-event dip splits the event in two"
+            ],
+            [
+              "D: Expand from peak",
+              "Start at highest-probability bin and expand until below threshold",
+              "Stops at any dip; fails completely if the peak is a false positive"
+            ],
+            [
+              "C: Maximum sum (Eq. 4)",
+              "Add/subtract weights and find max-sum contiguous span",
+              "Needs a threshold; too low a threshold lets barely-passing bins stretch the span"
+            ]
+          ]
+        },
+        {
+          "id": "s3b.f2.b5",
+          "section": "s3b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L47"
+          ],
+          "text": "This comparison of decoding rules is general modeling knowledge rather than paper content: when probabilities are clean and events are simple, Rules A or B are easy to debug; when scores jitter with dips or false positives, Rule C balances trade-offs (all four output a single interval). Note that the paper never benchmarks Eq. (4) against simple thresholding and never compares threshold 0.7 vs. 0.25, so its experiments alone do not prove this decoding rule beats simple thresholds on these benchmarks."
+        }
+      ]
+    },
+    {
+      "id": "s3c.b1",
+      "section": "s3c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L21"
+      ],
+      "text": "Multiple-choice QA reuses the exact same input layout, readout positions, and Eq. (1) scoring head, simply swapping the suffix candidates for the question's option text (4 or 5 options per training question instead of video bins). Because exactly one option $y$ is correct, Eq. (5) applies softmax so the $K$ option probabilities sum to 1 and compete, then takes the negative log probability of the correct option as cross-entropy loss:"
+    },
+    {
+      "id": "s3c.b2",
+      "section": "s3c",
+      "type": "formula",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L21"
+      ],
+      "intuition": "s3c.b1",
+      "latex": "p_i=\\frac{\\exp(s_i)}{\\sum_{j=1}^{K}\\exp(s_j)},\\qquad \\mathcal{L}_{CE}=-\\log p_y"
+    },
+    {
+      "id": "s3c.b3",
+      "section": "s3c",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L22"
+      ],
+      "text": "Pushing up the right option's score automatically pushes down the others. Using Figure 2(c)'s three illustrative probabilities (0.72, 0.18, 0.10, with scores back-computed), the loss gap depending on which option is correct is stark; at inference time, options stay in their original order and the model picks the highest-probability choice:"
+    },
+    {
+      "id": "s3c.b4",
+      "section": "s3c",
+      "type": "table",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L22"
+      ],
+      "headers": [
+        "If Correct Answer Is",
+        "Assigned Probability",
+        "Cross-Entropy Loss"
+      ],
+      "rows": [
+        [
+          "A",
+          "0.72",
+          "0.33"
+        ],
+        [
+          "B",
+          "0.18",
+          "1.71"
+        ],
+        [
+          "C",
+          "0.10",
+          "2.30"
+        ]
+      ]
+    },
+    {
+      "id": "s3c.b5",
+      "section": "s3c",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L23"
+      ],
+      "text": "To keep the model from memorizing option positions, training applies a reproducible, label-independent shuffle to eligible questions and updates the target label accordingly. For example, if the answer was A and shuffling moves it to C, the label updates to C. Questions whose wording explicitly references option positions or prior conversation turns keep their original order to preserve meaning."
+    },
+    {
+      "id": "s3c.b6",
+      "section": "s3c",
+      "type": "table",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L24"
+      ],
+      "headers": [
+        "Component",
+        "Temporal Grounding",
+        "Multiple-Choice QA"
+      ],
+      "rows": [
+        [
+          "Candidates",
+          "Time bins (sliced from video)",
+          "Option text from the question"
+        ],
+        [
+          "Candidate count $K$",
+          "Frames $\\div 2$ (e.g., 40)",
+          "4 or 5 (training data)"
+        ],
+        [
+          "Scoring",
+          "Eq. (1), shared head",
+          "Eq. (1), shared head"
+        ],
+        [
+          "Probabilities",
+          "sigmoid (independent bins)",
+          "softmax (competing options)"
+        ],
+        [
+          "Loss",
+          "BCE + Soft IoU",
+          "cross-entropy"
+        ],
+        [
+          "Output",
+          "Contiguous segment via Eq. (4)",
+          "Highest-probability option"
+        ]
+      ]
+    },
+    {
+      "id": "s4a.b1",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L25"
+      ],
+      "text": "Since one video often fields many questions, VideoJev computes the video prefix $V$ once; the difference lies in how question suffixes attach. **Cached** runs one forward pass (**prefill**) on the video prefix, caches it, and branches off to score each incoming question independently, fitting scenarios where questions arrive over time. **Joint** appends every question (prompt, candidates, and `<|decide|>`) behind the same prefix and scores them in one forward pass under standard **causal attention** (each position can only see itself and earlier tokens, never later ones). Joint requires all questions to be available upfront, and training uses this same concatenated layout."
+    },
+    {
+      "id": "s4a.b2",
+      "section": "s4a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L25"
+      ],
+      "headers": [
+        "Currently Reading (Three-Question Example)",
+        "Cached Sees",
+        "Joint Sees"
+      ],
+      "rows": [
+        [
+          "$Q_1$",
+          "$V$, $Q_1$",
+          "$V$, $Q_1$"
+        ],
+        [
+          "$Q_2$",
+          "$V$, $Q_2$",
+          "$V$, $Q_1$, $Q_2$"
+        ],
+        [
+          "$Q_3$",
+          "$V$, $Q_3$",
+          "$V$, $Q_1$, $Q_2$, $Q_3$"
+        ]
+      ]
+    },
+    {
+      "id": "s4a.b3",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L25",
+        "L26"
+      ],
+      "text": "In Joint mode, later questions can see earlier questions' prompts and options, but never any answers. The paper states it kept standard causal attention to preserve **FlashAttention** (a memory-saving, fast low-level attention kernel), without quantifying that trade-off; it also claims to have verified that no answer leakage occurs, without explaining how."
+    },
+    {
+      "id": "s4a.b4",
+      "section": "s4a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L27"
+      ],
+      "text": "From basic systems intuition (the paper does not spell this out): Cached runs a new forward pass and re-reads the cached prefix for every additional question, whereas Joint amortizes that into one pass. More questions per video widen Joint's advantage, while a single question sees no difference. Figure 3's 4B curves show this split clearly."
+    },
+    {
+      "id": "s4a.b5",
+      "section": "s4a",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L27"
+      ],
+      "manifest_id": "img-011",
+      "alt": "Two line plots with questions per video (1 to 10) on the x-axis and average model time on a log y-axis: (a) temporal grounding and (b) multiple-choice QA, comparing Cached (solid/dotted) versus Joint (dashed) with ten-question latency and accuracy labeled at the right ends.",
+      "caption": "Figure 3 — Multi-question efficiency of 4B models: average forward time for 1 to 10 questions per video",
+      "paper_label": "Figure 3",
+      "role": "results"
+    },
+    {
+      "id": "s4b.b1",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L28"
+      ],
+      "text": "Training runs in two stages, one **epoch** (full pass through that stage's data) each; the **vision encoder** that reads frames and the **merger** (connector layer into the language model) stay **frozen** (weights never updated) throughout:"
+    },
+    {
+      "id": "s4b.b2",
+      "section": "s4b",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L28"
+      ],
+      "ordered": true,
+      "items": [
+        "Stage One (30% of videos): train only the new scoring head, using BCE for temporal grounding and CE for QA.",
+        "Stage Two (70% of videos): unfreeze the language backbone and the **token embeddings** (input vectors) of the two new special tokens alongside the scoring head, adding Soft IoU with weight 2 for grounding while keeping CE for QA."
+      ]
+    },
+    {
+      "id": "s4b.b3",
+      "section": "s4b",
+      "type": "formula",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L28"
+      ],
+      "intuition": "s4b.b1",
+      "latex": "\\begin{aligned}\\text{Stage 1:}\\quad & \\mathcal{L}_{TG}=\\mathcal{L}_{BCE},\\qquad \\mathcal{L}_{QA}=\\mathcal{L}_{CE}\\\\\\text{Stage 2:}\\quad & \\mathcal{L}_{TG}=\\mathcal{L}_{BCE}+2\\,\\mathcal{L}_{IoU},\\qquad \\mathcal{L}_{QA}=\\mathcal{L}_{CE}\\end{aligned}"
+    },
+    {
+      "id": "s4b.b4",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L28"
+      ],
+      "text": "Plugging in the 10-bin illustrative example (BCE ~0.21, Soft IoU loss 0.36) gives a Stage Two grounding loss of $0.21 + 2 \\times 0.36 \\approx 0.93$; the paper does not say how the weight of 2 was chosen."
+    },
+    {
+      "id": "s4b.b4b",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L29"
+      ],
+      "text": "The paper explains that warming up the scoring head first gives it a stable representation space (borrowing from multimodal projector alignment). My guess is that a randomly initialized head produces noisy gradients at first, which could disrupt pretrained weights if backpropagated straight into the backbone."
+    },
+    {
+      "id": "s4b.b5",
+      "section": "s4b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L30"
+      ],
+      "text": "Table 8's ablation delivers a pragmatic verdict: two-stage training does not win on quality. Two-stage averages 65.3 (grounding) and 74.3 (QA), while single-stage training on all videos reaches 65.4 and 74.7. The real reason for two stages is training cost: Stage One skips backbone updates, so the backbone only updates on 70% of videos. As for 'potentially more stable', the paper never verifies it. Full hyperparameters live in part 3.1 of the paper."
+    },
+    {
+      "id": "s4b.b6",
+      "section": "s4b",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L30"
+      ],
+      "manifest_id": "img-010",
+      "alt": "Comparison table of VideoJev-4B two-stage training (baseline) versus single-stage training on all videos across three temporal grounding and four Video QA benchmarks, with deltas.",
+      "caption": "Table 8 — Two-stage vs. single-stage training (VideoJev-4B, baseline warms up the head on 30% of videos then jointly trains on 70%)",
+      "paper_label": "Table 8",
+      "role": "ablation"
+    },
+    {
+      "id": "s4b.f1",
+      "section": "s4b",
+      "type": "fold",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L49"
+      ],
+      "title": "Details: which parameters train in each stage, and is the backbone full fine-tuning or add-on weights?",
+      "tone": "info",
+      "children": [
+        {
+          "id": "s4b.f1.b1",
+          "section": "s4b",
+          "type": "paragraph",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L49"
+          ],
+          "text": "The paper never states whether the language backbone uses full-parameter fine-tuning or **LoRA** (low-rank adaptation, a memory-saving method that trains small add-on weights); neither 'LoRA' nor 'adapter' appears in the text. My guess is full fine-tuning based on three clues: first, backbone learning rates are 5e-6 (4B) and 2e-6 (35B-A3B), typical for full fine-tuning whereas LoRA usually runs one to two orders of magnitude higher (general practice); second, 4B uses DeepSpeed ZeRO-2 and 35B-A3B uses ZeRO-3, which shard optimizer states and gradients (with ZeRO-3 also sharding parameters) and are standard for full training; third, Appendix A.3's autoregressive baseline also fine-tunes Qwen3.5-4B at 5e-6 while freezing only the vision encoder and merger. The paper never tests LoRA and never reports head-only scores after Stage One; Table 8's single-stage run trains everything together."
+        },
+        {
+          "id": "s4b.f1.b2",
+          "section": "s4b",
+          "type": "table",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L49"
+          ],
+          "headers": [
+            "Component (Data-Flow Order)",
+            "Stage One",
+            "Stage Two"
+          ],
+          "rows": [
+            [
+              "Vision encoder, merger",
+              "Frozen",
+              "Frozen"
+            ],
+            [
+              "Language backbone",
+              "Frozen",
+              "Trained"
+            ],
+            [
+              "Token embeddings (`<|option_end|>`, `<|decide|>`)",
+              "Frozen",
+              "Trained"
+            ],
+            [
+              "Scoring head",
+              "Trained",
+              "Trained"
+            ]
+          ]
+        },
+        {
+          "id": "s4b.f1.b3",
+          "section": "s4b",
+          "type": "list",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L49"
+          ],
+          "ordered": false,
+          "items": [
+            "Language backbone: if full fine-tuning, all Transformer attention and MLP weights update (inference); whether the general vocabulary embedding table and 35B-A3B's **MoE** (Mixture of Experts) router and experts all update is unspecified (the appendix only notes the router stays FP32 at inference), and the removed final-layer MLP sits off the forward path with no gradient (inference).",
+            "Token embeddings: `<|option_end|>` and `<|decide|>` each add one length-$d$ input vector initialized from pretrained `<|im_end|>`, frozen in Stage One and trained in Stage Two with an unspecified learning rate; only input embeddings are needed because the output head was replaced by the scorer (inference).",
+            "Scoring head: Eq. (1)'s $W_q, b_q, W_k, b_k$ and scalar $b$ (the fixed 10 is non-learnable), totaling about $2 \\times (512d + 512) + 1 \\approx 1024d$ parameters across two $d \\to 512$ linear layers. The paper omits $d$; if $d$ is 2,000-4,000 (typical for multi-billion models), that is roughly 2M-4M parameters, three orders of magnitude smaller than the 4B backbone. Weights initialize from a 0.005-std Gaussian with bias 0, using learning rates 3e-4 in Stage One and 1e-4 in Stage Two."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s5a.b1",
+      "section": "s5a",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L32"
+      ],
+      "text": "Accuracy spans 7 benchmarks: average mIoU across 3 grounding benchmarks (3,363, 4,500, and 1,541 test queries) and average accuracy across 4 multiple-choice QA benchmarks (1,549, 2,700, 1,337, and 2,174 questions). Baselines come in two modes: **Instruct** outputs the answer directly, while **Thinking** generates a long reasoning trace first. On both the 4B dense model and the 35B-A3B Mixture-of-Experts (MoE) model, VideoJev beats same-backbone Instruct on both tasks; trailing 4B Thinking by 0.6 points on QA is the only loss, and Thinking pays over 100x the latency for it:"
+    },
+    {
+      "id": "s5a.b2",
+      "section": "s5a",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L32"
+      ],
+      "headers": [
+        "Comparison",
+        "Grounding mIoU",
+        "QA Accuracy"
+      ],
+      "rows": [
+        [
+          "4B: VideoJev vs. same-backbone Instruct",
+          "65.3 vs. 58.6 (+6.7)",
+          "74.3 vs. 66.3 (+8.0)"
+        ],
+        [
+          "4B: vs. strongest open 4B grounding baseline TimeLens2-4B",
+          "65.3 vs. 62.0 (+3.3)",
+          "—"
+        ],
+        [
+          "4B: vs. same-backbone Thinking",
+          "—",
+          "74.3 vs. 74.9 (-0.6)"
+        ],
+        [
+          "35B-A3B: vs. same-backbone Instruct",
+          "67.7 vs. 56.9 (+10.8)",
+          "79.5 vs. 73.8 (+5.7)"
+        ],
+        [
+          "35B-A3B: vs. same-backbone Thinking",
+          "—",
+          "79.5 vs. 78.8 (+0.7)"
+        ]
+      ]
+    },
+    {
+      "id": "s5a.f1",
+      "section": "s5a",
+      "type": "fold",
+      "layer": "support",
+      "origin": "source",
+      "ledger": [
+        "L32"
+      ],
+      "title": "Full benchmark tables: original Table 1 (Temporal Grounding) and Table 2 (Multiple-Choice Video QA)",
+      "tone": "note",
+      "children": [
+        {
+          "id": "s5a.f1.b1",
+          "section": "s5a",
+          "type": "figure",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L32"
+          ],
+          "manifest_id": "img-003",
+          "alt": "Full temporal grounding results table comparing proprietary models, 4B open models, and 30-35B MoE models on Charades, ActivityNet, and QVHighlights (R1@0.3/0.5/0.7, mIoU, average, and latency).",
+          "caption": "Table 1 — Temporal grounding results (generative models default to Instruct mode, VideoJev uses Joint inference; click to zoom)",
+          "paper_label": "Table 1",
+          "role": "results"
+        },
+        {
+          "id": "s5a.f1.b2",
+          "section": "s5a",
+          "type": "figure",
+          "layer": "fold",
+          "origin": "source",
+          "ledger": [
+            "L32"
+          ],
+          "manifest_id": "img-004",
+          "alt": "Full multiple-choice Video QA results table comparing proprietary models, 4B open models, and 30-35B MoE models on LVBench, Video-MME, LongVideoBench, and MLVU (accuracy, four-benchmark average, and latency).",
+          "caption": "Table 2 — Multiple-choice Video QA results",
+          "paper_label": "Table 2",
+          "role": "results"
+        }
+      ]
+    },
+    {
+      "id": "s5b.b1",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L33"
+      ],
+      "text": "The table below reports average forward time per question (in seconds): grounding is measured on Charades test (3,363 queries across 1,313 videos), and QA on LVBench (1,549 questions across 103 videos). VideoJev is timed in Joint mode, while baselines share the video prefix and generate each answer separately:"
+    },
+    {
+      "id": "s5b.b2",
+      "section": "s5b",
+      "type": "table",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L33"
+      ],
+      "headers": [
+        "Task & Scale",
+        "VideoJev",
+        "Same-Backbone Instruct",
+        "Same-Backbone Thinking"
+      ],
+      "rows": [
+        [
+          "Grounding 4B",
+          "0.276",
+          "0.763 (2.8×)",
+          "—"
+        ],
+        [
+          "Grounding 35B-A3B",
+          "0.336",
+          "1.054 (3.1×)",
+          "—"
+        ],
+        [
+          "QA 4B",
+          "1.123",
+          "1.355 (1.2×)",
+          "144.929 (129×)"
+        ],
+        [
+          "QA 35B-A3B",
+          "1.493",
+          "2.379 (1.6×)",
+          "149.777 (100×)"
+        ]
+      ]
+    },
+    {
+      "id": "s5b.b3",
+      "section": "s5b",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L33"
+      ],
+      "ordered": false,
+      "items": [
+        "The headline 'over 100× faster' compares against Thinking mode (129× and 100×).",
+        "Against direct-answer Instruct, multiple-choice QA is only 1.2× and 1.6× faster (computed from Table 2 latencies).",
+        "The 2.8× to 3.1× gain on temporal grounding is a fairer comparison, since generating timestamp strings inherently takes longer than reading scores."
+      ]
+    },
+    {
+      "id": "s5b.b4",
+      "section": "s5b",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L33"
+      ],
+      "text": "One more condition applies: those headline latencies use Joint mode, which assumes every question is known upfront. In an interactive agent loop where questions arrive one by one, Cached inference is the realistic regime."
+    },
+    {
+      "id": "s5c.b1",
+      "section": "s5c",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L34"
+      ],
+      "text": "Comparing Joint against Cached using the exact same trained model weights (**checkpoint**, Table 4): across 2 models × 7 benchmarks (14 pairs total), Joint actually scores higher on 13 of them. On 4B, Joint leads by 0.8 on grounding and 0.5 on QA; on 35B-A3B, it leads by 0.3 on grounding and 0.7 on QA. By contrast, an **autoregressive** (token-by-token) Direct baseline on LVBench (implementation details omitted here) drops from 60.0% under Cached to 58.7% under Joint, while VideoJev rises from 67.1% to 67.9%, showing Joint does not hurt accuracy."
+    },
+    {
+      "id": "s5c.b2",
+      "section": "s5c",
+      "type": "figure",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L34"
+      ],
+      "manifest_id": "img-006",
+      "alt": "Comparison table of VideoJev-4B and VideoJev-35B-A3B under Joint inference (baseline) versus Cached inference across three temporal grounding and four Video QA benchmarks, with deltas.",
+      "caption": "Table 4 — Cached inference vs. Joint inference",
+      "paper_label": "Table 4",
+      "role": "ablation"
+    },
+    {
+      "id": "s6.b1",
+      "section": "s6",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L51"
+      ],
+      "text": "Beyond the closed-world evaluation boundary noted earlier (pre-supplied questions, options, and queries, untested agent workflows in Future Work, and Joint-mode headline speeds), several implementation details remain unspecified:"
+    },
+    {
+      "id": "s6.b2",
+      "section": "s6",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L51"
+      ],
+      "ordered": false,
+      "items": [
+        "Grounding decoding edge cases: when every bin has a negative $w_i$, the system falls back to the highest-probability bin, yet the paper never specifies what 'lightweight boundary post-processing' does, how 'smoothing window = 1' smooths anything (my guess is window 1 means no smoothing), how $\\tau = 0.25$ was picked, or why simple thresholding was never compared.",
+        "Multiple-choice shuffling details: the paper does not clarify whether option letters are re-indexed after shuffling (our A-to-C example assumes re-indexing, which is an inference) and does not report the pre-shuffle answer distribution.",
+        "Other scattered gaps: why Eq. (1) fixes the scale at 10 and unit-normalizes, the trade-off of keeping standard causal attention (to preserve FlashAttention) and how non-leakage was verified, how Soft IoU weight 2 was chosen and whether two-stage training improves stability, the 2 fps training vs. 4 fps evaluation bin-width ambiguity, and whether backbone training is full fine-tuning or add-on low-rank weights (LoRA), the token-embedding learning rate, and whether 35B-A3B's MoE router updates."
+      ]
+    },
+    {
+      "id": "s7.b1",
+      "section": "s7",
+      "type": "paragraph",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L53"
+      ],
+      "text": "Three portable lessons from VideoJev you can use when evaluating other video models or designing your own:"
+    },
+    {
+      "id": "s7.b2",
+      "section": "s7",
+      "type": "list",
+      "layer": "main",
+      "origin": "source",
+      "ledger": [
+        "L53"
+      ],
+      "ordered": true,
+      "items": [
+        "Skip token generation for structured small decisions: pack time bins or answer options into one sequence, score them in one forward pass with a shared head, and compute the video prefix once. When questions arrive in a batch, Joint is both cheaper and slightly more accurate than Cached on 13 of 14 test pairs.",
+        "Always ask 'compared to what, and in which mode?' on speed claims: VideoJev beats same-backbone Instruct across the board on accuracy, yet 'over 100× faster' is against Thinking mode; against Instruct QA it is 1.2× to 1.6×, and sequential agent queries must look at Cached rather than Joint.",
+        "Align the training loss with the evaluation metric: use softmax for exclusive choices and sigmoid for independent bins; per-bin BCE misses whole-interval overlap, so adding Soft IoU adds 4.6 mIoU, paired with logit-space maximum-sum decoding."
+      ]
+    },
+    {
+      "id": "s8a.b1",
+      "section": "s8a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L36"
+      ],
+      "text": "A **logit** is the model's raw real-valued score; sigmoid and softmax both turn scores into probabilities, differing in whether candidates **compete with each other**. Viewed uniformly, sigmoid is just a two-class softmax with the second class fixed at 0: the first entry of $\\mathrm{softmax}([s, 0])$ is $e^s/(e^s+1) = \\sigma(s)$:"
+    },
+    {
+      "id": "s8a.b2",
+      "section": "s8a",
+      "type": "formula",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L36"
+      ],
+      "intuition": "s8a.b1",
+      "latex": "\\sigma(s)=\\frac{1}{1+e^{-s}},\\qquad \\mathrm{logit}(p)=\\log\\frac{p}{1-p},\\qquad \\mathrm{softmax}(s)_i=\\frac{e^{s_i}}{\\sum_j e^{s_j}}"
+    },
+    {
+      "id": "s8a.b3",
+      "section": "s8a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L36",
+        "L41"
+      ],
+      "text": "Because multiplying numerator and denominator by $e^c$ cancels out, adding a constant $b$ to every score leaves softmax completely unchanged, whereas for independent sigmoids it shifts the threshold. Suppose three options have base scores 9.00, 7.61, and 7.03 (score = base + $b$); changing $b$ from 0 to $-8$ leaves the softmax column frozen while transforming the sigmoid column:"
+    },
+    {
+      "id": "s8a.b4",
+      "section": "s8a",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L36"
+      ],
+      "headers": [
+        "$b$",
+        "Scores $s$",
+        "softmax",
+        "sigmoid"
+      ],
+      "rows": [
+        [
+          "0",
+          "9.00, 7.61, 7.03",
+          "72.0%, 17.9%, 10.0% (sum 100%)",
+          "99.99%, 99.95%, 99.91% (sum ~300%)"
+        ],
+        [
+          "-8",
+          "1.00, -0.39, -0.97",
+          "72.0%, 17.9%, 10.0% (sum 100%)",
+          "73.1%, 40.4%, 27.5% (sum ~141%)"
+        ]
+      ]
+    },
+    {
+      "id": "s8a.b5",
+      "section": "s8a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L41",
+        "L36"
+      ],
+      "text": "The same holds in temporal grounding: suppose three bins have cosine similarities 0.9, 0.5, and 0.1 (base scores 9, 5, and 1). At $b=0$ all three exceed 0.5; shifting $b$ to $-6$ moves their probabilities to 0.953, 0.269, and 0.007, leaving only the first bin above 0.5. Softmax implementations exploit this same shift invariance by subtracting the maximum score first to avoid exponential overflow:"
+    },
+    {
+      "id": "s8a.b6",
+      "section": "s8a",
+      "type": "code",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L36"
+      ],
+      "lang": "python",
+      "code": "e = exp(s - max(s))\np = e / sum(e)"
+    },
+    {
+      "id": "s8a.b7",
+      "section": "s8a",
+      "type": "list",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L36"
+      ],
+      "ordered": false,
+      "items": [
+        "Exactly one answer (single-label) -> softmax with cross-entropy; probabilities sum to 1 and compete.",
+        "Independent yes/no per item (multi-label) -> sigmoid with BCE; probabilities need not sum to 1.",
+        "Thresholding, summing, or fusing signals -> work directly in logit space, converting thresholds via $\\log\\frac{\\tau}{1-\\tau}$.",
+        "Bias or constant shift -> affects sigmoid only, never softmax."
+      ]
+    },
+    {
+      "id": "s8a.b8",
+      "section": "s8a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L50"
+      ],
+      "text": "The logit formula $\\log\\frac{p}{1-p}$ is simply the inverse of sigmoid: $p/(1-p)$ is the odds (ratio of happening to not happening), and taking its log gives log-odds. A model's raw output behaves like log-odds because training through sigmoid and BCE forces it onto that scale. The name comes from logistic regression in statistics, and machine learning broadened it to mean raw pre-probability scores (general knowledge):"
+    },
+    {
+      "id": "s8a.b9",
+      "section": "s8a",
+      "type": "formula",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L50"
+      ],
+      "intuition": "s8a.b8",
+      "latex": "p=\\frac{1}{1+e^{-s}}\\ \\Rightarrow\\ e^{s}=\\frac{p}{1-p}\\ \\Rightarrow\\ s=\\log\\frac{p}{1-p}"
+    },
+    {
+      "id": "s8a.b10",
+      "section": "s8a",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L50"
+      ],
+      "headers": [
+        "Score $s$",
+        "Probability $p=\\sigma(s)$",
+        "Odds $p/(1-p)$",
+        "Log-Odds"
+      ],
+      "rows": [
+        [
+          "-1.10",
+          "0.25",
+          "0.333 (1 to 3)",
+          "-1.10"
+        ],
+        [
+          "0",
+          "0.50",
+          "1",
+          "0"
+        ],
+        [
+          "1.0",
+          "0.731",
+          "2.718",
+          "1.0"
+        ],
+        [
+          "2.2",
+          "0.900",
+          "9 (9 to 1)",
+          "2.20"
+        ]
+      ]
+    },
+    {
+      "id": "s8a.b11",
+      "section": "s8a",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L50"
+      ],
+      "text": "Softmax follows a different relation: $s_i = \\log p_i + c$, where $c = \\log \\sum_j e^{s_j}$. On the same illustrative scores $(9.00, 7.61, 7.03)$, probabilities are about $(0.72, 0.18, 0.10)$ and log probabilities are about $(-0.33, -1.72, -2.30)$; subtracting log probability from each score yields about 9.33 everywhere, which is why softmax is shift-invariant."
+    },
+    {
+      "id": "s8b.b1",
+      "section": "s8b",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L37"
+      ],
+      "text": "Summing per-bin penalties does not equal whole-interval quality. Suppose ground truth spans the third through bin 6 (4 bins): Model A misses 2 event bins (assigning 0.1), while Model B over-predicts 2 non-event bins (assigning 0.9), with identical penalties on all other bins. Both models have the exact same BCE of 0.54, yet their Hard IoU diverges:"
+    },
+    {
+      "id": "s8b.b2",
+      "section": "s8b",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L37"
+      ],
+      "headers": [
+        "Metric",
+        "Model A: Misses 2 Bins",
+        "Model B: Over-Predicts 2 Bins"
+      ],
+      "rows": [
+        [
+          "Penalty per wrong bin",
+          "$-\\ln 0.1 = 2.30$",
+          "$-\\ln(1-0.9) = 2.30$"
+        ],
+        [
+          "BCE",
+          "0.54",
+          "0.54"
+        ],
+        [
+          "Hard IoU",
+          "$(4-2)/4 = 0.50$",
+          "$4/(4+2) = 0.67$"
+        ]
+      ]
+    },
+    {
+      "id": "s8b.b3",
+      "section": "s8b",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L37"
+      ],
+      "text": "BCE ties because every wrong bin costs the same; IoU splits because for a $g$-bin event, missing $m$ bins gives $(g-m)/g$ while over-predicting $m$ bins gives $g/(g+m)$, which is strictly larger, meaning misses hurt IoU more than extra bins. The fix is adding a differentiable **surrogate loss** for the global metric alongside the per-bin loss. VideoJev's BCE + 2 x Soft IoU raises average mIoU from 60.7 to 65.3 (+4.6, Table 6 above)."
+    },
+    {
+      "id": "s8c.b1",
+      "section": "s8c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L38"
+      ],
+      "text": "**Hard IoU** operates on final binary decisions (each bin is either in or out of the predicted span), dividing overlap length by union length and averaging across queries to get mIoU. It cannot be differentiated directly for training (general knowledge) because thresholding is a step function with gradient 0 almost everywhere, giving no smooth signal between 0.49 and 0.51. **Soft IoU** replaces binary decisions with continuous probabilities $p$; it matches Hard IoU whenever $p$ is strictly 0 or 1 and takes four lines of Python:"
+    },
+    {
+      "id": "s8c.b2",
+      "section": "s8c",
+      "type": "code",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L38"
+      ],
+      "lang": "python",
+      "code": "def soft_iou_loss(p, y, d):\n    inter = sum(d * p * y)\n    union = sum(d * (y + p * (1 - y)))\n    return 1 - inter / union"
+    },
+    {
+      "id": "s8c.b3",
+      "section": "s8c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L38"
+      ],
+      "text": "Training Soft IoU and evaluation Hard IoU move in the same direction, yet their values can differ sharply. On the same 10-bin illustrative predictions (ground truth sixth through bin 9), three methods produce three distinct numbers:"
+    },
+    {
+      "id": "s8c.b4",
+      "section": "s8c",
+      "type": "table",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L38"
+      ],
+      "headers": [
+        "Method",
+        "Result",
+        "Meaning"
+      ],
+      "rows": [
+        [
+          "Soft IoU (training)",
+          "IoU 0.64, loss 0.36",
+          "Blends overlap and confidence"
+        ],
+        [
+          "Hard IoU, threshold 0.5",
+          "1.00",
+          "Predicted sixth through bin 9 match ground truth exactly"
+        ],
+        [
+          "Hard IoU, Eq. (4) decoding ($\\tau=0.25$)",
+          "0.80",
+          "Outputs fifth through bin 9 (8 to 18 seconds)"
+        ]
+      ]
+    },
+    {
+      "id": "s8c.b5",
+      "section": "s8c",
+      "type": "paragraph",
+      "layer": "appendix",
+      "origin": "source",
+      "ledger": [
+        "L38"
+      ],
+      "text": "In this example, a plain 0.5 threshold hits the exact span because of the threshold value (the fifth bin clears 0.25 but not 0.5) rather than the decoding rule; the paper does not compare thresholds. Soft IoU also penalizes correct bins whose confidence sits between 0.6 and 0.9, whereas Hard IoU only judges the final span, so the two correlate without being equal."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "kind": "folded",
+      "ledger": "L40",
+      "why": "See zh plan decision D1 for ledger L40.",
+      "needs_human": true
+    },
+    {
+      "id": "D2",
+      "kind": "folded",
+      "ledger": "L43",
+      "why": "See zh plan decision D2 for ledger L43.",
+      "needs_human": true
+    },
+    {
+      "id": "D3",
+      "kind": "folded",
+      "ledger": "L47",
+      "why": "See zh plan decision D3 for ledger L47.",
+      "needs_human": true
+    },
+    {
+      "id": "D4",
+      "kind": "folded",
+      "ledger": "L49",
+      "why": "See zh plan decision D4 for ledger L49.",
+      "needs_human": true
+    },
+    {
+      "id": "D5",
+      "kind": "moved",
+      "ledger": "L36",
+      "why": "See zh plan decision D5 for ledger L36.",
+      "needs_human": false
+    },
+    {
+      "id": "D6",
+      "kind": "reworded",
+      "ledger": "L3",
+      "why": "See zh plan decision D6 for ledger L3.",
+      "needs_human": false
+    },
+    {
+      "id": "D7",
+      "kind": "reworded",
+      "ledger": "L39",
+      "why": "See zh plan decision D7 for ledger L39.",
+      "needs_human": false
+    },
+    {
+      "id": "D8",
+      "kind": "reworded",
+      "ledger": "L48",
+      "why": "See zh plan decision D8 for ledger L48.",
+      "needs_human": false
+    }
+  ]
+}

@@ -30,6 +30,8 @@ Recurring: `site` baseline monthly, never-crawled pages monthly.
 | 2026-12-23 | site | Monthly baseline: last 90 days vs the 90 before, against `reports/2026-11-24-monthly-baseline.md` | site baseline plus movers check; save a new dated report; ask the author the decisions still open in `plan.md` G3 |
 | 2026-12-23 | site | B3 never-crawled posts: last-crawled dates for the 9 URLs not indexed on 2026-11-24 | `batch_url_inspection`; list in `reports/2026-11-24-monthly-baseline.md` |
 | 2026-12-22 | post | `ai-concept/jev-overview` (zh): movers check, clicks 22 to 4 and impressions 1,154 to 348 at the same position (28 days to 2026-11-21) | post check; same position means demand changed, so record it; do not change the page from this alone |
+| 2026-12-04 | post | `paper-intro/videojev` (PR opened 2026-11-27): is it indexed and crawled? | `batch_url_inspection` on the zh and en URLs; pre-publish GSC checks were skipped (local GSC MCP unavailable / timed out) |
+| 2026-12-18 | post | `paper-intro/videojev`: impressions, position, CTR | post check; pre-publish GSC checks were skipped (`suggest.py` ran: VideoJev has no collision, `temporal grounding` has concept demand, `video QA` collides with video quality / game QA); under about 30 impressions means record it and do not tweak the title |
 
 ## Done
 
