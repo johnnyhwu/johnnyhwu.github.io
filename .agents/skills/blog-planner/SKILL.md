@@ -60,7 +60,7 @@ ledger**: detail is moved, folded and re-ordered, never deleted, and a script ca
 ## Inputs
 
 - `AI-Research/done/unpublished/<Topic>/article.md` and `assets/image-manifest.json` (or the documented exception
-  path in `AI-Research/CLAUDE.md`). Manifest `file` paths are relative to `AI-Research/`.
+  path in `AI-Research/AGENTS.md`). Manifest `file` paths are relative to `AI-Research/`.
 - `references/planner-guide.md` (how to make it readable: the reader, the four goals as moves, layering, figures
   and tables) and `references/style.md` (what to keep out of the sentences: scaffolding, recap loops, label clutter).
 - `references/plan-schema.md` (the JSON you write).

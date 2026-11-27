@@ -100,7 +100,7 @@ Then:
 - Every path below is under `AI-Research/`, e.g.
   `AI-Research/done/unpublished/<Topic>/`. Manifest `file` paths are relative
   to `AI-Research/` itself, not to the topic directory.
-- Read `AI-Research/CLAUDE.md` once. It documents that repo's layout and any
+- Read `AI-Research/AGENTS.md` once. It documents that repo's layout and any
   per-topic path exceptions — check it for the current exception list rather
   than assuming the canonical path (e.g. `SkillOpt` keeps its manifest at
   `done/published/SkillOpt/parsed/assets/image-manifest.json`).
@@ -132,7 +132,7 @@ Topic directories live **two** levels down under `done/`, one under
 
 A publish task produces **two** PRs: the post here, and a bucket move in `AI-Research`
 (`done/unpublished/<Topic>` -> `done/published/<Topic>`, manifest paths rewritten), each linking the other.
-`hugo-publisher` step 8 has the procedure; `AI-Research/CLAUDE.md` is the authority on the move. If you can't
+`hugo-publisher` step 8 has the procedure; `AI-Research/AGENTS.md` is the authority on the move. If you can't
 open the `AI-Research` PR, say so: a topic left in `done/unpublished/` gets offered for publishing again.
 
 ## Global rules for anything touching a published post
