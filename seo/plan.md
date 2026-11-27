@@ -239,7 +239,7 @@ plan, so each is a one-sentence hand edit in both languages.
 
 | From (source post) | To | Listed in |
 |---|---|---|
-| `paper-intro/video-deep-research`, `ai-concept/vllm-agentic-serving`, `paper-intro/sparse-upcycling` | `paper-intro/videojev` | PR #TBD |
+| `paper-intro/video-deep-research`, `ai-concept/vllm-agentic-serving`, `paper-intro/sparse-upcycling` | `paper-intro/videojev` | PR #111 |
 | `paper-intro/memgpt`, `ai-concept/context-engineering`, `paper-intro/plan-and-act` | `paper-intro/skill-state` | PR #107 |
 | `ai-concept/claude-code`, `ai-concept/context-engineering` | `paper-intro/is-bash-all-you-need` | PR #103 |
 | `ai-concept/jev-overview`, `paper-intro/cerebras-rag` | `paper-intro/decision-rag` | PR #101 |
